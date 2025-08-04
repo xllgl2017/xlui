@@ -17,6 +17,7 @@ use crate::response::button::ButtonResponse;
 use crate::response::checkbox::CheckBoxResponse;
 use crate::response::Response;
 use crate::response::slider::SliderResponse;
+use crate::response::spinbox::SpinBoxResponse;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::slider::Slider;
 
@@ -128,9 +129,10 @@ impl Ui {
         self.response.button_response()
     }
 
-    pub fn spinbox(&mut self, value: i32) {
-        let mut spinbox = SpinBox::new(value);
+    pub fn spinbox(&mut self, value: i32, range: Range<i32>) -> &mut SpinBoxResponse {
+        let mut spinbox = SpinBox::new(value).with_range(range);
         spinbox.draw(self);
+        self.response.spinbox_response()
     }
 
     pub fn image(&mut self, source: &'static str, size: (f32, f32)) {

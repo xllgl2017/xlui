@@ -1,57 +1,64 @@
+use std::ops::Range;
 use crate::{Device, Pos};
 use crate::frame::context::Context;
 use crate::paint::color::Color;
 use crate::paint::edit::PaintTextEdit;
 use crate::paint::triangle::PaintTriangle;
+use crate::response::Response;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::vertex::Vertex;
+use crate::widgets::spinbox::SpinBox;
 use crate::widgets::textedit::TextEdit;
 
 pub struct PaintSpinBox {
+    id: String,
     edit: PaintTextEdit,
     triangle: PaintTriangle,
     value: i32,
     up_rect: Rect,
     down_rect: Rect,
     rect: Rect,
+    range: Range<i32>,
 }
 
 impl PaintSpinBox {
-    pub fn new(ui: &mut Ui, rect: &Rect, text_edit: &TextEdit) -> PaintSpinBox {
+    pub fn new(ui: &mut Ui, spinbox: &SpinBox, text_edit: &TextEdit) -> PaintSpinBox {
         let mut triangle = PaintTriangle::new(ui);
         let color = Color::rgb(95, 95, 95);
         let inactive_color = Color::rgb(153, 152, 152);
         let up_rect = Rect {
-            x: Pos { min: rect.x.max - 14.0, max: rect.x.max },
-            y: Pos { min: rect.y.min + 1.0, max: rect.y.min + rect.height() / 2.0 - 2.0 },
+            x: Pos { min: spinbox.rect.x.max - 14.0, max: spinbox.rect.x.max },
+            y: Pos { min: spinbox.rect.y.min + 1.0, max: spinbox.rect.y.min + spinbox.rect.height() / 2.0 - 2.0 },
         };
         let vertices = vec![
             Vertex::new([up_rect.x.min + up_rect.width() / 2.0, up_rect.y.min], &color, &ui.ui_manage.context.size),
             Vertex::new([up_rect.x.min, up_rect.y.max], &color, &ui.ui_manage.context.size),
-            Vertex::new([rect.x.max, up_rect.y.max], &color, &ui.ui_manage.context.size),
+            Vertex::new([spinbox.rect.x.max, up_rect.y.max], &color, &ui.ui_manage.context.size),
         ];
         triangle.add_triangle(vertices, &ui.device);
         let down_rect = Rect {
-            x: Pos { min: rect.x.max - 14.0, max: rect.x.max },
-            y: Pos { min: rect.y.max - rect.height() / 2.0 + 2.0, max: rect.y.max - 2.0 },
+            x: Pos { min: spinbox.rect.x.max - 14.0, max: spinbox.rect.x.max },
+            y: Pos { min: spinbox.rect.y.max - spinbox.rect.height() / 2.0 + 2.0, max: spinbox.rect.y.max - 2.0 },
         };
         triangle.add_triangle(vec![
             Vertex::new([down_rect.x.min + down_rect.width() / 2.0, down_rect.y.max], &inactive_color, &ui.ui_manage.context.size),
-            Vertex::new([rect.x.max - 14.0, down_rect.y.min], &inactive_color, &ui.ui_manage.context.size),
-            Vertex::new([rect.x.max, down_rect.y.min], &inactive_color, &ui.ui_manage.context.size),
+            Vertex::new([spinbox.rect.x.max - 14.0, down_rect.y.min], &inactive_color, &ui.ui_manage.context.size),
+            Vertex::new([spinbox.rect.x.max, down_rect.y.min], &inactive_color, &ui.ui_manage.context.size),
         ], &ui.device);
         let mut edit = PaintTextEdit::new(ui, text_edit.rect.clone(), &text_edit.text_buffer);
         text_edit.gen_style(ui, &mut edit);
         edit.fill.prepare(&ui.device, false, false);
         // edit.prepare(&ui.device, &mut ui.ui_manage.context, false, false, false);
         PaintSpinBox {
+            id: spinbox.id.clone(),
             edit,
-            value: 0,
+            value: spinbox.value,
             up_rect,
             triangle,
             down_rect,
-            rect: rect.clone(),
+            rect: spinbox.rect.clone(),
+            range: spinbox.range.clone(),
         }
     }
 
@@ -64,7 +71,7 @@ impl PaintSpinBox {
         self.triangle.render(render_pass);
     }
 
-    pub fn click(&mut self, device: &Device, context: &mut Context) {
+    pub fn click(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
         if self.up_rect.has_position(x, y) {
             self.value += 1;
@@ -75,6 +82,7 @@ impl PaintSpinBox {
             self.edit.set_text(self.value.to_string().as_str(), context);
             context.window.request_redraw();
         }
+        resp.spinbox_mut(&self.id).unwrap().value=self.value;
         self.edit.click(device, context);
     }
 

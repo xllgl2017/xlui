@@ -3,29 +3,29 @@ use crate::response::{Callback, DrawnEvent, WidgetResponse};
 use crate::size::rect::Rect;
 use crate::ui::UiM;
 
-pub struct CheckBoxResponse {
+pub struct SpinBoxResponse {
     pub(crate) rect: Rect,
     pub(crate) event: DrawnEvent,
     pub(crate) callback: Callback,
-    pub(crate) checked: bool,
+    pub(crate) value: i32,
 }
 
-impl CheckBoxResponse {
-    pub fn new(rect: Rect) -> CheckBoxResponse {
-        CheckBoxResponse {
+impl SpinBoxResponse {
+    pub fn new(rect: Rect) -> SpinBoxResponse {
+        SpinBoxResponse {
             rect,
             event: DrawnEvent::Click,
             callback: Callback::new(),
-            checked: false,
+            value: 0,
         }
     }
 
-    pub fn connect<A: 'static>(&mut self, f: fn(&mut A, &mut UiM, bool)) {
-        self.callback.checkbox = Some(Callback::create_check(f));
+    pub fn connect<A: 'static>(&mut self, f: fn(&mut A, &mut UiM, i32)) {
+        self.callback.spinbox = Some(Callback::create_spinbox(f));
     }
 }
 
-impl WidgetResponse for CheckBoxResponse {
+impl WidgetResponse for SpinBoxResponse {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         &mut *self
     }

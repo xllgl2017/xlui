@@ -69,30 +69,36 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
-### ⬜️ Slider
-
-### ⬜️ ScrollBar(垂直)
+### ✅ Slider
+```rust
+fn draw(&mut self, ui: &mut Ui) {
+    ui.slider(30.0, 0.0..100.0).connect(Self::slider);
+    //或者
+    Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
+}
+```
 
 ### ✅ SpinBox
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.spinbox(0,0..100).connect(Self::changed);
+    ui.spinbox(1, 0..10).connect(Self::changed);
     //或者
-    SpinBox::new(0).with_rangle(0..100).connect(Self::changed).draw(ui);
+    SpinBox::new(1).with_range(0..10).connect(Self::changed).draw(ui);
 }
 ```
-
-
-### ⬜️ TextEdit
 
 ### ✅ CheckBox
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.checkbox(true, "checkbox1").connect(Self::check);
+    ui.checkbox(true, "checkbox1").connect(Self::checked);
     //或者
-    CheckBox::new(false, "checkbox2").connect(Self::check).draw(ui);
+    CheckBox::new(false, "checkbox2").connect(Self::checked).draw(ui);
 }
 ```
+
+### ⬜️ ScrollBar(垂直)
+
+### ⬜️ TextEdit
 
 ## Layout
 

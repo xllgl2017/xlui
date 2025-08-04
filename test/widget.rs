@@ -62,6 +62,11 @@ impl XlUiApp {
         self.label.set_text(format!("check: {}", checked));
         self.label.update(uim);
     }
+
+    pub fn spinbox(&mut self, uim: &mut UiM, value: i32) {
+        self.label.set_text(format!("spinbox: {}", value));
+        self.label.update(uim);
+    }
 }
 
 impl App for XlUiApp {
@@ -81,9 +86,12 @@ impl App for XlUiApp {
             CheckBox::new(false, "checkbox1").connect(Self::check).draw(ui);
             ui.checkbox(true, "checkbox2").connect(Self::check);
         });
+        ui.horizontal(|ui| {
+            SpinBox::new(1).with_range(0..10).connect(Self::spinbox).draw(ui);
+            ui.spinbox(1, 0..10).connect(Self::spinbox);
+        });
+
+
         TextEdit::new("sdsd".to_string()).draw(ui);
-        SpinBox::new(1).draw(ui);
-
     }
-
 }

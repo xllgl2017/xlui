@@ -1,6 +1,7 @@
 pub mod button;
 pub mod slider;
 pub mod checkbox;
+pub mod spinbox;
 
 use std::any::Any;
 use std::collections::HashMap;
@@ -9,6 +10,7 @@ use crate::map::Map;
 use crate::response::button::ButtonResponse;
 use crate::response::checkbox::CheckBoxResponse;
 use crate::response::slider::SliderResponse;
+use crate::response::spinbox::SpinBoxResponse;
 use crate::size::rect::Rect;
 use crate::ui::UiM;
 
@@ -21,7 +23,8 @@ pub enum DrawnEvent {
 pub struct Callback {
     click: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM)>>,
     slider: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, f32)>>,
-    check: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>,
+    checkbox: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>,
+    spinbox: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, i32)>>,
 }
 
 impl Callback {
@@ -29,7 +32,8 @@ impl Callback {
         Callback {
             click: None,
             slider: None,
-            check: None,
+            checkbox: None,
+            spinbox: None,
         }
     }
     pub fn set_click<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
@@ -71,7 +75,20 @@ impl Callback {
 
     pub fn check(f: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>) -> Self {
         let mut res = Callback::new();
-        res.check = f;
+        res.checkbox = f;
+        res
+    }
+
+    pub(crate) fn create_spinbox<A: 'static>(f: fn(&mut A, &mut UiM, i32)) -> Box<dyn FnMut(&mut dyn Any, &mut UiM, i32)> {
+        Box::new(move |target, uim, value| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, value)
+        })
+    }
+
+    pub fn spinbox(f: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, i32)>>) -> Self {
+        let mut res = Callback::new();
+        res.spinbox = f;
         res
     }
 }
@@ -105,6 +122,12 @@ impl Response {
         resp
     }
 
+    pub fn spinbox_response(&mut self) -> &mut SpinBoxResponse {
+        let resp = self.values.last_mut().unwrap();
+        let resp = resp.as_any_mut().downcast_mut::<SpinBoxResponse>().unwrap();
+        resp
+    }
+
     fn clicked<A: 'static>(resp: &mut Box<dyn WidgetResponse>, app: &mut A, uim: &mut UiM) {
         if let Some(ref mut callback) = resp.callback().click {
             callback(app, uim);
@@ -117,7 +140,7 @@ impl Response {
         if check_resp.is_none() { return; }
         let check_resp = check_resp.unwrap();
         let check_value = check_resp.checked;
-        if let Some(ref mut callback) = check_resp.callback.check {
+        if let Some(ref mut callback) = check_resp.callback.checkbox {
             callback(app, uim, check_value);
             uim.context.window.request_redraw();
         }
@@ -130,6 +153,17 @@ impl Response {
         let slider_value = slider_resp.value;
         if let Some(ref mut callback) = slider_resp.callback().slider {
             callback(app, uim, slider_value);
+            uim.context.window.request_redraw();
+        }
+    }
+
+    pub(crate) fn spinbox<A: 'static>(resp: &mut Box<dyn WidgetResponse>, app: &mut A, uim: &mut UiM) {
+        let spinbox_resp = resp.as_any_mut().downcast_mut::<SpinBoxResponse>();
+        if spinbox_resp.is_none() { return; }
+        let spinbox_resp = spinbox_resp.unwrap();
+        let value = spinbox_resp.value;
+        if let Some(ref mut callback) = spinbox_resp.callback().spinbox {
+            callback(app, uim, value);
             uim.context.window.request_redraw();
         }
     }
@@ -160,6 +194,7 @@ impl Response {
             if !has_pos { continue; }
             Self::clicked(value, app, uim);
             Self::checked(value, app, uim);
+            Self::spinbox(value, app, uim);
         }
     }
 
@@ -180,7 +215,13 @@ impl Response {
 
     pub fn slider_mut(&mut self, id: &String) -> Option<&mut SliderResponse> {
         let resp = self.values.get_mut(id)?;
-        let resp=resp.as_any_mut().downcast_mut::<SliderResponse>()?;
+        let resp = resp.as_any_mut().downcast_mut::<SliderResponse>()?;
+        Some(resp)
+    }
+
+    pub fn spinbox_mut(&mut self,id:&String)->Option<&mut SpinBoxResponse>{
+        let resp=self.values.get_mut(id)?;
+        let resp=resp.as_any_mut().downcast_mut::<SpinBoxResponse>()?;
         Some(resp)
     }
 }

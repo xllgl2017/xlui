@@ -209,7 +209,7 @@ impl Layout {
                     paint_edit.click(device, context);
                 }
                 PaintTask::SpinBox(paint_spinbox) => {
-                    paint_spinbox.click(device, context);
+                    paint_spinbox.click(device, context, resp);
                 }
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
                 _ => {}
