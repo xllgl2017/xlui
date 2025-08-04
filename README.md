@@ -1,6 +1,5 @@
-![logo](img/logo/logo_96.png)
-# 🚀 xlui:
-
+# 🚀<img alt="&lt;img alt=&quot;logo&quot; height=&quot;20&quot;&gt;" height="20" src="img/logo/logo_96.png" width="20"/> xlui: 
+[<img alt="github" src="https://img.shields.io/badge/github-xllgl2017/xlui-8da0cb?logo=github" height="20">](https://github.com/xllgl2017/xlui) [![Latest version](https://img.shields.io/crates/v/xlui.svg)](https://crates.io/crates/xlui) [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/main/LICENSE-APACHE)
 ### 示例
 ```rust
 fn main() {
