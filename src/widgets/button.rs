@@ -1,3 +1,14 @@
+//!```
+//! use xlui::ui::Ui;
+//! use xlui::widgets::button::Button;
+//! use xlui::widgets::Widget;
+//!
+//! # xlui::_run_test(|ui|{
+//!    let mut btn=Button::new("hello button");
+//!    btn.draw(ui);
+//! # });
+//! ```
+
 use crate::align::Align;
 use crate::frame::context::Context;
 use crate::paint::button::PaintButton;
@@ -26,9 +37,9 @@ pub struct Button {
 
 
 impl Button {
-    pub fn new(text: String) -> Self {
+    pub fn new(text: impl ToString) -> Self {
         let padding = Padding::same(2.0);
-        let text_buffer = TextBuffer::new(text);
+        let text_buffer = TextBuffer::new(text.to_string());
         Button {
             id: crate::gen_unique_id(),
             text_buffer,
