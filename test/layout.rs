@@ -1,3 +1,5 @@
+mod widget;
+
 use xlui::frame::{App, Application};
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;

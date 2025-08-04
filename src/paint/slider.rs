@@ -7,8 +7,11 @@ use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::Device;
 use std::ops::Range;
+use crate::response::Response;
+use crate::widgets::slider::Slider;
 
 pub struct PaintSlider {
+    id: String,
     fill: PaintRectangle,
     slider: PaintRectangle,
     value: f32,
@@ -17,8 +20,8 @@ pub struct PaintSlider {
 }
 
 impl PaintSlider {
-    pub fn new(ui: &mut Ui, rect: &Rect) -> PaintSlider {
-        let mut fill_rect = rect.clone();
+    pub fn new(ui: &mut Ui, slider: &Slider) -> PaintSlider {
+        let mut fill_rect = slider.rect.clone();
         fill_rect.y.min += 5.0;
         fill_rect.y.max -= 5.0;
         let mut fill = PaintRectangle::new(ui, fill_rect);
@@ -31,10 +34,12 @@ impl PaintSlider {
         fill_style.border.clicked = Border::new(0).radius(Radius::same(3));
         fill.set_style(fill_style);
         fill.prepare(&ui.device, false, false);
-        let mut slider_rect = rect.clone();
-        slider_rect.x.min -= rect.height() / 2.0;
-        slider_rect.set_width(rect.height());
-        let mut slider = PaintRectangle::new(ui, slider_rect);
+        let mut slider_rect = slider.rect.clone();
+        slider_rect.x.min -= slider.rect.height() / 2.0;
+        slider_rect.set_width(slider.rect.height());
+        let offset = slider.value * slider.rect.width() / (slider.range.end - slider.range.start);
+        slider_rect.offset_x(offset);
+        let mut slider_rectangle = PaintRectangle::new(ui, slider_rect);
         let mut slider_style = ui.style.widget.click.clone();
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
@@ -42,13 +47,14 @@ impl PaintSlider {
         slider_style.border.inactive = Border::new(0).color(Color::BLACK).radius(Radius::same(8));
         slider_style.border.hovered = Border::new(1).color(Color::BLACK).radius(Radius::same(8));
         slider_style.border.clicked = Border::new(1).color(Color::BLACK).radius(Radius::same(8));
-        slider.set_style(slider_style);
-        slider.prepare(&ui.device, false, false);
+        slider_rectangle.set_style(slider_style);
+        slider_rectangle.prepare(&ui.device, false, false);
         PaintSlider {
+            id:slider.id.clone(),
             fill,
-            slider,
-            value: 0.0,
-            value_range: 0.0..100.0,
+            slider: slider_rectangle,
+            value: slider.value,
+            value_range: slider.range.clone(),
             focused: false,
         }
     }
@@ -58,7 +64,7 @@ impl PaintSlider {
         self.slider.render(render, render_pass);
     }
 
-    pub fn mouse_move(&mut self, device: &Device, context: &Context) {
+    pub fn mouse_move(&mut self, device: &Device, context: &Context, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
         let slider_rect = &mut self.slider.param.rect;
         let fill_rect = &mut self.fill.param.rect;
@@ -74,6 +80,7 @@ impl PaintSlider {
             let cl = (slider_rect.width() / 2.0 + slider_rect.x.min - fill_rect.x.min) / fill_rect.width();
             let cv = (self.value_range.end - self.value_range.start) * cl;
             if self.value != cv { context.window.request_redraw(); }
+            resp.slider_mut(&self.id).unwrap().value = cv;
             self.value = cv;
         }
         self.slider.prepare(device, has_pos, device.device_input.mouse.pressed);

@@ -67,14 +67,12 @@ impl XlUiApp {
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         self.label.draw(ui);
+        ui.label("hello label1");
         ui.horizontal(|ui| {
             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).draw(ui);
             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
         });
-        // println!("draw");
-        // ScrollBar::new().size(20.0, 200.0).draw(ui);
-        TextEdit::new("sdsd".to_string()).draw(ui);
-        SpinBox::new(1).draw(ui);
+
         ui.horizontal(|ui| {
             Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
             ui.slider(30.0, 0.0..100.0).connect(Self::slider);
@@ -83,74 +81,9 @@ impl App for XlUiApp {
             CheckBox::new(false, "checkbox1").connect(Self::check).draw(ui);
             ui.checkbox(true, "checkbox2").connect(Self::check);
         });
-        let area = ScrollArea::new().with_size(300.0, 400.0);
-        area.show(ui, |ui| {
-            ui.label("s1");
-            ui.vertical(|ui| {
-                ui.label("sv1");
-                ui.label("sv2");
-                ui.button("sv3").connect(Self::click1);
-            });
-            ui.horizontal(|ui| {
-                ui.label("sh1");
-                ui.label("sh2");
-                ui.button("sh3");
-            });
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-        });
+        TextEdit::new("sdsd".to_string()).draw(ui);
+        SpinBox::new(1).draw(ui);
 
-        ui.label("hello label1");
-        // ui.horizontal(|ui| {
-        //     ui.label("hello label6");
-        //     ui.label("hello label7");
-        //     ui.button("+").connect(Self::click2);
-        //     ui.button("-").connect(Self::click1);
-        // });
-        // ui.label("hello label2");
-        // ui.label("hello label3");
-        // ui.label("hello label4");
-        // ui.label("hello label5");
-        // // let mut button = Button::new("hello button1".to_string()).connect(Self::click1);
-        //
-        // ui.button("hello button1").connect(Self::click1);
-        // ui.button("hello button2");
-        // ui.button("hello button3");
-        // ui.button("hello button4");
-        // ui.button("hello button5");
-        // ui.image("logo.jpg", (200.0, 200.0));
-        // ui.image("logo.jpg", (200.0, 200.0));
     }
 
-    // fn as_any(&mut self) -> &mut dyn Any {
-    //     todo!()
-    // }
 }

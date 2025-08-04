@@ -24,6 +24,9 @@ path = "example/hello_xlui.rs"
 name = "test_layout"
 path = "test/layout.rs"
 
+[[bin]]
+name = "test_widget"
+path = "test/widget.rs"
 
 [dependencies]
 winit = "0.30.11"

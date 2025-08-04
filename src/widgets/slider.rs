@@ -9,19 +9,19 @@ use crate::ui::{Ui, UiM};
 use crate::widgets::Widget;
 
 pub struct Slider {
-    id: String,
-    rect: Rect,
-    value: f32,
-    range: Range<f32>,
+    pub(crate) id: String,
+    pub(crate) rect: Rect,
+    pub(crate) value: f32,
+    pub(crate) range: Range<f32>,
     callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, f32)>>,
 }
 
 impl Slider {
-    pub fn new() -> Slider {
+    pub fn new(v: f32) -> Slider {
         Slider {
             id: crate::gen_unique_id(),
             rect: Rect::new(),
-            value: 0.0,
+            value: v,
             range: 0.0..1.0,
             callback: None,
         }
@@ -29,11 +29,6 @@ impl Slider {
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, f32)) -> Self {
         self.callback = Some(Callback::create_slider(f));
-        self
-    }
-
-    pub fn with_value(mut self, v: f32) -> Self {
-        self.value = v;
         self
     }
 
@@ -51,13 +46,13 @@ impl Widget for Slider {
         self.rect.x.max += 8.0;
         self.rect.set_size(130.0, 16.0);
         layout.alloc_rect(&self.rect);
-        let task = PaintSlider::new(ui, &self.rect);
+        let task = PaintSlider::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::Slider(task));
         ui.response.insert(self.id.clone(), SliderResponse {
             rect: self.rect.clone(),
             event: DrawnEvent::Click,
             callback: Callback::slider(self.callback.take()),
-            slider_value: self.value,
+            value: self.value,
         });
     }
 

@@ -7,7 +7,7 @@ pub struct SliderResponse {
     pub(crate) rect: Rect,
     pub(crate) event: DrawnEvent,
     pub(crate) callback: Callback,
-    pub(crate) slider_value: f32,
+    pub(crate) value: f32,
 }
 
 impl SliderResponse {
@@ -16,7 +16,7 @@ impl SliderResponse {
             rect,
             event: DrawnEvent::None,
             callback: Callback::new(),
-            slider_value: 0.0,
+            value: 0.0,
         }
     }
 
@@ -25,7 +25,7 @@ impl SliderResponse {
     }
 
     fn set_slider_value(&mut self, value: f32) {
-        self.slider_value = value;
+        self.value = value;
     }
 
 }

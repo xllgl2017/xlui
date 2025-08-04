@@ -61,7 +61,7 @@ impl PaintCheckBox {
     pub fn mouse_click(&mut self, device: &Device, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
         if !self.rect.has_position(x, y) { return; }
-        resp.resp_mut(&self.id).unwrap().checked = !self.checked;
+        resp.checked_mut(&self.id).unwrap().checked = !self.checked;
         self.checked = !self.checked;
     }
 

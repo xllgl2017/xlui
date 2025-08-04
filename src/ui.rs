@@ -140,7 +140,7 @@ impl Ui {
     }
 
     pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut SliderResponse {
-        let mut slider = Slider::new().with_value(v).with_range(r);
+        let mut slider = Slider::new(v).with_range(r);
         slider.draw(self);
         self.response.slider_response()
     }
@@ -208,7 +208,7 @@ impl Ui {
     pub(crate) fn mouse_move<A: 'static>(&mut self, app: &mut A) {
         let mut updates = vec![];
         for layout in self.ui_manage.layouts.iter_mut() {
-            updates.append(&mut layout.mouse_move(&self.device, &mut self.ui_manage.context));
+            updates.append(&mut layout.mouse_move(&self.device, &mut self.ui_manage.context, &mut self.response));
         }
         for (id, rect) in updates {
             self.response.update(id, rect);

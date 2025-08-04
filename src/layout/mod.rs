@@ -170,7 +170,7 @@ impl Layout {
 }
 
 impl Layout {
-    pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context) -> Vec<(String, Rect)> {
+    pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
         let mut updates = vec![];
         for (_, widget) in self.widgets.iter_mut() {
             match widget {
@@ -179,7 +179,7 @@ impl Layout {
                     paint_edit.mouse_move(&device, context);
                 }
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
-                PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context),
+                PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device),
                 PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
                 PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),

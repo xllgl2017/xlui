@@ -127,7 +127,7 @@ impl Response {
         let slider_resp = resp.as_any_mut().downcast_mut::<SliderResponse>();
         if slider_resp.is_none() { return; }
         let slider_resp = slider_resp.unwrap();
-        let slider_value = slider_resp.slider_value;
+        let slider_value = slider_resp.value;
         if let Some(ref mut callback) = slider_resp.callback().slider {
             callback(app, uim, slider_value);
             uim.context.window.request_redraw();
@@ -172,9 +172,15 @@ impl Response {
         }
     }
 
-    pub fn resp_mut(&mut self, id: &String) -> Option<&mut CheckBoxResponse> {
+    pub fn checked_mut(&mut self, id: &String) -> Option<&mut CheckBoxResponse> {
         let resp = self.values.get_mut(id)?;
         let resp = resp.as_any_mut().downcast_mut::<CheckBoxResponse>()?;
+        Some(resp)
+    }
+
+    pub fn slider_mut(&mut self, id: &String) -> Option<&mut SliderResponse> {
+        let resp = self.values.get_mut(id)?;
+        let resp=resp.as_any_mut().downcast_mut::<SliderResponse>()?;
         Some(resp)
     }
 }
