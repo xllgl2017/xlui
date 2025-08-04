@@ -57,6 +57,11 @@ impl XlUiApp {
         self.label.set_text(format!("slider: {}", value));
         self.label.update(uim);
     }
+
+    pub fn check(&mut self, uim: &mut UiM, checked: bool) {
+        self.label.set_text(format!("check: {}", checked));
+        self.label.update(uim);
+    }
 }
 
 impl App for XlUiApp {
@@ -71,8 +76,11 @@ impl App for XlUiApp {
         TextEdit::new("sdsd".to_string()).draw(ui);
         SpinBox::new(1).draw(ui);
         Slider::new().connect(Self::slider).draw(ui);
-        CheckBox::new("checked").draw(ui);
-        let area = ScrollArea::new().with_size(300.0,400.0);
+        ui.horizontal(|ui| {
+            CheckBox::new(false, "checkbox1").connect(Self::check).draw(ui);
+            ui.checkbox(true, "checkbox2").connect(Self::check);
+        });
+        let area = ScrollArea::new().with_size(300.0, 400.0);
         area.show(ui, |ui| {
             ui.label("s1");
             ui.vertical(|ui| {
@@ -115,7 +123,6 @@ impl App for XlUiApp {
             ui.label("s2");
             ui.label("s2");
             ui.label("s2");
-
         });
 
         ui.label("hello label1");

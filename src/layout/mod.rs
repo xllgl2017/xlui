@@ -6,6 +6,7 @@ use crate::paint::PaintTask;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::Device;
+use crate::response::Response;
 
 pub enum LayoutDirection {
     LeftToRight,
@@ -164,7 +165,7 @@ impl Layout {
         let display_all = self.max_rect.has_one(widget.rect());
         self.widgets.insert(id, widget);
         if !display_all { return; }
-        self.display.push(self.widgets.len()-1)
+        self.display.push(self.widgets.len() - 1)
     }
 }
 
@@ -201,7 +202,7 @@ impl Layout {
         }
     }
 
-    pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context) {
+    pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for (_, widget) in self.widgets.iter_mut() {
             match widget {
                 PaintTask::TextEdit(paint_edit) => {
@@ -210,7 +211,7 @@ impl Layout {
                 PaintTask::SpinBox(paint_spinbox) => {
                     paint_spinbox.click(device, context);
                 }
-                PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device),
+                PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
                 _ => {}
             }
         }

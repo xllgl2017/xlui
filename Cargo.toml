@@ -6,6 +6,10 @@ license = "Apache-2.0"
 repository = "https://github.com/xllgl2017/xlui"
 authors = ['xllgl2017']
 description = "Rust GUI库"
+readme = "README.md"
+
+[lib]
+name = "xlui"
 
 [[bin]]
 name = "hello_world"

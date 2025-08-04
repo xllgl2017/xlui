@@ -8,8 +8,11 @@ use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::Device;
+use crate::response::Response;
+use crate::widgets::checkbox::CheckBox;
 
 pub struct PaintCheckBox {
+    id: String,
     check: PaintRectangle,
     text: PaintText,
     checked_text: PaintText,
@@ -18,8 +21,8 @@ pub struct PaintCheckBox {
 }
 
 impl PaintCheckBox {
-    pub fn new(ui: &mut Ui, rect: &Rect, buffer: &TextBuffer) -> PaintCheckBox {
-        let mut check_rect = rect.clone();
+    pub fn new(ui: &mut Ui, checkbox: &CheckBox, buffer: &TextBuffer) -> PaintCheckBox {
+        let mut check_rect = checkbox.rect.clone();
         check_rect.set_width(15.0);
         check_rect.set_height(15.0);
         let mut check = PaintRectangle::new(ui, check_rect.clone());
@@ -40,11 +43,12 @@ impl PaintCheckBox {
         text_buffer.rect.y.min += 2.0;
         let checked_text = PaintText::new(ui, &text_buffer);
         PaintCheckBox {
+            id:checkbox.id.clone(),
             check,
             text,
-            checked: false,
+            checked: checkbox.value,
             checked_text,
-            rect: rect.clone(),
+            rect: checkbox.rect.clone(),
         }
     }
 
@@ -54,9 +58,10 @@ impl PaintCheckBox {
         self.check.prepare(device, has_pos, device.device_input.mouse.pressed)
     }
 
-    pub fn mouse_click(&mut self, device: &Device) {
+    pub fn mouse_click(&mut self, device: &Device, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
         if !self.rect.has_position(x, y) { return; }
+        resp.resp_mut(&self.id).unwrap().checked = !self.checked;
         self.checked = !self.checked;
     }
 

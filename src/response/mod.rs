@@ -5,7 +5,9 @@ pub mod checkbox;
 use std::any::Any;
 use std::collections::HashMap;
 use crate::Device;
+use crate::map::Map;
 use crate::response::button::ButtonResponse;
+use crate::response::checkbox::CheckBoxResponse;
 use crate::response::slider::SliderResponse;
 use crate::size::rect::Rect;
 use crate::ui::UiM;
@@ -19,6 +21,7 @@ pub enum DrawnEvent {
 pub struct Callback {
     click: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM)>>,
     slider: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, f32)>>,
+    check: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>,
 }
 
 impl Callback {
@@ -26,6 +29,7 @@ impl Callback {
         Callback {
             click: None,
             slider: None,
+            check: None,
         }
     }
     pub fn set_click<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
@@ -57,18 +61,29 @@ impl Callback {
         res.slider = f;
         res
     }
+
+    pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut UiM, bool)) -> Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)> {
+        Box::new(move |target, uim, value| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, value)
+        })
+    }
+
+    pub fn check(f: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>) -> Self {
+        let mut res = Callback::new();
+        res.check = f;
+        res
+    }
 }
 
 pub struct Response {
-    ids: HashMap<String, usize>,
-    values: Vec<Box<dyn WidgetResponse>>,
+    values: Map<Box<dyn WidgetResponse>>,
 }
 
 impl Response {
     pub fn new() -> Self {
         Response {
-            ids: HashMap::new(),
-            values: vec![],
+            values: Map::new(),
         }
     }
 
@@ -84,9 +99,26 @@ impl Response {
         resp
     }
 
-    pub(crate) fn clicked<A: 'static>(resp: &mut Box<dyn WidgetResponse>, app: &mut A, uim: &mut UiM) {
+    pub fn check_response(&mut self) -> &mut CheckBoxResponse {
+        let resp = self.values.last_mut().unwrap();
+        let resp = resp.as_any_mut().downcast_mut::<CheckBoxResponse>().unwrap();
+        resp
+    }
+
+    fn clicked<A: 'static>(resp: &mut Box<dyn WidgetResponse>, app: &mut A, uim: &mut UiM) {
         if let Some(ref mut callback) = resp.callback().click {
             callback(app, uim);
+            uim.context.window.request_redraw();
+        }
+    }
+
+    fn checked<A: 'static>(resp: &mut Box<dyn WidgetResponse>, app: &mut A, uim: &mut UiM) {
+        let check_resp = resp.as_any_mut().downcast_mut::<CheckBoxResponse>();
+        if check_resp.is_none() { return; }
+        let check_resp = check_resp.unwrap();
+        let check_value = check_resp.checked;
+        if let Some(ref mut callback) = check_resp.callback.check {
+            callback(app, uim, check_value);
             uim.context.window.request_redraw();
         }
     }
@@ -103,32 +135,47 @@ impl Response {
     }
 
     pub fn insert(&mut self, id: String, resp: impl WidgetResponse + 'static) {
-        self.ids.insert(id, self.values.len());
-        self.values.push(Box::new(resp));
+        self.values.insert(id, Box::new(resp));
+        // self.ids.insert(id, self.values.len());
+        // self.values.push(Box::new(resp));
     }
 
     pub fn update(&mut self, id: String, rect: Rect) {
-        let index = self.ids[&id];
-        let resp = &mut self.values[index];
-        resp.set_rect(rect);
+        if let Some(value) = self.values.get_mut(&id) {
+            value.set_rect(rect);
+        }
+        // match self.values.get_mut(&id) {
+        //     None => {}
+        //     Some(value) => {}
+        // }
+        // let index = self.ids[&id];
+        // let resp = &mut self.values[index];
+        // resp.set_rect(rect);
     }
 
     pub fn mouse_release<A: 'static>(&mut self, app: &mut A, device: &Device, uim: &mut UiM) {
         let (x, y) = device.device_input.mouse.lastest();
-        for value in self.values.iter_mut() {
+        for (_, value) in self.values.iter_mut() {
             let has_pos = value.rect().has_position(x, y);
             if !has_pos { continue; }
             Self::clicked(value, app, uim);
+            Self::checked(value, app, uim);
         }
     }
 
     pub fn mouse_move<A: 'static>(&mut self, app: &mut A, device: &Device, uim: &mut UiM) {
         let (x, y) = device.device_input.mouse.lastest();
-        for value in self.values.iter_mut() {
+        for (_, value) in self.values.iter_mut() {
             let has_pos = value.rect().has_position(x, y);
             if !has_pos { continue; }
             Self::slider(value, app, uim);
         }
+    }
+
+    pub fn resp_mut(&mut self, id: &String) -> Option<&mut CheckBoxResponse> {
+        let resp = self.values.get_mut(id)?;
+        let resp = resp.as_any_mut().downcast_mut::<CheckBoxResponse>()?;
+        Some(resp)
     }
 }
 

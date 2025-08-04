@@ -14,8 +14,10 @@ use crate::widgets::Widget;
 use crate::{Device, SAMPLE_COUNT};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use crate::response::button::ButtonResponse;
+use crate::response::checkbox::CheckBoxResponse;
 use crate::response::Response;
 use crate::response::slider::SliderResponse;
+use crate::widgets::checkbox::CheckBox;
 use crate::widgets::slider::Slider;
 
 pub struct UiM {
@@ -77,7 +79,7 @@ impl Ui {
 
     pub(crate) fn add_paint_task(&mut self, id: String, paint_task: PaintTask) {
         let layout = self.current_layout.as_mut().unwrap();
-        layout.insert_widget(id,paint_task);
+        layout.insert_widget(id, paint_task);
         // layout.ids.insert(id, layout.widgets.len());
         // layout.widgets.push(paint_task);
     }
@@ -141,6 +143,12 @@ impl Ui {
         let mut slider = Slider::new().with_value(v).with_range(r);
         slider.draw(self);
         self.response.slider_response()
+    }
+
+    pub fn checkbox(&mut self, check: bool, label: impl ToString) -> &mut CheckBoxResponse {
+        let mut checkbox = CheckBox::new(check, label);
+        checkbox.draw(self);
+        self.response.check_response()
     }
 
     pub fn add(&mut self, mut widget: impl Widget) {
@@ -218,10 +226,9 @@ impl Ui {
     pub(crate) fn mouse_release<A: 'static>(&mut self, app: &mut A) {
         self.device.device_input.mouse.pressed = false;
         for layout in self.ui_manage.layouts.iter_mut() {
-            layout.mouse_release(&self.device, &mut self.ui_manage.context)
+            layout.mouse_release(&self.device, &mut self.ui_manage.context, &mut self.response)
         }
         self.response.mouse_release(app, &self.device, &mut self.ui_manage);
-        self.ui_manage.context.window.request_redraw();
     }
 
     pub(crate) fn resize(&mut self) {
