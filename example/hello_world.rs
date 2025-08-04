@@ -11,19 +11,15 @@ use xlui::font::Font;
 use xlui::frame::context::{Context, Render};
 use xlui::size::Size;
 use xlui::text::text_render::TextRender;
-use xlui::widgets::button::Button;
 use xlui::{Device, DeviceInput};
 use crate::render::RoundedBorderRenderer;
-use crate::triangle::{PaintTriangle, TriangleVertex};
 
 mod render;
-mod triangle;
 
 struct State {
     device: Device,
     context: Context,
     rounded_renderer: RoundedBorderRenderer,
-    triangle_render: PaintTriangle,
 }
 
 impl State {
@@ -69,39 +65,11 @@ impl State {
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
 
 
-        let mut paint_triangle = PaintTriangle::new(&device);
-        let p1 = [-0.5, -0.5];
-        let p2 = [ 0.5, -0.5];
-        let p3 = [ 0.0,  0.5];
-        paint_triangle.add_triangle(vec![
-            TriangleVertex {
-                position: p1,
-                color: [1.0, 0.0, 0.0, 1.0],
-                v0: p1,
-                v1: p2,
-                v2: p3,
-            },
-            TriangleVertex {
-                position: p2,
-                color: [1.0, 0.0, 0.0, 1.0],
-                v0: p1,
-                v1: p2,
-                v2: p3,
-            },
-            TriangleVertex {
-                position: p3,
-                color: [1.0, 0.0, 0.0, 1.0],
-                v0: p1,
-                v1: p2,
-                v2: p3,
-            }
-        ], &device);
 
         let mut state = State {
             device,
             context,
             rounded_renderer,
-            triangle_render: paint_triangle,
         };
 
         // Configure surface for the first time
@@ -166,8 +134,7 @@ impl State {
             timestamp_writes: None,
             occlusion_query_set: None,
         });
-        // self.rounded_renderer.draw(&mut renderpass);
-        self.triangle_render.render(&mut renderpass);
+        self.rounded_renderer.draw(&mut renderpass);
         drop(renderpass);
 
         // Submit the command in the queue to execute
