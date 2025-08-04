@@ -247,10 +247,11 @@ impl Image {
         self.rect = rect;
     }
 
-    pub fn set_size(&mut self, width: f32, height: f32) {
+    pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.rect.set_width(width);
         self.rect.set_height(height);
         self.size_mode = SizeMode::Fix;
+        self
     }
 }
 
@@ -262,7 +263,7 @@ impl Widget for Image {
         self.reset_size(&img);
         layout.alloc_rect(&self.rect);
         let image_render = ImageReader::new(ui, img, &self.rect);
-        ui.add_paint_task(self.id.clone(), PaintTask::Image(PaintImage::new(image_render,self.rect.clone())));
+        ui.add_paint_task(self.id.clone(), PaintTask::Image(PaintImage::new(image_render, self.rect.clone())));
     }
 
     fn update(&mut self, uim: &mut UiM) {

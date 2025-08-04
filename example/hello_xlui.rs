@@ -3,6 +3,7 @@ use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
+use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
@@ -146,7 +147,8 @@ impl App for XlUiApp {
         // ui.button("hello button3");
         // ui.button("hello button4");
         // ui.button("hello button5");
-        // ui.image("logo.jpg", (200.0, 200.0));
+        ui.image("logo.jpg", (200.0, 200.0));
+        Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
         // ui.image("logo.jpg", (200.0, 200.0));
     }
 

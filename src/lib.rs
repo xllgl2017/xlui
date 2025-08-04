@@ -53,6 +53,7 @@
 //!```
 
 use std::time::SystemTime;
+use crate::ui::Ui;
 
 pub mod widgets;
 mod align;
@@ -158,3 +159,4 @@ pub fn gen_unique_id() -> String {
     format!("{:x}", t)
 }
 
+pub fn _run_test(_: fn(&mut Ui)) {}

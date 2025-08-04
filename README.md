@@ -94,6 +94,17 @@ fn draw(&mut self, ui: &mut Ui) {
     CheckBox::new(false, "checkbox2").connect(Self::checked).draw(ui);
 }
 ```
+### ✅ Image
+```rust
+fn draw(&mut self, ui: &mut Ui) {
+    ui.image("logo.jpg", (200.0, 200.0));
+    //或者
+    Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
+}
+```
+
+
+
 
 ### ⬜️ ScrollBar(垂直)
 

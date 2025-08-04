@@ -136,8 +136,7 @@ impl Ui {
     }
 
     pub fn image(&mut self, source: &'static str, size: (f32, f32)) {
-        let mut image = Image::new(source);
-        image.set_size(size.0, size.1);
+        let mut image = Image::new(source).with_size(size.0, size.1);
         image.draw(self);
     }
 

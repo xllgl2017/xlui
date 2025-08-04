@@ -3,9 +3,6 @@ pub mod slider;
 pub mod checkbox;
 pub mod spinbox;
 
-use std::any::Any;
-use std::collections::HashMap;
-use crate::Device;
 use crate::map::Map;
 use crate::response::button::ButtonResponse;
 use crate::response::checkbox::CheckBoxResponse;
@@ -13,6 +10,8 @@ use crate::response::slider::SliderResponse;
 use crate::response::spinbox::SpinBoxResponse;
 use crate::size::rect::Rect;
 use crate::ui::UiM;
+use crate::Device;
+use std::any::Any;
 
 pub enum DrawnEvent {
     None,
@@ -36,9 +35,9 @@ impl Callback {
             spinbox: None,
         }
     }
-    pub fn set_click<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
-        self.click = Some(Self::create_click(f));
-    }
+    // pub fn set_click<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
+    //     self.click = Some(Self::create_click(f));
+    // }
 
     pub(crate) fn create_click<A: 'static>(f: fn(&mut A, &mut UiM)) -> Box<dyn FnMut(&mut dyn Any, &mut UiM)> {
         Box::new(move |target, uim| {
