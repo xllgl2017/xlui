@@ -1,0 +1,38 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: Swatinem/rust-cache@v2
+      with:
+        key: |
+          ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo-${{ github.ref }}-
+          ${{ runner.os }}-cargo-
+        cache-on-failure: true
+        cache-directories: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ./target
+        prefix-key: |
+          ${{ runner.os }}-cargo-
+    - name: Install mold
+      run: sudo apt-get install mold -y
+    - name: Build
+      run: cargo build
+    - name: Run tests
+      run: cargo test

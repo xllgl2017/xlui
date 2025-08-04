@@ -1,0 +1,72 @@
+use crate::frame::context::Context;
+use crate::paint::color::Color;
+use crate::paint::rectangle::PaintRectangle;
+use crate::paint::text::PaintText;
+use crate::radius::Radius;
+use crate::size::border::Border;
+use crate::size::rect::Rect;
+use crate::text::text_buffer::TextBuffer;
+use crate::ui::Ui;
+use crate::Device;
+
+pub struct PaintCheckBox {
+    check: PaintRectangle,
+    text: PaintText,
+    checked_text: PaintText,
+    checked: bool,
+    rect: Rect,
+}
+
+impl PaintCheckBox {
+    pub fn new(ui: &mut Ui, rect: &Rect, buffer: &TextBuffer) -> PaintCheckBox {
+        let mut check_rect = rect.clone();
+        check_rect.set_width(15.0);
+        check_rect.set_height(15.0);
+        let mut check = PaintRectangle::new(ui, check_rect.clone());
+        let mut check_style = ui.style.widget.click.clone();
+        check_style.fill.inactive = Color::rgb(210, 210, 210);
+        check_style.fill.hovered = Color::rgb(210, 210, 210);
+        check_style.fill.clicked = Color::rgb(210, 210, 210);
+        check_style.border.inactive = Border::new(0).radius(Radius::same(2));
+        check_style.border.hovered = Border::new(1).color(Color::BLACK).radius(Radius::same(2));
+        check_style.border.clicked = Border::new(1).color(Color::BLACK).radius(Radius::same(2));
+        check.set_style(check_style);
+        check.prepare(&ui.device, false, false);
+        let text = PaintText::new(ui, buffer);
+        let mut text_buffer = TextBuffer::new("√".to_string());
+        text_buffer.text_size.font_size = 12.0;
+        text_buffer.reset_size(&ui.ui_manage.context);
+        text_buffer.rect = check_rect;
+        text_buffer.rect.y.min += 2.0;
+        let checked_text = PaintText::new(ui, &text_buffer);
+        PaintCheckBox {
+            check,
+            text,
+            checked: false,
+            checked_text,
+            rect: rect.clone(),
+        }
+    }
+
+    pub fn mouse_move(&mut self, device: &Device) {
+        let (x, y) = device.device_input.mouse.lastest();
+        let has_pos = self.rect.has_position(x, y);
+        self.check.prepare(device, has_pos, device.device_input.mouse.pressed)
+    }
+
+    pub fn mouse_click(&mut self, device: &Device) {
+        let (x, y) = device.device_input.mouse.lastest();
+        if !self.rect.has_position(x, y) { return; }
+        self.checked = !self.checked;
+    }
+
+    pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
+        self.check.render(&context.render, render_pass);
+        self.text.render(device, context, render_pass);
+        if self.checked { self.checked_text.render(device, context, render_pass); }
+    }
+
+    pub fn rect(&self) -> &Rect {
+        &self.rect
+    }
+}
