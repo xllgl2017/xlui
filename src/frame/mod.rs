@@ -70,28 +70,22 @@ impl Default for WindowAttribute {
 }
 
 
-pub struct Application<A> {
+struct Application<A> {
     windows: Vec<Window<A>>,
     attribute: WindowAttribute,
     app: Option<A>,
 }
 
-impl<A: App + 'static> Application<A> {
-    pub fn new() -> Self {
+impl<A> Application<A> {
+    fn new() -> Self {
         Application {
             windows: vec![],
             attribute: WindowAttribute::default(),
             app: None,
         }
     }
-    pub fn run(&mut self, app: A) {
-        self.app = Some(app);
-        let event_loop = EventLoop::new().unwrap();
-        event_loop.set_control_flow(ControlFlow::Wait);
-        event_loop.run_app(self).unwrap()
-    }
 
-    pub fn with_attrs(mut self, attrs: WindowAttribute) -> Self {
+    fn with_attrs(mut self, attrs: WindowAttribute) -> Self {
         self.attribute = attrs;
         self
     }
@@ -155,8 +149,18 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
 }
 
 
-pub trait App {
+pub trait App: Sized + 'static {
     fn draw(&mut self, ui: &mut Ui);
 
-    // fn as_any(&mut self) -> &mut dyn Any;
+    fn window_attributes(&self) -> WindowAttribute {
+        WindowAttribute::default()
+    }
+
+    fn run(self) {
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(ControlFlow::Wait);
+        let mut application = Application::new().with_attrs(self.window_attributes());
+        application.app = Some(self);
+        event_loop.run_app(&mut application).unwrap()
+    }
 }

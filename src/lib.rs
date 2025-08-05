@@ -1,18 +1,15 @@
-//! ### 示例
+//! ### 最小运行示例
 //! ```
-//! use xlui::frame::{WindowAttribute,Application,App};
+//! use xlui::frame::{WindowAttribute,App};
 //! use xlui::widgets::Widget;
 //! use xlui::widgets::label::Label;
 //! use xlui::widgets::button::Button;
 //! use xlui::ui::{UiM,Ui};
 //!
 //! fn main() {
-//!    let attr = WindowAttribute {
-//!        inner_size: (800, 600).into(),
-//!        ..Default::default()
-//!    };
-//!    let mut app = Application::new().with_attrs(attr);
-//!    app.run(XlUiApp::new());
+//!     let app=XlUiApp::new();
+//!     //直接调run()
+//!     app.run();
 //! }
 //!
 //! struct XlUiApp {
@@ -41,6 +38,7 @@
 //!     }
 //! }
 //!
+//! //实现App trait
 //! impl App for XlUiApp {
 //!     fn draw(&mut self, ui: &mut Ui) {
 //!         self.label.draw(ui);
@@ -49,6 +47,12 @@
 //!             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
 //!         });
 //!      }
+//!     fn window_attributes(&self) -> WindowAttribute {
+//!         WindowAttribute{
+//!             inner_size:(800.0,600.0).into(),
+//!             ..Default::default()
+//!         }
+//!     }
 //! }
 //!```
 

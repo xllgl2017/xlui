@@ -3,12 +3,7 @@
 ### 示例
 ```rust
 fn main() {
-    let attr = WindowAttribute {
-        inner_size: (800, 600).into(),
-        ..Default::default()
-    };
-    let mut app = Application::new().with_attrs(attr);
-    app.run(XlUiApp::new());
+    XlUiApp::new().run();
 }
 
 struct XlUiApp {
@@ -45,6 +40,13 @@ impl App for XlUiApp {
             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).draw(ui);
             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
         });
+    }
+
+    fn window_attributes(&self) -> WindowAttribute {
+        WindowAttribute {
+            inner_size: (800, 600).into(),
+            ..Default::default()
+        }
     }
 }
 ```

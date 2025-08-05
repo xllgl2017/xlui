@@ -1,4 +1,4 @@
-use xlui::frame::{App, Application, WindowAttribute};
+use xlui::frame::{App, WindowAttribute};
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
@@ -10,12 +10,7 @@ use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
 
 fn main() {
-    let attr = WindowAttribute {
-        inner_size: (800, 600).into(),
-        ..Default::default()
-    };
-    let mut app = Application::new().with_attrs(attr);
-    app.run(XlUiApp::new());
+    XlUiApp::new().run();
 }
 
 struct XlUiApp {
@@ -24,51 +19,41 @@ struct XlUiApp {
 }
 
 impl XlUiApp {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             label: Label::new("hello".to_string()).width(100.0),
             count: 0,
         }
     }
 
-    pub fn click1(&mut self, uim: &mut UiM) {
-        self.count += 1;
-        println!("count: {}", self.count);
-    }
-
-    pub fn click2(&mut self, uim: &mut UiM) {
-        self.count += 2;
-        println!("count2: {}", self.count);
-    }
-
-    pub fn add(&mut self, uim: &mut UiM) {
+    fn add(&mut self, uim: &mut UiM) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
     }
 
-    pub fn reduce(&mut self, uim: &mut UiM) {
+    fn reduce(&mut self, uim: &mut UiM) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
     }
 
-    pub fn slider(&mut self, uim: &mut UiM, value: f32) {
+    fn slider(&mut self, uim: &mut UiM, value: f32) {
         self.label.set_text(format!("slider: {}", value));
         self.label.update(uim);
     }
 
-    pub fn check(&mut self, uim: &mut UiM, checked: bool) {
+    fn check(&mut self, uim: &mut UiM, checked: bool) {
         self.label.set_text(format!("check: {}", checked));
         self.label.update(uim);
     }
 
-    pub fn spinbox(&mut self, uim: &mut UiM, value: i32) {
+    fn spinbox(&mut self, uim: &mut UiM, value: i32) {
         self.label.set_text(format!("spinbox: {}", value));
         self.label.update(uim);
     }
 
-    pub fn radio(&mut self, uim: &mut UiM, checked: bool) {
+    fn radio(&mut self, uim: &mut UiM, checked: bool) {
         self.label.set_text(format!("radio: {}", checked));
         self.label.update(uim);
     }
@@ -102,5 +87,12 @@ impl App for XlUiApp {
 
 
         TextEdit::new("sdsd".to_string()).draw(ui);
+    }
+
+    fn window_attributes(&self) -> WindowAttribute {
+        WindowAttribute {
+            inner_size: (800, 600).into(),
+            ..Default::default()
+        }
     }
 }
