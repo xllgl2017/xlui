@@ -151,10 +151,18 @@ impl Layout {
 
     pub(crate) fn offset(&mut self, device: &Device, ox: f32, oy: f32) -> Vec<(String, Rect)> {
         let mut res = vec![];
-        for (_, widget) in self.widgets.iter_mut() {
+        self.display.clear();
+        let rect = self.rect();
+        for (index, (_, widget)) in self.widgets.iter_mut().enumerate() {
             match widget {
-                PaintTask::Text(paint_text) => paint_text.offset(ox, oy), //text外部无response，如果添加response，此处需增加，否则在滚动视图中事件错误
-                PaintTask::Button(paint_btn) => res.append(&mut paint_btn.offset(device, ox, oy)),
+                PaintTask::Text(paint_text) => { //text外部无response，如果添加response，此处需增加，否则在滚动视图中事件错误
+                    paint_text.offset(ox, oy);
+                    if !paint_text.rect.out_of_rect(&rect) { self.display.push(index); }
+                }
+                PaintTask::Button(paint_btn) => {
+                    res.append(&mut paint_btn.offset(device, ox, oy));
+                    if !paint_btn.rect().out_of_rect(&rect) { self.display.push(index); }
+                }
                 _ => {}
             }
         }
@@ -162,10 +170,10 @@ impl Layout {
     }
 
     pub(crate) fn insert_widget(&mut self, id: String, widget: PaintTask) {
-        let display_all = self.max_rect.has_one(widget.rect());
-        // println!("{:?} {:?} {}",self.max_rect,widget.rect(),display_all);
+        let out_of_max = widget.rect().out_of_rect(&self.max_rect);
+        println!("{:?} {:?} {}", self.max_rect, widget.rect(), out_of_max);
         self.widgets.insert(id, widget);
-        if !display_all { return; }
+        if out_of_max { return; }
         self.display.push(self.widgets.len() - 1)
     }
 

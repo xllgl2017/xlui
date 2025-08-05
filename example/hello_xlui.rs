@@ -97,35 +97,9 @@ impl App for XlUiApp {
                 ui.label("sh2");
                 ui.button("sh3");
             });
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.label("s2");
-            ui.button("s3");
-            ui.label("s2");
-            ui.label("s2");
+            for i in 0..1000 {
+                ui.label(format!("i{}", i));
+            }
             ui.label("end");
         });
 

@@ -124,11 +124,8 @@ impl Rect {
         res
     }
 
-    pub(crate) fn has_one(&self, other: &Rect) -> bool {
-        if self.x.min < other.x.min && other.x.min < self.x.max { return true; }
-        if self.x.min < other.x.max && other.x.max < self.x.max { return true; }
-        if self.y.min < other.y.min && other.y.min < self.y.max { return true; }
-        if self.y.min < other.y.max && other.y.max < self.y.max { return true; }
-        false
+    pub(crate) fn out_of_rect(&self, other: &Rect) -> bool {
+        other.x.min > self.x.max || other.x.max < self.x.min ||
+            other.y.min > self.y.max || other.y.max < self.y.min
     }
 }

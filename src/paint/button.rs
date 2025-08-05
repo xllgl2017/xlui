@@ -35,7 +35,7 @@ impl PaintButton {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
         if has_pos != self.hovered || device.device_input.mouse.pressed != self.mouse_down {
-            println!("{} {}", has_pos, device.device_input.mouse.pressed);
+            // println!("{} {}", has_pos, device.device_input.mouse.pressed);
             self.fill.prepare(device, has_pos, device.device_input.mouse.pressed);
             context.window.request_redraw();
         }

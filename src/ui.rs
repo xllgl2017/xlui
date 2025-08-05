@@ -88,7 +88,7 @@ impl Ui {
     pub fn horizontal(&mut self, callback: impl Fn(&mut Ui)) {
         let mut previous_layout = self.current_layout.take().unwrap();
         let mut rect = previous_layout.available_rect.clone();
-        rect.y.max = 0.0;
+        // rect.y.max = 0.0;
         let current_layout = Layout::left_to_right().with_max_rect(rect);
         self.current_layout.replace(current_layout); //设置当前布局
         callback(self);
