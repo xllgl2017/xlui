@@ -86,7 +86,7 @@ impl App for XlUiApp {
         });
         let area = ScrollArea::new().with_size(300.0, 400.0);
         area.show(ui, |ui| {
-            ui.label("s1");
+            ui.label("start");
             ui.vertical(|ui| {
                 ui.label("sv1");
                 ui.label("sv2");
@@ -126,7 +126,7 @@ impl App for XlUiApp {
             ui.button("s3");
             ui.label("s2");
             ui.label("s2");
-            ui.label("s2");
+            ui.label("end");
         });
 
         ui.label("hello label1");
@@ -147,8 +147,8 @@ impl App for XlUiApp {
         // ui.button("hello button3");
         // ui.button("hello button4");
         // ui.button("hello button5");
-        ui.image("logo.jpg", (200.0, 200.0));
-        Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
+        // ui.image("logo.jpg", (200.0, 200.0));
+        // Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
         // ui.image("logo.jpg", (200.0, 200.0));
     }
 

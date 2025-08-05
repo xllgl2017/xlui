@@ -12,6 +12,7 @@ pub struct ScrollArea {
     id: String,
     pub(crate) rect: Rect,
     pub(crate) layouts: Vec<Layout>,
+    pub(crate) padding: Padding,
     current_layout: Option<Layout>,
     pub(crate) v_bar: ScrollBar,
 }
@@ -22,6 +23,7 @@ impl ScrollArea {
             id: crate::gen_unique_id(),
             rect: Rect::new(),
             layouts: vec![],
+            padding: Padding::same(10.0),
             current_layout: Some(Layout::top_to_bottom()),
             v_bar: ScrollBar::new(),
         }
@@ -46,8 +48,8 @@ impl ScrollArea {
 
 
         let mut current_layout = self.current_layout.take().unwrap();
-        current_layout.available_rect = previous_layout.available_rect.clone_add_padding(&Padding::same(5.0));
-        current_layout.max_rect = self.rect.clone();
+        current_layout.available_rect = self.rect.clone_add_padding(&self.padding);
+        current_layout.max_rect = self.rect.clone_add_padding(&self.padding);
         ui.current_layout.replace(current_layout);
         ui.current_scrollable = true;
         callback(ui);
@@ -64,7 +66,7 @@ impl ScrollArea {
 
     fn draw(self, ui: &mut Ui) {
         let id = self.id.clone();
-        ui.response.insert(self.id.clone(),ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Click));
+        ui.response.insert(self.id.clone(), ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Click));
         let task = PaintScrollArea::new(self, ui);
         ui.add_paint_task(id, PaintTask::ScrollArea(task));
     }

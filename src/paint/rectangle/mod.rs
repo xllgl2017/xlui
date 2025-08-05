@@ -47,7 +47,7 @@ impl PaintRectangle {
     }
 
     pub fn prepare(&mut self, device: &Device, hovered: bool, mouse_down: bool) {
-        println!("prepare{} {}", hovered, mouse_down);
+        // println!("prepare{} {}", hovered, mouse_down);
         let draw_param = self.param.as_draw_param(hovered, mouse_down);
         device.queue.write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&draw_param));
     }

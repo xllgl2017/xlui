@@ -17,10 +17,14 @@ pub struct PaintScrollArea {
     scroll: PaintScrollBar,
     focused: bool,
     scrolling: bool,
+    context_rect: Rect,
 }
 
 impl PaintScrollArea {
     pub fn new(scroll_area: ScrollArea, ui: &mut Ui) -> Self {
+        println!("{} {}", scroll_area.layouts[0].height, scroll_area.layouts[0].max_rect.height());
+
+
         let mut fill_rect = scroll_area.rect.clone();
         fill_rect.x.max = fill_rect.x.max - scroll_area.v_bar.rect.width() - 2.0;
         let mut fill = PaintRectangle::new(ui, fill_rect);
@@ -30,24 +34,25 @@ impl PaintScrollArea {
         fill_style.border.clicked = Border::new(1).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill.set_style(fill_style);
         fill.prepare(&ui.device, false, false);
-        let scroll = PaintScrollBar::new(ui, &scroll_area.v_bar.rect);
+        let layout = &scroll_area.layouts[0];
+        let scroll = PaintScrollBar::new(ui, &scroll_area.v_bar.rect, layout.height + scroll_area.padding.vertical());
         PaintScrollArea {
             fill,
             rect: scroll_area.rect,
+            context_rect: layout.rect(),
             layouts: scroll_area.layouts,
             scroll,
             focused: false,
             scrolling: false,
+
         }
     }
 
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         self.fill.render(&context.render, render_pass);
         self.scroll.render(&context.render, render_pass);
-        let mut clip = self.rect.clone();
-        clip.y.min += 5.0;
+        let mut clip = &self.context_rect;
         render_pass.set_scissor_rect(clip.x.min as u32, clip.y.min as u32, clip.width() as u32, clip.height() as u32);
-
         for layout in self.layouts.iter_mut() {
             layout.draw(device, context, render_pass);
         }

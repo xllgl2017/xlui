@@ -14,4 +14,6 @@ impl Padding {
             top: padding,
         }
     }
+
+    pub fn vertical(&self) -> f32 { self.top + self.bottom }
 }

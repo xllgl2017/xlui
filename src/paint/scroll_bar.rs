@@ -16,10 +16,11 @@ pub struct PaintScrollBar {
     hovered: bool,
     focused: bool,
     pub(crate) offset_y: f32,
+    height: f32,
 }
 
 impl PaintScrollBar {
-    pub fn new(ui: &mut Ui, rect: &Rect) -> Self {
+    pub fn new(ui: &mut Ui, rect: &Rect, height: f32) -> Self {
         let mut outer_style = ui.style.widget.click.clone();
         outer_style.fill.inactive = Color::rgb(215, 215, 215);
         outer_style.fill.hovered = Color::rgb(215, 215, 215);
@@ -29,7 +30,8 @@ impl PaintScrollBar {
             style: outer_style,
         };
         let mut rect = rect.clone();
-        rect.set_height(30.0);
+        let inner_height = if height < rect.height() { rect.height() } else { rect.height() * rect.height() / height };
+        rect.set_height(inner_height);
         let mut inner_style = ui.style.widget.click.clone();
         inner_style.fill.inactive = Color::rgb(56, 182, 244);
         inner_style.fill.hovered = Color::rgb(56, 182, 244);
@@ -56,23 +58,27 @@ impl PaintScrollBar {
             hovered: false,
             focused: false,
             offset_y: 0.0,
+            height,
         }
     }
 
     pub(crate) fn offset_y(&mut self, device: &Device, oy: f32) {
-        self.offset_y = oy;
+        // let oy = ;
+
+
+        self.offset_y = oy * self.height / self.outer_param.rect.height();
         self.inner_param.rect.offset_y(oy);
         if self.inner_param.rect.y.min < self.outer_param.rect.y.min {
             let oy = self.inner_param.rect.y.min - self.outer_param.rect.y.min;
-            self.offset_y -= oy;
+            self.offset_y -= oy * self.height / self.outer_param.rect.height();
             self.inner_param.rect.offset_y(-oy);
         }
         if self.inner_param.rect.y.max > self.outer_param.rect.y.max {
             let oy = self.inner_param.rect.y.max - self.outer_param.rect.y.max;
-            self.offset_y -= oy;
+            self.offset_y -= oy * self.height / self.outer_param.rect.height();
             self.inner_param.rect.offset_y(-oy);
         }
-        println!("{}", self.offset_y);
+        // println!("{}", self.offset_y);
         let draw_param = self.inner_param.as_draw_param(true, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.inner_buffer, 0, bytemuck::bytes_of(&draw_param));
     }

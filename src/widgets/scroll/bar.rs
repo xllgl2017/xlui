@@ -33,7 +33,7 @@ impl Widget for ScrollBar {
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.rect.x.min += 5.0;
         layout.alloc_rect(&self.rect);
-        let paint_rectangle = PaintScrollBar::new(ui, &self.rect);
+        let paint_rectangle = PaintScrollBar::new(ui, &self.rect,10000.0);
         let rectangle_id = format!("{}_rectangle", self.id);
         ui.add_paint_task(rectangle_id.clone(), PaintTask::ScrollBar(paint_rectangle));
         ui.response.insert(self.id.clone(), ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Hover));

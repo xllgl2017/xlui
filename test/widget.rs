@@ -1,5 +1,4 @@
 use xlui::frame::{App, Application, WindowAttribute};
-use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;

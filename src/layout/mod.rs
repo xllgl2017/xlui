@@ -21,11 +21,11 @@ pub struct Layout {
     direction: LayoutDirection,
     need_repaint: bool,
     pub(crate) item_space: f32, //item之间的间隔
-    max_rect: Rect,
+    pub max_rect: Rect,
     pub(crate) available_rect: Rect,
     padding: Padding,
-    width: f32,
-    height: f32,
+    pub width: f32,
+    pub height: f32,
     pub(crate) widgets: Map<PaintTask>,
     display: Vec<usize>,
 }
@@ -163,9 +163,17 @@ impl Layout {
 
     pub(crate) fn insert_widget(&mut self, id: String, widget: PaintTask) {
         let display_all = self.max_rect.has_one(widget.rect());
+        // println!("{:?} {:?} {}",self.max_rect,widget.rect(),display_all);
         self.widgets.insert(id, widget);
         if !display_all { return; }
         self.display.push(self.widgets.len() - 1)
+    }
+
+    pub(crate) fn rect(&self) -> Rect {
+        let mut rect = self.max_rect.clone();
+        rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
+        rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
+        rect
     }
 }
 
