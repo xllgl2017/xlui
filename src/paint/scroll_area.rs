@@ -67,7 +67,7 @@ impl PaintScrollArea {
         if (has_pos || self.scrolling) && self.focused && device.device_input.mouse.pressed { //处于滚动中
             self.scrolling = device.device_input.mouse.pressed;
             let oy = device.device_input.mouse.offset_y();
-            self.scroll.offset_y(device, -oy);
+            self.scroll.offset_y(device, -oy, true);
             for layout in self.layouts.iter_mut() {
                 updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y));
                 if self.scroll.offset_y != 0.0 { context.window.request_redraw(); }
@@ -113,7 +113,7 @@ impl PaintScrollArea {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.rect.has_position(x, y);
         if !has_pos { return vec![]; }
-        self.scroll.offset_y(device, -device.device_input.mouse.delta_y() * 10.0);
+        self.scroll.offset_y(device, -device.device_input.mouse.delta_y() * 10.0, true);
         let mut updates = vec![];
         for layout in self.layouts.iter_mut() {
             updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y))

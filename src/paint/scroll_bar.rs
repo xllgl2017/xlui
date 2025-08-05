@@ -30,7 +30,8 @@ impl PaintScrollBar {
             style: outer_style,
         };
         let mut rect = rect.clone();
-        let inner_height = if height < rect.height() { rect.height() } else { rect.height() * rect.height() / height };
+        let mut inner_height = if height < rect.height() { rect.height() } else { rect.height() * rect.height() / height };
+        if inner_height < 32.0 { inner_height = 32.0; }
         rect.set_height(inner_height);
         let mut inner_style = ui.style.widget.click.clone();
         inner_style.fill.inactive = Color::rgb(56, 182, 244);
@@ -62,23 +63,39 @@ impl PaintScrollBar {
         }
     }
 
-    pub(crate) fn offset_y(&mut self, device: &Device, oy: f32) {
-        // let oy = ;
+    fn slider_offset_y(&self, cy: f32) -> f32 {
+        let scrollable_content = self.height - self.outer_param.rect.height();
+        let scrollable_slider = self.outer_param.rect.height() - self.inner_param.rect.height();
+        let scroll_ratio = cy / scrollable_content; // 内容偏移占比：
+        scroll_ratio * scrollable_slider // 滑块应偏移：
+    }
 
+    fn context_offset_y(&self, oy: f32) -> f32 {
+        let scrollable_content = self.height - self.outer_param.rect.height();
+        let scrollable_slider = self.outer_param.rect.height() - self.inner_param.rect.height();
+        let scroll_ratio = oy / scrollable_slider; // 内容偏移占比：
+        scroll_ratio * scrollable_content // 滑块应偏移：
+    }
 
-        self.offset_y = oy * self.height / self.outer_param.rect.height();
+    pub(crate) fn offset_y(&mut self, device: &Device, oy: f32, ct: bool) {
+        let oy = if ct {
+            self.offset_y = oy;
+            self.slider_offset_y(oy)
+        } else {
+            self.offset_y = self.context_offset_y(oy);
+            oy
+        };
         self.inner_param.rect.offset_y(oy);
         if self.inner_param.rect.y.min < self.outer_param.rect.y.min {
             let oy = self.inner_param.rect.y.min - self.outer_param.rect.y.min;
-            self.offset_y -= oy * self.height / self.outer_param.rect.height();
+            self.offset_y -= self.context_offset_y(oy);
             self.inner_param.rect.offset_y(-oy);
         }
         if self.inner_param.rect.y.max > self.outer_param.rect.y.max {
             let oy = self.inner_param.rect.y.max - self.outer_param.rect.y.max;
-            self.offset_y -= oy * self.height / self.outer_param.rect.height();
+            self.offset_y -= self.context_offset_y(oy);
             self.inner_param.rect.offset_y(-oy);
         }
-        // println!("{}", self.offset_y);
         let draw_param = self.inner_param.as_draw_param(true, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.inner_buffer, 0, bytemuck::bytes_of(&draw_param));
     }
@@ -92,7 +109,7 @@ impl PaintScrollBar {
                 if !device.device_input.mouse.pressed || !self.focused { return; } //非滚动
                 let oy = device.device_input.mouse.offset_y();
                 if oy == 0.0 { return; }
-                self.offset_y(device, oy);
+                self.offset_y(device, oy, false);
                 context.window.request_redraw();
             }
             false => {
