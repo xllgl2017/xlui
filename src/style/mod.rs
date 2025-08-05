@@ -30,7 +30,7 @@ pub struct ClickStyle {
 
 impl ClickStyle {
     pub fn dyn_fill(&self, clicked: bool, hovered: bool) -> &Color {
-        if clicked && hovered { return &self.fill.inactive; }
+        if clicked && hovered { return &self.fill.clicked; }
         if hovered { return &self.fill.hovered; }
         &self.fill.inactive
     }
@@ -81,9 +81,9 @@ impl Style {
                     },
 
                     border: BorderStyle {
-                        inactive: Border::new(0),
-                        hovered: Border::new(1).color(Color::rgb(0, 0, 0)),
-                        clicked: Border::new(1).color(Color::rgb(0, 0, 0)),
+                        inactive: Border::new(0.0),
+                        hovered: Border::new(1.0).color(Color::rgb(0, 0, 0)),
+                        clicked: Border::new(1.0).color(Color::rgb(0, 0, 0)),
                     },
                 },
             },

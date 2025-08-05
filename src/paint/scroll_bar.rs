@@ -37,9 +37,9 @@ impl PaintScrollBar {
         inner_style.fill.inactive = Color::rgb(56, 182, 244);
         inner_style.fill.hovered = Color::rgb(56, 182, 244);
         inner_style.fill.clicked = Color::rgb(56, 182, 244);
-        inner_style.border.inactive = Border::new(0).radius(Radius::same(2));
-        inner_style.border.hovered = Border::new(0).radius(Radius::same(2));
-        inner_style.border.clicked = Border::new(0).radius(Radius::same(2));
+        inner_style.border.inactive = Border::new(0.0).radius(Radius::same(2));
+        inner_style.border.hovered = Border::new(0.0).radius(Radius::same(2));
+        inner_style.border.clicked = Border::new(0.0).radius(Radius::same(2));
         let inner_param = RectangleParam {
             rect,
             style: inner_style,

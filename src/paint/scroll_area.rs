@@ -29,9 +29,9 @@ impl PaintScrollArea {
         fill_rect.x.max = fill_rect.x.max - scroll_area.v_bar.rect.width() - 2.0;
         let mut fill = PaintRectangle::new(ui, fill_rect);
         let mut fill_style = ui.style.widget.click.clone();
-        fill_style.border.inactive = Border::new(1).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.hovered = Border::new(1).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::new(1).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.inactive = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.hovered = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill.set_style(fill_style);
         fill.prepare(&ui.device, false, false);
         let layout = &scroll_area.layouts[0];

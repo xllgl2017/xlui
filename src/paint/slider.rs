@@ -29,9 +29,9 @@ impl PaintSlider {
         fill_style.fill.inactive = Color::rgb(56, 182, 244);
         fill_style.fill.hovered = Color::rgb(56, 182, 244);
         fill_style.fill.clicked = Color::rgb(56, 182, 244);
-        fill_style.border.inactive = Border::new(0).radius(Radius::same(3));
-        fill_style.border.hovered = Border::new(0).radius(Radius::same(3));
-        fill_style.border.clicked = Border::new(0).radius(Radius::same(3));
+        fill_style.border.inactive = Border::new(0.0).radius(Radius::same(3));
+        fill_style.border.hovered = Border::new(0.0).radius(Radius::same(3));
+        fill_style.border.clicked = Border::new(0.0).radius(Radius::same(3));
         fill.set_style(fill_style);
         fill.prepare(&ui.device, false, false);
         let mut slider_rect = slider.rect.clone();
@@ -44,9 +44,9 @@ impl PaintSlider {
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
         slider_style.fill.clicked = Color::rgb(56, 182, 244);
-        slider_style.border.inactive = Border::new(0).color(Color::BLACK).radius(Radius::same(8));
-        slider_style.border.hovered = Border::new(1).color(Color::BLACK).radius(Radius::same(8));
-        slider_style.border.clicked = Border::new(1).color(Color::BLACK).radius(Radius::same(8));
+        slider_style.border.inactive = Border::new(0.0).color(Color::BLACK).radius(Radius::same(8));
+        slider_style.border.hovered = Border::new(1.0).color(Color::BLACK).radius(Radius::same(8));
+        slider_style.border.clicked = Border::new(1.0).color(Color::BLACK).radius(Radius::same(8));
         slider_rectangle.set_style(slider_style);
         slider_rectangle.prepare(&ui.device, false, false);
         PaintSlider {

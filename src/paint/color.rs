@@ -1,4 +1,3 @@
-
 #[derive(Clone)]
 pub struct Color {
     r: u8,
@@ -16,6 +15,7 @@ impl Color {
     pub const ORANGE: Color = Color { r: 255, g: 165, b: 0, a: 255 };
     pub const BLUE: Color = Color { r: 0, g: 0, b: 255, a: 255 };
     pub const YELLOW: Color = Color { r: 255, g: 255, b: 0, a: 255 };
+    pub const TRANSPARENT: Color = Color { r: 0, g: 0, b: 0, a: 0 };
 
     pub fn new() -> Color {
         Color { r: 0, g: 0, b: 0, a: 255 }

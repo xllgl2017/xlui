@@ -46,7 +46,7 @@ impl Button {
             text_algin: Align::Center,
             rect: Rect::new(),
             padding,
-            border: Border::new(1),
+            border: Border::new(1.0),
             size_mode: SizeMode::Auto,
             callback: None,
         }

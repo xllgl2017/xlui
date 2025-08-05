@@ -28,7 +28,7 @@ impl TextEdit {
             text_buffer: TextBuffer::new(context),
             rect: Rect::new(),
             size_mode: SizeMode::Auto,
-            border: Border::new(1).color(Color::BLUE).radius(Radius::same(2)),
+            border: Border::new(1.0).color(Color::BLUE).radius(Radius::same(2)),
         }
     }
 
@@ -50,25 +50,25 @@ impl TextEdit {
         fill_style.fill.inactive = Color::WHITE;
         fill_style.fill.hovered = Color::WHITE;
         fill_style.fill.clicked = Color::WHITE;
-        fill_style.border.inactive = Border::new(0).radius(Radius::same(2));
-        fill_style.border.hovered = Border::new(1).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.inactive = Border::new(0.0).radius(Radius::same(2));
+        fill_style.border.hovered = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill_style.border.clicked = fill_style.border.hovered.clone();
         task.fill_style(fill_style);
         let mut cursor_style = ui.style.widget.click.clone();
         cursor_style.fill.inactive = Color::rgb(0, 83, 125);
         cursor_style.fill.hovered = Color::rgb(0, 83, 125);
         cursor_style.fill.clicked = Color::rgb(0, 83, 125);
-        cursor_style.border.inactive = Border::new(0).radius(Radius::same(0));
-        cursor_style.border.hovered = Border::new(0).radius(Radius::same(0));
-        cursor_style.border.clicked = Border::new(0).radius(Radius::same(0));
+        cursor_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
+        cursor_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
+        cursor_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
         task.cursor_style(cursor_style);
         let mut select_style = ui.style.widget.click.clone();
         select_style.fill.inactive = Color::rgba(144, 209, 255, 100);
         select_style.fill.hovered = Color::rgba(144, 209, 255, 100);
         select_style.fill.clicked = Color::rgba(144, 209, 255, 100);
-        select_style.border.inactive = Border::new(0).radius(Radius::same(0));
-        select_style.border.hovered = Border::new(0).radius(Radius::same(0));
-        select_style.border.clicked = Border::new(0).radius(Radius::same(0));
+        select_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
+        select_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
+        select_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
         task.select_style(select_style);
     }
 }

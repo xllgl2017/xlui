@@ -6,13 +6,13 @@ use crate::paint::color::Color;
 
 #[derive(Clone)]
 pub struct Border {
-    pub width: u8,
+    pub width: f32,
     pub radius: Radius,
     pub color: Color,
 }
 
 impl Border {
-    pub fn new(width: u8) -> Self {
+    pub fn new(width: f32) -> Self {
         Border {
             width,
             radius: Radius::same(3),
@@ -49,7 +49,7 @@ impl Border {
     }
 
     pub fn radius_border_vertex(&self, size: &Size, rect: &Rect) -> (Vec<Vertex>, Vec<u16>) {
-        if self.width == 0 { return (vec![], vec![]); }
+        if self.width == 0.0 { return (vec![], vec![]); }
         //左下圆角边框
         let r = self.radius.left_bottom as f32; //半径
         let circle = [rect.x.min + r, rect.y.max - r]; //圆心;ax+1/2=a/width

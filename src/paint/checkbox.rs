@@ -30,9 +30,9 @@ impl PaintCheckBox {
         check_style.fill.inactive = Color::rgb(210, 210, 210);
         check_style.fill.hovered = Color::rgb(210, 210, 210);
         check_style.fill.clicked = Color::rgb(210, 210, 210);
-        check_style.border.inactive = Border::new(0).radius(Radius::same(2));
-        check_style.border.hovered = Border::new(1).color(Color::BLACK).radius(Radius::same(2));
-        check_style.border.clicked = Border::new(1).color(Color::BLACK).radius(Radius::same(2));
+        check_style.border.inactive = Border::new(0.0).radius(Radius::same(2));
+        check_style.border.hovered = Border::new(1.0).color(Color::BLACK).radius(Radius::same(2));
+        check_style.border.clicked = Border::new(1.0).color(Color::BLACK).radius(Radius::same(2));
         check.set_style(check_style);
         check.prepare(&ui.device, false, false);
         let text = PaintText::new(ui, buffer);
