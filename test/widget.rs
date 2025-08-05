@@ -3,6 +3,7 @@ use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
 use xlui::widgets::label::Label;
+use xlui::widgets::radio::RadioButton;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::TextEdit;
@@ -66,6 +67,11 @@ impl XlUiApp {
         self.label.set_text(format!("spinbox: {}", value));
         self.label.update(uim);
     }
+
+    pub fn radio(&mut self, uim: &mut UiM, checked: bool) {
+        self.label.set_text(format!("radio: {}", checked));
+        self.label.update(uim);
+    }
 }
 
 impl App for XlUiApp {
@@ -88,6 +94,10 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             SpinBox::new(1).with_range(0..10).connect(Self::spinbox).draw(ui);
             ui.spinbox(1, 0..10).connect(Self::spinbox);
+        });
+        ui.horizontal(|ui| {
+            RadioButton::new(false, "radiobutton").connect(Self::radio).draw(ui);
+            ui.radio(true, "radiobutton").connect(Self::radio);
         });
 
 

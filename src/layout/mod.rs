@@ -144,6 +144,7 @@ impl Layout {
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.render(device, context, render_pass),
                 PaintTask::Button(paint_button) => paint_button.render(device, context, render_pass),
                 PaintTask::ScrollArea(paint_area) => paint_area.draw(device, context, render_pass),
+                PaintTask::Radio(paint_radio) => paint_radio.draw(device, context, render_pass),
                 _ => {}
             }
         }
@@ -199,6 +200,7 @@ impl Layout {
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device),
                 PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
                 PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),
+                PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
                 _ => {}
             }
         }
@@ -213,6 +215,7 @@ impl Layout {
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context),
                 PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device),
                 PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context),
+                PaintTask::Radio(paint_radio) => paint_radio.mouse_down(device, context),
                 _ => {}
             }
         }
@@ -228,6 +231,7 @@ impl Layout {
                     paint_spinbox.click(device, context, resp);
                 }
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
+                PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
                 _ => {}
             }
         }

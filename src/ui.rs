@@ -19,6 +19,7 @@ use crate::response::Response;
 use crate::response::slider::SliderResponse;
 use crate::response::spinbox::SpinBoxResponse;
 use crate::widgets::checkbox::CheckBox;
+use crate::widgets::radio::RadioButton;
 use crate::widgets::slider::Slider;
 
 pub struct UiM {
@@ -149,6 +150,12 @@ impl Ui {
     pub fn checkbox(&mut self, check: bool, label: impl ToString) -> &mut CheckBoxResponse {
         let mut checkbox = CheckBox::new(check, label);
         checkbox.draw(self);
+        self.response.check_response()
+    }
+
+    pub fn radio(&mut self, check: bool, label: impl ToString) -> &mut CheckBoxResponse {
+        let mut radio_btn = RadioButton::new(check, label);
+        radio_btn.draw(self);
         self.response.check_response()
     }
 

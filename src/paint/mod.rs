@@ -9,6 +9,7 @@ use crate::paint::spinbox::PaintSpinBox;
 use crate::paint::text::PaintText;
 use crate::vertex::Vertex;
 use crate::{Device, SAMPLE_COUNT};
+use crate::paint::radio::PaintRadioButton;
 use crate::size::rect::Rect;
 
 pub mod text;
@@ -24,6 +25,7 @@ pub mod scroll_bar;
 pub mod checkbox;
 pub mod scroll_area;
 pub mod button;
+pub mod radio;
 
 fn gen_render_pipeline(device: &Device, topology: wgpu::PrimitiveTopology) -> wgpu::RenderPipeline {
     let shader = device.device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -84,6 +86,7 @@ pub(crate) enum PaintTask {
     CheckBox(PaintCheckBox),
     Button(PaintButton),
     ScrollArea(PaintScrollArea),
+    Radio(PaintRadioButton),
 }
 
 impl PaintTask {
@@ -94,7 +97,7 @@ impl PaintTask {
         }
     }
 
-    pub fn rect(&self)->&Rect{
+    pub fn rect(&self) -> &Rect {
         match self {
             PaintTask::Text(t) => &t.rect,
             PaintTask::Image(t) => &t.rect,
@@ -105,6 +108,7 @@ impl PaintTask {
             PaintTask::CheckBox(t) => &t.rect(),
             PaintTask::Button(t) => &t.rect(),
             PaintTask::ScrollArea(t) => &t.rect,
+            PaintTask::Radio(t) => &t.rect,
         }
     }
 
