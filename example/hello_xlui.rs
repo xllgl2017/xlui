@@ -75,7 +75,7 @@ impl App for XlUiApp {
         // println!("draw");
         // ScrollBar::new().size(20.0, 200.0).draw(ui);
         TextEdit::new("sdsd".to_string()).draw(ui);
-        SpinBox::new(1).draw(ui);
+        SpinBox::new(1).with_range(0..10).draw(ui);
         ui.horizontal(|ui| {
             Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
             ui.slider(30.0, 0.0..100.0).connect(Self::slider);
