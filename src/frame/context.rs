@@ -24,10 +24,10 @@ pub struct Render {
 }
 
 impl Render {
-    pub fn new(device: &Device, font: Arc<Font>) -> Render {
+    pub fn new(device: &Device) -> Render {
         Render {
             rectangle: RectangleRender::new(device),
-            text: TextRender::new(device, font),
+            text: TextRender::new(device),
         }
     }
 }

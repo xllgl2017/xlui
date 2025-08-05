@@ -24,9 +24,6 @@ impl SliderResponse {
         self.callback.slider = Some(Callback::create_slider(f));
     }
 
-    fn set_slider_value(&mut self, value: f32) {
-        self.value = value;
-    }
 
 }
 

@@ -55,7 +55,7 @@ impl<A: App> Window<A> {
             window,
             surface,
             resize: false,
-            render: Render::new(&device, font),
+            render: Render::new(&device),
         };
         let mut ui = Ui::new(device, context, Style::light_style());
         app.draw(&mut ui);

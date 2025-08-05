@@ -215,7 +215,6 @@ impl Layout {
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context),
                 PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device),
                 PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context),
-                PaintTask::Radio(paint_radio) => paint_radio.mouse_down(device, context),
                 _ => {}
             }
         }

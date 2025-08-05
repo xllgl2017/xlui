@@ -55,7 +55,7 @@ impl<T> Map<T> {
         self.values.len()
     }
 
-    pub fn last_mut(&mut self)->Option<&mut T>{
+    pub fn last_mut(&mut self) -> Option<&mut T> {
         Some(&mut self.values.last_mut()?.value)
     }
 }

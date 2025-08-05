@@ -1,6 +1,4 @@
-mod widget;
-
-use xlui::frame::{App, Application};
+use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 
@@ -34,7 +32,6 @@ impl App for Frame {
                 ui.label("a1");
                 ui.label("a1");
                 ui.label("a1");
-
             });
             ui.label("h5");
             ui.label("h6");
@@ -136,6 +133,5 @@ impl App for Frame {
 
 
 fn main() {
-    let mut app = Application::new();
-    app.run(Frame {});
+    Frame {}.run();
 }

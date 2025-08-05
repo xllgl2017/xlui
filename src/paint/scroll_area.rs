@@ -51,7 +51,7 @@ impl PaintScrollArea {
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         self.fill.render(&context.render, render_pass);
         self.scroll.render(&context.render, render_pass);
-        let mut clip = &self.context_rect;
+        let clip = &self.context_rect;
         render_pass.set_scissor_rect(clip.x.min as u32, clip.y.min as u32, clip.width() as u32, clip.height() as u32);
         for layout in self.layouts.iter_mut() {
             layout.draw(device, context, render_pass);

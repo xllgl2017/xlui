@@ -66,23 +66,23 @@ impl Rect {
         [self.x.min, self.y.min]
     }
 
-    #[deprecated]
-    pub(crate) fn add_padding(&mut self, padding: &Padding) {
-        self.x.min += padding.left;
-        self.x.max -= padding.right;
-        self.y.min += padding.top;
-        self.y.max -= padding.bottom;
-    }
-
-    #[deprecated]
-    pub(crate) fn clone_reduce_padding(&self, padding: &Padding) -> Rect {
-        let mut res = self.clone();
-        res.x.min += padding.left;
-        res.x.max -= padding.right;
-        res.y.min += padding.top;
-        res.y.max -= padding.bottom;
-        res
-    }
+    // #[deprecated]
+    // pub(crate) fn add_padding(&mut self, padding: &Padding) {
+    //     self.x.min += padding.left;
+    //     self.x.max -= padding.right;
+    //     self.y.min += padding.top;
+    //     self.y.max -= padding.bottom;
+    // }
+    //
+    // #[deprecated]
+    // pub(crate) fn clone_reduce_padding(&self, padding: &Padding) -> Rect {
+    //     let mut res = self.clone();
+    //     res.x.min += padding.left;
+    //     res.x.max -= padding.right;
+    //     res.y.min += padding.top;
+    //     res.y.max -= padding.bottom;
+    //     res
+    // }
 
     pub(crate) fn clone_add_padding(&self, padding: &Padding) -> Rect {
         let mut res = self.clone();
@@ -112,10 +112,10 @@ impl Rect {
         x > self.x.min && x < self.x.max && y > self.y.min && y < self.y.max
     }
 
-    pub(crate) fn set_min_pos(&mut self, x: f32, y: f32) {
-        self.x.min = x;
-        self.y.min = y;
-    }
+    // pub(crate) fn set_min_pos(&mut self, x: f32, y: f32) {
+    //     self.x.min = x;
+    //     self.y.min = y;
+    // }
 
     pub(crate) fn clone_with_size(&mut self, other: &Rect) -> Rect {
         let mut res = self.clone();

@@ -49,8 +49,8 @@ impl PaintRadioButton {
         inner_radio_rect.y.max -= 4.0;
         inner_radio_rect.set_width(inner_radio_rect.height());
         let mut inner_style = ui.style.widget.click.clone();
-        inner_style.fill.hovered = Color::rgb(56, 160, 200);;
-        inner_style.fill.clicked = Color::rgb(56, 182, 244);;
+        inner_style.fill.hovered = Color::rgb(56, 160, 200);
+        inner_style.fill.clicked = Color::rgb(56, 182, 244);
         inner_style.border.inactive = Border::new(0.0).radius(Radius::same(4));
         inner_style.border.hovered = Border::new(0.0).radius(Radius::same(4));
         inner_style.border.clicked = Border::new(0.0).radius(Radius::same(4));
@@ -92,15 +92,6 @@ impl PaintRadioButton {
             context.window.request_redraw();
             self.hovered = has_pos;
         }
-    }
-
-    pub fn mouse_down(&mut self, device: &Device, context: &mut Context) {
-        // let (x, y) = device.device_input.mouse.lastest();
-        // let has_pos = self.rect.has_position(x, y);
-        // if has_pos { return; }
-        // let data = self.inner_param.as_draw_param(has_pos, self.value);
-        // device.queue.write_buffer(&self.inner_buffer, 0, bytemuck::bytes_of(&data));
-        // context.window.request_redraw();
     }
 
     pub fn click(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {

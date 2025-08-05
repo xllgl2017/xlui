@@ -41,7 +41,6 @@ impl TextBuffer {
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui) {
-        let layout = ui.current_layout.as_mut().unwrap();
         let task = PaintTask::Text(PaintText::new(ui, self));
         ui.add_paint_task(self.id.clone(), task);
     }

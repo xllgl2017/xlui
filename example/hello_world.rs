@@ -60,7 +60,7 @@ impl State {
             window,
             surface,
             resize: false,
-            render: Render::new(&device, font),
+            render: Render::new(&device),
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
 

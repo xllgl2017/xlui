@@ -1,9 +1,8 @@
-use xlui::frame::{App, Application, WindowAttribute};
+use xlui::frame::{App, WindowAttribute};
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
-use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
@@ -11,12 +10,7 @@ use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
 
 fn main() {
-    let attr = WindowAttribute {
-        inner_size: (800, 600).into(),
-        ..Default::default()
-    };
-    let mut app = Application::new().with_attrs(attr);
-    app.run(XlUiApp::new());
+    XlUiApp::new().run();
 }
 
 struct XlUiApp {
