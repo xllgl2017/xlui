@@ -1,3 +1,4 @@
+use crate::render::RoundedBorderRenderer;
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
@@ -10,16 +11,17 @@ use winit::{
 use xlui::font::Font;
 use xlui::frame::context::{Context, Render};
 use xlui::size::Size;
-use xlui::text::text_render::TextRender;
 use xlui::{Device, DeviceInput};
-use crate::render::RoundedBorderRenderer;
+use crate::circle::CircleRender;
 
 mod render;
+mod circle;
 
 struct State {
     device: Device,
     context: Context,
     rounded_renderer: RoundedBorderRenderer,
+    circle: CircleRender,
 }
 
 impl State {
@@ -52,7 +54,7 @@ impl State {
             surface_config,
             device_input: DeviceInput::new(),
         };
-        let text_render = TextRender::new(&device, font.clone());
+        // let text_render = TextRender::new(&device);
         let context = Context {
             size: Size { width: window.inner_size().width, height: window.inner_size().height },
             font: font.clone(),
@@ -63,23 +65,19 @@ impl State {
             render: Render::new(&device),
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
-
-
+        let circle = CircleRender::new(&device);
 
         let mut state = State {
             device,
             context,
             rounded_renderer,
+            circle,
         };
 
         // Configure surface for the first time
         state.configure_surface();
 
         state
-    }
-
-    fn get_window(&self) -> &Window {
-        &self.context.window
     }
 
     fn configure_surface(&mut self) {
@@ -135,6 +133,7 @@ impl State {
             occlusion_query_set: None,
         });
         self.rounded_renderer.draw(&mut renderpass);
+        self.circle.render(&mut renderpass);
         drop(renderpass);
 
         // Submit the command in the queue to execute

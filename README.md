@@ -1,4 +1,4 @@
-# 🚀<img alt="&lt;img alt=&quot;logo&quot; height=&quot;20&quot;&gt;" height="20" src="img/logo/logo_96.png" width="20"/> xlui: 
+# 🚀<img alt="&lt;img alt=&quot;logo&quot; height=&quot;30&quot;&gt;" height="30" src="img/logo/logo_96.png" width="30"/> xlui: 
 [<img alt="github" src="https://img.shields.io/badge/github-xllgl2017/xlui-8da0cb?logo=github" height="20">](https://github.com/xllgl2017/xlui) [![Latest version](https://img.shields.io/crates/v/xlui.svg)](https://crates.io/crates/xlui) [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/xlui/blob/main/LICENSE-APACHE)
 ### 示例
 ```rust
@@ -118,7 +118,7 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ### ⬜️ TextEdit
 
-## Layout
+## 布局
 
 ### ✅ Layout(垂直、水平)
 ```rust

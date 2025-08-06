@@ -39,9 +39,9 @@ impl RadioButton {
     fn reset_size(&mut self, context: &Context) {
         self.rect.set_height(16.0);
         self.text.rect = self.rect.clone();
-        self.text.rect.offset_x(16.0);
+        self.text.rect.offset_x(18.0);
         self.text.reset_size(context);
-        self.rect.set_width(16.0 + self.text.rect.width());
+        self.rect.set_width(18.0 + self.text.rect.width());
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, bool)) -> Self {

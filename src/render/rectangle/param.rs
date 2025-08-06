@@ -3,7 +3,7 @@ use crate::style::ClickStyle;
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
-pub struct DrawParam {
+pub struct RectDrawParam {
     pos: [f32; 2],           //⬅️ 左上角顶点位置 (NDC)
     size: [f32; 2],          //⬅️ 矩形的宽高
     radius_tl: f32,          //⬅️ 左上圆角
@@ -21,23 +21,24 @@ pub struct DrawParam {
 }
 
 
-pub struct RectangleParam {
+pub struct RectParam {
     pub(crate) rect: Rect,
     pub(crate) style: ClickStyle,
+    draw: RectDrawParam,
 }
 
-impl RectangleParam {
-    pub fn as_draw_param(&self, hovered: bool, mouse_down: bool) -> DrawParam {
-        let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
-        let border = self.style.dyn_border(mouse_down, hovered);
-        DrawParam {
-            pos: [self.rect.x.min, self.rect.y.min],
-            size: [self.rect.width(), self.rect.height()],
+impl RectParam {
+    pub fn new(rect: Rect, style: ClickStyle) -> Self {
+        let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
+        let border = style.dyn_border(false, false);
+        let draw = RectDrawParam {
+            pos: [rect.x.min, rect.y.min],
+            size: [rect.width(), rect.height()],
             radius_bl: border.radius.left_bottom as f32,
             radius_br: border.radius.right_bottom as f32,
             radius_tr: border.radius.right_top as f32,
             radius_tl: border.radius.left_top as f32,
-            border_width: border.width as f32,
+            border_width: border.width,
             _pad0: [0.0; 3],
             border_color: border.color.as_gamma_rgba(),
             shadow_offset: [0.0, 0.0],
@@ -45,6 +46,25 @@ impl RectangleParam {
             _pad1: [0.0; 1],
             shadow_color: [0.0, 0.0, 0.0, 0.0],
             fill_color,
+        };
+        RectParam {
+            rect,
+            style,
+            draw,
         }
+    }
+    pub fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
+        let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
+        let border = self.style.dyn_border(mouse_down, hovered);
+        self.draw.pos = [self.rect.x.min, self.rect.y.min];
+        self.draw.size = [self.rect.width(), self.rect.height()];
+        self.draw.radius_bl = border.radius.left_bottom as f32;
+        self.draw.radius_br = border.radius.right_bottom as f32;
+        self.draw.radius_tr = border.radius.right_top as f32;
+        self.draw.radius_tl = border.radius.left_top as f32;
+        self.draw.border_width = border.width;
+        self.draw.border_color = border.color.as_gamma_rgba();
+        self.draw.fill_color = fill_color;
+        bytemuck::bytes_of(&self.draw)
     }
 }

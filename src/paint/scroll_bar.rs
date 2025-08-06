@@ -1,8 +1,9 @@
 use crate::Device;
 use crate::frame::context::{Context, Render};
 use crate::paint::color::Color;
-use crate::paint::rectangle::param::RectangleParam;
 use crate::radius::Radius;
+use crate::render::rectangle::param::RectParam;
+use crate::render::WrcRender;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
@@ -11,8 +12,8 @@ pub struct PaintScrollBar {
     inner_buffer: wgpu::Buffer,
     outer_index: usize,
     inner_index: usize,
-    outer_param: RectangleParam,
-    inner_param: RectangleParam,
+    outer_param: RectParam,
+    inner_param: RectParam,
     hovered: bool,
     focused: bool,
     pub(crate) offset_y: f32,
@@ -25,10 +26,7 @@ impl PaintScrollBar {
         outer_style.fill.inactive = Color::rgb(215, 215, 215);
         outer_style.fill.hovered = Color::rgb(215, 215, 215);
         outer_style.fill.clicked = Color::rgb(215, 215, 215);
-        let outer_param = RectangleParam {
-            rect: rect.clone(),
-            style: outer_style,
-        };
+        let mut outer_param = RectParam::new(rect.clone(), outer_style);
         let mut rect = rect.clone();
         let mut inner_height = if height < rect.height() { rect.height() } else { rect.height() * rect.height() / height };
         if inner_height < 32.0 { inner_height = 32.0; }
@@ -40,13 +38,10 @@ impl PaintScrollBar {
         inner_style.border.inactive = Border::new(0.0).radius(Radius::same(2));
         inner_style.border.hovered = Border::new(0.0).radius(Radius::same(2));
         inner_style.border.clicked = Border::new(0.0).radius(Radius::same(2));
-        let inner_param = RectangleParam {
-            rect,
-            style: inner_style,
-        };
+        let mut inner_param = RectParam::new(rect, inner_style);
 
-        let inner_buffer = ui.ui_manage.context.render.rectangle.create_buffer(&ui.device, &inner_param);
-        let outer_buffer = ui.ui_manage.context.render.rectangle.create_buffer(&ui.device, &outer_param);
+        let inner_buffer = ui.ui_manage.context.render.rectangle.create_buffer(&ui.device, inner_param.as_draw_param(false, false));
+        let outer_buffer = ui.ui_manage.context.render.rectangle.create_buffer(&ui.device, outer_param.as_draw_param(false, false));
         let outer_index = ui.ui_manage.context.render.rectangle.create_bind_group(&ui.device, &outer_buffer);
         let inner_index = ui.ui_manage.context.render.rectangle.create_bind_group(&ui.device, &inner_buffer);
 
@@ -97,7 +92,7 @@ impl PaintScrollBar {
             self.inner_param.rect.offset_y(-oy);
         }
         let draw_param = self.inner_param.as_draw_param(true, device.device_input.mouse.pressed);
-        device.queue.write_buffer(&self.inner_buffer, 0, bytemuck::bytes_of(&draw_param));
+        device.queue.write_buffer(&self.inner_buffer, 0, draw_param);
     }
 
     pub fn mouse_move(&mut self, device: &Device, context: &Context) {
@@ -115,7 +110,7 @@ impl PaintScrollBar {
             false => {
                 if self.hovered != has_pos {
                     let draw_param = self.inner_param.as_draw_param(has_pos, device.device_input.mouse.pressed);
-                    device.queue.write_buffer(&self.inner_buffer, 0, bytemuck::bytes_of(&draw_param));
+                    device.queue.write_buffer(&self.inner_buffer, 0, draw_param);
                     self.hovered = has_pos;
                     context.window.request_redraw();
                 }

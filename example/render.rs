@@ -27,7 +27,7 @@ pub struct RoundedBorderRenderer {
 
 impl RoundedBorderRenderer {
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
-        let shader = device.create_shader_module(wgpu::include_wgsl!("../src/render/rectangle.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("../src/render/rectangle/rectangle.wgsl"));
 
         let draw_param = DrawParam {
             pos: [20.0, 20.0],

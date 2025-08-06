@@ -1,10 +1,11 @@
 use crate::font::Font;
-use crate::render::rectangle::RectangleRender;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
 use crate::Device;
 use glyphon::Viewport;
 use std::sync::Arc;
+use crate::render::circle::CircleRenderer;
+use crate::render::rectangle::RectangleRender;
 
 pub struct Context {
     pub size: Size,
@@ -21,6 +22,7 @@ pub struct Context {
 pub struct Render {
     pub(crate) rectangle: RectangleRender,
     pub(crate) text: TextRender,
+    pub(crate) circle: CircleRenderer,
 }
 
 impl Render {
@@ -28,6 +30,7 @@ impl Render {
         Render {
             rectangle: RectangleRender::new(device),
             text: TextRender::new(device),
+            circle: CircleRenderer::new(device),
         }
     }
 }

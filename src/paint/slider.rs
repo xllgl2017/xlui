@@ -7,13 +7,17 @@ use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::Device;
 use std::ops::Range;
+use crate::render::circle::param::CircleParam;
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::widgets::slider::Slider;
 
 pub struct PaintSlider {
     id: String,
     fill: PaintRectangle,
-    slider: PaintRectangle,
+    slider_buffer: wgpu::Buffer,
+    slider_index: usize,
+    slider_param: CircleParam,
     value: f32,
     value_range: Range<f32>,
     focused: bool,
@@ -39,7 +43,8 @@ impl PaintSlider {
         slider_rect.set_width(slider.rect.height());
         let offset = slider.value * slider.rect.width() / (slider.range.end - slider.range.start);
         slider_rect.offset_x(offset);
-        let mut slider_rectangle = PaintRectangle::new(ui, slider_rect);
+
+        // let cx = [slider_rect.x.center(), slider_rect.y.center()];
         let mut slider_style = ui.style.widget.click.clone();
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
@@ -47,26 +52,34 @@ impl PaintSlider {
         slider_style.border.inactive = Border::new(0.0).color(Color::BLACK).radius(Radius::same(8));
         slider_style.border.hovered = Border::new(1.0).color(Color::BLACK).radius(Radius::same(8));
         slider_style.border.clicked = Border::new(1.0).color(Color::BLACK).radius(Radius::same(8));
-        slider_rectangle.set_style(slider_style);
-        slider_rectangle.prepare(&ui.device, false, false);
+        let mut slider_param = CircleParam::new(slider_rect, slider_style);
+        let data = slider_param.as_draw_param(false, false);
+        let slider_buffer = ui.ui_manage.context.render.circle.create_buffer(&ui.device, data);
+        let slider_index = ui.ui_manage.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
+        // let mut slider_rectangle = PaintRectangle::new(ui, slider_rect);
+
+        // slider_rectangle.set_style(slider_style);
+        // slider_rectangle.prepare(&ui.device, false, false);
         PaintSlider {
-            id:slider.id.clone(),
+            id: slider.id.clone(),
             fill,
-            slider: slider_rectangle,
+            slider_buffer,
+            slider_index,
             value: slider.value,
             value_range: slider.range.clone(),
             focused: false,
+            slider_param,
         }
     }
 
     pub fn render(&mut self, render: &Render, render_pass: &mut wgpu::RenderPass) {
         self.fill.render(render, render_pass);
-        self.slider.render(render, render_pass);
+        render.circle.render(self.slider_index, render_pass);
     }
 
     pub fn mouse_move(&mut self, device: &Device, context: &Context, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
-        let slider_rect = &mut self.slider.param.rect;
+        let slider_rect = &mut self.slider_param.rect;
         let fill_rect = &mut self.fill.param.rect;
         let has_pos = slider_rect.has_position(x, y);
         if (has_pos || self.focused) && device.device_input.mouse.pressed {
@@ -83,12 +96,14 @@ impl PaintSlider {
             resp.slider_mut(&self.id).unwrap().value = cv;
             self.value = cv;
         }
-        self.slider.prepare(device, has_pos, device.device_input.mouse.pressed);
+        let data = self.slider_param.as_draw_param(has_pos, device.device_input.mouse.pressed);
+        device.queue.write_buffer(&self.slider_buffer, 0, data);
+        // self.slider.prepare(device, has_pos, device.device_input.mouse.pressed);
     }
 
     pub fn mouse_down(&mut self, device: &Device) {
         let (x, y) = device.device_input.mouse.lastest();
-        self.focused = self.slider.param.rect.has_position(x, y);
+        self.focused = self.slider_param.rect.has_position(x, y);
     }
 
     pub fn rect(&self) -> &Rect { &self.fill.param.rect }

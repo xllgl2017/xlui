@@ -100,7 +100,7 @@ impl PaintScrollArea {
         let (x, y) = device.device_input.mouse.lastest();
         self.focused = self.fill.param.rect.has_position(x, y);
         self.scrolling = false;
-        println!("scroll down {}", self.focused);
+        // println!("scroll down {}", self.focused);
         self.scroll.mouse_down(device);
         if self.focused { //处于视图内部
             for layout in self.layouts.iter_mut() {

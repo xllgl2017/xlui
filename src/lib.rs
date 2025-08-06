@@ -71,7 +71,7 @@ pub mod frame;
 pub mod ui;
 
 pub mod style;
-mod paint;
+pub mod paint;
 mod render;
 mod response;
 mod map;
@@ -82,6 +82,12 @@ const SAMPLE_COUNT: u32 = 4;
 pub struct Pos {
     pub min: f32,
     pub max: f32,
+}
+
+impl Pos {
+    pub fn center(&self) -> f32 {
+        (self.min + self.max) / 2.0
+    }
 }
 
 
