@@ -225,9 +225,7 @@ impl Layout {
     pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for (_, widget) in self.widgets.iter_mut() {
             match widget {
-                PaintTask::TextEdit(paint_edit) => {
-                    paint_edit.click(device, context);
-                }
+                PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
                 PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
@@ -247,17 +245,19 @@ impl Layout {
         }
     }
 
-    pub(crate) fn key_input(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key) {
+    pub(crate) fn key_input(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, resp: &mut Response) -> Vec<String> {
+        let mut res = vec![];
         for (_, widget) in self.widgets.iter_mut() {
             match widget {
                 PaintTask::Text(_) => {}
                 PaintTask::Image(_) => {}
                 PaintTask::ScrollBar(_) => {}
-                PaintTask::TextEdit(paint_edit) => paint_edit.key_input(device, context, key.clone()),
-                PaintTask::SpinBox(pain_spinbox) => pain_spinbox.key_input(device, context, key.clone()),
+                PaintTask::TextEdit(paint_edit) => res.append(&mut paint_edit.key_input(device, context, key.clone(), resp)),
+                PaintTask::SpinBox(pain_spinbox) => pain_spinbox.key_input(device, context, key.clone(), resp),
                 _ => {}
             }
         }
+        res
     }
 
     pub(crate) fn delta_input(&mut self, device: &Device, context: &Context) -> Vec<(String, Rect)> {

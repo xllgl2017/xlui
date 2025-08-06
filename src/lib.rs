@@ -88,6 +88,11 @@ impl Pos {
     pub fn center(&self) -> f32 {
         (self.min + self.max) / 2.0
     }
+
+    pub fn offset(&mut self, offset: f32) {
+        self.min += offset;
+        self.max += offset;
+    }
 }
 
 

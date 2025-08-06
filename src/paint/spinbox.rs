@@ -50,7 +50,7 @@ impl PaintSpinBox {
             Vertex::new([spinbox.rect.x.max - 14.0, down_rect.y.min], &color, &ui.ui_manage.context.size),
             Vertex::new([spinbox.rect.x.max, down_rect.y.min], &color, &ui.ui_manage.context.size),
         ], &ui.device);
-        let mut edit = PaintTextEdit::new(ui, text_edit.rect.clone(), &text_edit.text_buffer);
+        let mut edit = PaintTextEdit::new(ui, text_edit);
         text_edit.gen_style(ui, &mut edit);
         edit.fill.prepare(&ui.device, false, false);
         // edit.prepare(&ui.device, &mut ui.ui_manage.context, false, false, false);
@@ -114,7 +114,7 @@ impl PaintSpinBox {
                 self.triangle.vertices[self.up_index.clone()].iter_mut().for_each(|x| {
                     x.color = self.color.as_gamma_rgba();
                 });
-                is_change=true;
+                is_change = true;
             }
             self.triangle.vertices[self.down_index.clone()].iter_mut().for_each(|x| {
                 x.color = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
@@ -152,8 +152,8 @@ impl PaintSpinBox {
     }
 
 
-    pub fn key_input(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key) {
-        self.edit.key_input(device, context, key);
+    pub fn key_input(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, resp: &mut Response) {
+        self.edit.key_input(device, context, key, resp);
     }
 
     pub fn rect(&self) -> &Rect { &self.rect }

@@ -2,6 +2,7 @@ pub mod button;
 pub mod slider;
 pub mod checkbox;
 pub mod spinbox;
+pub mod textedit;
 
 use crate::map::Map;
 use crate::response::button::ButtonResponse;
@@ -12,6 +13,7 @@ use crate::size::rect::Rect;
 use crate::ui::UiM;
 use crate::Device;
 use std::any::Any;
+use crate::response::textedit::TextEditResponse;
 
 pub enum DrawnEvent {
     None,
@@ -24,6 +26,7 @@ pub struct Callback {
     slider: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, f32)>>,
     checkbox: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>,
     spinbox: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, i32)>>,
+    textedit: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, &str)>>,
 }
 
 impl Callback {
@@ -33,6 +36,7 @@ impl Callback {
             slider: None,
             checkbox: None,
             spinbox: None,
+            textedit: None,
         }
     }
     // pub fn set_click<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
@@ -88,6 +92,19 @@ impl Callback {
     pub fn spinbox(f: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, i32)>>) -> Self {
         let mut res = Callback::new();
         res.spinbox = f;
+        res
+    }
+
+    pub(crate) fn create_textedit<A: 'static>(f: fn(&mut A, &mut UiM, &str)) -> Box<dyn FnMut(&mut dyn Any, &mut UiM, &str)> {
+        Box::new(move |target, uim, value| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, value)
+        })
+    }
+
+    pub fn textedit(f: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, &str)>>) -> Self {
+        let mut res = Callback::new();
+        res.textedit = f;
         res
     }
 }
@@ -205,6 +222,16 @@ impl Response {
         }
     }
 
+    pub fn key_input<A: 'static>(&mut self, id: String, app: &mut A, uim: &mut UiM) {
+        let resp = self.values.get_mut(id);
+        if resp.is_none() { return; }
+        let edit_resp = resp.unwrap();
+        match edit_resp.as_any_mut().downcast_mut::<TextEditResponse>() {
+            None => {}
+            Some(edit_resp) => edit_resp.call(app, uim),
+        }
+    }
+
     pub fn checked_mut(&mut self, id: &String) -> Option<&mut CheckBoxResponse> {
         let resp = self.values.get_mut(id)?;
         let resp = resp.as_any_mut().downcast_mut::<CheckBoxResponse>()?;
@@ -220,6 +247,12 @@ impl Response {
     pub fn spinbox_mut(&mut self, id: &String) -> Option<&mut SpinBoxResponse> {
         let resp = self.values.get_mut(id)?;
         let resp = resp.as_any_mut().downcast_mut::<SpinBoxResponse>()?;
+        Some(resp)
+    }
+
+    pub fn edit_mut(&mut self, id: &String) -> Option<&mut TextEditResponse> {
+        let resp = self.values.get_mut(id)?;
+        let resp = resp.as_any_mut().downcast_mut::<TextEditResponse>()?;
         Some(resp)
     }
 }

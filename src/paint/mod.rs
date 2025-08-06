@@ -97,10 +97,17 @@ pub(crate) enum PaintTask {
 }
 
 impl PaintTask {
-    pub fn paint_text(&mut self) -> &mut PaintText {
+    pub fn paint_text_mut(&mut self) -> &mut PaintText {
         match self {
             PaintTask::Text(paint_text) => paint_text,
             _ => panic!("应该是PaintTask::Text"),
+        }
+    }
+
+    pub fn paint_edit(&self) -> &PaintTextEdit {
+        match self {
+            PaintTask::TextEdit(paint_edit) => paint_edit,
+            _ => panic!("应该是PaintTask::TextEdit"),
         }
     }
 

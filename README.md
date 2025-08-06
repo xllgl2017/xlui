@@ -165,7 +165,28 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
-### ⬜️ TextEdit
+### ✅ TextEdit
+
+```rust
+//通过uim获取edit的文本
+pub fn add(&mut self, uim: &mut UiM) {
+    let text = uim.get_edit_text("xlui_edit");
+    self.label.set_text(format!("textedit: {}", text));
+    self.label.update(uim);
+}
+
+//文本变动监测
+fn edit_changed(&mut self, uim: &mut UiM, text: &str) {
+    self.label.set_text(format!("textedit: {}", text));
+    self.label.update(uim);
+}
+
+fn draw(&mut self, ui: &mut Ui) {
+    //创建TextEdit并添加ID，以便后续获取其文本
+    TextEdit::new("sdsd".to_string()).width_id("xlui_edit")
+        .connect(Self::edit_changed).draw(ui);
+}
+```
 
 ## 布局
 
@@ -207,4 +228,4 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
-[//]: # (❌)
+[//]:  # (❌⬜️)  

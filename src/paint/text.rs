@@ -62,8 +62,8 @@ impl PaintText {
         self.render.render(&mut context.render.text.atlas, &context.viewport, render_pass).unwrap()
     }
 
-    pub fn set_text(&mut self, context: &mut Context, text: &str) {
-        self.buffer.set_text(&mut context.render.text.font_system, text, &context.font.font_attr(), Shaping::Advanced);
+    pub fn set_text(&mut self, context: &mut Context, text: impl AsRef<str>) {
+        self.buffer.set_text(&mut context.render.text.font_system, text.as_ref(), &context.font.font_attr(), Shaping::Advanced);
         self.change = true;
     }
 

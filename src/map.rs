@@ -33,7 +33,7 @@ impl<T> Map<T> {
         self.values.push(MapNode { key: key.to_string(), value });
     }
 
-    pub fn get(&mut self, key: impl ToString) -> Option<&T> {
+    pub fn get(&self, key: impl ToString) -> Option<&T> {
         let k = key.to_string();
         let index = self.keys.get(&k)?;
         Some(&self.values.get(*index)?.value)

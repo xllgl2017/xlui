@@ -22,7 +22,7 @@ struct XlUiApp {
 impl XlUiApp {
     pub fn new() -> Self {
         Self {
-            label: Label::new("hello".to_string()).width(100.0),
+            label: Label::new("hello".to_string()).width(200.0),
             count: 0,
         }
     }
@@ -38,6 +38,8 @@ impl XlUiApp {
     }
 
     pub fn add(&mut self, uim: &mut UiM) {
+        let text = uim.get_edit_text("xlui_edit");
+        println!("text: {}", text);
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
@@ -58,6 +60,11 @@ impl XlUiApp {
         self.label.set_text(format!("check: {}", checked));
         self.label.update(uim);
     }
+
+    pub fn edit_changed(&mut self, uim: &mut UiM, text: &str) {
+        self.label.set_text(format!("textedit: {}", text));
+        self.label.update(uim);
+    }
 }
 
 impl App for XlUiApp {
@@ -69,7 +76,7 @@ impl App for XlUiApp {
         });
         // println!("draw");
         // ScrollBar::new().size(20.0, 200.0).draw(ui);
-        TextEdit::new("sdsd".to_string()).draw(ui);
+        TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed).draw(ui);
         SpinBox::new(1).with_range(0..10).draw(ui);
         ui.horizontal(|ui| {
             Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
@@ -104,7 +111,6 @@ impl App for XlUiApp {
                 ui.label("c3");
                 ui.label("c4");
                 ui.label("c5");
-
             }).draw(ui);
         });
 

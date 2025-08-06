@@ -1,10 +1,12 @@
+use std::any::Any;
 use crate::frame::context::Context;
 use crate::paint::color::Color;
 use crate::paint::edit::PaintTextEdit;
 use crate::paint::PaintTask;
 use crate::radius::Radius;
 use crate::response::button::ButtonResponse;
-use crate::response::DrawnEvent;
+use crate::response::{Callback, DrawnEvent};
+use crate::response::textedit::TextEditResponse;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
@@ -14,11 +16,12 @@ use crate::ui::{Ui, UiM};
 use crate::widgets::Widget;
 
 pub struct TextEdit {
-    id: String,
+    pub(crate) id: String,
     pub(crate) text_buffer: TextBuffer,
     pub(crate) rect: Rect,
     size_mode: SizeMode,
     border: Border,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, &str)>>,
 }
 
 impl TextEdit {
@@ -29,6 +32,7 @@ impl TextEdit {
             rect: Rect::new(),
             size_mode: SizeMode::Auto,
             border: Border::new(1.0).color(Color::BLUE).radius(Radius::same(2)),
+            callback: None,
         }
     }
 
@@ -71,6 +75,16 @@ impl TextEdit {
         select_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
         task.select_style(select_style);
     }
+
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, &str)) -> Self {
+        self.callback = Some(Callback::create_textedit(f));
+        self
+    }
+
+    pub fn width_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
 }
 
 
@@ -79,12 +93,18 @@ impl Widget for TextEdit {
         let layout = ui.current_layout.as_mut().unwrap();
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.reset_size(&ui.ui_manage.context);
+
         layout.alloc_rect(&self.rect);
-        let mut task = PaintTextEdit::new(ui, self.rect.clone(), &self.text_buffer);
+        let mut task = PaintTextEdit::new(ui, self);
         self.gen_style(ui, &mut task);
         task.fill.prepare(&ui.device, false, false);
         ui.add_paint_task(self.id.clone(), PaintTask::TextEdit(task));
-        ui.response.insert(self.id.clone(), ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Click));
+        ui.response.insert(self.id.clone(), TextEditResponse {
+            rect: self.rect.clone(),
+            event: DrawnEvent::Click,
+            callback: Callback::textedit(self.callback.take()),
+            value: self.text_buffer.text.clone(),
+        });
     }
 
     fn update(&mut self, uim: &mut UiM) {

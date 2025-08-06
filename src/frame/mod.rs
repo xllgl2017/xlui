@@ -140,7 +140,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
             }
             WindowEvent::KeyboardInput { device_id: _device_id, event, .. } => {
                 if !event.state.is_pressed() { return; }
-                window.ui.key_input(event.logical_key);
+                window.ui.key_input(event.logical_key,&mut window.app);
                 window.ui.ui_manage.context.window.request_redraw();
             }
             _ => (),

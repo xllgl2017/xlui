@@ -41,12 +41,21 @@ impl UiM {
             match layout.widgets.get_mut(&buffer.id) {
                 None => {}
                 Some(paint) => {
-                    paint.paint_text().set_text(&mut self.context, &buffer.text);
-                    paint.paint_text().set_wrap(&mut self.context, &buffer.text_wrap);
-                    paint.paint_text().set_font_size(&mut self.context, &buffer.text_size);
+                    paint.paint_text_mut().set_text(&mut self.context, &buffer.text);
+                    paint.paint_text_mut().set_wrap(&mut self.context, &buffer.text_wrap);
+                    paint.paint_text_mut().set_font_size(&mut self.context, &buffer.text_size);
                 }
             }
         }
+    }
+
+    pub fn get_edit_text(&self, id: &str) -> String {
+        for layout in self.layouts.iter() {
+            if let Some(value) = layout.widgets.get(id) {
+                return value.paint_edit().text();
+            }
+        }
+        panic!("id错误");
     }
 }
 
@@ -58,6 +67,7 @@ pub struct Ui {
     pub(crate) response: Response,
     pub(crate) current_scrollable: bool,
     pub(crate) scroll_layouts: Vec<Layout>,
+    pub(crate) ids: Vec<String>,
 }
 
 
@@ -74,10 +84,13 @@ impl Ui {
             ui_manage: UiM::new(context),
             response: Response::new(),
             scroll_layouts: vec![],
+            ids: vec![],
         }
     }
 
     pub(crate) fn add_paint_task(&mut self, id: String, paint_task: PaintTask) {
+        assert!(!self.ids.contains(&id));
+        self.ids.push(id.clone());
         let layout = self.current_layout.as_mut().unwrap();
         layout.insert_widget(id, paint_task);
         // layout.ids.insert(id, layout.widgets.len());
@@ -243,9 +256,14 @@ impl Ui {
         }
     }
 
-    pub(crate) fn key_input(&mut self, key: winit::keyboard::Key) {
+    pub(crate) fn key_input<A: 'static>(&mut self, key: winit::keyboard::Key, app: &mut A) {
+        let mut res = vec![];
         for layout in self.ui_manage.layouts.iter_mut() {
-            layout.key_input(&self.device, &mut self.ui_manage.context, key.clone())
+            res.append(&mut layout.key_input(&self.device, &mut self.ui_manage.context, key.clone(), &mut self.response));
+        }
+        println!("{:?}", res);
+        for re in res {
+            self.response.key_input(re, app, &mut self.ui_manage);
         }
     }
 
