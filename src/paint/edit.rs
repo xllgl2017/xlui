@@ -8,6 +8,11 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::textedit::TextEdit;
 use crate::{Device, Pos};
+use crate::paint::color::Color;
+use crate::radius::Radius;
+use crate::render::rectangle::param::RectParam;
+use crate::render::WrcRender;
+use crate::size::border::Border;
 
 struct TextChar {
     x: Pos,
@@ -127,44 +132,61 @@ pub(crate) struct PaintTextEdit {
     id: String,
     text: PaintText,
     pub fill: PaintRectangle,
-    cursor: PaintRectangle,
+    cursor_index: usize,
+    cursor_param: RectParam,
+    cursor_buffer: wgpu::Buffer,
     select: PaintRectangle,
     char_layout: CharLayout,
     has_select: bool,
     hovered: bool,
     pub(crate) focused: bool,
+    mouse_down_x: f32,
 }
 
 impl PaintTextEdit {
     pub fn new(ui: &mut Ui, edit: &TextEdit) -> Self {
-        let mut cursor_rect = edit.rect.clone_add_padding(&Padding::same(5.0));
-        cursor_rect.x.min = cursor_rect.x.min - 2.0;
-        cursor_rect.x.max = cursor_rect.x.min + 2.0;
-
         let wx = edit.text_buffer.rect.x.min;
         let char_layout = CharLayout::from_text(wx, &edit.text_buffer.text, edit.text_buffer.text_size.font_size, &ui.ui_manage.context);
 
+        let mut cursor_rect = edit.rect.clone_add_padding(&Padding::same(5.0));
+        cursor_rect.x.min = cursor_rect.x.min - 2.0;
+        cursor_rect.x.max = cursor_rect.x.min + 2.0;
+        cursor_rect.offset_x_to(char_layout.x_min + char_layout.width);
+
+        let mut cursor_style = ui.style.widget.click.clone();
+        cursor_style.fill.inactive = Color::rgb(0, 83, 125);
+        cursor_style.fill.hovered = Color::rgb(0, 83, 125);
+        cursor_style.fill.clicked = Color::rgb(0, 83, 125);
+        cursor_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
+        cursor_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
+        cursor_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
+        let mut cursor_param = RectParam::new(cursor_rect, cursor_style);
+        let data = cursor_param.as_draw_param(false, false);
+        let cursor_buffer = ui.ui_manage.context.render.rectangle.create_buffer(&ui.device, data);
+        let cursor_index = ui.ui_manage.context.render.rectangle.create_bind_group(&ui.device, &cursor_buffer);
+
+
         let mut select_rect = edit.text_buffer.rect.clone();
         select_rect.set_width(0.0);
+
         PaintTextEdit {
             id: edit.id.clone(),
             text: PaintText::new(ui, &edit.text_buffer),
             fill: PaintRectangle::new(ui, edit.rect.clone()),
-            cursor: PaintRectangle::new(ui, cursor_rect),
+            cursor_index,
+            cursor_param,
+            cursor_buffer,
             select: PaintRectangle::new(ui, select_rect),
             char_layout,
             has_select: false,
             hovered: false,
             focused: false,
+            mouse_down_x: 0.0,
         }
     }
 
     pub fn fill_style(&mut self, style: ClickStyle) {
         self.fill.set_style(style);
-    }
-
-    pub fn cursor_style(&mut self, style: ClickStyle) {
-        self.cursor.set_style(style);
     }
 
     pub fn select_style(&mut self, style: ClickStyle) {
@@ -186,45 +208,63 @@ impl PaintTextEdit {
         }
     }
 
+    fn update_cursor(&mut self, device: &Device, xm: f32) {
+        self.cursor_param.rect.offset_x_to(xm);
+        let data = self.cursor_param.as_draw_param(false, false);
+        device.queue.write_buffer(&self.cursor_buffer, 0, data);
+    }
+
     pub fn mouse_down(&mut self, device: &Device, context: &Context) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
-        if self.focused != has_pos || device.device_input.mouse.pressed != has_pos {
-            self.focused = has_pos;
-            self.fill.prepare(device, has_pos || self.focused, device.device_input.mouse.pressed);
-            context.window.request_redraw();
-        }
-    }
-
-    pub fn click(&mut self, device: &Device, context: &Context) {
-        let (x, y) = device.device_input.mouse.lastest();
+        self.focused = has_pos;
+        println!("mouse down");
         if !self.fill.param.rect.has_position(x, y) { return; }
         self.has_select = false;
         self.select.rect_mut().set_width(0.0);
-        let lx = device.device_input.mouse.lastest.0;
-        if lx < self.char_layout.x_min {
-            self.cursor.offset(self.char_layout.x_min);
+        if x < self.char_layout.x_min {
+            self.select.param.rect.x.min = self.char_layout.x_min;
+            self.select.param.rect.x.max = self.char_layout.x_min;
+            self.update_cursor(device, self.char_layout.x_min);
             self.char_layout.reset_cursor(0);
-        } else if lx > self.char_layout.x_min + self.char_layout.width {
-            self.cursor.offset(self.char_layout.x_min + self.char_layout.width);
+            context.window.request_redraw();
+        } else if x > self.char_layout.x_min + self.char_layout.width {
+            self.select.param.rect.x.min = self.char_layout.x_min + self.char_layout.width;
+            self.select.param.rect.x.max = self.char_layout.x_min + self.char_layout.width;
+            self.update_cursor(device, self.char_layout.x_min + self.char_layout.width);
             self.char_layout.reset_cursor(self.char_layout.chars.len());
+            context.window.request_redraw();
         } else {
-            let pos = self.char_layout.chars.iter().position(|x| x.x.min < lx && lx < x.x.max);
+            let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < x && x < tc.x.max);
             if let Some(pos) = pos {
                 let ct = &self.char_layout.chars[pos];
-                self.cursor.offset(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
-                self.char_layout.reset_cursor(if lx >= ct.half_x() { pos + 1 } else { pos });
+                self.select.param.rect.x.min = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
+                self.select.param.rect.x.max = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
+                self.char_layout.reset_cursor(if x >= ct.half_x() { pos + 1 } else { pos });
+                self.update_cursor(device, self.select.param.rect.x.min);
+                context.window.request_redraw();
             }
         }
-        self.cursor.prepare(device, true, false);
-        context.window.request_redraw();
+        self.mouse_down_x = x;
     }
 
+    pub fn click(&mut self, device: &Device, context: &Context) {}
+
     pub fn text_select(&mut self, device: &Device) {
+        let lx = device.device_input.mouse.lastest().0;
         self.has_select = true;
-        let rect = self.select.rect_mut();
-        rect.x.max = rect.x.max + device.device_input.mouse.offset_x();
-        if rect.x.max > self.char_layout.x_min + self.char_layout.width { rect.x.max = self.char_layout.x_min + self.char_layout.width; }
+        let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < lx && lx < tc.x.max);
+        if let Some(pos) = pos {
+            let ct = &self.char_layout.chars[pos];
+            if lx > self.mouse_down_x { //向右选择
+                self.select.param.rect.x.max = if lx >= ct.half_x() { ct.x.max } else { ct.x.min };
+            } else { //向左选择
+                self.select.param.rect.x.min = if lx >= ct.half_x() { ct.x.max } else { ct.x.min };
+            }
+
+            self.char_layout.reset_cursor(if lx >= ct.half_x() { pos + 1 } else { pos });
+            self.update_cursor(device, if lx > self.mouse_down_x { self.select.param.rect.x.max } else { self.select.param.rect.x.min });
+        }
         self.select.prepare(device, false, false)
     }
 
@@ -232,7 +272,8 @@ impl PaintTextEdit {
     pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         self.fill.render(&context.render, render_pass);
         self.text.render(device, context, render_pass);
-        if self.focused { self.cursor.render(&context.render, render_pass); }
+        // println!("{} {:?}", self.focused, self.cursor.param.rect);
+        if self.focused { context.render.rectangle.render(self.cursor_index, render_pass); }
         if self.has_select { self.select.render(&context.render, render_pass); }
     }
 
@@ -258,32 +299,38 @@ impl PaintTextEdit {
                 match name {
                     winit::keyboard::NamedKey::Backspace => {
                         let xm = self.char_layout.remove_char();
-                        self.cursor.offset(xm);
+                        self.update_cursor(device, xm);
                         let text = self.char_layout.text();
-                        resp.edit_mut(&self.id).unwrap().value = text.clone();
+                        if let Some(resp) = resp.edit_mut(&self.id) {
+                            resp.value=text.clone();
+                        }
                         self.text.set_text(context, text);
                         res.push(self.id.clone());
                     }
                     winit::keyboard::NamedKey::ArrowLeft => {
                         let xm = self.char_layout.cursor_reduce();
-                        self.cursor.offset(xm);
+                        self.update_cursor(device, xm);
                     }
                     winit::keyboard::NamedKey::ArrowRight => {
                         let xm = self.char_layout.cursor_add();
-                        self.cursor.offset(xm);
+                        self.update_cursor(device, xm);
                     }
                     winit::keyboard::NamedKey::Delete => {
                         self.char_layout.remove_after();
                         let text = self.char_layout.text();
-                        resp.edit_mut(&self.id).unwrap().value = text.clone();
+                        if let Some(resp) = resp.edit_mut(&self.id) {
+                            resp.value=text.clone();
+                        }
                         self.text.set_text(context, text);
                         res.push(self.id.clone());
                     }
                     winit::keyboard::NamedKey::Space => {
                         let xm = self.char_layout.push_char(' ', context);
-                        self.cursor.offset(xm);
+                        self.update_cursor(device, xm);
                         let text = self.char_layout.text();
-                        resp.edit_mut(&self.id).unwrap().value = text.clone();
+                        if let Some(resp) = resp.edit_mut(&self.id) {
+                            resp.value=text.clone();
+                        }
                         self.text.set_text(context, text);
                         res.push(self.id.clone());
                     }
@@ -293,16 +340,17 @@ impl PaintTextEdit {
             winit::keyboard::Key::Character(c) => {
                 let c = c.chars().next().unwrap();
                 let xm = self.char_layout.push_char(c, context);
-                self.cursor.offset(xm);
+                self.update_cursor(device, xm);
                 let text = self.char_layout.text();
-                resp.edit_mut(&self.id).unwrap().value = text.clone();
+                if let Some(resp) = resp.edit_mut(&self.id) {
+                    resp.value=text.clone();
+                }
                 self.text.set_text(context, text);
                 res.push(self.id.clone());
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
         }
-        self.cursor.prepare(device, false, false);
         res
     }
 }

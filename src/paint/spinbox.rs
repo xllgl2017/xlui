@@ -143,12 +143,26 @@ impl PaintSpinBox {
         self.edit.mouse_move(device, context);
     }
 
-    pub fn mouse_down(&mut self, device: &Device, context: &mut Context) {
-        self.edit.mouse_down(device, context);
-        if !self.edit.focused {
+    pub fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+        if self.edit.focused {
             self.value = self.edit.text().parse::<i32>().unwrap_or(self.value);
+            if self.value > self.range.end {
+                self.value = self.range.end;
+            };
+            if self.value < self.range.start {
+                self.value = self.range.start;
+            }
+            self.triangle.vertices[self.up_index.clone()].iter_mut().for_each(|x| {
+                x.color = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            });
+            self.triangle.vertices[self.down_index.clone()].iter_mut().for_each(|x| {
+                x.color = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            });
+            self.triangle.prepare(device, context);
+            resp.spinbox_mut(&self.id).unwrap().value = self.value;
             self.edit.set_text(self.value.to_string().as_str(), context);
         }
+        self.edit.mouse_down(device, context);
     }
 
 

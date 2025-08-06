@@ -212,7 +212,7 @@ impl Layout {
             match widget {
                 PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
                 PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
-                PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context),
+                PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, resp),
                 PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
                 PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
                 _ => {}

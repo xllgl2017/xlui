@@ -108,6 +108,22 @@ impl Rect {
         self.offset_y(y);
     }
 
+    pub fn offset_x_to(&mut self, tx: f32) {
+        let ox = tx - self.x.min;
+        self.offset_x(ox)
+    }
+
+    pub fn offset_y_to(&mut self, ty: f32) {
+        let oy = ty - self.y.min;
+        self.offset_y(oy)
+    }
+
+    pub fn offset_to(&mut self, tx: f32, ty: f32) {
+        self.offset_x_to(tx);
+        self.offset_y_to(ty);
+    }
+
+
     pub fn has_position(&self, x: f32, y: f32) -> bool {
         x > self.x.min && x < self.x.max && y > self.y.min && y < self.y.max
     }
