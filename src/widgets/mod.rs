@@ -9,6 +9,7 @@ pub mod spinbox;
 pub mod slider;
 pub mod checkbox;
 pub mod radio;
+pub mod combobox;
 
 pub trait Widget {
     fn draw(&mut self, ui: &mut Ui); //初次绘制调用

@@ -1,4 +1,5 @@
 pub mod scroll_area;
+pub mod popup;
 
 use crate::frame::context::Context;
 use crate::map::Map;
@@ -131,22 +132,23 @@ impl Layout {
 
     pub(crate) fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         for index in &self.display {
-            let widget = &mut self.widgets[*index];
-            match widget {
-                PaintTask::Text(paint_text) => {
-                    paint_text.render(device, context, render_pass)
-                } //绘制文本
-                PaintTask::Image(paint_image) => paint_image.render(device, context, render_pass),
-                PaintTask::ScrollBar(paint_bar) => paint_bar.render(&context.render, render_pass),
-                PaintTask::TextEdit(paint_edit) => paint_edit.render(device, context, render_pass),
-                PaintTask::SpinBox(paint_spin_box) => paint_spin_box.render(device, context, render_pass),
-                PaintTask::Slider(paint_slider) => paint_slider.render(&context.render, render_pass),
-                PaintTask::CheckBox(paint_checkbox) => paint_checkbox.render(device, context, render_pass),
-                PaintTask::Button(paint_button) => paint_button.render(device, context, render_pass),
-                PaintTask::ScrollArea(paint_area) => paint_area.draw(device, context, render_pass),
-                PaintTask::Radio(paint_radio) => paint_radio.draw(device, context, render_pass),
-                _ => {}
-            }
+            self.widgets[*index].draw(device, context, render_pass);
+            // let widget = &mut self.widgets[*index];
+            // match widget {
+            //     PaintTask::Text(paint_text) => {
+            //         paint_text.render(device, context, render_pass)
+            //     } //绘制文本
+            //     PaintTask::Image(paint_image) => paint_image.render(device, context, render_pass),
+            //     PaintTask::ScrollBar(paint_bar) => paint_bar.render(&context.render, render_pass),
+            //     PaintTask::TextEdit(paint_edit) => paint_edit.render(device, context, render_pass),
+            //     PaintTask::SpinBox(paint_spin_box) => paint_spin_box.render(device, context, render_pass),
+            //     PaintTask::Slider(paint_slider) => paint_slider.render(&context.render, render_pass),
+            //     PaintTask::CheckBox(paint_checkbox) => paint_checkbox.render(device, context, render_pass),
+            //     PaintTask::Button(paint_button) => paint_button.render(device, context, render_pass),
+            //     PaintTask::ScrollArea(paint_area) => paint_area.draw(device, context, render_pass),
+            //     PaintTask::Radio(paint_radio) => paint_radio.draw(device, context, render_pass),
+            //     _ => {}
+            // }
         }
     }
 
@@ -226,11 +228,10 @@ impl Layout {
                 PaintTask::TextEdit(paint_edit) => {
                     paint_edit.click(device, context);
                 }
-                PaintTask::SpinBox(paint_spinbox) => {
-                    paint_spinbox.click(device, context, resp);
-                }
+                PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
                 PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
+                PaintTask::ComboBox(paint_combo) => paint_combo.click(device),
                 _ => {}
             }
         }

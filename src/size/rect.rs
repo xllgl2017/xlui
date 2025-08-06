@@ -117,7 +117,7 @@ impl Rect {
     //     self.y.min = y;
     // }
 
-    pub(crate) fn clone_with_size(&mut self, other: &Rect) -> Rect {
+    pub(crate) fn clone_with_size(&self, other: &Rect) -> Rect {
         let mut res = self.clone();
         res.set_width(other.width());
         res.set_height(other.height());

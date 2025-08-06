@@ -12,16 +12,13 @@ use xlui::font::Font;
 use xlui::frame::context::{Context, Render};
 use xlui::size::Size;
 use xlui::{Device, DeviceInput};
-use crate::circle::CircleRender;
 
 mod render;
-mod circle;
 
 struct State {
     device: Device,
     context: Context,
     rounded_renderer: RoundedBorderRenderer,
-    circle: CircleRender,
 }
 
 impl State {
@@ -65,13 +62,11 @@ impl State {
             render: Render::new(&device),
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
-        let circle = CircleRender::new(&device);
 
         let mut state = State {
             device,
             context,
             rounded_renderer,
-            circle,
         };
 
         // Configure surface for the first time
@@ -133,7 +128,6 @@ impl State {
             occlusion_query_set: None,
         });
         self.rounded_renderer.draw(&mut renderpass);
-        self.circle.render(&mut renderpass);
         drop(renderpass);
 
         // Submit the command in the queue to execute

@@ -46,14 +46,20 @@ pub struct WidgetStyle {
     pub click: ClickStyle,
 }
 
-impl WidgetStyle {
+pub struct Shadow {
+    pub offset: [f32; 2],
+    pub spread: f32,
+    pub color: Color,
+}
 
-
-    // pub fn color(&self, click: bool, hovered: bool) -> &Color {
-    //     if click { return &self.click.clicked; }
-    //     if hovered { return &self.click.hovered; }
-    //     &self.click.inactive
-    // }
+impl Shadow {
+    pub fn new() -> Shadow {
+        Shadow {
+            offset: [0.0; 2],
+            spread: 0.0,
+            color: Color::TRANSPARENT,
+        }
+    }
 }
 
 

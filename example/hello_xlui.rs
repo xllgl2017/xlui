@@ -1,8 +1,10 @@
 use xlui::frame::App;
+use xlui::layout::popup::Popup;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
+use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::label::Label;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
@@ -78,23 +80,33 @@ impl App for XlUiApp {
             CheckBox::new(false, "checkbox1").connect(Self::check).draw(ui);
             ui.checkbox(true, "checkbox2").connect(Self::check);
         });
-        let area = ScrollArea::new().with_size(300.0, 400.0);
-        area.show(ui, |ui| {
-            ui.label("start");
-            ui.vertical(|ui| {
-                ui.label("sv1");
-                ui.label("sv2");
-                ui.button("sv3").connect(Self::click1);
+        ui.horizontal(|ui| {
+            let area = ScrollArea::new().with_size(300.0, 400.0);
+            area.show(ui, |ui| {
+                ui.label("start");
+                ui.vertical(|ui| {
+                    ui.label("sv1");
+                    ui.label("sv2");
+                    ui.button("sv3").connect(Self::click1);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("sh1");
+                    ui.label("sh2");
+                    ui.button("sh3");
+                });
+                for i in 0..1000 {
+                    ui.label(format!("i{}", i));
+                }
+                ui.label("end");
             });
-            ui.horizontal(|ui| {
-                ui.label("sh1");
-                ui.label("sh2");
-                ui.button("sh3");
-            });
-            for i in 0..1000 {
-                ui.label(format!("i{}", i));
-            }
-            ui.label("end");
+            ComboBox::new().with_popup_height(150.0).with_widgets(|ui| {
+                ui.label("c1");
+                ui.label("c2");
+                ui.label("c3");
+                ui.label("c4");
+                ui.label("c5");
+
+            }).draw(ui);
         });
 
         ui.label("hello label1");

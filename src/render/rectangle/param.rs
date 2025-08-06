@@ -1,5 +1,5 @@
 use crate::size::rect::Rect;
-use crate::style::ClickStyle;
+use crate::style::{ClickStyle, Shadow};
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
@@ -24,6 +24,7 @@ pub struct RectDrawParam {
 pub struct RectParam {
     pub(crate) rect: Rect,
     pub(crate) style: ClickStyle,
+    shadow: Shadow,
     draw: RectDrawParam,
 }
 
@@ -31,6 +32,7 @@ impl RectParam {
     pub fn new(rect: Rect, style: ClickStyle) -> Self {
         let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
         let border = style.dyn_border(false, false);
+        let shadow = Shadow::new();
         let draw = RectDrawParam {
             pos: [rect.x.min, rect.y.min],
             size: [rect.width(), rect.height()],
@@ -41,18 +43,28 @@ impl RectParam {
             border_width: border.width,
             _pad0: [0.0; 3],
             border_color: border.color.as_gamma_rgba(),
-            shadow_offset: [0.0, 0.0],
-            shadow_spread: 0.0,
+            shadow_offset: shadow.offset,
+            shadow_spread: shadow.spread,
             _pad1: [0.0; 1],
-            shadow_color: [0.0, 0.0, 0.0, 0.0],
+            shadow_color: shadow.color.as_gamma_rgba(),
             fill_color,
         };
         RectParam {
             rect,
             style,
+            shadow,
             draw,
         }
     }
+
+    pub fn with_shadow(mut self, shadow: Shadow) -> RectParam {
+        self.shadow = shadow;
+        self.draw.shadow_offset = self.shadow.offset;
+        self.draw.shadow_spread = self.shadow.spread;
+        self.draw.shadow_color = self.shadow.color.as_gamma_rgba();
+        self
+    }
+
     pub fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);

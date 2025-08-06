@@ -2,6 +2,7 @@ use xlui::frame::{App, WindowAttribute};
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
+use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::label::Label;
 use xlui::widgets::radio::RadioButton;
 use xlui::widgets::slider::Slider;
@@ -83,6 +84,15 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             RadioButton::new(false, "radiobutton").connect(Self::radio).draw(ui);
             ui.radio(true, "radiobutton").connect(Self::radio);
+        });
+        ui.horizontal(|ui|{
+            ComboBox::new().with_popup_height(150.0).with_widgets(|ui|{
+                ui.label("c1");
+                ui.label("c2");
+                ui.label("c3");
+                ui.label("c4");
+                ui.label("c5");
+            }).draw(ui);
         });
 
 

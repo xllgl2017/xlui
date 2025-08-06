@@ -9,6 +9,9 @@ use crate::paint::spinbox::PaintSpinBox;
 use crate::paint::text::PaintText;
 use crate::vertex::Vertex;
 use crate::{Device, SAMPLE_COUNT};
+use crate::frame::context::Context;
+use crate::paint::combobox::PaintComboBox;
+use crate::paint::popup::PaintPopup;
 use crate::paint::radio::PaintRadioButton;
 use crate::size::rect::Rect;
 
@@ -26,6 +29,8 @@ pub mod checkbox;
 pub mod scroll_area;
 pub mod button;
 pub mod radio;
+pub mod popup;
+pub mod combobox;
 
 fn gen_render_pipeline(device: &Device, topology: wgpu::PrimitiveTopology) -> wgpu::RenderPipeline {
     let shader = device.device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -87,6 +92,8 @@ pub(crate) enum PaintTask {
     Button(PaintButton),
     ScrollArea(PaintScrollArea),
     Radio(PaintRadioButton),
+    Popup(PaintPopup),
+    ComboBox(PaintComboBox),
 }
 
 impl PaintTask {
@@ -109,6 +116,26 @@ impl PaintTask {
             PaintTask::Button(t) => &t.rect(),
             PaintTask::ScrollArea(t) => &t.rect,
             PaintTask::Radio(t) => &t.rect,
+            PaintTask::Popup(t) => &t.rect,
+            PaintTask::ComboBox(t) => t.rect()
+        }
+    }
+
+    pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
+        match self {
+            PaintTask::Text(paint_text) => paint_text.render(device, context, render_pass), //绘制文本
+            PaintTask::Image(paint_image) => paint_image.render(device, context, render_pass),
+            PaintTask::ScrollBar(paint_bar) => paint_bar.render(&context.render, render_pass),
+            PaintTask::TextEdit(paint_edit) => paint_edit.render(device, context, render_pass),
+            PaintTask::SpinBox(paint_spin_box) => paint_spin_box.render(device, context, render_pass),
+            PaintTask::Slider(paint_slider) => paint_slider.render(&context.render, render_pass),
+            PaintTask::CheckBox(paint_checkbox) => paint_checkbox.render(device, context, render_pass),
+            PaintTask::Button(paint_button) => paint_button.render(device, context, render_pass),
+            PaintTask::ScrollArea(paint_area) => paint_area.draw(device, context, render_pass),
+            PaintTask::Radio(paint_radio) => paint_radio.draw(device, context, render_pass),
+            PaintTask::Popup(paint_popup) => paint_popup.draw(device, context, render_pass),
+            PaintTask::ComboBox(paint_combo) => paint_combo.draw(device, context, render_pass),
+            _ => {}
         }
     }
 
