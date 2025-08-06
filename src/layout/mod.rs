@@ -209,14 +209,14 @@ impl Layout {
         updates
     }
 
-    pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context) {
+    pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for (_, widget) in self.widgets.iter_mut() {
             match widget {
                 PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
                 PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context),
-                PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device),
-                PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context),
+                PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
+                PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
                 _ => {}
             }
         }
@@ -232,6 +232,7 @@ impl Layout {
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
                 PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
                 PaintTask::ComboBox(paint_combo) => paint_combo.click(device),
+                PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
                 _ => {}
             }
         }

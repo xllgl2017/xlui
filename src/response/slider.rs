@@ -8,6 +8,7 @@ pub struct SliderResponse {
     pub(crate) event: DrawnEvent,
     pub(crate) callback: Callback,
     pub(crate) value: f32,
+    pub(crate) focused: bool,
 }
 
 impl SliderResponse {
@@ -17,14 +18,13 @@ impl SliderResponse {
             event: DrawnEvent::None,
             callback: Callback::new(),
             value: 0.0,
+            focused: false,
         }
     }
 
     pub fn connect<A: 'static>(&mut self, f: fn(&mut A, &mut UiM, f32)) {
         self.callback.slider = Some(Callback::create_slider(f));
     }
-
-
 }
 
 impl WidgetResponse for SliderResponse {

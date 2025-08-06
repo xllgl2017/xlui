@@ -150,7 +150,8 @@ impl Response {
         if slider_resp.is_none() { return; }
         let slider_resp = slider_resp.unwrap();
         let slider_value = slider_resp.value;
-        if let Some(ref mut callback) = slider_resp.callback().slider {
+        let focused = slider_resp.focused;
+        if let Some(ref mut callback) = slider_resp.callback().slider && focused {
             callback(app, uim, slider_value);
             uim.context.window.request_redraw();
         }
@@ -198,10 +199,8 @@ impl Response {
     }
 
     pub fn mouse_move<A: 'static>(&mut self, app: &mut A, device: &Device, uim: &mut UiM) {
-        let (x, y) = device.device_input.mouse.lastest();
+        if !device.device_input.mouse.pressed { return; }
         for (_, value) in self.values.iter_mut() {
-            let has_pos = value.rect().has_position(x, y);
-            if !has_pos { continue; }
             Self::slider(value, app, uim);
         }
     }
@@ -218,9 +217,9 @@ impl Response {
         Some(resp)
     }
 
-    pub fn spinbox_mut(&mut self,id:&String)->Option<&mut SpinBoxResponse>{
-        let resp=self.values.get_mut(id)?;
-        let resp=resp.as_any_mut().downcast_mut::<SpinBoxResponse>()?;
+    pub fn spinbox_mut(&mut self, id: &String) -> Option<&mut SpinBoxResponse> {
+        let resp = self.values.get_mut(id)?;
+        let resp = resp.as_any_mut().downcast_mut::<SpinBoxResponse>()?;
         Some(resp)
     }
 }

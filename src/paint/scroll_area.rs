@@ -9,6 +9,7 @@ use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::Device;
+use crate::response::Response;
 
 pub struct PaintScrollArea {
     layouts: Vec<Layout>,
@@ -60,7 +61,6 @@ impl PaintScrollArea {
     }
 
     pub fn mouse_move(&mut self, device: &Device, context: &mut Context) -> Vec<(String, Rect)> {
-        // self.scroll.mouse_move(device, context);
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
         let mut updates = vec![];
@@ -76,35 +76,19 @@ impl PaintScrollArea {
             self.scroll.mouse_move(device, context);
             for layout in self.layouts.iter_mut() {
                 if self.scroll.offset_y != 0.0 { updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y)); }
-                // updates.append(&mut layout.mouse_move(device, context));
             }
         }
-
-
-        // if self.fill.param.rect.has_position(x, y) {}
-        //
-        //
-        // if self.fill.param.rect.has_position(x, y) && self.focused && device.device_input.mouse.pressed {} else {
-        //     for layout in self.layouts.iter_mut() {
-        //         if self.scroll.offset_y != 0.0 {
-        //             updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y));
-        //             context.window.request_redraw();
-        //         }
-        //         layout.mouse_move(device, context);
-        //     }
-        // }
         updates
     }
 
-    pub fn mouse_down(&mut self, device: &Device, context: &mut Context) {
+    pub fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
         self.focused = self.fill.param.rect.has_position(x, y);
         self.scrolling = false;
-        // println!("scroll down {}", self.focused);
         self.scroll.mouse_down(device);
         if self.focused { //处于视图内部
             for layout in self.layouts.iter_mut() {
-                layout.mouse_down(device, context);
+                layout.mouse_down(device, context, resp);
             }
         }
     }

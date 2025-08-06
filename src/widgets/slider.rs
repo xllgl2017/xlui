@@ -53,6 +53,7 @@ impl Widget for Slider {
             event: DrawnEvent::Click,
             callback: Callback::slider(self.callback.take()),
             value: self.value,
+            focused: false,
         });
     }
 

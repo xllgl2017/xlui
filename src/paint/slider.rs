@@ -21,6 +21,7 @@ pub struct PaintSlider {
     value: f32,
     value_range: Range<f32>,
     focused: bool,
+    hovered: bool,
 }
 
 impl PaintSlider {
@@ -44,7 +45,6 @@ impl PaintSlider {
         let offset = slider.value * slider.rect.width() / (slider.range.end - slider.range.start);
         slider_rect.offset_x(offset);
 
-        // let cx = [slider_rect.x.center(), slider_rect.y.center()];
         let mut slider_style = ui.style.widget.click.clone();
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
@@ -56,10 +56,6 @@ impl PaintSlider {
         let data = slider_param.as_draw_param(false, false);
         let slider_buffer = ui.ui_manage.context.render.circle.create_buffer(&ui.device, data);
         let slider_index = ui.ui_manage.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
-        // let mut slider_rectangle = PaintRectangle::new(ui, slider_rect);
-
-        // slider_rectangle.set_style(slider_style);
-        // slider_rectangle.prepare(&ui.device, false, false);
         PaintSlider {
             id: slider.id.clone(),
             fill,
@@ -69,6 +65,7 @@ impl PaintSlider {
             value_range: slider.range.clone(),
             focused: false,
             slider_param,
+            hovered: false,
         }
     }
 
@@ -96,14 +93,25 @@ impl PaintSlider {
             resp.slider_mut(&self.id).unwrap().value = cv;
             self.value = cv;
         }
-        let data = self.slider_param.as_draw_param(has_pos, device.device_input.mouse.pressed);
+        let data = self.slider_param.as_draw_param(has_pos || self.focused, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.slider_buffer, 0, data);
-        // self.slider.prepare(device, has_pos, device.device_input.mouse.pressed);
+        if self.hovered != has_pos {
+            self.hovered = has_pos;
+            context.window.request_redraw();
+        }
     }
 
-    pub fn mouse_down(&mut self, device: &Device) {
+    pub fn mouse_down(&mut self, device: &Device, resp: &mut Response) {
         let (x, y) = device.device_input.mouse.lastest();
         self.focused = self.slider_param.rect.has_position(x, y);
+        resp.slider_mut(&self.id).unwrap().focused = self.focused;
+    }
+
+    pub fn mouse_release(&mut self,device: &Device, resp: &mut Response) {
+        self.focused = false;
+        resp.slider_mut(&self.id).unwrap().focused = self.focused;
+        let data = self.slider_param.as_draw_param(self.focused, device.device_input.mouse.pressed);
+        device.queue.write_buffer(&self.slider_buffer, 0, data);
     }
 
     pub fn rect(&self) -> &Rect { &self.fill.param.rect }
