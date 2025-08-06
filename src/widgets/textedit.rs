@@ -4,7 +4,6 @@ use crate::paint::color::Color;
 use crate::paint::edit::PaintTextEdit;
 use crate::paint::PaintTask;
 use crate::radius::Radius;
-use crate::response::button::ButtonResponse;
 use crate::response::{Callback, DrawnEvent};
 use crate::response::textedit::TextEditResponse;
 use crate::size::border::Border;

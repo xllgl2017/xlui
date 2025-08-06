@@ -261,7 +261,6 @@ impl Ui {
         for layout in self.ui_manage.layouts.iter_mut() {
             res.append(&mut layout.key_input(&self.device, &mut self.ui_manage.context, key.clone(), &mut self.response));
         }
-        println!("{:?}", res);
         for re in res {
             self.response.key_input(re, app, &mut self.ui_manage);
         }

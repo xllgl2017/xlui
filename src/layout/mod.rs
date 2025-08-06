@@ -20,7 +20,6 @@ pub enum LayoutDirection {
 pub struct Layout {
     pub(crate) id: String,
     direction: LayoutDirection,
-    need_repaint: bool,
     pub(crate) item_space: f32, //item之间的间隔
     pub max_rect: Rect,
     pub(crate) available_rect: Rect,
@@ -37,7 +36,6 @@ impl Layout {
             id: crate::gen_unique_id(),
             direction,
             widgets: Map::new(),
-            need_repaint: true,
             item_space: 5.0,
             available_rect: Rect::new(),
             max_rect: Rect::new(),
@@ -229,7 +227,7 @@ impl Layout {
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
                 PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
                 PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
-                PaintTask::ComboBox(paint_combo) => paint_combo.click(device),
+                PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
                 PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
                 _ => {}
             }

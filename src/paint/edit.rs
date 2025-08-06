@@ -1,14 +1,13 @@
 use crate::frame::context::Context;
 use crate::paint::rectangle::PaintRectangle;
 use crate::paint::text::PaintText;
+use crate::response::Response;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
-use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
-use crate::{Device, Pos};
-use crate::response::Response;
 use crate::widgets::textedit::TextEdit;
+use crate::{Device, Pos};
 
 struct TextChar {
     x: Pos,
@@ -61,7 +60,6 @@ impl CharLayout {
     }
 
     fn reset_cursor(&mut self, index: usize) {
-        println!("reset_cursor {}", index);
         self.cursor = index;
     }
 
