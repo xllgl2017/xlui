@@ -1,6 +1,25 @@
-# 🚀<img alt="&lt;img alt=&quot;logo&quot; height=&quot;30&quot;&gt;" height="30" src="img/logo/logo_96.png" width="30"/> xlui: 
-[<img alt="github" src="https://img.shields.io/badge/github-xllgl2017/xlui-8da0cb?logo=github" height="20">](https://github.com/xllgl2017/xlui) [![Latest version](https://img.shields.io/crates/v/xlui.svg)](https://crates.io/crates/xlui) [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/xlui/blob/main/LICENSE-APACHE)
+# 🚀<img alt="logo" height="30" src="img/logo/logo_96.png" width="30"/> xlui:
+
+[<img alt="github" src="https://img.shields.io/badge/github-xllgl2017/xlui-8da0cb?logo=github" height="20">](https://github.com/xllgl2017/xlui)
+[![Latest version](https://img.shields.io/crates/v/xlui.svg)](https://crates.io/crates/xlui)
+[![Documentation](https://docs.rs/xlui/badge.svg)](https://docs.rs/xlui)
+[![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/xlui/blob/main/LICENSE-APACHE)
+
+&nbsp;&nbsp;&nbsp;&nbsp; xlui是一个Rust的2D GUI库，体积小(最小第三方依赖)，简单易用，在保证性能的前提下尽量减少CPU的开销。
+
+### xlui的目标
+
+| 适配情况 |   目标系统    |    平台UI     |
+|:----:|:---------:|:-----------:|
+|  ✅   |   Linux   | x11,wayland |
+|  ⬜️  |  Windows  |    10,11    |
+|  ⬜️  |   MacOS   |      -      |
+|  ⬜️  |  Android  |     11+     |
+|  ⬜️  |    Web    |    Wasm     |
+|  ❌   | HarmonyOS |   暂无适配计划    |
+
 ### 示例
+
 ```rust
 fn main() {
     XlUiApp::new().run();
@@ -30,7 +49,6 @@ impl XlUiApp {
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
     }
-
 }
 
 impl App for XlUiApp {
@@ -52,7 +70,9 @@ impl App for XlUiApp {
 ```
 
 ## 控件(目前可用)
+
 ### ✅ Label
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.label("hello label");
@@ -62,6 +82,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ```
 
 ### ✅ Button
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.button("hello button").connect(Self::clicked);
@@ -71,6 +92,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ```
 
 ### ✅ Slider
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.slider(30.0, 0.0..100.0).connect(Self::slider);
@@ -80,6 +102,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ```
 
 ### ✅ SpinBox
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.spinbox(1, 0..10).connect(Self::changed);
@@ -89,6 +112,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ```
 
 ### ✅ CheckBox
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.checkbox(true, "checkbox1").connect(Self::checked);
@@ -96,7 +120,9 @@ fn draw(&mut self, ui: &mut Ui) {
     CheckBox::new(false, "checkbox2").connect(Self::checked).draw(ui);
 }
 ```
+
 ### ✅ Image
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.image("logo.jpg", (200.0, 200.0));
@@ -106,6 +132,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ```
 
 ### ✅ RadioButton
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.radio(true, "radiobutton").connect(Self::radio);
@@ -114,13 +141,36 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
+### ✅ ComboBox
+
+```rust
+fn draw(&mut self, ui: &mut Ui) {
+    // ui.radio(true, "radiobutton").connect(Self::radio);
+    //或者
+    ComboBox::new().with_popup_height(150.0).with_widgets(|ui| {
+        ui.label("c1");
+        ui.label("c2");
+        ui.label("c3");
+        ui.label("c4");
+        ui.label("c5");
+    }).draw(ui);
+}
+```
+
 ### ✅ ScrollBar(垂直)
+
+```rust
+fn draw(&mut self, ui: &mut Ui) {
+    ScrollBar::new().with_size(20.0, 100.0).draw(ui);
+}
+```
 
 ### ⬜️ TextEdit
 
 ## 布局
 
 ### ✅ Layout(垂直、水平)
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     ui.horizontal(|ui| {
@@ -133,6 +183,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ```
 
 ### ✅ ScrollArea(垂直)
+
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
     let area = ScrollArea::new().with_size(300.0, 400.0);
@@ -155,7 +206,5 @@ fn draw(&mut self, ui: &mut Ui) {
     });
 }
 ```
-
-
 
 [//]: # (❌)
