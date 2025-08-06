@@ -1,5 +1,16 @@
+//!### ComboBox的示例用法
+//!
+//! ```
+//! use xlui::widgets::combobox::ComboBox;
+//! use xlui::widgets::Widget;
+//! # xlui::_run_test(|ui|{
+//!    ComboBox::new().with_popup_height(150.0).with_widgets(|ui|{
+//!        ui.label("combo");
+//!    }).draw(ui);
+//! # });
+//! ```
+
 use crate::frame::context::Context;
-use crate::layout::Layout;
 use crate::layout::popup::Popup;
 use crate::paint::combobox::PaintComboBox;
 use crate::paint::PaintTask;
@@ -27,7 +38,7 @@ impl ComboBox {
             popup: Popup::new(),
             size_mode: SizeMode::Auto,
             text_buffer: TextBuffer::new("".to_string()),
-            widgets: |ui| {},
+            widgets: |_| {},
         }
     }
 
@@ -52,6 +63,7 @@ impl ComboBox {
         self
     }
 
+    /// 设置popup的高度
     pub fn with_popup_height(mut self, height: f32) -> Self {
         self.popup.rect_mut().set_height(height);
         self

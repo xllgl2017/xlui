@@ -11,9 +11,7 @@ use crate::ui::Ui;
 
 pub struct PaintPopup {
     pub(crate) rect: Rect,
-    fill_buffer: wgpu::Buffer,
     fill_index: usize,
-    fill_param: RectParam,
     layout: Layout,
 }
 
@@ -32,9 +30,7 @@ impl PaintPopup {
         let fill_index = ui.ui_manage.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
         PaintPopup {
             rect: popup.rect().clone(),
-            fill_buffer,
             fill_index,
-            fill_param,
             layout: popup.layout.take().unwrap(),
         }
     }
