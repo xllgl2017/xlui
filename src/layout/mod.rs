@@ -179,13 +179,13 @@ impl Layout {
         self.display.push(self.widgets.len() - 1)
     }
 
-    #[deprecated]
-    pub(crate) fn rect(&self) -> Rect {
-        let mut rect = self.max_rect.clone();
-        rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
-        rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
-        rect
-    }
+    // #[deprecated]
+    // pub(crate) fn rect(&self) -> Rect {
+    //     let mut rect = self.max_rect.clone();
+    //     rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
+    //     rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
+    //     rect
+    // }
 
     fn drawn_rect(&self) -> Rect {
         let mut rect = self.max_rect.clone();
@@ -199,7 +199,7 @@ impl Layout {
     pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
         let mut updates = vec![];
         for widget in self.widgets.iter_mut() {
-            widget.mouse_move(device, context, resp);
+            updates.append(&mut widget.mouse_move(device, context, resp));
         }
         updates
     }

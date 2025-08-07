@@ -247,8 +247,6 @@ impl PaintTextEdit {
         self.mouse_down_x = x;
     }
 
-    pub fn click(&mut self, device: &Device, context: &Context) {}
-
     pub fn text_select(&mut self, device: &Device) {
         let lx = device.device_input.mouse.lastest().0;
         self.has_select = true;

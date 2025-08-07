@@ -180,7 +180,6 @@ impl PaintTask {
 
     pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         match self {
-            PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
             PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
             PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
             PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
@@ -189,18 +188,4 @@ impl PaintTask {
             _ => {}
         }
     }
-
-    // pub fn paint_rectangle(&mut self) -> &mut PaintRectangle {
-    //     match self {
-    //         PaintTask::Rectangle(paint_rectangle) => paint_rectangle,
-    //         _ => panic!("应该是PaintTask::Rectangle"),
-    //     }
-    // }
-    //
-    // pub fn paint_line(&mut self) -> &mut PaintLine {
-    //     match self {
-    //         PaintTask::Line(paint_line) => paint_line,
-    //         _ => panic!("应该是PaintTask::Line"),
-    //     }
-    // }
 }

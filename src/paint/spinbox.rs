@@ -124,7 +124,6 @@ impl PaintSpinBox {
             context.window.request_redraw();
         }
         resp.spinbox_mut(&self.id).unwrap().value = self.value;
-        self.edit.click(device, context);
     }
 
     pub fn mouse_move(&mut self, device: &Device, context: &Context) {

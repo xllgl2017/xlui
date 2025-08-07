@@ -19,7 +19,6 @@ pub struct PaintText {
 
 impl PaintText {
     pub fn new(ui: &mut Ui, text_buffer: &TextBuffer) -> PaintText {
-        // println!("text {:?} {}", text_buffer.rect, text_buffer.text);
         let mut buffer = glyphon::Buffer::new(&mut ui.ui_manage.context.render.text.font_system, glyphon::Metrics::new(text_buffer.text_size.font_size, text_buffer.text_size.line_height));
         buffer.set_wrap(&mut ui.ui_manage.context.render.text.font_system, text_buffer.text_wrap.as_gamma());
         buffer.set_text(&mut ui.ui_manage.context.render.text.font_system, &text_buffer.text, &ui.ui_manage.context.font.font_attr(), Shaping::Advanced);

@@ -23,8 +23,6 @@ pub struct PaintScrollArea {
 
 impl PaintScrollArea {
     pub fn new(mut scroll_area: ScrollArea, ui: &mut Ui) -> Self {
-        // println!("{} {}", scroll_area.layout.height, scroll_area.layout.max_rect.height());
-
         let mut fill_rect = scroll_area.rect.clone();
         fill_rect.x.max = fill_rect.x.max - scroll_area.v_bar.rect.width() - 2.0;
         let mut fill = PaintRectangle::new(ui, fill_rect);
@@ -86,9 +84,6 @@ impl PaintScrollArea {
         self.scroll.mouse_down(device);
         if self.focused { //处于视图内部
             self.layout.mouse_down(device, context, resp);
-            // for layout in self.layouts.iter_mut() {
-            //     layout.mouse_down(device, context, resp);
-            // }
         }
     }
 
@@ -98,10 +93,7 @@ impl PaintScrollArea {
         if !has_pos { return vec![]; }
         self.scroll.offset_y(device, -device.device_input.mouse.delta_y() * 10.0, true);
         if self.scroll.offset_y == 0.0 { return vec![]; }
-        let mut updates = self.layout.offset(device, 0.0, -self.scroll.offset_y);
-        // for layout in self.layouts.iter_mut() {
-        //     updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y))
-        // }
+        let updates = self.layout.offset(device, 0.0, -self.scroll.offset_y);
         context.window.request_redraw();
         updates
     }
