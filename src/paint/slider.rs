@@ -1,16 +1,18 @@
 use crate::frame::context::{Context, Render};
+use crate::frame::App;
 use crate::paint::color::Color;
 use crate::paint::rectangle::PaintRectangle;
 use crate::radius::Radius;
+use crate::render::circle::param::CircleParam;
+use crate::render::WrcRender;
+use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
-use crate::Device;
-use std::ops::Range;
-use crate::render::circle::param::CircleParam;
-use crate::render::WrcRender;
-use crate::response::Response;
 use crate::widgets::slider::Slider;
+use crate::Device;
+use std::any::Any;
+use std::ops::Range;
 
 pub struct PaintSlider {
     id: String,
@@ -22,10 +24,11 @@ pub struct PaintSlider {
     value_range: Range<f32>,
     focused: bool,
     hovered: bool,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, f32)>>,
 }
 
 impl PaintSlider {
-    pub fn new(ui: &mut Ui, slider: &Slider) -> PaintSlider {
+    pub fn new(ui: &mut Ui, slider: &mut Slider) -> PaintSlider {
         let mut fill_rect = slider.rect.clone();
         fill_rect.y.min += 5.0;
         fill_rect.y.max -= 5.0;
@@ -66,6 +69,7 @@ impl PaintSlider {
             focused: false,
             slider_param,
             hovered: false,
+            callback: slider.callback.take(),
         }
     }
 
@@ -74,7 +78,7 @@ impl PaintSlider {
         render.circle.render(self.slider_index, render_pass);
     }
 
-    pub fn mouse_move(&mut self, device: &Device, context: &Context, resp: &mut Response) {
+    pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         let (x, y) = device.device_input.mouse.lastest();
         let slider_rect = &mut self.slider_param.rect;
         let fill_rect = &mut self.fill.param.rect;
@@ -90,7 +94,10 @@ impl PaintSlider {
             let cl = (slider_rect.width() / 2.0 + slider_rect.x.min - fill_rect.x.min) / fill_rect.width();
             let cv = (self.value_range.end - self.value_range.start) * cl;
             if self.value != cv { context.window.request_redraw(); }
-            resp.slider_mut(&self.id).unwrap().value = cv;
+            if let Some(ref mut callback) = self.callback {
+                callback(app, context, self.value);
+            }
+            // resp.slider_mut(&self.id).unwrap().value = cv;
             self.value = cv;
         }
         let data = self.slider_param.as_draw_param(has_pos || self.focused, device.device_input.mouse.pressed);
@@ -101,18 +108,22 @@ impl PaintSlider {
         }
     }
 
-    pub fn mouse_down(&mut self, device: &Device, resp: &mut Response) {
+    pub fn mouse_down(&mut self, device: &Device) {
         let (x, y) = device.device_input.mouse.lastest();
         self.focused = self.slider_param.rect.has_position(x, y);
-        resp.slider_mut(&self.id).unwrap().focused = self.focused;
+        // resp.slider_mut(&self.id).unwrap().focused = self.focused;
     }
 
-    pub fn mouse_release(&mut self,device: &Device, resp: &mut Response) {
+    pub fn mouse_release(&mut self, device: &Device) {
         self.focused = false;
-        resp.slider_mut(&self.id).unwrap().focused = self.focused;
+        // resp.slider_mut(&self.id).unwrap().focused = self.focused;
         let data = self.slider_param.as_draw_param(self.focused, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.slider_buffer, 0, data);
     }
 
     pub fn rect(&self) -> &Rect { &self.fill.param.rect }
+
+    pub fn connect<A: App>(&mut self, f: fn(&mut A, &mut Context, f32)) {
+        self.callback = Some(Callback::create_slider(f));
+    }
 }

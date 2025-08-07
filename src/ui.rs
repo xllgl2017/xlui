@@ -13,12 +13,13 @@ use crate::widgets::spinbox::SpinBox;
 use crate::widgets::Widget;
 use crate::{Device, SAMPLE_COUNT};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use crate::frame::App;
+use crate::paint::button::PaintButton;
+use crate::paint::checkbox::PaintCheckBox;
+use crate::paint::radio::PaintRadioButton;
 use crate::paint::rectangle::PaintRectangle;
-use crate::response::button::ButtonResponse;
-use crate::response::checkbox::CheckBoxResponse;
-use crate::response::{Callback, DrawnEvent, Response};
-use crate::response::slider::SliderResponse;
-use crate::response::spinbox::SpinBoxResponse;
+use crate::paint::slider::PaintSlider;
+use crate::paint::spinbox::PaintSpinBox;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::radio::RadioButton;
 use crate::widgets::slider::Slider;
@@ -65,7 +66,6 @@ pub struct Ui {
     pub(crate) style: Style,
     pub(crate) current_layout: Option<Layout>,
     pub(crate) ui_manage: UiM,
-    pub(crate) response: Response,
     pub(crate) current_scrollable: bool,
     pub(crate) scroll_layouts: Vec<Layout>,
     pub(crate) ids: Vec<String>,
@@ -83,7 +83,6 @@ impl Ui {
             current_layout: Some(layout),
             current_scrollable: false,
             ui_manage: UiM::new(context),
-            response: Response::new(),
             scroll_layouts: vec![],
             ids: vec![],
         }
@@ -94,14 +93,11 @@ impl Ui {
         self.ids.push(id.clone());
         let layout = self.current_layout.as_mut().unwrap();
         layout.insert_widget(id, paint_task);
-        // layout.ids.insert(id, layout.widgets.len());
-        // layout.widgets.push(paint_task);
     }
 
-    pub fn horizontal(&mut self, callback: impl Fn(&mut Ui)) {
+    pub fn horizontal(&mut self, mut callback: impl FnMut(&mut Ui)) {
         let mut previous_layout = self.current_layout.take().unwrap();
         let rect = previous_layout.available_rect.clone();
-        // rect.y.max = 0.0;
         let current_layout = Layout::left_to_right().with_max_rect(rect);
         self.current_layout.replace(current_layout); //设置当前布局
         callback(self);
@@ -136,16 +132,20 @@ impl Ui {
         label.draw(self);
     }
 
-    pub fn button(&mut self, text: &str) -> &mut ButtonResponse {
+    pub fn button(&mut self, text: &str) -> &mut PaintButton {
         let mut button = Button::new(text.to_string());
         button.draw(self);
-        self.response.button_response()
+        let layout = self.current_layout.as_mut().unwrap();
+        let task = layout.widgets.get_mut(&button.id).unwrap();
+        task.paint_btn_mut()
     }
 
-    pub fn spinbox(&mut self, value: i32, range: Range<i32>) -> &mut SpinBoxResponse {
+    pub fn spinbox(&mut self, value: i32, range: Range<i32>) -> &mut PaintSpinBox {
         let mut spinbox = SpinBox::new(value).with_range(range);
         spinbox.draw(self);
-        self.response.spinbox_response()
+        let layout = self.current_layout.as_mut().unwrap();
+        let task = layout.widgets.get_mut(&spinbox.id).unwrap();
+        task.paint_spinbox_mut()
     }
 
     pub fn image(&mut self, source: &'static str, size: (f32, f32)) {
@@ -153,22 +153,28 @@ impl Ui {
         image.draw(self);
     }
 
-    pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut SliderResponse {
+    pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut PaintSlider {
         let mut slider = Slider::new(v).with_range(r);
         slider.draw(self);
-        self.response.slider_response()
+        let layout = self.current_layout.as_mut().unwrap();
+        let task = layout.widgets.get_mut(&slider.id).unwrap();
+        task.paint_slider_mut()
     }
 
-    pub fn checkbox(&mut self, check: bool, label: impl ToString) -> &mut CheckBoxResponse {
+    pub fn checkbox(&mut self, check: bool, label: impl ToString) -> &mut PaintCheckBox {
         let mut checkbox = CheckBox::new(check, label);
         checkbox.draw(self);
-        self.response.check_response()
+        let layout = self.current_layout.as_mut().unwrap();
+        let task = layout.widgets.get_mut(&checkbox.id).unwrap();
+        task.paint_checkbox_mut()
     }
 
-    pub fn radio(&mut self, check: bool, label: impl ToString) -> &mut CheckBoxResponse {
+    pub fn radio(&mut self, check: bool, label: impl ToString) -> &mut PaintRadioButton {
         let mut radio_btn = RadioButton::new(check, label);
         radio_btn.draw(self);
-        self.response.check_response()
+        let layout = self.current_layout.as_mut().unwrap();
+        let task = layout.widgets.get_mut(&radio_btn.id).unwrap();
+        task.paint_radio_mut()
     }
 
     pub fn available_rect(&self) -> Rect {
@@ -176,18 +182,16 @@ impl Ui {
     }
 
 
-    pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) -> &mut ButtonResponse {
-        println!("{:?}",rect);
+    pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) -> &mut PaintRectangle {
+        println!("{:?}", rect);
         let mut task = PaintRectangle::new(self, rect);
         task.set_style(style);
         task.prepare(&self.device, false, false);
-        self.response.insert(task.id.clone(), ButtonResponse {
-            rect: task.rect().clone(),
-            event: DrawnEvent::None,
-            callback: Callback::new(),
-        });
+        let id = task.id.clone();
         self.add_paint_task(task.id.clone(), PaintTask::Rectangle(task));
-        self.response.button_response()
+        let layout = self.current_layout.as_mut().unwrap();
+        let task = layout.widgets.get_mut(&id).unwrap();
+        task.paint_rect_mut()
     }
 
     pub fn add(&mut self, mut widget: impl Widget) {
@@ -244,30 +248,24 @@ impl Ui {
 }
 
 impl Ui {
-    pub(crate) fn mouse_move<A: 'static>(&mut self, app: &mut A) {
-        let mut updates = vec![];
+    pub(crate) fn mouse_move<A: App>(&mut self, app: &mut A) {
         for layout in self.ui_manage.layouts.iter_mut() {
-            updates.append(&mut layout.mouse_move(&self.device, &mut self.ui_manage.context, &mut self.response));
+            layout.mouse_move(&self.device, &mut self.ui_manage.context, app)
         }
-        for (id, rect) in updates {
-            self.response.update(id, rect);
-        }
-        self.response.mouse_move(app, &self.device, &mut self.ui_manage);
     }
 
-    pub(crate) fn mouse_down(&mut self) {
+    pub(crate) fn mouse_down<A: App>(&mut self, app: &mut A) {
         self.device.device_input.mouse.pressed = true;
         for layout in self.ui_manage.layouts.iter_mut() {
-            layout.mouse_down(&self.device, &mut self.ui_manage.context, &mut self.response);
+            layout.mouse_down(&self.device, &mut self.ui_manage.context, app);
         }
     }
 
-    pub(crate) fn mouse_release<A: 'static>(&mut self, app: &mut A) {
+    pub(crate) fn mouse_release<A: App>(&mut self, app: &mut A) {
         self.device.device_input.mouse.pressed = false;
         for layout in self.ui_manage.layouts.iter_mut() {
-            layout.mouse_release(&self.device, &mut self.ui_manage.context, &mut self.response)
+            layout.mouse_release(&self.device, &mut self.ui_manage.context, app)
         }
-        self.response.mouse_release(app, &self.device, &mut self.ui_manage);
     }
 
     pub(crate) fn resize(&mut self) {
@@ -276,23 +274,15 @@ impl Ui {
         }
     }
 
-    pub(crate) fn key_input<A: 'static>(&mut self, key: winit::keyboard::Key, app: &mut A) {
-        let mut res = vec![];
+    pub(crate) fn key_input<A: App>(&mut self, key: winit::keyboard::Key, app: &mut A) {
         for layout in self.ui_manage.layouts.iter_mut() {
-            res.append(&mut layout.key_input(&self.device, &mut self.ui_manage.context, key.clone(), &mut self.response));
-        }
-        for re in res {
-            self.response.key_input(re, app, &mut self.ui_manage);
+            layout.key_input(&self.device, &mut self.ui_manage.context, key.clone(), app)
         }
     }
 
     pub(crate) fn delta_input(&mut self) {
-        let mut updates = vec![];
         for layout in self.ui_manage.layouts.iter_mut() {
-            updates.append(&mut layout.delta_input(&self.device, &self.ui_manage.context));
-        }
-        for (id, rect) in updates {
-            self.response.update(id, rect);
+            layout.delta_input(&self.device, &self.ui_manage.context)
         }
     }
 }

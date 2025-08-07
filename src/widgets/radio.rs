@@ -6,23 +6,22 @@
 //! btn.draw(ui);
 //! #  });
 
-use std::any::Any;
 use crate::frame::context::Context;
-use crate::paint::PaintTask;
 use crate::paint::radio::PaintRadioButton;
-use crate::response::{Callback, DrawnEvent};
-use crate::response::checkbox::CheckBoxResponse;
+use crate::paint::PaintTask;
+use crate::response::Callback;
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 use crate::widgets::Widget;
+use std::any::Any;
 
 pub struct RadioButton {
     pub(crate) id: String,
     pub(crate) rect: Rect,
     pub(crate) value: bool,
     pub(crate) text: TextBuffer,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
 
 }
 
@@ -44,7 +43,7 @@ impl RadioButton {
         self.rect.set_width(18.0 + self.text.rect.width());
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, bool)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, bool)) -> Self {
         self.callback = Some(Callback::create_check(f));
         self
     }
@@ -59,13 +58,7 @@ impl Widget for RadioButton {
         layout.alloc_rect(&self.rect);
         let task = PaintRadioButton::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::Radio(task));
-        ui.response.insert(self.id.clone(), CheckBoxResponse {
-            rect: self.rect.clone(),
-            event: DrawnEvent::Click,
-            callback: Callback::check(self.callback.take()),
-            checked: self.value,
-        })
     }
 
-    fn update(&mut self, uim: &mut UiM) {}
+    fn update(&mut self, ctx: &mut Context) {}
 }

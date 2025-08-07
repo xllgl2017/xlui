@@ -45,6 +45,10 @@ impl Rect {
         self
     }
 
+    pub fn size(&self) -> (f32, f32) {
+        (self.width(), self.height())
+    }
+
     pub(crate) fn right(&self) -> i32 {
         (self.x.min + self.width()) as i32
     }

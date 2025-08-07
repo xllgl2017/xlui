@@ -12,33 +12,52 @@
 
 use crate::frame::context::Context;
 use crate::layout::popup::Popup;
+use crate::paint::color::Color;
 use crate::paint::combobox::PaintComboBox;
 use crate::paint::PaintTask;
+use crate::radius::Radius;
+use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
+use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::text::text_buffer::TextBuffer;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
+use crate::widgets::button::Button;
 use crate::widgets::Widget;
+use std::fmt::Display;
 
-pub struct ComboBox {
+pub struct ComboBox<T> {
     id: String,
     pub(crate) rect: Rect,
     pub(crate) popup: Popup,
     size_mode: SizeMode,
     pub(crate) text_buffer: TextBuffer,
-    widgets: fn(&mut Ui),
+    data: Vec<T>,
+    item_style: ClickStyle,
 }
 
-impl ComboBox {
-    pub fn new() -> ComboBox {
+impl<T> ComboBox<T> {
+    pub fn new(data: Vec<T>) -> Self {
         ComboBox {
             id: crate::gen_unique_id(),
             rect: Rect::new(),
             popup: Popup::new(),
             size_mode: SizeMode::Auto,
             text_buffer: TextBuffer::new("".to_string()),
-            widgets: |_| {},
+            data,
+            item_style: ClickStyle {
+                fill: FillStyle {
+                    inactive: Color::TRANSPARENT,
+                    hovered: Color::rgba(153, 193, 241, 220),
+                    clicked: Color::rgba(153, 193, 241, 220),
+                },
+                border: BorderStyle {
+                    inactive: Border::new(0.0),
+                    hovered: Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
+                    clicked: Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
+                },
+            },
         }
     }
 
@@ -57,7 +76,7 @@ impl ComboBox {
         self.popup.set_rect(popup_rect);
     }
 
-    pub fn with_size(mut self, width: f32, height: f32) -> ComboBox {
+    pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
         self
@@ -68,28 +87,41 @@ impl ComboBox {
         self.popup.rect_mut().set_height(height);
         self
     }
+}
 
-    pub fn with_widgets(mut self, widgets: fn(&mut Ui)) -> Self {
-        self.widgets = widgets;
-        self
+impl<T: Display + PartialEq> ComboBox<T> {
+    fn add_item(&self, ui: &mut Ui, item: &T, row: usize) {
+        let style = ui.style.widget.click.clone();
+        ui.style.widget.click = self.item_style.clone();
+        let mut btn = Button::new(item.to_string()).padding(Padding::same(3.0));
+        btn.set_size(self.popup.rect().width() - 10.0, 25.0);
+        btn.draw(ui);
+        ui.style.widget.click = style;
+    }
+
+    fn add_items(&self, ui: &mut Ui) {
+        for (row, datum) in self.data.iter().enumerate() {
+            self.add_item(ui, datum, row);
+        }
     }
 }
 
 
-impl Widget for ComboBox {
+impl<T: Display + PartialEq> Widget for ComboBox<T> {
     fn draw(&mut self, ui: &mut Ui) {
         let layout = ui.current_layout.as_mut().unwrap();
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.reset_size(&ui.ui_manage.context);
         layout.alloc_rect(&self.rect);
-        let popup_layout = self.popup.layout.take().unwrap();
+        let mut popup_layout = self.popup.layout.take().unwrap();
+        popup_layout.item_space = 2.0;
         let previous_layout = ui.current_layout.replace(popup_layout).unwrap();
-        (self.widgets)(ui);
+        self.add_items(ui);
         let popup_layout = ui.current_layout.replace(previous_layout).unwrap();
         self.popup.layout.replace(popup_layout);
         let task = PaintComboBox::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::ComboBox(task));
     }
 
-    fn update(&mut self, uim: &mut UiM) {}
+    fn update(&mut self, ctx: &mut Context) {}
 }

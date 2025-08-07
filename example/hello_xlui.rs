@@ -1,13 +1,13 @@
+use xlui::frame::context::Context;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::paint::color::Color;
 use xlui::radius::Radius;
 use xlui::size::border::Border;
 use xlui::style::{BorderStyle, ClickStyle, FillStyle};
-use xlui::ui::{Ui, UiM};
+use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
-use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
 use xlui::widgets::slider::Slider;
@@ -47,9 +47,7 @@ impl ListView {
             ],
         }
     }
-    fn item_click(app: &mut XlUiApp, uim: &mut UiM) {
-        println!("item click");
-    }
+
 
     fn item_widget(&self, ui: &mut Ui, datum: &TD) {
         let mut rect = ui.available_rect();
@@ -66,7 +64,7 @@ impl ListView {
                 clicked: Border::new(1.0).radius(Radius::same(3)).color(Color::YELLOW),
             },
         };
-        ui.paint_rect(rect, style).connect(Self::item_click);
+        ui.paint_rect(rect, style).connect(XlUiApp::item_click);
         ui.horizontal(|ui| {
             ui.image("logo.jpg", (30.0, 30.0));
             ui.vertical(|ui| {
@@ -93,9 +91,7 @@ impl Widget for ListView {
         });
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        todo!()
-    }
+    fn update(&mut self, ctx: &mut Context) {}
 }
 
 fn main() {
@@ -105,6 +101,7 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
+    list_view: ListView,
 }
 
 impl XlUiApp {
@@ -112,46 +109,49 @@ impl XlUiApp {
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,
+            list_view: ListView::new(),
         }
     }
 
-    pub fn click1(&mut self, uim: &mut UiM) {
+    pub fn click1(&mut self, ctx: &mut Context) {
         self.count += 1;
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, uim: &mut UiM) {
+    pub fn click2(&mut self, ctx: &mut Context) {
         self.count += 2;
         println!("count2: {}", self.count);
     }
 
-    pub fn add(&mut self, uim: &mut UiM) {
-        let text = uim.get_edit_text("xlui_edit");
-        println!("text: {}", text);
+    pub fn add(&mut self, ctx: &mut Context) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    pub fn reduce(&mut self, uim: &mut UiM) {
+    pub fn reduce(&mut self, ctx: &mut Context) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    pub fn slider(&mut self, uim: &mut UiM, value: f32) {
+    pub fn slider(&mut self, ctx: &mut Context, value: f32) {
         self.label.set_text(format!("slider: {}", value));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    pub fn check(&mut self, uim: &mut UiM, checked: bool) {
+    pub fn check(&mut self, ctx: &mut Context, checked: bool) {
         self.label.set_text(format!("check: {}", checked));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    pub fn edit_changed(&mut self, uim: &mut UiM, text: &str) {
+    pub fn edit_changed(&mut self, ctx: &mut Context, text: String) {
         self.label.set_text(format!("textedit: {}", text));
-        self.label.update(uim);
+        self.label.update(ctx);
+    }
+
+    fn item_click(&mut self, ctx: &mut Context) {
+        println!("item click");
     }
 }
 
@@ -181,7 +181,7 @@ impl App for XlUiApp {
                 ui.vertical(|ui| {
                     ui.label("sv1");
                     ui.label("sv2");
-                    ui.button("sv3").connect(Self::click1);
+                    ui.button("sv3").connect(Self::click1)
                 });
                 ui.horizontal(|ui| {
                     ui.label("sh1");
@@ -193,14 +193,8 @@ impl App for XlUiApp {
                 }
                 ui.label("end");
             });
-            ComboBox::new().with_popup_height(150.0).with_widgets(|ui| {
-                ui.label("c1");
-                ui.label("c2");
-                ui.label("c3");
-                ui.label("c4");
-                ui.label("c5");
-            }).draw(ui);
-            ui.add(ListView::new());
+            // ComboBox::new(vec!["item1", "item2", "item3", "item4"]).with_popup_height(150.0).draw(ui);
+            self.list_view.draw(ui);
         });
 
         ui.label("hello label1");

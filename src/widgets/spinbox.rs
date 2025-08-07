@@ -1,12 +1,11 @@
 use crate::frame::context::Context;
 use crate::paint::spinbox::PaintSpinBox;
 use crate::paint::PaintTask;
-use crate::response::spinbox::SpinBoxResponse;
-use crate::response::{Callback, DrawnEvent};
+use crate::response::Callback;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
 use std::any::Any;
@@ -14,12 +13,12 @@ use std::ops::Range;
 
 pub struct SpinBox {
     pub(crate) id: String,
-    edit: TextEdit,
+    pub(crate) edit: TextEdit,
     pub(crate) rect: Rect,
     size_mode: SizeMode,
     pub(crate) value: i32,
     pub(crate) range: Range<i32>,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, i32)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, i32)>>,
 
 }
 
@@ -53,7 +52,7 @@ impl SpinBox {
         self
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, i32)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, i32)) -> Self {
         self.callback = Some(Callback::create_spinbox(f));
         self
     }
@@ -66,17 +65,9 @@ impl Widget for SpinBox {
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.reset_size(&ui.ui_manage.context);
         layout.alloc_rect(&self.rect);
-        let task = PaintSpinBox::new(ui, self, &self.edit);
+        let task = PaintSpinBox::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::SpinBox(task));
-        ui.response.insert(self.id.clone(), SpinBoxResponse {
-            rect: self.rect.clone(),
-            event: DrawnEvent::Click,
-            callback: Callback::spinbox(self.callback.take()),
-            value: self.value,
-        });
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        todo!()
-    }
+    fn update(&mut self, ctx: &mut Context) {}
 }

@@ -1,20 +1,19 @@
-use std::any::Any;
 use crate::frame::context::Context;
 use crate::paint::checkbox::PaintCheckBox;
 use crate::paint::PaintTask;
-use crate::response::checkbox::CheckBoxResponse;
-use crate::response::{Callback, DrawnEvent};
+use crate::response::Callback;
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 use crate::widgets::Widget;
+use std::any::Any;
 
 pub struct CheckBox {
     pub(crate) id: String,
     pub(crate) rect: Rect,
-    text: TextBuffer,
+    pub(crate) text: TextBuffer,
     pub(crate) value: bool,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, bool)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
 }
 
 impl CheckBox {
@@ -38,7 +37,7 @@ impl CheckBox {
         self.text.rect.set_height(20.0);
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, bool)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, bool)) -> Self {
         self.callback = Some(Callback::create_check(f));
         self
     }
@@ -50,17 +49,9 @@ impl Widget for CheckBox {
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.reset_size(&ui.ui_manage.context);
         layout.alloc_rect(&self.rect);
-        let task = PaintCheckBox::new(ui, self, &self.text);
+        let task = PaintCheckBox::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::CheckBox(task));
-        ui.response.insert(self.id.clone(), CheckBoxResponse {
-            rect: self.rect.clone(),
-            event: DrawnEvent::Click,
-            callback: Callback::check(self.callback.take()),
-            checked: self.value,
-        });
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        todo!()
-    }
+    fn update(&mut self, ctx: &mut Context) {}
 }

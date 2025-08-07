@@ -4,9 +4,22 @@ use crate::text::text_render::TextRender;
 use crate::Device;
 use glyphon::Viewport;
 use std::sync::Arc;
+use crate::map::Map;
 use crate::render::circle::CircleRender;
 use crate::render::image::ImageRender;
 use crate::render::rectangle::RectangleRender;
+
+pub enum ContextUpdate {
+    Text(String),
+}
+
+impl ContextUpdate {
+    pub fn text(self) -> String {
+        match self {
+            ContextUpdate::Text(text) => text,
+        }
+    }
+}
 
 pub struct Context {
     pub size: Size,
@@ -16,7 +29,14 @@ pub struct Context {
     pub surface: wgpu::Surface<'static>,
     pub resize: bool,
     pub render: Render,
+    pub updates: Map<ContextUpdate>,
+}
 
+impl Context {
+    pub fn send_update(&mut self, id: String, update: ContextUpdate) {
+        self.updates.insert(id, update);
+        self.window.request_redraw();//更新ui
+    }
 }
 
 

@@ -9,12 +9,12 @@ use crate::paint::spinbox::PaintSpinBox;
 use crate::paint::text::PaintText;
 use crate::vertex::Vertex;
 use crate::{Device, SAMPLE_COUNT};
+use crate::frame::App;
 use crate::frame::context::Context;
 use crate::paint::combobox::PaintComboBox;
 use crate::paint::popup::PaintPopup;
 use crate::paint::radio::PaintRadioButton;
 use crate::paint::rectangle::PaintRectangle;
-use crate::response::Response;
 use crate::size::rect::Rect;
 
 pub mod text;
@@ -113,6 +113,49 @@ impl PaintTask {
         }
     }
 
+
+    pub fn paint_btn_mut(&mut self) -> &mut PaintButton {
+        match self {
+            PaintTask::Button(paint_btn) => paint_btn,
+            _ => panic!("应该是PaintTask::PaintButton"),
+        }
+    }
+
+    pub fn paint_spinbox_mut(&mut self) -> &mut PaintSpinBox {
+        match self {
+            PaintTask::SpinBox(paint_spinbox) => paint_spinbox,
+            _ => panic!("应该是PaintTask::PaintSpinBox"),
+        }
+    }
+
+    pub fn paint_slider_mut(&mut self) -> &mut PaintSlider {
+        match self {
+            PaintTask::Slider(paint_slider) => paint_slider,
+            _ => panic!("应该是PaintTask::PaintSpinBox"),
+        }
+    }
+
+    pub fn paint_checkbox_mut(&mut self) -> &mut PaintCheckBox {
+        match self {
+            PaintTask::CheckBox(paint_checkbox) => paint_checkbox,
+            _ => panic!("应该是PaintTask::PaintCheckBox"),
+        }
+    }
+
+    pub fn paint_radio_mut(&mut self) -> &mut PaintRadioButton {
+        match self {
+            PaintTask::Radio(paint_radio) => paint_radio,
+            _ => panic!("应该是PaintTask::PaintRadioButton"),
+        }
+    }
+
+    pub fn paint_rect_mut(&mut self) -> &mut PaintRectangle {
+        match self {
+            PaintTask::Rectangle(paint_rect) => paint_rect,
+            _ => panic!("应该是PaintTask::PaintRectangle"),
+        }
+    }
+
     pub fn rect(&self) -> &Rect {
         match self {
             PaintTask::Rectangle(t) => t.rect(),
@@ -150,41 +193,41 @@ impl PaintTask {
         }
     }
 
-    pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
-        let mut updates = vec![];
+    pub(crate) fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         match self {
             PaintTask::Rectangle(paint_rect) => paint_rect.mouse_move(device, context),
             PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
             PaintTask::TextEdit(paint_edit) => paint_edit.mouse_move(&device, context),
             PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
-            PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
+            PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, app),
             PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device, context),
             PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
-            PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context, resp)),
+            PaintTask::ScrollArea(paint_area) => paint_area.mouse_move(device, context, app),
             PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
+            PaintTask::ComboBox(paint_combo) => paint_combo.mouse_move(device, context, app),
             _ => {}
         }
-        updates
     }
 
-    pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+    pub(crate) fn mouse_down<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         match self {
             PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
             PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
-            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, resp),
-            PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
-            PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
+            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, app),
+            PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device),
+            PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, app),
             _ => {}
         }
     }
 
-    pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+    pub(crate) fn mouse_release<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         match self {
-            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
-            PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
-            PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
+            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, app),
+            PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, context, app),
+            PaintTask::Radio(paint_radio) => paint_radio.click(device, context, app),
             PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
-            PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
+            PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device),
+            PaintTask::Button(paint_btn) => paint_btn.click(device, context, app),
             _ => {}
         }
     }

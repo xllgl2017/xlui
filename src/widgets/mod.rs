@@ -1,4 +1,5 @@
-use crate::ui::{Ui, UiM};
+use crate::frame::context::Context;
+use crate::ui::Ui;
 
 pub mod label;
 pub mod button;
@@ -13,13 +14,5 @@ pub mod combobox;
 
 pub trait Widget {
     fn draw(&mut self, ui: &mut Ui); //初次绘制调用
-    fn update(&mut self, uim: &mut UiM); //后续更新调用
+    fn update(&mut self, ctx: &mut Context); //后续更新调用
 }
-
-// pub(crate) enum WidgetKind {
-//     Label(Label),
-//     Button(Button),
-//     Image(Image),
-//     Custom(Box<dyn Widget>),
-//
-// }

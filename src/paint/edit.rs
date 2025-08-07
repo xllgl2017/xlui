@@ -1,13 +1,14 @@
+use std::any::Any;
 use crate::frame::context::Context;
 use crate::paint::rectangle::PaintRectangle;
 use crate::paint::text::PaintText;
-use crate::response::Response;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::textedit::TextEdit;
 use crate::{Device, Pos};
+use crate::frame::App;
 use crate::paint::color::Color;
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
@@ -141,10 +142,11 @@ pub(crate) struct PaintTextEdit {
     hovered: bool,
     pub(crate) focused: bool,
     mouse_down_x: f32,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, String)>>,
 }
 
 impl PaintTextEdit {
-    pub fn new(ui: &mut Ui, edit: &TextEdit) -> Self {
+    pub fn new(ui: &mut Ui, edit: &mut TextEdit) -> Self {
         let wx = edit.text_buffer.rect.x.min;
         let char_layout = CharLayout::from_text(wx, &edit.text_buffer.text, edit.text_buffer.text_size.font_size, &ui.ui_manage.context);
 
@@ -182,6 +184,7 @@ impl PaintTextEdit {
             hovered: false,
             focused: false,
             mouse_down_x: 0.0,
+            callback: edit.callback.take(),
         }
     }
 
@@ -286,9 +289,8 @@ impl PaintTextEdit {
         &self.fill.param.rect
     }
 
-    pub fn key_input(&mut self, device: &Device, context: &mut Context, c: winit::keyboard::Key, resp: &mut Response) -> Vec<String> {
-        if !self.focused { return vec![]; }
-        let mut res = vec![];
+    pub fn key_input<A: App>(&mut self, device: &Device, context: &mut Context, c: winit::keyboard::Key, app: &mut A) {
+        if !self.focused { return; }
         match c {
             winit::keyboard::Key::Named(name) => {
                 println!("{:?}", name);
@@ -297,11 +299,7 @@ impl PaintTextEdit {
                         let xm = self.char_layout.remove_char();
                         self.update_cursor(device, xm);
                         let text = self.char_layout.text();
-                        if let Some(resp) = resp.edit_mut(&self.id) {
-                            resp.value=text.clone();
-                        }
                         self.text.set_text(context, text);
-                        res.push(self.id.clone());
                     }
                     winit::keyboard::NamedKey::ArrowLeft => {
                         let xm = self.char_layout.cursor_reduce();
@@ -314,21 +312,13 @@ impl PaintTextEdit {
                     winit::keyboard::NamedKey::Delete => {
                         self.char_layout.remove_after();
                         let text = self.char_layout.text();
-                        if let Some(resp) = resp.edit_mut(&self.id) {
-                            resp.value=text.clone();
-                        }
                         self.text.set_text(context, text);
-                        res.push(self.id.clone());
                     }
                     winit::keyboard::NamedKey::Space => {
                         let xm = self.char_layout.push_char(' ', context);
                         self.update_cursor(device, xm);
                         let text = self.char_layout.text();
-                        if let Some(resp) = resp.edit_mut(&self.id) {
-                            resp.value=text.clone();
-                        }
                         self.text.set_text(context, text);
-                        res.push(self.id.clone());
                     }
                     _ => {}
                 }
@@ -338,15 +328,13 @@ impl PaintTextEdit {
                 let xm = self.char_layout.push_char(c, context);
                 self.update_cursor(device, xm);
                 let text = self.char_layout.text();
-                if let Some(resp) = resp.edit_mut(&self.id) {
-                    resp.value=text.clone();
-                }
                 self.text.set_text(context, text);
-                res.push(self.id.clone());
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
         }
-        res
+        if let Some(ref mut callback) = self.callback {
+            callback(app, context, self.char_layout.text());
+        }
     }
 }

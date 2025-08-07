@@ -1,12 +1,14 @@
 use crate::frame::context::Context;
+use crate::frame::App;
 use crate::paint::rectangle::PaintRectangle;
 use crate::paint::text::PaintText;
+use crate::response::Callback;
 use crate::size::padding::Padding;
-use crate::text::text_buffer::TextBuffer;
+use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::Device;
-use crate::size::rect::Rect;
+use std::any::Any;
 
 pub struct PaintButton {
     id: String,
@@ -14,20 +16,24 @@ pub struct PaintButton {
     text: PaintText,
     mouse_down: bool,
     hovered: bool,
+    pub selection: bool,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
 }
 
 impl PaintButton {
-    pub fn new(ui: &mut Ui, btn: &Button, buffer: &TextBuffer) -> PaintButton {
+    pub fn new(ui: &mut Ui, btn: &mut Button) -> PaintButton {
         let rectangle_rect = btn.rect.clone_add_padding(&Padding::same(btn.border.width as f32));
 
         let fill = PaintRectangle::new(ui, rectangle_rect);
-        let text = PaintText::new(ui, buffer);
+        let text = PaintText::new(ui, &btn.text_buffer);
         PaintButton {
             id: btn.id.clone(),
             fill,
             text,
             mouse_down: false,
             hovered: false,
+            selection: false,
+            callback: btn.callback.take(),
         }
     }
 
@@ -36,11 +42,20 @@ impl PaintButton {
         let has_pos = self.fill.param.rect.has_position(x, y);
         if has_pos != self.hovered || device.device_input.mouse.pressed != self.mouse_down {
             // println!("{} {}", has_pos, device.device_input.mouse.pressed);
-            self.fill.prepare(device, has_pos, device.device_input.mouse.pressed);
+            self.fill.prepare(device, has_pos || self.selection, device.device_input.mouse.pressed || self.selection);
             context.window.request_redraw();
         }
         self.hovered = has_pos;
         self.mouse_down = device.device_input.mouse.pressed;
+    }
+
+    pub fn click<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
+        let (lx, ly) = device.device_input.mouse.pressed_pos;
+        let (x, y) = device.device_input.mouse.lastest();
+        let has_pos = self.fill.param.rect.has_position(lx, ly) && self.fill.param.rect.has_position(x, y);
+        if let Some(ref mut callback) = self.callback && has_pos { //按下和释放均在本控件上才会触发
+            callback(app, context);
+        }
     }
 
 
@@ -60,4 +75,8 @@ impl PaintButton {
         }
     }
     pub fn rect(&self) -> &Rect { &self.fill.param.rect }
+
+    pub fn connect<A: App>(&mut self, f: impl FnMut(&mut A, &mut Context) + 'static) {
+        self.callback = Some(Callback::create_click(f));
+    }
 }

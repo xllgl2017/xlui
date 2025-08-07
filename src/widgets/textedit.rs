@@ -1,18 +1,17 @@
-use std::any::Any;
 use crate::frame::context::Context;
 use crate::paint::color::Color;
 use crate::paint::edit::PaintTextEdit;
 use crate::paint::PaintTask;
 use crate::radius::Radius;
-use crate::response::{Callback, DrawnEvent};
-use crate::response::textedit::TextEditResponse;
+use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::text::text_buffer::TextBuffer;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 use crate::widgets::Widget;
+use std::any::Any;
 
 pub struct TextEdit {
     pub(crate) id: String,
@@ -20,7 +19,7 @@ pub struct TextEdit {
     pub(crate) rect: Rect,
     size_mode: SizeMode,
     border: Border,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, &str)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, String)>>,
 }
 
 impl TextEdit {
@@ -67,7 +66,7 @@ impl TextEdit {
         task.select_style(select_style);
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, &str)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, String)) -> Self {
         self.callback = Some(Callback::create_textedit(f));
         self
     }
@@ -90,15 +89,9 @@ impl Widget for TextEdit {
         self.gen_style(ui, &mut task);
         task.fill.prepare(&ui.device, false, false);
         ui.add_paint_task(self.id.clone(), PaintTask::TextEdit(task));
-        ui.response.insert(self.id.clone(), TextEditResponse {
-            rect: self.rect.clone(),
-            event: DrawnEvent::Click,
-            callback: Callback::textedit(self.callback.take()),
-            value: self.text_buffer.text.clone(),
-        });
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        self.text_buffer.update(uim);
+    fn update(&mut self, ctx: &mut Context) {
+        self.text_buffer.update(ctx);
     }
 }

@@ -1,6 +1,7 @@
+use crate::frame::context::Context;
 use crate::text::text_buffer::TextBuffer;
 use crate::text::TextWrap;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 use crate::widgets::Widget;
 
 
@@ -26,11 +27,6 @@ impl Label {
         self.text_buffer.set_text(text);
     }
 
-
-    // pub(crate) fn size(&self) -> (f32, f32) {
-    //     (self.text_buffer.rect.width(), self.text_buffer.rect.height())
-    // }
-
     pub fn width(mut self, w: f32) -> Self {
         self.text_buffer.set_width(w);
         self
@@ -52,7 +48,8 @@ impl Widget for Label {
         self.text_buffer.draw(ui); //创建绘制任务并计算需绘制的宽高
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        self.text_buffer.update(uim);
+
+    fn update(&mut self, ctx: &mut Context) {
+        self.text_buffer.update(ctx);
     }
 }

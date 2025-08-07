@@ -1,4 +1,5 @@
 use std::any::Any;
+use crate::frame::context::Context;
 use crate::response::{Callback, DrawnEvent, WidgetResponse};
 use crate::size::rect::Rect;
 use crate::ui::UiM;
@@ -30,7 +31,7 @@ impl ButtonResponse {
         self
     }
 
-    pub fn connect<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
+    pub fn connect<A: 'static>(&mut self, f: fn(&mut A, &mut Context)) {
         self.callback.click = Some(Callback::create_click(f));
     }
 }

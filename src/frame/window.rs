@@ -7,6 +7,7 @@ use crate::ui::Ui;
 use crate::{Device, DeviceInput};
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
+use crate::map::Map;
 
 pub(crate) struct Window<A> {
     pub(crate) ui: Ui,
@@ -56,6 +57,7 @@ impl<A: App> Window<A> {
             surface,
             resize: false,
             render: Render::new(&device),
+            updates: Map::new(),
         };
         let mut ui = Ui::new(device, context, Style::light_style());
         app.draw(&mut ui);

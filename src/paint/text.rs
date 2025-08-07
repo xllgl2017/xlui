@@ -1,12 +1,12 @@
-use glyphon::Shaping;
-use wgpu::MultisampleState;
-use crate::{Device, SAMPLE_COUNT};
 use crate::frame::context::Context;
 use crate::paint::color::Color;
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
 use crate::text::{TextSize, TextWrap};
 use crate::ui::Ui;
+use crate::{Device, SAMPLE_COUNT};
+use glyphon::Shaping;
+use wgpu::MultisampleState;
 
 pub struct PaintText {
     id: String,
@@ -57,6 +57,9 @@ impl PaintText {
     }
 
     pub(crate) fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
+        if let Some(update) = context.updates.remove(&self.id) {
+            self.set_text(context, update.text());
+        }
         self.prepare(device, context);
         self.render.render(&mut context.render.text.atlas, &context.viewport, render_pass).unwrap()
     }

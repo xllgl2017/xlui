@@ -1,4 +1,5 @@
 use crate::{Device, Pos};
+use crate::frame::App;
 use crate::frame::context::Context;
 use crate::paint::color::Color;
 use crate::paint::popup::PaintPopup;
@@ -24,7 +25,7 @@ pub struct PaintComboBox {
 }
 
 impl PaintComboBox {
-    pub fn new(ui: &mut Ui, combobox: &mut ComboBox) -> PaintComboBox {
+    pub fn new<T>(ui: &mut Ui, combobox: &mut ComboBox<T>) -> PaintComboBox {
         let popup = PaintPopup::new(ui, &mut combobox.popup);
         let text = PaintText::new(ui, &combobox.text_buffer);
 
@@ -65,6 +66,8 @@ impl PaintComboBox {
 
     pub fn rect(&self) -> &Rect { &self.fill_param.rect }
 
+    pub fn item_click(&mut self, row: usize) {}
+
     pub fn click(&mut self, device: &Device, context: &Context) {
         let (x, y) = device.device_input.mouse.lastest();
         if self.fill_param.rect.has_position(x, y) { //在显示区域点击
@@ -77,6 +80,10 @@ impl PaintComboBox {
 
     pub fn resize(&mut self, device: &Device, context: &Context) {
         self.triangle.prepare(device, context);
+    }
+
+    pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
+        self.popup.mouse_move(device, context, app);
     }
 
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {

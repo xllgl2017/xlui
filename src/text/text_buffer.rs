@@ -1,11 +1,11 @@
+use crate::frame::context::{Context, ContextUpdate};
+use crate::paint::color::Color;
+use crate::paint::text::PaintText;
+use crate::paint::PaintTask;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::text::{TextSize, TextWrap};
-use crate::frame::context::Context;
-use crate::paint::color::Color;
-use crate::paint::PaintTask;
-use crate::paint::text::PaintText;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 
 pub struct TextBuffer {
     pub(crate) id: String,
@@ -46,8 +46,8 @@ impl TextBuffer {
     }
 
 
-    pub(crate) fn update(&mut self, uim: &mut UiM) {
-        uim.update_text_task(self);
+    pub(crate) fn update(&mut self, ctx: &mut Context) {
+        ctx.send_update(self.id.clone(), ContextUpdate::Text(self.text.clone()));
     }
 
     pub fn set_text(&mut self, text: String) {

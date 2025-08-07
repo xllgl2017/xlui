@@ -1,11 +1,11 @@
+use crate::frame::context::Context;
 use crate::paint::image::PaintImage;
 use crate::paint::PaintTask;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
-use crate::ui::{Ui, UiM};
+use crate::ui::Ui;
 use crate::widgets::Widget;
 use crate::Pos;
-use image::GenericImageView;
 
 pub struct Image {
     pub(crate) id: String,
@@ -73,7 +73,7 @@ impl Widget for Image {
         ui.add_paint_task(self.id.clone(), PaintTask::Image(task));
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        todo!() //替换图片
+    fn update(&mut self, ctx: &mut Context) {
+
     }
 }

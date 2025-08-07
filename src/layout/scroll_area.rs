@@ -1,8 +1,6 @@
 use crate::layout::Layout;
-use crate::paint::PaintTask;
 use crate::paint::scroll_area::PaintScrollArea;
-use crate::response::button::ButtonResponse;
-use crate::response::DrawnEvent;
+use crate::paint::PaintTask;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
@@ -67,7 +65,7 @@ impl ScrollArea {
 
     fn draw(self, ui: &mut Ui) {
         let id = self.id.clone();
-        ui.response.insert(self.id.clone(), ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Click));
+        // ui.response.insert(self.id.clone(), ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Click));
         let task = PaintScrollArea::new(self, ui);
         ui.add_paint_task(id, PaintTask::ScrollArea(task));
     }

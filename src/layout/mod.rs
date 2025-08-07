@@ -7,7 +7,7 @@ use crate::paint::PaintTask;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::Device;
-use crate::response::Response;
+use crate::frame::App;
 
 pub enum LayoutDirection {
     LeftToRight,
@@ -18,7 +18,6 @@ pub enum LayoutDirection {
 
 
 pub struct Layout {
-    pub(crate) id: String,
     direction: LayoutDirection,
     pub(crate) item_space: f32, //item之间的间隔
     pub max_rect: Rect,
@@ -34,7 +33,6 @@ pub struct Layout {
 impl Layout {
     pub fn new(direction: LayoutDirection) -> Self {
         Self {
-            id: crate::gen_unique_id(),
             direction,
             widgets: Map::new(),
             item_space: 5.0,
@@ -139,14 +137,13 @@ impl Layout {
         }
     }
 
-    pub(crate) fn offset(&mut self, device: &Device, ox: f32, oy: f32) -> Vec<(String, Rect)> {
-        if ox == 0.0 && oy == 0.0 { return vec![]; }
-        let mut res = vec![];
+    pub(crate) fn offset(&mut self, device: &Device, ox: f32, oy: f32) {
+        if ox == 0.0 && oy == 0.0 { return; }
         self.display.clear();
         let rect = self.drawn_rect();
         for child in self.children.iter_mut() {
             child.max_rect.offset(ox, oy);
-            res.append(&mut child.offset(device, ox, oy));
+            child.offset(device, ox, oy)
         }
         for (index, widget) in self.widgets.iter_mut().enumerate() {
             match widget {
@@ -155,21 +152,20 @@ impl Layout {
                     if !paint_text.rect.out_of_rect(&rect) { self.display.push(index); }
                 }
                 PaintTask::Button(paint_btn) => {
-                    res.append(&mut paint_btn.offset(device, ox, oy));
+                    paint_btn.offset(device, ox, oy);
                     if !paint_btn.rect().out_of_rect(&rect) { self.display.push(index); }
                 }
                 PaintTask::Image(paint_image) => {
-                    res.append(&mut paint_image.offset(device, ox, oy));
+                    paint_image.offset(device, ox, oy);
                     if !paint_image.rect.out_of_rect(&rect) { self.display.push(index); }
                 }
                 PaintTask::Rectangle(paint_rect) => {
-                    res.append(&mut paint_rect.offset(device, ox, oy));
+                    paint_rect.offset(device, ox, oy);
                     if !paint_rect.rect().out_of_rect(&rect) { self.display.push(index); }
                 }
                 _ => {}
             }
         }
-        res
     }
 
     pub(crate) fn insert_widget(&mut self, id: String, widget: PaintTask) {
@@ -179,13 +175,6 @@ impl Layout {
         self.display.push(self.widgets.len() - 1)
     }
 
-    // #[deprecated]
-    // pub(crate) fn rect(&self) -> Rect {
-    //     let mut rect = self.max_rect.clone();
-    //     rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
-    //     rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
-    //     rect
-    // }
 
     fn drawn_rect(&self) -> Rect {
         let mut rect = self.max_rect.clone();
@@ -196,23 +185,21 @@ impl Layout {
 }
 
 impl Layout {
-    pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
-        let mut updates = vec![];
+    pub(crate) fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A){
         for widget in self.widgets.iter_mut() {
-            updates.append(&mut widget.mouse_move(device, context, resp));
-        }
-        updates
-    }
-
-    pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
-        for widget in self.widgets.iter_mut() {
-            widget.mouse_down(device, context, resp);
+            widget.mouse_move(device, context, app)
         }
     }
 
-    pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+    pub(crate) fn mouse_down<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         for widget in self.widgets.iter_mut() {
-            widget.mouse_release(device, context, resp);
+            widget.mouse_down(device, context, app);
+        }
+    }
+
+    pub(crate) fn mouse_release<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
+        for widget in self.widgets.iter_mut() {
+            widget.mouse_release(device, context, app);
         }
     }
 
@@ -226,30 +213,26 @@ impl Layout {
         }
     }
 
-    pub(crate) fn key_input(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, resp: &mut Response) -> Vec<String> {
-        let mut res = vec![];
+    pub(crate) fn key_input<A: App>(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, app: &mut A)  {
         for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::Text(_) => {}
                 PaintTask::Image(_) => {}
                 PaintTask::ScrollBar(_) => {}
-                PaintTask::TextEdit(paint_edit) => res.append(&mut paint_edit.key_input(device, context, key.clone(), resp)),
-                PaintTask::SpinBox(pain_spinbox) => pain_spinbox.key_input(device, context, key.clone(), resp),
+                PaintTask::TextEdit(paint_edit) => paint_edit.key_input(device, context, key.clone(), app),
+                PaintTask::SpinBox(pain_spinbox) => pain_spinbox.key_input(device, context, key.clone(), app),
                 _ => {}
             }
         }
-        res
     }
 
-    pub(crate) fn delta_input(&mut self, device: &Device, context: &Context) -> Vec<(String, Rect)> {
-        let mut updates = vec![];
+    pub(crate) fn delta_input(&mut self, device: &Device, context: &Context) {
         for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::ScrollBar(_) => {}
-                PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.delta_input(device, context)),
+                PaintTask::ScrollArea(paint_area) => paint_area.delta_input(device, context),
                 _ => {}
             }
         }
-        updates
     }
 }

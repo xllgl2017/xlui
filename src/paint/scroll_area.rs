@@ -9,7 +9,7 @@ use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::Device;
-use crate::response::Response;
+use crate::frame::App;
 
 pub struct PaintScrollArea {
     layout: Layout,
@@ -56,10 +56,10 @@ impl PaintScrollArea {
         render_pass.set_scissor_rect(0, 0, context.size.width, context.size.height);
     }
 
-    pub fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
+    pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
-        let res = if (has_pos || self.scrolling) && self.focused && device.device_input.mouse.pressed { //处于滚动中
+        if (has_pos || self.scrolling) && self.focused && device.device_input.mouse.pressed { //处于滚动中
             self.scrolling = device.device_input.mouse.pressed;
             let oy = device.device_input.mouse.offset_y();
             self.scroll.offset_y(device, -oy, true);
@@ -67,34 +67,31 @@ impl PaintScrollArea {
         } else {
             self.scroll.mouse_move(device, context);
             if self.scroll.offset_y == 0.0 {
-                self.layout.mouse_move(device, context, resp);
-                vec![]
+                self.layout.mouse_move(device, context, app);
             } else {
                 self.layout.offset(device, 0.0, -self.scroll.offset_y)
             }
         };
         if self.scroll.offset_y != 0.0 { context.window.request_redraw(); }
-        res
     }
 
-    pub fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+    pub fn mouse_down<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         let (x, y) = device.device_input.mouse.lastest();
         self.focused = self.fill.param.rect.has_position(x, y);
         self.scrolling = false;
         self.scroll.mouse_down(device);
         if self.focused { //处于视图内部
-            self.layout.mouse_down(device, context, resp);
+            self.layout.mouse_down(device, context, app);
         }
     }
 
-    pub fn delta_input(&mut self, device: &Device, context: &Context) -> Vec<(String, Rect)> {
+    pub fn delta_input(&mut self, device: &Device, context: &Context) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.rect.has_position(x, y);
-        if !has_pos { return vec![]; }
+        if !has_pos { return; }
         self.scroll.offset_y(device, -device.device_input.mouse.delta_y() * 10.0, true);
-        if self.scroll.offset_y == 0.0 { return vec![]; }
-        let updates = self.layout.offset(device, 0.0, -self.scroll.offset_y);
+        if self.scroll.offset_y == 0.0 { return; }
+        self.layout.offset(device, 0.0, -self.scroll.offset_y);
         context.window.request_redraw();
-        updates
     }
 }

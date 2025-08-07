@@ -121,8 +121,12 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 window.resize(size);
             }
             WindowEvent::MouseInput { state, button, .. } => {
+                // println!("{:?}", state);
                 match (state, button) {
-                    (ElementState::Pressed, MouseButton::Left) => window.ui.mouse_down(),
+                    (ElementState::Pressed, MouseButton::Left) => {
+                        window.ui.device.device_input.mouse.pressed_pos = window.ui.device.device_input.mouse.lastest;
+                        window.ui.mouse_down(&mut window.app)
+                    }
                     (ElementState::Released, MouseButton::Left) => window.ui.mouse_release(&mut window.app),
                     (_, _) => {}
                 }
@@ -140,7 +144,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
             }
             WindowEvent::KeyboardInput { device_id: _device_id, event, .. } => {
                 if !event.state.is_pressed() { return; }
-                window.ui.key_input(event.logical_key,&mut window.app);
+                window.ui.key_input(event.logical_key, &mut window.app);
                 window.ui.ui_manage.context.window.request_redraw();
             }
             _ => (),

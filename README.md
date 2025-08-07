@@ -38,13 +38,13 @@ impl XlUiApp {
         }
     }
 
-    pub fn add(&mut self, uim: &mut UiM) {
+    pub fn add(&mut self, ctx: &mut Context) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
     }
 
-    pub fn reduce(&mut self, uim: &mut UiM) {
+    pub fn reduce(&mut self, ctx: &mut Context) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
@@ -168,17 +168,11 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ TextEdit
 
 ```rust
-//通过uim获取edit的文本
-pub fn add(&mut self, uim: &mut UiM) {
-    let text = uim.get_edit_text("xlui_edit");
-    self.label.set_text(format!("textedit: {}", text));
-    self.label.update(uim);
-}
 
 //文本变动监测
-fn edit_changed(&mut self, uim: &mut UiM, text: &str) {
+fn edit_changed(&mut self, ctx: &mut Context, text: &str) {
     self.label.set_text(format!("textedit: {}", text));
-    self.label.update(uim);
+    self.label.update(ctx);
 }
 
 fn draw(&mut self, ui: &mut Ui) {

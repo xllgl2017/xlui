@@ -11,28 +11,28 @@
 
 use crate::align::Align;
 use crate::frame::context::Context;
+use crate::frame::App;
 use crate::paint::button::PaintButton;
 use crate::paint::PaintTask;
+use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::text::text_buffer::TextBuffer;
-use crate::ui::{Ui, UiM};
-use std::any::Any;
-use crate::response::button::ButtonResponse;
-use crate::response::{Callback, DrawnEvent};
+use crate::ui::Ui;
 use crate::widgets::Widget;
+use std::any::Any;
 
 pub struct Button {
     pub(crate) id: String,
-    text_buffer: TextBuffer,
+    pub(crate) text_buffer: TextBuffer,
     text_algin: Align,
     pub(crate) rect: Rect,
     padding: Padding,
     pub(crate) border: Border,
     size_mode: SizeMode,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
 }
 
 
@@ -91,8 +91,6 @@ impl Button {
         self.text_buffer.text_size.font_size = font_size;
     }
 
-    // pub(crate) fn id(&self) -> &String { &self.id }
-
     pub fn width(mut self, w: f32) -> Self {
         self.set_width(w);
         self
@@ -103,7 +101,12 @@ impl Button {
         self
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM)) -> Self {
+    pub fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
+    pub fn connect<A: App>(mut self, f: impl FnMut(&mut A, &mut Context) + 'static) -> Self {
         self.callback = Some(Callback::create_click(f));
         self
     }
@@ -113,21 +116,15 @@ impl Button {
 impl Widget for Button {
     fn draw(&mut self, ui: &mut Ui) {
         let layout = ui.current_layout.as_mut().unwrap();
-
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.reset_size(&ui.ui_manage.context);
         layout.alloc_rect(&self.rect);
         //按钮矩形
-        let task = PaintButton::new(ui, self, &self.text_buffer);
+        let task = PaintButton::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::Button(task));
-        ui.response.insert(self.id.clone(), ButtonResponse {
-            rect: self.rect.clone(),
-            event: DrawnEvent::Click,
-            callback: Callback::click(self.callback.take()),
-        });
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        self.text_buffer.update(uim);
+    fn update(&mut self, ctx: &mut Context) {
+        self.text_buffer.update(ctx);
     }
 }

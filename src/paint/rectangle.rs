@@ -1,11 +1,14 @@
+use std::any::Any;
 use crate::frame::context::{Context, Render};
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::Device;
 use wgpu::util::DeviceExt;
+use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
+use crate::response::Callback;
 
 pub struct PaintRectangle {
     pub(crate) id: String,
@@ -13,6 +16,7 @@ pub struct PaintRectangle {
     pub(crate) param: RectParam,
     index: usize,
     hovered: bool,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
 }
 
 impl PaintRectangle {
@@ -30,6 +34,7 @@ impl PaintRectangle {
             param,
             index,
             hovered: false,
+            callback: None,
         }
     }
 
@@ -75,5 +80,9 @@ impl PaintRectangle {
         let data = self.param.as_draw_param(self.hovered, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.buffer, 0, &data);
         context.window.request_redraw();
+    }
+
+    pub fn connect<A: App>(&mut self, f: impl FnMut(&mut A, &mut Context) + 'static) {
+        self.callback = Some(Callback::create_click(f));
     }
 }

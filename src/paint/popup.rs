@@ -1,4 +1,5 @@
 use crate::Device;
+use crate::frame::App;
 use crate::frame::context::Context;
 use crate::layout::Layout;
 use crate::layout::popup::Popup;
@@ -33,6 +34,10 @@ impl PaintPopup {
             fill_index,
             layout: popup.layout.take().unwrap(),
         }
+    }
+
+    pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
+        self.layout.mouse_move(device, context, app);
     }
 
 

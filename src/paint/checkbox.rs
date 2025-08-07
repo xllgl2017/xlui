@@ -1,4 +1,5 @@
 use crate::frame::context::Context;
+use crate::frame::App;
 use crate::paint::color::Color;
 use crate::paint::rectangle::PaintRectangle;
 use crate::paint::text::PaintText;
@@ -7,9 +8,10 @@ use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
-use crate::Device;
-use crate::response::Response;
 use crate::widgets::checkbox::CheckBox;
+use crate::Device;
+use std::any::Any;
+use crate::response::Callback;
 
 pub struct PaintCheckBox {
     id: String,
@@ -19,10 +21,11 @@ pub struct PaintCheckBox {
     checked: bool,
     rect: Rect,
     hovered: bool,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
 }
 
 impl PaintCheckBox {
-    pub fn new(ui: &mut Ui, checkbox: &CheckBox, buffer: &TextBuffer) -> PaintCheckBox {
+    pub fn new(ui: &mut Ui, checkbox: &mut CheckBox) -> PaintCheckBox {
         let mut check_rect = checkbox.rect.clone();
         check_rect.set_width(15.0);
         check_rect.set_height(15.0);
@@ -36,7 +39,7 @@ impl PaintCheckBox {
         check_style.border.clicked = Border::new(1.0).color(Color::BLACK).radius(Radius::same(2));
         check.set_style(check_style);
         check.prepare(&ui.device, false, false);
-        let text = PaintText::new(ui, buffer);
+        let text = PaintText::new(ui, &mut checkbox.text);
         let mut text_buffer = TextBuffer::new("√".to_string());
         text_buffer.text_size.font_size = 12.0;
         text_buffer.reset_size(&ui.ui_manage.context);
@@ -51,6 +54,7 @@ impl PaintCheckBox {
             checked_text,
             rect: checkbox.rect.clone(),
             hovered: false,
+            callback: checkbox.callback.take(),
         }
     }
 
@@ -64,11 +68,16 @@ impl PaintCheckBox {
         }
     }
 
-    pub fn mouse_click(&mut self, device: &Device, resp: &mut Response) {
+    pub fn mouse_click<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
+        let (lx, ly) = device.device_input.mouse.pressed_pos;
         let (x, y) = device.device_input.mouse.lastest();
-        if !self.rect.has_position(x, y) { return; }
-        resp.checked_mut(&self.id).unwrap().checked = !self.checked;
+        if !self.rect.has_position(x, y) || !self.rect.has_position(lx, ly) { return; }
         self.checked = !self.checked;
+        if let Some(ref mut callback) = self.callback {
+            callback(app, context, self.checked)
+        }
+        context.window.request_redraw();
+
     }
 
     pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
@@ -79,5 +88,9 @@ impl PaintCheckBox {
 
     pub fn rect(&self) -> &Rect {
         &self.rect
+    }
+
+    pub fn connect<A: 'static>(&mut self, f: fn(&mut A, &mut Context, bool)) {
+        self.callback = Some(Callback::create_check(f));
     }
 }

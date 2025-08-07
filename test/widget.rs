@@ -1,5 +1,6 @@
+use xlui::frame::context::Context;
 use xlui::frame::{App, WindowAttribute};
-use xlui::ui::{Ui, UiM};
+use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
 use xlui::widgets::combobox::ComboBox;
@@ -27,36 +28,36 @@ impl XlUiApp {
         }
     }
 
-    fn add(&mut self, uim: &mut UiM) {
+    fn add(&mut self, ctx: &mut Context) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    fn reduce(&mut self, uim: &mut UiM) {
+    fn reduce(&mut self, ctx: &mut Context) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    fn slider(&mut self, uim: &mut UiM, value: f32) {
+    fn slider(&mut self, ctx: &mut Context, value: f32) {
         self.label.set_text(format!("slider: {}", value));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    fn check(&mut self, uim: &mut UiM, checked: bool) {
+    fn check(&mut self, ctx: &mut Context, checked: bool) {
         self.label.set_text(format!("check: {}", checked));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    fn spinbox(&mut self, uim: &mut UiM, value: i32) {
+    fn spinbox(&mut self, ctx: &mut Context, value: i32) {
         self.label.set_text(format!("spinbox: {}", value));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 
-    fn radio(&mut self, uim: &mut UiM, checked: bool) {
+    fn radio(&mut self, ctx: &mut Context, checked: bool) {
         self.label.set_text(format!("radio: {}", checked));
-        self.label.update(uim);
+        self.label.update(ctx);
     }
 }
 
@@ -85,14 +86,8 @@ impl App for XlUiApp {
             RadioButton::new(false, "radiobutton").connect(Self::radio).draw(ui);
             ui.radio(true, "radiobutton").connect(Self::radio);
         });
-        ui.horizontal(|ui|{
-            ComboBox::new().with_popup_height(150.0).with_widgets(|ui|{
-                ui.label("c1");
-                ui.label("c2");
-                ui.label("c3");
-                ui.label("c4");
-                ui.label("c5");
-            }).draw(ui);
+        ui.horizontal(|ui| {
+            ComboBox::new(vec![1, 2, 3]).with_popup_height(150.0).draw(ui);
         });
 
 

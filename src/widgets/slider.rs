@@ -1,19 +1,19 @@
+use crate::frame::context::Context;
+use crate::paint::slider::PaintSlider;
+use crate::paint::PaintTask;
+use crate::response::Callback;
+use crate::size::rect::Rect;
+use crate::ui::Ui;
+use crate::widgets::Widget;
 use std::any::Any;
 use std::ops::Range;
-use crate::paint::PaintTask;
-use crate::paint::slider::PaintSlider;
-use crate::response::{Callback, DrawnEvent};
-use crate::response::slider::SliderResponse;
-use crate::size::rect::Rect;
-use crate::ui::{Ui, UiM};
-use crate::widgets::Widget;
 
 pub struct Slider {
     pub(crate) id: String,
     pub(crate) rect: Rect,
     pub(crate) value: f32,
     pub(crate) range: Range<f32>,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut UiM, f32)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, f32)>>,
 }
 
 impl Slider {
@@ -27,7 +27,7 @@ impl Slider {
         }
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut UiM, f32)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, f32)) -> Self {
         self.callback = Some(Callback::create_slider(f));
         self
     }
@@ -48,16 +48,7 @@ impl Widget for Slider {
         layout.alloc_rect(&self.rect);
         let task = PaintSlider::new(ui, self);
         ui.add_paint_task(self.id.clone(), PaintTask::Slider(task));
-        ui.response.insert(self.id.clone(), SliderResponse {
-            rect: self.rect.clone(),
-            event: DrawnEvent::Click,
-            callback: Callback::slider(self.callback.take()),
-            value: self.value,
-            focused: false,
-        });
     }
 
-    fn update(&mut self, uim: &mut UiM) {
-        todo!()
-    }
+    fn update(&mut self, ctx: &mut Context) {}
 }

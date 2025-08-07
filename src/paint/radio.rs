@@ -1,14 +1,16 @@
 use crate::frame::context::Context;
+use crate::frame::App;
 use crate::paint::color::Color;
 use crate::paint::text::PaintText;
 use crate::render::circle::param::CircleParam;
 use crate::render::WrcRender;
-use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::widgets::radio::RadioButton;
 use crate::Device;
+use std::any::Any;
+use crate::response::Callback;
 
 pub struct PaintRadioButton {
     id: String,
@@ -22,10 +24,11 @@ pub struct PaintRadioButton {
     inner_index: usize,
     value: bool,
     hovered: bool,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
 }
 
 impl PaintRadioButton {
-    pub fn new(ui: &mut Ui, radio: &RadioButton) -> Self {
+    pub fn new(ui: &mut Ui, radio: &mut RadioButton) -> Self {
         let mut outer_radio_rect = radio.rect.clone();
         outer_radio_rect.set_width(radio.rect.height());
         let mut outer_style = ui.style.widget.click.clone();
@@ -72,6 +75,7 @@ impl PaintRadioButton {
             inner_index,
             value: radio.value,
             hovered: false,
+            callback: radio.callback.take(),
         }
     }
 
@@ -88,7 +92,7 @@ impl PaintRadioButton {
         }
     }
 
-    pub fn click(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+    pub fn click<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.rect.has_position(x, y);
         if !has_pos { return; }
@@ -98,13 +102,18 @@ impl PaintRadioButton {
         let data = self.inner_param.as_draw_param(self.value, self.value);
         device.queue.write_buffer(&self.inner_buffer, 0, data);
         context.window.request_redraw();
-
-        resp.checked_mut(&self.id).unwrap().checked = self.value;
+        if let Some(ref mut callback) = self.callback {
+            callback(app,context,self.value);
+        }
     }
 
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         context.render.circle.render(self.outer_index, render_pass);
         context.render.circle.render(self.inner_index, render_pass);
         self.text.render(device, context, render_pass);
+    }
+
+    pub fn connect<A: App>(&mut self, f: fn(&mut A, &mut Context, bool)) {
+        self.callback = Some(Callback::create_check(f));
     }
 }

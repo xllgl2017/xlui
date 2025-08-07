@@ -4,7 +4,8 @@
 //! use xlui::widgets::Widget;
 //! use xlui::widgets::label::Label;
 //! use xlui::widgets::button::Button;
-//! use xlui::ui::{UiM,Ui};
+//! use xlui::ui::Ui;
+//! use xlui::frame::context::Context;
 //!
 //! fn main() {
 //!     let app=XlUiApp::new();
@@ -25,16 +26,16 @@
 //!             count: 0,
 //!         }
 //!     }
-//!     fn add(&mut self,uim:&mut UiM){
+//!     fn add(&mut self,ctx: &mut Context){
 //!         self.count += 1;
 //!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(uim);
+//!         self.label.update(ctx);
 //!     }
 //!
-//!     fn reduce(&mut self,uim:&mut UiM){
+//!     fn reduce(&mut self,ctx: &mut Context){
 //!         self.count-=1;
 //!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(uim);
+//!         self.label.update(ctx);
 //!     }
 //! }
 //!
@@ -109,6 +110,7 @@ pub struct MouseInput {
     lastest: (f32, f32),
     previous: (f32, f32),
     delta: (f32, f32),
+    pressed_pos: (f32, f32),
     pressed: bool,
 }
 
@@ -162,6 +164,7 @@ impl DeviceInput {
                 lastest: (0.0, 0.0),
                 previous: (0.0, 0.0),
                 delta: (0.0, 0.0),
+                pressed_pos: (0.0, 0.0),
                 pressed: false,
             }
         }
