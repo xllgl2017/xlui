@@ -68,6 +68,8 @@ impl PaintScrollBar {
     fn context_offset_y(&self, oy: f32) -> f32 {
         let scrollable_content = self.height - self.outer_param.rect.height();
         let scrollable_slider = self.outer_param.rect.height() - self.inner_param.rect.height();
+        if scrollable_slider == 0.0 { return 0.0; }
+        // println!("{} {}", scrollable_content, scrollable_slider);
         let scroll_ratio = oy / scrollable_slider; // 内容偏移占比：
         scroll_ratio * scrollable_content // 滑块应偏移：
     }
@@ -75,10 +77,12 @@ impl PaintScrollBar {
     pub(crate) fn offset_y(&mut self, device: &Device, oy: f32, ct: bool) {
         let oy = if ct {
             self.offset_y = oy;
-            self.slider_offset_y(oy)
+            let oy = self.slider_offset_y(oy);
+            if oy == 0.0 { self.offset_y = 0.0; }
+            oy
         } else {
             self.offset_y = self.context_offset_y(oy);
-            oy
+            if self.offset_y == 0.0 { 0.0 } else { oy }
         };
         self.inner_param.rect.offset_y(oy);
         if self.inner_param.rect.y.min < self.outer_param.rect.y.min {

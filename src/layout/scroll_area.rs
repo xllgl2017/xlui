@@ -36,7 +36,7 @@ impl ScrollArea {
         self
     }
 
-    pub fn show(mut self, ui: &mut Ui, callback: fn(&mut Ui)) {
+    pub fn show(mut self, ui: &mut Ui, callback: impl Fn(&mut Ui)) {
         ui.current_scrollable = true;
         let mut previous_layout = ui.current_layout.take().unwrap();
         self.rect = previous_layout.available_rect.clone_with_size(&self.rect);

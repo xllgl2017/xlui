@@ -4,11 +4,68 @@ use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
 use xlui::widgets::combobox::ComboBox;
+use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
+
+struct TD {
+    name: String,
+}
+
+impl TD {
+    fn new(name: impl ToString) -> TD {
+        TD { name: name.to_string() }
+    }
+}
+
+struct ListView {
+    data: Vec<TD>,
+}
+
+impl ListView {
+    fn new() -> ListView {
+        ListView {
+            data: vec![
+                TD::new("1"),
+                TD::new("1"),
+                TD::new("1"),
+                TD::new("1")
+            ],
+        }
+    }
+    fn item_widget(&self, ui: &mut Ui, datum: &TD) {
+        ui.horizontal(|ui| {
+            ui.image("logo.jpg", (30.0, 30.0));
+            ui.vertical(|ui| {
+                ui.label("name");
+                ui.horizontal(|ui| {
+                    ui.label("00:00");
+                    ui.label("200");
+                    ui.label("HTTP/1.1");
+                    ui.label("10 KB");
+                });
+            });
+        });
+    }
+}
+
+
+impl Widget for ListView {
+    fn draw(&mut self, ui: &mut Ui) {
+        ScrollArea::new().with_size(300.0, 300.0).show(ui, |ui| {
+            for datum in self.data.iter() {
+                self.item_widget(ui, datum);
+            }
+        });
+    }
+
+    fn update(&mut self, uim: &mut UiM) {
+        todo!()
+    }
+}
 
 fn main() {
     XlUiApp::new().run();
@@ -112,6 +169,7 @@ impl App for XlUiApp {
                 ui.label("c4");
                 ui.label("c5");
             }).draw(ui);
+            ui.add(ListView::new());
         });
 
         ui.label("hello label1");
@@ -133,8 +191,8 @@ impl App for XlUiApp {
         // ui.button("hello button4");
         // ui.button("hello button5");
         // ui.image("logo.jpg", (200.0, 200.0));
-        // Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
-        // ui.image("logo.jpg", (200.0, 200.0));
+        Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
+        ui.image("logo.jpg", (200.0, 200.0));
     }
 
     // fn as_any(&mut self) -> &mut dyn Any {

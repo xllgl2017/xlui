@@ -164,6 +164,10 @@ impl Layout {
                     res.append(&mut paint_btn.offset(device, ox, oy));
                     if !paint_btn.rect().out_of_rect(&rect) { self.display.push(index); }
                 }
+                PaintTask::Image(paint_image) => {
+                    res.append(&mut paint_image.offset(device, ox, oy));
+                    if !paint_image.rect.out_of_rect(&rect) { self.display.push(index); }
+                }
                 _ => {}
             }
         }

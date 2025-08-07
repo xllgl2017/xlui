@@ -218,7 +218,6 @@ impl PaintTextEdit {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
         self.focused = has_pos;
-        println!("mouse down");
         if !self.fill.param.rect.has_position(x, y) { return; }
         self.has_select = false;
         self.select.rect_mut().set_width(0.0);
@@ -272,7 +271,6 @@ impl PaintTextEdit {
     pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         self.fill.render(&context.render, render_pass);
         self.text.render(device, context, render_pass);
-        // println!("{} {:?}", self.focused, self.cursor.param.rect);
         if self.focused { context.render.rectangle.render(self.cursor_index, render_pass); }
         if self.has_select { self.select.render(&context.render, render_pass); }
     }

@@ -131,6 +131,20 @@ impl ImageReader {
         self.vertexes.iter_mut().for_each(|x| x.screen_size = context.size.as_gamma_size());
         device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(self.vertexes.as_slice()));
     }
+
+    pub(crate) fn offset(&mut self, device: &Device, rect: &Rect) {
+        for (index, v) in self.vertexes.iter_mut().enumerate() {
+            match index {
+                0 => v.position = rect.left_top(),
+                1 => v.position = rect.left_bottom(),
+                2 => v.position = rect.right_bottom(),
+                3 => v.position = rect.right_top(),
+                _ => {}
+            }
+        }
+        device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(self.vertexes.as_slice()));
+    }
+
     fn create_bind_group(device: &Device, img: image::DynamicImage, group_layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
         let rgba = img.to_rgba8();
         let dimensions = img.dimensions();

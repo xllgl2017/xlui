@@ -20,18 +20,6 @@ impl App for Frame {
                 ui.label("a1");
                 ui.label("a1");
                 ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
-                ui.label("a1");
             });
             ui.label("h5");
             ui.label("h6");

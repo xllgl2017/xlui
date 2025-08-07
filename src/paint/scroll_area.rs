@@ -98,6 +98,7 @@ impl PaintScrollArea {
         let has_pos = self.rect.has_position(x, y);
         if !has_pos { return vec![]; }
         self.scroll.offset_y(device, -device.device_input.mouse.delta_y() * 10.0, true);
+        if self.scroll.offset_y == 0.0 { return vec![]; }
         let mut updates = vec![];
         for layout in self.layouts.iter_mut() {
             updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y))
