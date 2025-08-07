@@ -12,6 +12,7 @@ use xlui::font::Font;
 use xlui::frame::context::{Context, Render};
 use xlui::size::Size;
 use xlui::{Device, DeviceInput};
+use xlui::map::Map;
 
 mod render;
 
@@ -60,6 +61,7 @@ impl State {
             surface,
             resize: false,
             render: Render::new(&device),
+            updates: Map::new(),
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
 

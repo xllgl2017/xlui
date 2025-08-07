@@ -75,7 +75,7 @@ pub mod style;
 pub mod paint;
 mod render;
 mod response;
-mod map;
+pub mod map;
 
 const SAMPLE_COUNT: u32 = 4;
 
