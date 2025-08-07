@@ -187,26 +187,17 @@ impl Response {
 
     pub fn insert(&mut self, id: String, resp: impl WidgetResponse + 'static) {
         self.values.insert(id, Box::new(resp));
-        // self.ids.insert(id, self.values.len());
-        // self.values.push(Box::new(resp));
     }
 
     pub fn update(&mut self, id: String, rect: Rect) {
         if let Some(value) = self.values.get_mut(&id) {
             value.set_rect(rect);
         }
-        // match self.values.get_mut(&id) {
-        //     None => {}
-        //     Some(value) => {}
-        // }
-        // let index = self.ids[&id];
-        // let resp = &mut self.values[index];
-        // resp.set_rect(rect);
     }
 
     pub fn mouse_release<A: 'static>(&mut self, app: &mut A, device: &Device, uim: &mut UiM) {
         let (x, y) = device.device_input.mouse.lastest();
-        for (_, value) in self.values.iter_mut() {
+        for value in self.values.iter_mut() {
             let has_pos = value.rect().has_position(x, y);
             if !has_pos { continue; }
             Self::clicked(value, app, uim);
@@ -217,7 +208,7 @@ impl Response {
 
     pub fn mouse_move<A: 'static>(&mut self, app: &mut A, device: &Device, uim: &mut UiM) {
         if !device.device_input.mouse.pressed { return; }
-        for (_, value) in self.values.iter_mut() {
+        for value in self.values.iter_mut() {
             Self::slider(value, app, uim);
         }
     }

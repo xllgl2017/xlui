@@ -95,11 +95,11 @@ pub struct MapIter<'a, T> {
 }
 
 impl<'a, T> Iterator for MapIter<'a, T> {
-    type Item = (&'a String, &'a T);
+    type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.inner.next()?;
-        Some((&item.key, &item.value))
+        Some(&item.value)
     }
 }
 
@@ -108,10 +108,10 @@ pub struct MapIterMut<'a, T> {
 }
 
 impl<'a, T> Iterator for MapIterMut<'a, T> {
-    type Item = (&'a String, &'a mut T);
+    type Item = &'a mut T;
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.inner.next()?;
-        Some((&item.key, &mut item.value))
+        Some(&mut item.value)
     }
 }
 

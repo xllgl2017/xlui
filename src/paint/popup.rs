@@ -38,7 +38,7 @@ impl PaintPopup {
 
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         context.render.rectangle.render(self.fill_index, render_pass);
-        for (_, widget) in self.layout.widgets.iter_mut() {
+        for widget in self.layout.widgets.iter_mut() {
             widget.draw(device, context, render_pass);
         }
     }

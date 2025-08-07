@@ -154,7 +154,7 @@ impl Layout {
         let mut res = vec![];
         self.display.clear();
         let rect = self.rect();
-        for (index, (_, widget)) in self.widgets.iter_mut().enumerate() {
+        for (index,widget) in self.widgets.iter_mut().enumerate() {
             match widget {
                 PaintTask::Text(paint_text) => { //text外部无response，如果添加response，此处需增加，否则在滚动视图中事件错误
                     paint_text.offset(ox, oy);
@@ -193,7 +193,7 @@ impl Layout {
 impl Layout {
     pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
         let mut updates = vec![];
-        for (_, widget) in self.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
                 PaintTask::TextEdit(paint_edit) => {
@@ -212,7 +212,7 @@ impl Layout {
     }
 
     pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
-        for (_, widget) in self.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
                 PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
@@ -225,7 +225,7 @@ impl Layout {
     }
 
     pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
-        for (_, widget) in self.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
@@ -239,7 +239,7 @@ impl Layout {
     }
 
     pub(crate) fn window_resize(&mut self, device: &Device, context: &mut Context) {
-        for (_, widget) in self.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.prepare(device, context),
                 _ => {}
@@ -249,7 +249,7 @@ impl Layout {
 
     pub(crate) fn key_input(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, resp: &mut Response) -> Vec<String> {
         let mut res = vec![];
-        for (_, widget) in self.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::Text(_) => {}
                 PaintTask::Image(_) => {}
@@ -264,7 +264,7 @@ impl Layout {
 
     pub(crate) fn delta_input(&mut self, device: &Device, context: &Context) -> Vec<(String, Rect)> {
         let mut updates = vec![];
-        for (_, widget) in self.widgets.iter_mut() {
+        for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::ScrollBar(_) => {}
                 PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.delta_input(device, context)),
