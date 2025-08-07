@@ -13,6 +13,7 @@ use crate::frame::context::Context;
 use crate::paint::combobox::PaintComboBox;
 use crate::paint::popup::PaintPopup;
 use crate::paint::radio::PaintRadioButton;
+use crate::paint::rectangle::PaintRectangle;
 use crate::response::Response;
 use crate::size::rect::Rect;
 
@@ -81,7 +82,7 @@ fn gen_render_pipeline(device: &Device, topology: wgpu::PrimitiveTopology) -> wg
 
 pub(crate) enum PaintTask {
     Text(PaintText),
-    // Rectangle(PaintRectangle),
+    Rectangle(PaintRectangle),
     // Line(PaintLine),
     Image(PaintImage),
     ScrollBar(PaintScrollBar),
@@ -114,6 +115,7 @@ impl PaintTask {
 
     pub fn rect(&self) -> &Rect {
         match self {
+            PaintTask::Rectangle(t) => t.rect(),
             PaintTask::Text(t) => &t.rect,
             PaintTask::Image(t) => &t.rect,
             PaintTask::ScrollBar(t) => &t.rect(),
@@ -131,6 +133,7 @@ impl PaintTask {
 
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
         match self {
+            PaintTask::Rectangle(paint_rect) => paint_rect.render(&context.render, render_pass),
             PaintTask::Text(paint_text) => paint_text.render(device, context, render_pass), //绘制文本
             PaintTask::Image(paint_image) => paint_image.render(device, context, render_pass),
             PaintTask::ScrollBar(paint_bar) => paint_bar.render(&context.render, render_pass),
@@ -150,13 +153,14 @@ impl PaintTask {
     pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
         let mut updates = vec![];
         match self {
+            PaintTask::Rectangle(paint_rect) => paint_rect.mouse_move(device, context),
             PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
             PaintTask::TextEdit(paint_edit) => paint_edit.mouse_move(&device, context),
             PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
             PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
             PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device, context),
             PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
-            PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),
+            PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context, resp)),
             PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
             _ => {}
         }

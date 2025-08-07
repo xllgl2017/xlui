@@ -1,5 +1,9 @@
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
+use xlui::paint::color::Color;
+use xlui::radius::Radius;
+use xlui::size::border::Border;
+use xlui::style::{BorderStyle, ClickStyle, FillStyle};
 use xlui::ui::{Ui, UiM};
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
@@ -30,21 +34,48 @@ impl ListView {
         ListView {
             data: vec![
                 TD::new("1"),
-                TD::new("1"),
-                TD::new("1"),
-                TD::new("1")
+                TD::new("2"),
+                TD::new("3"),
+                TD::new("4"),
+                TD::new("5"),
+                TD::new("6"),
+                TD::new("7"),
+                TD::new("8"),
+                TD::new("9"),
+                TD::new("0"),
+                TD::new("11")
             ],
         }
     }
+    fn item_click(app: &mut XlUiApp, uim: &mut UiM) {
+        println!("item click");
+    }
+
     fn item_widget(&self, ui: &mut Ui, datum: &TD) {
+        let mut rect = ui.available_rect();
+        rect.set_height(38.0);
+        let style = ClickStyle {
+            fill: FillStyle {
+                inactive: Color::TRANSPARENT,
+                hovered: Color::TRANSPARENT,
+                clicked: Color::TRANSPARENT,
+            },
+            border: BorderStyle {
+                inactive: Border::new(1.0).radius(Radius::same(3)).color(Color::BLUE),
+                hovered: Border::new(1.0).radius(Radius::same(3)).color(Color::RED),
+                clicked: Border::new(1.0).radius(Radius::same(3)).color(Color::YELLOW),
+            },
+        };
+        ui.paint_rect(rect, style).connect(Self::item_click);
         ui.horizontal(|ui| {
             ui.image("logo.jpg", (30.0, 30.0));
             ui.vertical(|ui| {
-                ui.label("name");
+                ui.label(datum.name.as_str());
                 ui.horizontal(|ui| {
                     ui.label("00:00");
                     ui.label("200");
                     ui.label("HTTP/1.1");
+                    ui.label("10 KB");
                     ui.label("10 KB");
                 });
             });

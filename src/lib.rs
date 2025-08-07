@@ -62,7 +62,7 @@ use crate::ui::Ui;
 pub mod widgets;
 mod align;
 pub mod vertex;
-mod radius;
+pub mod radius;
 pub mod layout;
 pub mod text;
 pub mod font;

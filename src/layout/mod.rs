@@ -27,6 +27,7 @@ pub struct Layout {
     pub width: f32,
     pub height: f32,
     pub(crate) widgets: Map<PaintTask>,
+    pub(crate) children: Vec<Layout>,
     display: Vec<usize>,
 }
 
@@ -43,6 +44,7 @@ impl Layout {
             width: 0.0,
             height: 0.0,
             display: vec![],
+            children: vec![],
         }
     }
 
@@ -129,31 +131,23 @@ impl Layout {
     }
 
     pub(crate) fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
+        for child in self.children.iter_mut() {
+            child.draw(device, context, render_pass);
+        }
         for index in &self.display {
             self.widgets[*index].draw(device, context, render_pass);
-            // let widget = &mut self.widgets[*index];
-            // match widget {
-            //     PaintTask::Text(paint_text) => {
-            //         paint_text.render(device, context, render_pass)
-            //     } //绘制文本
-            //     PaintTask::Image(paint_image) => paint_image.render(device, context, render_pass),
-            //     PaintTask::ScrollBar(paint_bar) => paint_bar.render(&context.render, render_pass),
-            //     PaintTask::TextEdit(paint_edit) => paint_edit.render(device, context, render_pass),
-            //     PaintTask::SpinBox(paint_spin_box) => paint_spin_box.render(device, context, render_pass),
-            //     PaintTask::Slider(paint_slider) => paint_slider.render(&context.render, render_pass),
-            //     PaintTask::CheckBox(paint_checkbox) => paint_checkbox.render(device, context, render_pass),
-            //     PaintTask::Button(paint_button) => paint_button.render(device, context, render_pass),
-            //     PaintTask::ScrollArea(paint_area) => paint_area.draw(device, context, render_pass),
-            //     PaintTask::Radio(paint_radio) => paint_radio.draw(device, context, render_pass),
-            //     _ => {}
-            // }
         }
     }
 
     pub(crate) fn offset(&mut self, device: &Device, ox: f32, oy: f32) -> Vec<(String, Rect)> {
+        if ox == 0.0 && oy == 0.0 { return vec![]; }
         let mut res = vec![];
         self.display.clear();
-        let rect = self.rect();
+        let rect = self.drawn_rect();
+        for child in self.children.iter_mut() {
+            child.max_rect.offset(ox, oy);
+            res.append(&mut child.offset(device, ox, oy));
+        }
         for (index, widget) in self.widgets.iter_mut().enumerate() {
             match widget {
                 PaintTask::Text(paint_text) => { //text外部无response，如果添加response，此处需增加，否则在滚动视图中事件错误
@@ -168,6 +162,10 @@ impl Layout {
                     res.append(&mut paint_image.offset(device, ox, oy));
                     if !paint_image.rect.out_of_rect(&rect) { self.display.push(index); }
                 }
+                PaintTask::Rectangle(paint_rect) => {
+                    res.append(&mut paint_rect.offset(device, ox, oy));
+                    if !paint_rect.rect().out_of_rect(&rect) { self.display.push(index); }
+                }
                 _ => {}
             }
         }
@@ -176,16 +174,23 @@ impl Layout {
 
     pub(crate) fn insert_widget(&mut self, id: String, widget: PaintTask) {
         let out_of_max = widget.rect().out_of_rect(&self.max_rect);
-        // println!("{:?} {:?} {}", self.max_rect, widget.rect(), out_of_max);
         self.widgets.insert(id, widget);
         if out_of_max { return; }
         self.display.push(self.widgets.len() - 1)
     }
 
+    #[deprecated]
     pub(crate) fn rect(&self) -> Rect {
         let mut rect = self.max_rect.clone();
         rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
         rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
+        rect
+    }
+
+    fn drawn_rect(&self) -> Rect {
+        let mut rect = self.max_rect.clone();
+        rect.set_width(self.width);
+        rect.set_height(self.height);
         rect
     }
 }
@@ -195,17 +200,6 @@ impl Layout {
         let mut updates = vec![];
         for widget in self.widgets.iter_mut() {
             widget.mouse_move(device, context, resp);
-            // match widget {
-            //     PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
-            //     PaintTask::TextEdit(paint_edit) => paint_edit.mouse_move(&device, context),
-            //     PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
-            //     PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
-            //     PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device, context),
-            //     PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
-            //     PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),
-            //     PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
-            //     _ => {}
-            // }
         }
         updates
     }
@@ -213,29 +207,12 @@ impl Layout {
     pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for widget in self.widgets.iter_mut() {
             widget.mouse_down(device, context, resp);
-            // match widget {
-            //     PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
-            //     PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
-            //     PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, resp),
-            //     PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
-            //     PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
-            //     _ => {}
-            // }
         }
     }
 
     pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for widget in self.widgets.iter_mut() {
             widget.mouse_release(device, context, resp);
-            // match widget {
-            //     PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
-            //     PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
-            //     PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
-            //     PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
-            //     PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
-            //     PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
-            //     _ => {}
-            // }
         }
     }
 

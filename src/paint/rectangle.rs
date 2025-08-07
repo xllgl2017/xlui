@@ -1,4 +1,4 @@
-use crate::frame::context::Render;
+use crate::frame::context::{Context, Render};
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
@@ -8,9 +8,11 @@ use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 
 pub struct PaintRectangle {
-    param_buffer: wgpu::Buffer,
+    pub(crate) id: String,
+    buffer: wgpu::Buffer,
     pub(crate) param: RectParam,
     index: usize,
+    hovered: bool,
 }
 
 impl PaintRectangle {
@@ -23,16 +25,31 @@ impl PaintRectangle {
         });
         let index = ui.ui_manage.context.render.rectangle.create_bind_group(&ui.device, &param_buffer);
         PaintRectangle {
-            param_buffer,
+            id: crate::gen_unique_id(),
+            buffer: param_buffer,
             param,
             index,
+            hovered: false,
         }
     }
 
-    pub fn offset(&mut self, target_x: f32) {
+    #[deprecated]
+    pub fn offset_to_x(&mut self, target_x: f32) {
         let x = self.param.rect.x.min;
         self.param.rect.offset_x(target_x - x);
     }
+
+    pub fn offset(&mut self, device: &Device, ox: f32, oy: f32) -> Vec<(String, Rect)> {
+        self.param.rect.offset(ox, oy);
+        if ox != 0.0 || oy != 0.0 {
+            let data = self.param.as_draw_param(self.hovered, device.device_input.mouse.pressed);
+            device.queue.write_buffer(&self.buffer, 0, data);
+            return vec![(self.id.clone(), self.param.rect.clone())];
+        }
+        vec![]
+    }
+
+    pub fn rect(&self) -> &Rect { &self.param.rect }
 
     pub fn rect_mut(&mut self) -> &mut Rect {
         &mut self.param.rect
@@ -43,11 +60,20 @@ impl PaintRectangle {
     }
 
     pub fn prepare(&mut self, device: &Device, hovered: bool, mouse_down: bool) {
-        // println!("prepare{} {}", hovered, mouse_down);
         let draw_param = self.param.as_draw_param(hovered, mouse_down);
-        device.queue.write_buffer(&self.param_buffer, 0, draw_param);
+        device.queue.write_buffer(&self.buffer, 0, draw_param);
     }
     pub fn render(&mut self, render: &Render, render_pass: &mut wgpu::RenderPass) {
         render.rectangle.render(self.index, render_pass);
+    }
+
+    pub fn mouse_move(&mut self, device: &Device, context: &mut Context) {
+        let (x, y) = device.device_input.mouse.lastest();
+        let has_pos = self.param.rect.has_position(x, y);
+        if self.hovered == has_pos { return; }
+        self.hovered = has_pos;
+        let data = self.param.as_draw_param(self.hovered, device.device_input.mouse.pressed);
+        device.queue.write_buffer(&self.buffer, 0, &data);
+        context.window.request_redraw();
     }
 }

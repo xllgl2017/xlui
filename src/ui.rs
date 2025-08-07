@@ -4,7 +4,7 @@ use crate::layout::Layout;
 use crate::paint::PaintTask;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
-use crate::style::Style;
+use crate::style::{ClickStyle, Style};
 use crate::text::text_buffer::TextBuffer;
 use crate::widgets::button::Button;
 use crate::widgets::image::Image;
@@ -13,9 +13,10 @@ use crate::widgets::spinbox::SpinBox;
 use crate::widgets::Widget;
 use crate::{Device, SAMPLE_COUNT};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use crate::paint::rectangle::PaintRectangle;
 use crate::response::button::ButtonResponse;
 use crate::response::checkbox::CheckBoxResponse;
-use crate::response::Response;
+use crate::response::{Callback, DrawnEvent, Response};
 use crate::response::slider::SliderResponse;
 use crate::response::spinbox::SpinBoxResponse;
 use crate::widgets::checkbox::CheckBox;
@@ -168,6 +169,25 @@ impl Ui {
         let mut radio_btn = RadioButton::new(check, label);
         radio_btn.draw(self);
         self.response.check_response()
+    }
+
+    pub fn available_rect(&self) -> Rect {
+        self.current_layout.as_ref().unwrap().available_rect.clone()
+    }
+
+
+    pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) -> &mut ButtonResponse {
+        println!("{:?}",rect);
+        let mut task = PaintRectangle::new(self, rect);
+        task.set_style(style);
+        task.prepare(&self.device, false, false);
+        self.response.insert(task.id.clone(), ButtonResponse {
+            rect: task.rect().clone(),
+            event: DrawnEvent::None,
+            callback: Callback::new(),
+        });
+        self.add_paint_task(task.id.clone(), PaintTask::Rectangle(task));
+        self.response.button_response()
     }
 
     pub fn add(&mut self, mut widget: impl Widget) {

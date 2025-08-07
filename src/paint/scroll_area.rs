@@ -12,7 +12,7 @@ use crate::Device;
 use crate::response::Response;
 
 pub struct PaintScrollArea {
-    layouts: Vec<Layout>,
+    layout: Layout,
     fill: PaintRectangle,
     pub(crate) rect: Rect,
     scroll: PaintScrollBar,
@@ -22,9 +22,8 @@ pub struct PaintScrollArea {
 }
 
 impl PaintScrollArea {
-    pub fn new(scroll_area: ScrollArea, ui: &mut Ui) -> Self {
-        println!("{} {}", scroll_area.layouts[0].height, scroll_area.layouts[0].max_rect.height());
-
+    pub fn new(mut scroll_area: ScrollArea, ui: &mut Ui) -> Self {
+        // println!("{} {}", scroll_area.layout.height, scroll_area.layout.max_rect.height());
 
         let mut fill_rect = scroll_area.rect.clone();
         fill_rect.x.max = fill_rect.x.max - scroll_area.v_bar.rect.width() - 2.0;
@@ -35,13 +34,14 @@ impl PaintScrollArea {
         fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill.set_style(fill_style);
         fill.prepare(&ui.device, false, false);
-        let layout = &scroll_area.layouts[0];
-        let scroll = PaintScrollBar::new(ui, &scroll_area.v_bar.rect, layout.height + scroll_area.padding.vertical());
+
+        let layout = scroll_area.layout.take().unwrap();
+        let scroll = PaintScrollBar::new(ui, &scroll_area.v_bar.rect, layout.height + scroll_area.padding.vertical() + layout.item_space);
         PaintScrollArea {
             fill,
             rect: scroll_area.rect,
-            context_rect: layout.rect(),
-            layouts: scroll_area.layouts,
+            context_rect: layout.max_rect.clone(),
+            layout,
             scroll,
             focused: false,
             scrolling: false,
@@ -54,31 +54,29 @@ impl PaintScrollArea {
         self.scroll.render(&context.render, render_pass);
         let clip = &self.context_rect;
         render_pass.set_scissor_rect(clip.x.min as u32, clip.y.min as u32, clip.width() as u32, clip.height() as u32);
-        for layout in self.layouts.iter_mut() {
-            layout.draw(device, context, render_pass);
-        }
+        self.layout.draw(device, context, render_pass);
         render_pass.set_scissor_rect(0, 0, context.size.width, context.size.height);
     }
 
-    pub fn mouse_move(&mut self, device: &Device, context: &mut Context) -> Vec<(String, Rect)> {
+    pub fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
-        let mut updates = vec![];
-        if (has_pos || self.scrolling) && self.focused && device.device_input.mouse.pressed { //处于滚动中
+        let res = if (has_pos || self.scrolling) && self.focused && device.device_input.mouse.pressed { //处于滚动中
             self.scrolling = device.device_input.mouse.pressed;
             let oy = device.device_input.mouse.offset_y();
             self.scroll.offset_y(device, -oy, true);
-            for layout in self.layouts.iter_mut() {
-                updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y));
-                if self.scroll.offset_y != 0.0 { context.window.request_redraw(); }
-            }
+            self.layout.offset(device, 0.0, -self.scroll.offset_y)
         } else {
             self.scroll.mouse_move(device, context);
-            for layout in self.layouts.iter_mut() {
-                if self.scroll.offset_y != 0.0 { updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y)); }
+            if self.scroll.offset_y == 0.0 {
+                self.layout.mouse_move(device, context, resp);
+                vec![]
+            } else {
+                self.layout.offset(device, 0.0, -self.scroll.offset_y)
             }
-        }
-        updates
+        };
+        if self.scroll.offset_y != 0.0 { context.window.request_redraw(); }
+        res
     }
 
     pub fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
@@ -87,9 +85,10 @@ impl PaintScrollArea {
         self.scrolling = false;
         self.scroll.mouse_down(device);
         if self.focused { //处于视图内部
-            for layout in self.layouts.iter_mut() {
-                layout.mouse_down(device, context, resp);
-            }
+            self.layout.mouse_down(device, context, resp);
+            // for layout in self.layouts.iter_mut() {
+            //     layout.mouse_down(device, context, resp);
+            // }
         }
     }
 
@@ -99,10 +98,10 @@ impl PaintScrollArea {
         if !has_pos { return vec![]; }
         self.scroll.offset_y(device, -device.device_input.mouse.delta_y() * 10.0, true);
         if self.scroll.offset_y == 0.0 { return vec![]; }
-        let mut updates = vec![];
-        for layout in self.layouts.iter_mut() {
-            updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y))
-        }
+        let mut updates = self.layout.offset(device, 0.0, -self.scroll.offset_y);
+        // for layout in self.layouts.iter_mut() {
+        //     updates.append(&mut layout.offset(device, 0.0, -self.scroll.offset_y))
+        // }
         context.window.request_redraw();
         updates
     }

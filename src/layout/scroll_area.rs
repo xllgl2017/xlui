@@ -11,9 +11,8 @@ use crate::widgets::scroll::bar::ScrollBar;
 pub struct ScrollArea {
     id: String,
     pub(crate) rect: Rect,
-    pub(crate) layouts: Vec<Layout>,
+    pub(crate) layout: Option<Layout>,
     pub(crate) padding: Padding,
-    current_layout: Option<Layout>,
     pub(crate) v_bar: ScrollBar,
 }
 
@@ -22,16 +21,14 @@ impl ScrollArea {
         ScrollArea {
             id: crate::gen_unique_id(),
             rect: Rect::new(),
-            layouts: vec![],
+            layout: Some(Layout::top_to_bottom()),
             padding: Padding::same(10.0),
-            current_layout: Some(Layout::top_to_bottom()),
             v_bar: ScrollBar::new(),
         }
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.rect.set_width(width);
-        self.rect.set_height(height);
+        self.rect.set_size(width, height);
         self.v_bar.rect.set_height(height);
         self
     }
@@ -47,19 +44,23 @@ impl ScrollArea {
         self.v_bar.rect.x.min = self.v_bar.rect.x.max - v_bar_width; //outer
 
 
-        let mut current_layout = self.current_layout.take().unwrap();
-        current_layout.available_rect = self.rect.clone_add_padding(&self.padding);
+        let mut current_layout = self.layout.take().unwrap();
         current_layout.max_rect = self.rect.clone_add_padding(&self.padding);
+        current_layout.max_rect.set_width(self.rect.width() - v_bar_width - 2.0-self.padding.horizontal());
+        current_layout.available_rect = current_layout.max_rect.clone();
+
         ui.current_layout.replace(current_layout);
         ui.current_scrollable = true;
         callback(ui);
-        let current_layout = ui.current_layout.take().unwrap();
+        let mut current_layout = ui.current_layout.take().unwrap();
         previous_layout.alloc_rect(&self.rect); //分配大小
         // previous_layout.alloc_layout(&current_layout);
         ui.current_layout.replace(previous_layout);
         ui.current_scrollable = false;
-        self.layouts.insert(0, current_layout);
-        self.layouts.append(&mut ui.scroll_layouts);
+        current_layout.children.append(&mut ui.scroll_layouts);
+        self.layout.replace(current_layout);
+        // self.layout.insert(0, current_layout);
+        // self.layout.append(&mut ui.scroll_layouts);
         self.draw(ui);
     }
 
