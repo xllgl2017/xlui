@@ -64,7 +64,7 @@ impl Button {
             SizeMode::FixHeight => self.rect.set_width(self.text_buffer.rect.width()),
             SizeMode::Fix => {
                 self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
-                println!("{:?}", self.text_buffer.rect);
+                println!("text {:?}", self.text_buffer.rect);
             }
         }
         self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);

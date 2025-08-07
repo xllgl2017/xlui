@@ -154,7 +154,7 @@ impl Layout {
         let mut res = vec![];
         self.display.clear();
         let rect = self.rect();
-        for (index,widget) in self.widgets.iter_mut().enumerate() {
+        for (index, widget) in self.widgets.iter_mut().enumerate() {
             match widget {
                 PaintTask::Text(paint_text) => { //text外部无response，如果添加response，此处需增加，否则在滚动视图中事件错误
                     paint_text.offset(ox, oy);
@@ -176,7 +176,7 @@ impl Layout {
 
     pub(crate) fn insert_widget(&mut self, id: String, widget: PaintTask) {
         let out_of_max = widget.rect().out_of_rect(&self.max_rect);
-        println!("{:?} {:?} {}", self.max_rect, widget.rect(), out_of_max);
+        // println!("{:?} {:?} {}", self.max_rect, widget.rect(), out_of_max);
         self.widgets.insert(id, widget);
         if out_of_max { return; }
         self.display.push(self.widgets.len() - 1)
@@ -194,47 +194,48 @@ impl Layout {
     pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
         let mut updates = vec![];
         for widget in self.widgets.iter_mut() {
-            match widget {
-                PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
-                PaintTask::TextEdit(paint_edit) => {
-                    paint_edit.mouse_move(&device, context);
-                }
-                PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
-                PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
-                PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device),
-                PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
-                PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),
-                PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
-                _ => {}
-            }
+            widget.mouse_move(device, context, resp);
+            // match widget {
+            //     PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
+            //     PaintTask::TextEdit(paint_edit) => paint_edit.mouse_move(&device, context),
+            //     PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
+            //     PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
+            //     PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device, context),
+            //     PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
+            //     PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),
+            //     PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
+            //     _ => {}
+            // }
         }
         updates
     }
 
     pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for widget in self.widgets.iter_mut() {
-            match widget {
-                PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
-                PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
-                PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, resp),
-                PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
-                PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
-                _ => {}
-            }
+            widget.mouse_down(device, context, resp);
+            // match widget {
+            //     PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
+            //     PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
+            //     PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, resp),
+            //     PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
+            //     PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
+            //     _ => {}
+            // }
         }
     }
 
     pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
         for widget in self.widgets.iter_mut() {
-            match widget {
-                PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
-                PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
-                PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
-                PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
-                PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
-                PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
-                _ => {}
-            }
+            widget.mouse_release(device, context, resp);
+            // match widget {
+            //     PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
+            //     PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
+            //     PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
+            //     PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
+            //     PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
+            //     PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
+            //     _ => {}
+            // }
         }
     }
 
@@ -242,6 +243,7 @@ impl Layout {
         for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::SpinBox(paint_spinbox) => paint_spinbox.prepare(device, context),
+                PaintTask::ComboBox(paint_combo) => paint_combo.resize(device, context),
                 _ => {}
             }
         }

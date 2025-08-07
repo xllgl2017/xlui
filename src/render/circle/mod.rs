@@ -4,13 +4,13 @@ use crate::render::WrcRender;
 
 pub mod param;
 
-pub struct CircleRenderer {
+pub struct CircleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
     bind_groups: Vec<wgpu::BindGroup>,
 }
 
-impl CircleRenderer {
+impl CircleRender {
     pub fn new(device: &Device) -> Self {
         let shader = device.device.create_shader_module(include_wgsl!("circle.wgsl"));
         let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
@@ -36,7 +36,7 @@ impl CircleRenderer {
         });
 
         let render_pipeline = super::create_pipeline(device, shader, pipeline_layout);
-        CircleRenderer {
+        CircleRender {
             pipeline: render_pipeline,
             bind_group_layout,
             bind_groups: vec![],
@@ -45,7 +45,7 @@ impl CircleRenderer {
 
 }
 
-impl WrcRender for CircleRenderer {
+impl WrcRender for CircleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {
         &self.pipeline
     }

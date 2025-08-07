@@ -13,6 +13,7 @@ use crate::frame::context::Context;
 use crate::paint::combobox::PaintComboBox;
 use crate::paint::popup::PaintPopup;
 use crate::paint::radio::PaintRadioButton;
+use crate::response::Response;
 use crate::size::rect::Rect;
 
 pub mod text;
@@ -142,6 +143,45 @@ impl PaintTask {
             PaintTask::Radio(paint_radio) => paint_radio.draw(device, context, render_pass),
             PaintTask::Popup(paint_popup) => paint_popup.draw(device, context, render_pass),
             PaintTask::ComboBox(paint_combo) => paint_combo.draw(device, context, render_pass),
+            _ => {}
+        }
+    }
+
+    pub(crate) fn mouse_move(&mut self, device: &Device, context: &mut Context, resp: &mut Response) -> Vec<(String, Rect)> {
+        let mut updates = vec![];
+        match self {
+            PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_move(&device, context),
+            PaintTask::TextEdit(paint_edit) => paint_edit.mouse_move(&device, context),
+            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_move(device, context),
+            PaintTask::Slider(paint_slider) => paint_slider.mouse_move(device, context, resp),
+            PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_move(device, context),
+            PaintTask::Button(paint_button) => paint_button.mouse_move(device, context),
+            PaintTask::ScrollArea(paint_area) => updates.append(&mut paint_area.mouse_move(device, context)),
+            PaintTask::Radio(paint_radio) => paint_radio.mouse_move(device, context),
+            _ => {}
+        }
+        updates
+    }
+
+    pub(crate) fn mouse_down(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+        match self {
+            PaintTask::ScrollBar(paint_bar) => paint_bar.mouse_down(device),
+            PaintTask::TextEdit(paint_edit) => paint_edit.mouse_down(device, context),
+            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.mouse_down(device, context, resp),
+            PaintTask::Slider(paint_slider) => paint_slider.mouse_down(device, resp),
+            PaintTask::ScrollArea(paint_area) => paint_area.mouse_down(device, context, resp),
+            _ => {}
+        }
+    }
+
+    pub(crate) fn mouse_release(&mut self, device: &Device, context: &mut Context, resp: &mut Response) {
+        match self {
+            PaintTask::TextEdit(paint_edit) => paint_edit.click(device, context),
+            PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, resp),
+            PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, resp),
+            PaintTask::Radio(paint_radio) => paint_radio.click(device, context, resp),
+            PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
+            PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device, resp),
             _ => {}
         }
     }

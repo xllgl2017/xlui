@@ -18,6 +18,7 @@ pub struct PaintCheckBox {
     checked_text: PaintText,
     checked: bool,
     rect: Rect,
+    hovered: bool,
 }
 
 impl PaintCheckBox {
@@ -43,19 +44,24 @@ impl PaintCheckBox {
         text_buffer.rect.y.min += 2.0;
         let checked_text = PaintText::new(ui, &text_buffer);
         PaintCheckBox {
-            id:checkbox.id.clone(),
+            id: checkbox.id.clone(),
             check,
             text,
             checked: checkbox.value,
             checked_text,
             rect: checkbox.rect.clone(),
+            hovered: false,
         }
     }
 
-    pub fn mouse_move(&mut self, device: &Device) {
+    pub fn mouse_move(&mut self, device: &Device, context: &Context) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.rect.has_position(x, y);
-        self.check.prepare(device, has_pos, device.device_input.mouse.pressed)
+        self.check.prepare(device, has_pos, device.device_input.mouse.pressed);
+        if self.hovered != has_pos {
+            self.hovered = has_pos;
+            context.window.request_redraw();
+        }
     }
 
     pub fn mouse_click(&mut self, device: &Device, resp: &mut Response) {

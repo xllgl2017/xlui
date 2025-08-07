@@ -69,11 +69,14 @@ impl PaintComboBox {
         let (x, y) = device.device_input.mouse.lastest();
         if self.fill_param.rect.has_position(x, y) { //在显示区域点击
             self.open = !self.open;
-
         } else if self.popup.rect.has_position(x, y) { //弹窗区域点击
 
         } else { self.open = false; }
         context.window.request_redraw();
+    }
+
+    pub fn resize(&mut self, device: &Device, context: &Context) {
+        self.triangle.prepare(device, context);
     }
 
     pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
