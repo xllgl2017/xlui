@@ -59,6 +59,11 @@ impl Image {
         self.size_mode = SizeMode::Fix;
         self
     }
+
+    pub fn set_size(&mut self, width: f32, height: f32) {
+        self.rect.set_size(width, height);
+        self.size_mode = SizeMode::Fix;
+    }
 }
 
 impl Widget for Image {

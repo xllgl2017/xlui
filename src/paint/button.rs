@@ -1,5 +1,6 @@
 use crate::frame::context::Context;
 use crate::frame::App;
+use crate::paint::image::PaintImage;
 use crate::paint::rectangle::PaintRectangle;
 use crate::paint::text::PaintText;
 use crate::response::Callback;
@@ -16,6 +17,7 @@ pub struct PaintButton {
     text: PaintText,
     mouse_down: bool,
     hovered: bool,
+    image: Option<PaintImage>,
     callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
 }
 
@@ -25,12 +27,21 @@ impl PaintButton {
 
         let fill = PaintRectangle::new(ui, rectangle_rect);
         let text = PaintText::new(ui, &btn.text_buffer);
+
+        let image = match btn.image.as_ref() {
+            None => None,
+            Some(image) => {
+                ui.ui_manage.context.render.image.insert_image(&ui.device, image.source.to_string(), image.source);
+                Some(PaintImage::new(ui, image))
+            }
+        };
         PaintButton {
             id: btn.id.clone(),
             fill,
             text,
             mouse_down: false,
             hovered: false,
+            image,
             callback: btn.callback.take(),
         }
     }
@@ -67,6 +78,9 @@ impl PaintButton {
 
     pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
         self.fill.render(param, pass);
+        if let Some(ref mut image) = self.image {
+            image.render(param, pass);
+        }
         self.text.render(param, pass);
     }
 

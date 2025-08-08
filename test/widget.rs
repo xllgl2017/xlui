@@ -149,6 +149,11 @@ impl App for XlUiApp {
             ui.add_space(186.0);
             ui.checkbox(false, "变动监测");
         });
+        ui.horizontal(|ui| {
+            RadioButton::new(false, "ImageButton").draw(ui);
+            ui.add_space(10.0);
+            Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0).draw(ui);
+        });
     }
 
     fn window_attributes(&self) -> WindowAttribute {

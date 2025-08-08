@@ -114,4 +114,11 @@ impl Callback {
             f(t, uim, r)
         })
     }
+
+    pub(crate) fn create_t<A: 'static, T: 'static>(r: T, f: fn(&mut A, &mut Context, &T)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
+        Box::new(move |target, uim| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, &r)
+        })
+    }
 }

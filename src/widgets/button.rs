@@ -23,6 +23,7 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
+use crate::widgets::image::Image;
 
 pub struct Button {
     pub(crate) id: String,
@@ -33,6 +34,7 @@ pub struct Button {
     pub(crate) border: Border,
     size_mode: SizeMode,
     pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
+    pub(crate) image: Option<Image>,
 }
 
 
@@ -49,15 +51,22 @@ impl Button {
             border: Border::new(1.0),
             size_mode: SizeMode::Auto,
             callback: None,
+            image: None,
         }
+    }
+
+    pub fn image_and_text(source: &'static str, text: impl ToString) -> Self {
+        let mut res = Button::new(text);
+        res.image = Some(Image::new(source));
+        res
     }
 
     pub(crate) fn reset_size(&mut self, context: &Context) {
         self.text_buffer.reset_size(&context);
         match self.size_mode {
             SizeMode::Auto => {
-                let width = self.text_buffer.rect.width() + self.padding.left + self.padding.right;
-                let height = self.text_buffer.rect.height() + self.padding.top + self.padding.bottom;
+                let width = self.text_buffer.rect.width() + self.padding.horizontal();
+                let height = self.text_buffer.rect.height() + self.padding.vertical();
                 self.rect.set_size(width, height);
             }
             SizeMode::FixWidth => self.rect.set_height(self.text_buffer.rect.height()),
@@ -67,7 +76,18 @@ impl Button {
                 println!("text {:?}", self.text_buffer.rect);
             }
         }
-        self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
+        if self.image.is_some() {
+            self.rect.set_width(self.rect.width() + self.rect.height());
+            self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
+            self.text_buffer.rect.offset_x(self.rect.height());
+            let mut image_rect = self.rect.clone_add_padding(&self.padding);
+            image_rect.offset(self.padding.left, self.padding.top);
+            image_rect.set_width(image_rect.height() - self.padding.vertical());
+            image_rect.set_height(image_rect.height() - self.padding.vertical());
+            self.image.as_mut().unwrap().rect = image_rect;
+        } else {
+            self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
+        }
     }
 
 
