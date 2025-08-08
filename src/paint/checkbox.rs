@@ -7,7 +7,7 @@ use crate::radius::Radius;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::widgets::checkbox::CheckBox;
 use crate::Device;
 use std::any::Any;
@@ -77,13 +77,12 @@ impl PaintCheckBox {
             callback(app, context, self.checked)
         }
         context.window.request_redraw();
-
     }
 
-    pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        self.check.render(&context.render, render_pass);
-        self.text.render(device, context, render_pass);
-        if self.checked { self.checked_text.render(device, context, render_pass); }
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.check.render(param, pass);
+        self.text.render(param, pass);
+        if self.checked { self.checked_text.render(param, pass); }
     }
 
     pub fn rect(&self) -> &Rect {

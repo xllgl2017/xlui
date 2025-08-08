@@ -9,25 +9,25 @@ pub enum DrawnEvent {
 }
 
 pub struct Callback {
-    click: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
-    slider: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, f32)>>,
-    checkbox: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
-    spinbox: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, i32)>>,
-    textedit: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, &str)>>,
-    combo_item: Option<Box<dyn FnMut(&mut PaintComboBox, usize)>>,
+    // click: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
+    // slider: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, f32)>>,
+    // checkbox: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
+    // spinbox: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, i32)>>,
+    // textedit: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, &str)>>,
+    // combo_item: Option<Box<dyn FnMut(&mut PaintComboBox, usize)>>,
 }
 
 impl Callback {
-    pub fn new() -> Self {
-        Callback {
-            click: None,
-            slider: None,
-            checkbox: None,
-            spinbox: None,
-            textedit: None,
-            combo_item: None,
-        }
-    }
+    // pub fn new() -> Self {
+    //     Callback {
+    //         click: None,
+    //         slider: None,
+    //         checkbox: None,
+    //         spinbox: None,
+    //         textedit: None,
+    //         combo_item: None,
+    //     }
+    // }
     // pub fn set_click<A: 'static>(&mut self, f: fn(&mut A, &mut UiM)) {
     //     self.click = Some(Self::create_click(f));
     // }
@@ -97,9 +97,15 @@ impl Callback {
     //     res
     // }
 
-    pub fn combo_item(f: Option<Box<dyn FnMut(&mut PaintComboBox, usize)>>) -> Self {
-        let mut res = Callback::new();
-        res.combo_item = f;
-        res
+    pub(crate) fn create_combobox<A: 'static>(f: fn(&mut A, &mut Context, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Context, usize)> {
+        Box::new(move |target, uim, value| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, value)
+        })
     }
+    // pub fn combo_item(f: Option<Box<dyn FnMut(&mut PaintComboBox, usize)>>) -> Self {
+    //     let mut res = Callback::new();
+    //     res.combo_item = f;
+    //     res
+    // }
 }

@@ -86,7 +86,7 @@ impl<A: App> Window<A> {
             width: self.ui.ui_manage.context.size.width,
             height: self.ui.ui_manage.context.size.height,
         });
-        self.ui.draw();
+        self.ui.draw(&mut self.app);
     }
 }
 

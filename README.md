@@ -149,13 +149,10 @@ fn draw(&mut self, ui: &mut Ui) {
 fn draw(&mut self, ui: &mut Ui) {
     // ui.radio(true, "radiobutton").connect(Self::radio);
     //或者
-    ComboBox::new().with_popup_height(150.0).with_widgets(|ui| {
-        ui.label("c1");
-        ui.label("c2");
-        ui.label("c3");
-        ui.label("c4");
-        ui.label("c5");
-    }).draw(ui);
+    let combo_data = vec!["item1", "item2", "item3", "item4"];
+    let combo = ComboBox::new(&combo_data).connect(Self::combo_changed).with_popup_height(150.0);
+    combo.draw(ui);
+    combo.draw(ui);//再次添加一个
 }
 ```
 

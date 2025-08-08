@@ -114,6 +114,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 if self.windows.len() == 0 { event_loop.exit(); }
             }
             WindowEvent::RedrawRequested => {
+                println!("11");
                 window.render();
                 window.ui.ui_manage.context.resize = false;
             }

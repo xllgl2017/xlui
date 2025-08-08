@@ -1,12 +1,12 @@
-use crate::Device;
-use crate::frame::context::{Context, Render};
+use crate::frame::context::Context;
 use crate::paint::color::Color;
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
+use crate::Device;
 
 pub struct PaintScrollBar {
     inner_buffer: wgpu::Buffer,
@@ -127,9 +127,9 @@ impl PaintScrollBar {
         let focus = self.inner_param.rect.has_position(x, y);
         self.focused = focus;
     }
-    pub fn render(&mut self, render: &Render, render_pass: &mut wgpu::RenderPass) {
-        render.rectangle.render(self.outer_index, render_pass);
-        render.rectangle.render(self.inner_index, render_pass);
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        param.context.render.rectangle.render(self.outer_index, pass);
+        param.context.render.rectangle.render(self.inner_index, pass);
     }
 
     pub fn rect(&self) -> &Rect {

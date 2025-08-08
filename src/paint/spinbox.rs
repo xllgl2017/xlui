@@ -5,7 +5,7 @@ use crate::paint::edit::PaintTextEdit;
 use crate::paint::triangle::PaintTriangle;
 use crate::response::Callback;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::vertex::Vertex;
 use crate::widgets::spinbox::SpinBox;
 use crate::{Device, Pos};
@@ -77,9 +77,9 @@ impl PaintSpinBox {
         self.triangle.prepare(device, context);
     }
 
-    pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        self.edit.render(device, context, render_pass);
-        self.triangle.render(render_pass);
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.edit.render(param, pass);
+        self.triangle.render(pass);
     }
 
     pub fn click<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {

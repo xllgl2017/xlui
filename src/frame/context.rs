@@ -11,12 +11,29 @@ use crate::render::rectangle::RectangleRender;
 
 pub enum ContextUpdate {
     Text(String),
+    Combo(usize),
+    Popup(bool),
 }
 
 impl ContextUpdate {
     pub fn text(self) -> String {
         match self {
             ContextUpdate::Text(text) => text,
+            _=>panic!("应该是:ContextUpdate::Text")
+        }
+    }
+
+    pub fn combo(self) -> usize {
+        match self {
+            ContextUpdate::Combo(v) => v,
+            _=>panic!("应该是:ContextUpdate::Text")
+        }
+    }
+
+    pub fn popup(self) -> bool {
+        match self {
+            ContextUpdate::Popup(v) => v,
+            _=>panic!("应该是:ContextUpdate::Text")
         }
     }
 }
@@ -35,7 +52,7 @@ pub struct Context {
 impl Context {
     pub fn send_update(&mut self, id: String, update: ContextUpdate) {
         self.updates.insert(id, update);
-        self.window.request_redraw();//更新ui
+        self.window.request_redraw(); //更新ui
     }
 }
 

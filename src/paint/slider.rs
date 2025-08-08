@@ -1,4 +1,4 @@
-use crate::frame::context::{Context, Render};
+use crate::frame::context::Context;
 use crate::frame::App;
 use crate::paint::color::Color;
 use crate::paint::rectangle::PaintRectangle;
@@ -8,7 +8,7 @@ use crate::render::WrcRender;
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::widgets::slider::Slider;
 use crate::Device;
 use std::any::Any;
@@ -73,9 +73,9 @@ impl PaintSlider {
         }
     }
 
-    pub fn render(&mut self, render: &Render, render_pass: &mut wgpu::RenderPass) {
-        self.fill.render(render, render_pass);
-        render.circle.render(self.slider_index, render_pass);
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.fill.render(param,pass);
+        param.context.render.circle.render(self.slider_index, pass);
     }
 
     pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {

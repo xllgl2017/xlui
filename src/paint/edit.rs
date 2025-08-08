@@ -5,7 +5,7 @@ use crate::paint::text::PaintText;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::widgets::textedit::TextEdit;
 use crate::{Device, Pos};
 use crate::frame::App;
@@ -269,11 +269,11 @@ impl PaintTextEdit {
     }
 
 
-    pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        self.fill.render(&context.render, render_pass);
-        self.text.render(device, context, render_pass);
-        if self.focused { context.render.rectangle.render(self.cursor_index, render_pass); }
-        if self.has_select { self.select.render(&context.render, render_pass); }
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.fill.render(param, pass);
+        self.text.render(param, pass);
+        if self.focused { param.context.render.rectangle.render(self.cursor_index, pass); }
+        if self.has_select { self.select.render(param, pass); }
     }
 
     pub fn text(&self) -> String {

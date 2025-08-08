@@ -59,6 +59,7 @@
 //!```
 
 use std::time::SystemTime;
+use crate::size::rect::Rect;
 use crate::ui::Ui;
 
 pub mod widgets;
@@ -169,6 +170,17 @@ impl DeviceInput {
                 pressed: false,
             }
         }
+    }
+
+    pub fn click_at(&self, rect: &Rect) -> bool {
+        let (lx, ly) = self.mouse.pressed_pos;
+        let (x, y) = self.mouse.lastest;
+        rect.has_position(lx, ly) && rect.has_position(x, y)
+    }
+
+    pub fn mouse_at(&self, rect: &Rect) -> bool {
+        let (x, y) = self.mouse.lastest;
+        rect.has_position(x, y)
     }
 }
 

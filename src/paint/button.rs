@@ -5,7 +5,7 @@ use crate::paint::text::PaintText;
 use crate::response::Callback;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::widgets::button::Button;
 use crate::Device;
 use std::any::Any;
@@ -16,13 +16,12 @@ pub struct PaintButton {
     text: PaintText,
     mouse_down: bool,
     hovered: bool,
-    pub selection: bool,
     callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
 }
 
 impl PaintButton {
     pub fn new(ui: &mut Ui, btn: &mut Button) -> PaintButton {
-        let rectangle_rect = btn.rect.clone_add_padding(&Padding::same(btn.border.width as f32));
+        let rectangle_rect = btn.rect.clone_add_padding(&Padding::same(btn.border.width));
 
         let fill = PaintRectangle::new(ui, rectangle_rect);
         let text = PaintText::new(ui, &btn.text_buffer);
@@ -32,7 +31,6 @@ impl PaintButton {
             text,
             mouse_down: false,
             hovered: false,
-            selection: false,
             callback: btn.callback.take(),
         }
     }
@@ -40,11 +38,19 @@ impl PaintButton {
     pub fn mouse_move(&mut self, device: &Device, context: &Context) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.fill.param.rect.has_position(x, y);
-        if has_pos != self.hovered || device.device_input.mouse.pressed != self.mouse_down {
-            // println!("{} {}", has_pos, device.device_input.mouse.pressed);
-            self.fill.prepare(device, has_pos || self.selection, device.device_input.mouse.pressed || self.selection);
+        if has_pos != self.hovered {
+            self.fill.prepare(device, has_pos, device.device_input.mouse.pressed);
+            context.window.request_redraw();
+        } else if self.hovered && device.device_input.mouse.pressed != self.mouse_down {
+            self.fill.prepare(device, has_pos, device.device_input.mouse.pressed);
             context.window.request_redraw();
         }
+
+
+        // if has_pos != self.hovered || device.device_input.mouse.pressed != self.mouse_down {
+        //     // println!("{} {}", has_pos, device.device_input.mouse.pressed);
+        //
+        // }
         self.hovered = has_pos;
         self.mouse_down = device.device_input.mouse.pressed;
     }
@@ -59,9 +65,9 @@ impl PaintButton {
     }
 
 
-    pub fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        self.fill.render(&context.render, render_pass);
-        self.text.render(device, context, render_pass);
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.fill.render(param, pass);
+        self.text.render(param, pass);
     }
 
     pub fn offset(&mut self, device: &Device, ox: f32, oy: f32) -> Vec<(String, Rect)> {

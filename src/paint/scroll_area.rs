@@ -7,7 +7,7 @@ use crate::paint::scroll_bar::PaintScrollBar;
 use crate::radius::Radius;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::Device;
 use crate::frame::App;
 
@@ -47,13 +47,13 @@ impl PaintScrollArea {
         }
     }
 
-    pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        self.fill.render(&context.render, render_pass);
-        self.scroll.render(&context.render, render_pass);
+    pub fn draw<A: App>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.fill.render(param, pass);
+        self.scroll.render(param, pass);
         let clip = &self.context_rect;
-        render_pass.set_scissor_rect(clip.x.min as u32, clip.y.min as u32, clip.width() as u32, clip.height() as u32);
-        self.layout.draw(device, context, render_pass);
-        render_pass.set_scissor_rect(0, 0, context.size.width, context.size.height);
+        pass.set_scissor_rect(clip.x.min as u32, clip.y.min as u32, clip.width() as u32, clip.height() as u32);
+        self.layout.draw(param, pass);
+        pass.set_scissor_rect(0, 0, param.context.size.width, param.context.size.height);
     }
 
     pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {

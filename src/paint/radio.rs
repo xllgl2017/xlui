@@ -6,7 +6,7 @@ use crate::render::circle::param::CircleParam;
 use crate::render::WrcRender;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::widgets::radio::RadioButton;
 use crate::Device;
 use std::any::Any;
@@ -103,14 +103,14 @@ impl PaintRadioButton {
         device.queue.write_buffer(&self.inner_buffer, 0, data);
         context.window.request_redraw();
         if let Some(ref mut callback) = self.callback {
-            callback(app,context,self.value);
+            callback(app, context, self.value);
         }
     }
 
-    pub fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        context.render.circle.render(self.outer_index, render_pass);
-        context.render.circle.render(self.inner_index, render_pass);
-        self.text.render(device, context, render_pass);
+    pub fn draw<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        param.context.render.circle.render(self.outer_index, pass);
+        param.context.render.circle.render(self.inner_index, pass);
+        self.text.render(param, pass);
     }
 
     pub fn connect<A: App>(&mut self, f: fn(&mut A, &mut Context, bool)) {

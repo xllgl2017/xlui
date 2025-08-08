@@ -1,14 +1,14 @@
-use std::any::Any;
-use crate::frame::context::{Context, Render};
-use crate::size::rect::Rect;
-use crate::style::ClickStyle;
-use crate::ui::Ui;
-use crate::Device;
-use wgpu::util::DeviceExt;
+use crate::frame::context::Context;
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::Callback;
+use crate::size::rect::Rect;
+use crate::style::ClickStyle;
+use crate::ui::{DrawParam, Ui};
+use crate::Device;
+use std::any::Any;
+use wgpu::util::DeviceExt;
 
 pub struct PaintRectangle {
     pub(crate) id: String,
@@ -68,8 +68,8 @@ impl PaintRectangle {
         let draw_param = self.param.as_draw_param(hovered, mouse_down);
         device.queue.write_buffer(&self.buffer, 0, draw_param);
     }
-    pub fn render(&mut self, render: &Render, render_pass: &mut wgpu::RenderPass) {
-        render.rectangle.render(self.index, render_pass);
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        param.context.render.rectangle.render(self.index, pass);
     }
 
     pub fn mouse_move(&mut self, device: &Device, context: &mut Context) {

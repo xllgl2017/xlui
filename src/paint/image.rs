@@ -1,6 +1,6 @@
 use crate::frame::context::Context;
 use crate::size::rect::Rect;
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::vertex::ImageVertex;
 use crate::Device;
 use wgpu::util::DeviceExt;
@@ -47,9 +47,9 @@ impl PaintImage {
     }
 
 
-    pub fn render(&mut self, device: &Device, context: &Context, render_pass: &mut wgpu::RenderPass) {
-        self.prepare(device, Some(context));
-        context.render.image.render(&self.uri, &self.vertex_buffer, &self.index_buffer, render_pass);
+    pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        self.prepare(param.device, Some(param.context));
+        param.context.render.image.render(&self.uri, &self.vertex_buffer, &self.index_buffer, pass);
         // self.render.prepare(device, context);
         // self.render.render(render_pass);
     }

@@ -8,6 +8,7 @@ use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::Device;
 use crate::frame::App;
+use crate::ui::DrawParam;
 
 pub enum LayoutDirection {
     LeftToRight,
@@ -143,12 +144,12 @@ impl Layout {
         self
     }
 
-    pub(crate) fn draw(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
+    pub(crate) fn draw<A: App>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
         for child in self.children.iter_mut() {
-            child.draw(device, context, render_pass);
+            child.draw(param, pass);
         }
         for index in &self.display {
-            self.widgets[*index].draw(device, context, render_pass);
+            self.widgets[*index].draw(param, pass);
         }
     }
 
@@ -202,6 +203,7 @@ impl Layout {
 impl Layout {
     pub(crate) fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         for widget in self.widgets.iter_mut() {
+            // if !device.device_input.mouse_at(widget.rect()) { continue; }
             widget.mouse_move(device, context, app)
         }
     }

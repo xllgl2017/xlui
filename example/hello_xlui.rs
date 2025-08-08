@@ -8,6 +8,7 @@ use xlui::style::{BorderStyle, ClickStyle, FillStyle};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
+use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
 use xlui::widgets::slider::Slider;
@@ -153,6 +154,11 @@ impl XlUiApp {
     fn item_click(&mut self, ctx: &mut Context) {
         println!("item click");
     }
+
+    fn combo_changed(&mut self, ctx: &mut Context, index: usize) {
+        self.label.set_text(format!("combo: {}", index));
+        self.label.update(ctx);
+    }
 }
 
 impl App for XlUiApp {
@@ -193,7 +199,7 @@ impl App for XlUiApp {
                 }
                 ui.label("end");
             });
-            // ComboBox::new(vec!["item1", "item2", "item3", "item4"]).with_popup_height(150.0).draw(ui);
+            ComboBox::new(&vec!["item1", "item2", "item3", "item4"]).connect(Self::combo_changed).with_popup_height(150.0).draw(ui);
             self.list_view.draw(ui);
         });
 

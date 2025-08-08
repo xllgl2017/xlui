@@ -18,6 +18,7 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
+    combo_data: Vec<&'static str>,
 }
 
 impl XlUiApp {
@@ -25,6 +26,7 @@ impl XlUiApp {
         Self {
             label: Label::new("这里是Label".to_string()).width(100.0),
             count: 0,
+            combo_data: vec!["item1", "item2", "item3", "item4"],
         }
     }
 
@@ -141,10 +143,11 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             RadioButton::new(false, "ComboBox").draw(ui);
             ui.add_space(30.0);
-            ComboBox::new(vec![1, 2, 3]).with_popup_height(150.0).draw(ui);
+            let mut combo = ComboBox::new(&self.combo_data).with_popup_height(150.0);
+            combo.draw(ui);
+            combo.draw(ui);
             ui.add_space(186.0);
             ui.checkbox(false, "变动监测");
-            ui.checkbox(false, "泛类");
         });
     }
 

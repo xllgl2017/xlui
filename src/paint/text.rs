@@ -3,7 +3,7 @@ use crate::paint::color::Color;
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
 use crate::text::{TextSize, TextWrap};
-use crate::ui::Ui;
+use crate::ui::{DrawParam, Ui};
 use crate::{Device, SAMPLE_COUNT};
 use glyphon::Shaping;
 use wgpu::MultisampleState;
@@ -56,12 +56,12 @@ impl PaintText {
                             &context.viewport, vec![area], &mut context.render.text.cache).unwrap();
     }
 
-    pub(crate) fn render(&mut self, device: &Device, context: &mut Context, render_pass: &mut wgpu::RenderPass) {
-        if let Some(update) = context.updates.remove(&self.id) {
-            self.set_text(context, update.text());
+    pub(crate) fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
+        if let Some(update) = param.context.updates.remove(&self.id) {
+            self.set_text(param.context, update.text());
         }
-        self.prepare(device, context);
-        self.render.render(&mut context.render.text.atlas, &context.viewport, render_pass).unwrap()
+        self.prepare(param.device, param.context);
+        self.render.render(&mut param.context.render.text.atlas, &param.context.viewport, pass).unwrap()
     }
 
     pub fn set_text(&mut self, context: &mut Context, text: impl AsRef<str>) {
