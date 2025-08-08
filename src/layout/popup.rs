@@ -17,7 +17,6 @@ pub struct Popup {
     rect: Rect,
     pub(crate) layout: Layout,
     fill_index: usize,
-    pub(crate) open: bool,
 }
 
 impl Popup {
@@ -38,7 +37,6 @@ impl Popup {
             rect,
             layout: Layout::top_to_bottom(),
             fill_index,
-            open: false,
         }
     }
 
@@ -78,10 +76,7 @@ impl Popup {
     }
 
     pub fn draw<A: App>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
-        if let Some(update) = param.context.updates.remove(&self.id) {
-            self.open = update.popup();
-        }
-        if !self.open { return; }
+        if !param.context.popup_opened(&self.id) { return; }
         param.context.render.rectangle.render(self.fill_index, pass);
         for widget in self.layout.widgets.iter_mut() {
             widget.draw(param, pass);

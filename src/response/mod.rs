@@ -1,5 +1,4 @@
 use crate::frame::context::Context;
-use crate::paint::combobox::PaintComboBox;
 use std::any::Any;
 
 pub enum DrawnEvent {

@@ -22,9 +22,10 @@ pub struct PaintComboBox {
     fill_param: RectParam,
     fill_buffer: wgpu::Buffer,
     fill_index: usize,
-    popup_open: bool,
     popup_id: String,
     data: Vec<String>,
+    hovered: bool,
+    mouse_down: bool,
     pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, usize)>>,
 }
 
@@ -64,9 +65,10 @@ impl PaintComboBox {
             fill_param,
             fill_buffer,
             fill_index,
-            popup_open: false,
             popup_id,
             data: combobox.data.clone(),
+            hovered: false,
+            mouse_down: false,
             callback: combobox.callback.take(),
         }
     }
@@ -78,11 +80,12 @@ impl PaintComboBox {
     pub fn click(&mut self, device: &Device, context: &mut Context) {
         let (x, y) = device.device_input.mouse.lastest();
         if self.fill_param.rect.has_position(x, y) { //在显示区域点击
-            self.popup_open = !self.popup_open;
-            context.send_update(self.popup_id.clone(), ContextUpdate::Popup(self.popup_open));
+            context.open_popup(&self.popup_id);
+            context.window.request_redraw();
+        } else if context.popup_opened(&self.popup_id) {
+            context.close_all_popups();
             context.window.request_redraw();
         }
-
     }
 
     pub fn resize(&mut self, device: &Device, context: &Context) {
@@ -90,16 +93,27 @@ impl PaintComboBox {
     }
 
     pub fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
-
-        // self.popup.mouse_move(device, context, app);
+        let (x, y) = device.device_input.mouse.lastest();
+        let has_pos = self.fill_param.rect.has_position(x, y);
+        if has_pos != self.hovered {
+            let data = self.fill_param.as_draw_param(has_pos, device.device_input.mouse.pressed);
+            device.queue.write_buffer(&self.fill_buffer, 0, data);
+            context.window.request_redraw();
+        } else if self.hovered && device.device_input.mouse.pressed != self.mouse_down {
+            let data = self.fill_param.as_draw_param(has_pos, device.device_input.mouse.pressed);
+            device.queue.write_buffer(&self.fill_buffer, 0, data);
+            context.window.request_redraw();
+        }
+        self.hovered = has_pos;
+        self.mouse_down = device.device_input.mouse.pressed;
     }
 
     pub fn draw<A: App>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
         if let Some(update) = param.context.updates.remove(&self.id) {
-            self.popup_open = false;
             let index = update.combo();
             self.text.set_text(param.context, self.data[index].as_str());
-            param.context.send_update(self.popup_id.clone(), ContextUpdate::Popup(false));
+            param.context.close_all_popups();
+            // param.context.send_update(self.popup_id.clone(), ContextUpdate::Popup(false));
             if let Some(ref mut callback) = self.callback {
                 callback(param.app, param.context, index);
             }
@@ -107,7 +121,6 @@ impl PaintComboBox {
         param.context.render.rectangle.render(self.fill_index, pass);
         self.triangle.render(pass);
         self.text.render(param, pass);
-        // if self.open { self.popup.draw(device, context, render_pass); }
     }
 
     pub fn connect<A: App>(&mut self, f: fn(&mut A, &mut Context, usize)) {

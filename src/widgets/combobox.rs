@@ -121,18 +121,19 @@ impl ComboBox {
 
 impl Widget for ComboBox {
     fn draw(&mut self, ui: &mut Ui) {
-        self.id=crate::gen_unique_id();
+        self.id = crate::gen_unique_id();
         let layout = ui.current_layout.as_mut().unwrap();
         self.rect = layout.available_rect.clone_with_size(&self.rect);
         self.reset_size(&ui.ui_manage.context);
         layout.alloc_rect(&self.rect);
 
-        let mut popup = Popup::new(ui, self.popup_rect.clone(),self.id.clone());
+        let mut popup = Popup::new(ui, self.popup_rect.clone(), self.id.clone());
         popup.layout.available_rect = self.popup_rect.clone_add_padding(&Padding::same(2.0));
         popup.layout.item_space = 2.0;
         self.add_items(ui, &mut popup);
         let popup_id = popup.id.clone();
         ui.ui_manage.popups.insert(popup.id.clone(), popup);
+        ui.ui_manage.context.popup.insert(popup_id.clone(), false);
         let task = PaintComboBox::new(ui, self, popup_id);
         ui.add_paint_task(self.id.clone(), PaintTask::ComboBox(task));
     }

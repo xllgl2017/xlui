@@ -203,7 +203,7 @@ impl Layout {
 impl Layout {
     pub(crate) fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         for widget in self.widgets.iter_mut() {
-            // if !device.device_input.mouse_at(widget.rect()) { continue; }
+            // if !device.device_input.mouse_at_extend(widget.rect()) { continue; }
             widget.mouse_move(device, context, app)
         }
     }

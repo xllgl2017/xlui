@@ -132,6 +132,10 @@ impl Rect {
         x > self.x.min && x < self.x.max && y > self.y.min && y < self.y.max
     }
 
+    // pub fn has_position_extend(&self, x: f32, y: f32) -> bool {
+    //     x > self.x.min - 5.0 && x < self.x.max + 5.0 && y > self.y.min - 5.0 && y < self.y.max + 5.0
+    // }
+
     // pub(crate) fn set_min_pos(&mut self, x: f32, y: f32) {
     //     self.x.min = x;
     //     self.y.min = y;

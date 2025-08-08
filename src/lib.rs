@@ -178,10 +178,10 @@ impl DeviceInput {
         rect.has_position(lx, ly) && rect.has_position(x, y)
     }
 
-    pub fn mouse_at(&self, rect: &Rect) -> bool {
-        let (x, y) = self.mouse.lastest;
-        rect.has_position(x, y)
-    }
+    // pub fn mouse_at_extend(&self, rect: &Rect) -> bool {
+    //     let (x, y) = self.mouse.lastest;
+    //     rect.has_position_extend(x, y)
+    // }
 }
 
 

@@ -78,18 +78,33 @@ impl<T> IndexMut<usize> for Map<T> {
     }
 }
 
-impl<T> Index<String> for Map<T> {
-    type Output = T;
+// impl<T> Index<String> for Map<T> {
+//     type Output = T;
+//
+//     fn index(&self, index: String) -> &Self::Output {
+//         let index = self.keys[&index];
+//         &self.values[index].value
+//     }
+// }
 
-    fn index(&self, index: String) -> &Self::Output {
-        let index = self.keys[&index];
+impl<T> Index<&String> for Map<T>{
+    type Output = T;
+    fn index(&self, index: &String) -> &Self::Output {
+        let index = self.keys[index];
         &self.values[index].value
     }
 }
 
-impl<T> IndexMut<String> for Map<T> {
-    fn index_mut(&mut self, index: String) -> &mut Self::Output {
-        let index = self.keys[&index];
+// impl<T> IndexMut<String> for Map<T> {
+//     fn index_mut(&mut self, index: String) -> &mut Self::Output {
+//         let index = self.keys[&index];
+//         &mut self.values[index].value
+//     }
+// }
+
+impl<T> IndexMut<&String> for Map<T> {
+    fn index_mut(&mut self, index: &String) -> &mut Self::Output {
+        let index = self.keys[index];
         &mut self.values[index].value
     }
 }
