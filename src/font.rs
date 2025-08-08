@@ -29,6 +29,10 @@ impl Font {
 
     pub fn new_from_file(fp: &str) -> Font {
         let data = fs::read(fp).unwrap();
+        Font::from_vec(data)
+    }
+
+    pub fn from_vec(data: Vec<u8>) -> Font {
         let mut res = Font::new();
         res.data = Arc::new(data);
         res.glyph_font = ab_glyph::FontArc::try_from_vec(res.data.to_vec()).unwrap();
@@ -56,7 +60,7 @@ impl Font {
         let descent = scale_font.descent();
         let line_gap = scale_font.line_gap();
         size.line_height = ascent - descent + line_gap;
-        size.font_size=font_size;
+        size.font_size = font_size;
         size
     }
 
