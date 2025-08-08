@@ -119,6 +119,21 @@ impl Layout {
         }
     }
 
+    pub(crate) fn add_space(&mut self, space: f32) {
+        match self.direction {
+            LayoutDirection::LeftToRight => {
+                self.available_rect.x.min += space;
+                self.width += space;
+            }
+            LayoutDirection::RightToLeft => {}
+            LayoutDirection::TopToBottom => {
+                self.available_rect.y.min += space;
+                self.height += space;
+            }
+            LayoutDirection::BottomToTop => {}
+        }
+    }
+
     pub(crate) fn size(&self) -> (f32, f32) {
         (self.width, self.height)
     }
@@ -185,7 +200,7 @@ impl Layout {
 }
 
 impl Layout {
-    pub(crate) fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A){
+    pub(crate) fn mouse_move<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         for widget in self.widgets.iter_mut() {
             widget.mouse_move(device, context, app)
         }
@@ -213,7 +228,7 @@ impl Layout {
         }
     }
 
-    pub(crate) fn key_input<A: App>(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, app: &mut A)  {
+    pub(crate) fn key_input<A: App>(&mut self, device: &Device, context: &mut Context, key: winit::keyboard::Key, app: &mut A) {
         for widget in self.widgets.iter_mut() {
             match widget {
                 PaintTask::Text(_) => {}

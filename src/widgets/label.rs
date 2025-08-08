@@ -36,11 +36,16 @@ impl Label {
         self.text_buffer.set_height(h);
         self
     }
+
+    pub fn size(mut self, s: f32) -> Self {
+        self.text_buffer.text_size.font_size = s;
+        self
+    }
 }
 
 
 impl Widget for Label {
-    fn draw(&mut self, ui: &mut Ui)  {
+    fn draw(&mut self, ui: &mut Ui) {
         let layout = ui.current_layout.as_mut().unwrap();
         self.text_buffer.rect = layout.available_rect.clone_with_size(&self.text_buffer.rect);
         self.text_buffer.reset_size(&ui.ui_manage.context);

@@ -56,6 +56,7 @@ impl Font {
         let descent = scale_font.descent();
         let line_gap = scale_font.line_gap();
         size.line_height = ascent - descent + line_gap;
+        size.font_size=font_size;
         size
     }
 

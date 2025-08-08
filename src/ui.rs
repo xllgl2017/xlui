@@ -177,6 +177,11 @@ impl Ui {
         task.paint_radio_mut()
     }
 
+    pub fn add_space(&mut self, space: f32) {
+        let layout = self.current_layout.as_mut().unwrap();
+        layout.add_space(space);
+    }
+
     pub fn available_rect(&self) -> Rect {
         self.current_layout.as_ref().unwrap().available_rect.clone()
     }

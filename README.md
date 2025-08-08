@@ -71,6 +71,8 @@ impl App for XlUiApp {
 
 ## 控件(目前可用)
 
+![控件状态](/img/doc/img.png)
+
 ### ✅ Label
 
 ```rust
@@ -225,6 +227,8 @@ fn draw(&mut self, ui: &mut Ui) {
     });
 }
 ```
+
+### ⬜️ Popup
 
 ## ⬜️ 自定义窗口
 

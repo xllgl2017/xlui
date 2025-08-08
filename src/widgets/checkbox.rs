@@ -7,6 +7,7 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
+use crate::size::SizeMode;
 
 pub struct CheckBox {
     pub(crate) id: String,
@@ -14,6 +15,7 @@ pub struct CheckBox {
     pub(crate) text: TextBuffer,
     pub(crate) value: bool,
     pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, bool)>>,
+    size_mode: SizeMode,
 }
 
 impl CheckBox {
@@ -24,6 +26,7 @@ impl CheckBox {
             text: TextBuffer::new(label.to_string()),
             value: v,
             callback: None,
+            size_mode: SizeMode::Auto,
         }
     }
 
@@ -32,13 +35,27 @@ impl CheckBox {
         self.text.rect = self.rect.clone();
         self.text.reset_size(context);
         self.text.rect.offset_x(15.0);
-        self.rect.set_width(15.0 + self.text.rect.width());
-        self.rect.set_height(20.0);
-        self.text.rect.set_height(20.0);
+        match self.size_mode {
+            SizeMode::Auto => {
+                self.rect.set_width(15.0 + self.text.rect.width());
+                self.rect.set_height(20.0);
+            }
+            SizeMode::FixWidth => self.rect.set_height(20.0),
+            SizeMode::FixHeight => self.rect.set_width(15.0 + self.text.rect.width()),
+            SizeMode::Fix => {}
+        }
+
+        self.text.rect.set_height(self.rect.height());
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, bool)) -> Self {
         self.callback = Some(Callback::create_check(f));
+        self
+    }
+
+    pub fn with_width(mut self, width: f32) -> Self {
+        self.rect.set_width(width);
+        self.size_mode = SizeMode::FixWidth;
         self
     }
 }

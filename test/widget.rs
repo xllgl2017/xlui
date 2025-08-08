@@ -23,7 +23,7 @@ struct XlUiApp {
 impl XlUiApp {
     fn new() -> Self {
         Self {
-            label: Label::new("hello".to_string()).width(100.0),
+            label: Label::new("这里是Label".to_string()).width(100.0),
             count: 0,
         }
     }
@@ -59,39 +59,93 @@ impl XlUiApp {
         self.label.set_text(format!("radio: {}", checked));
         self.label.update(ctx);
     }
+
+    fn edit_changed(&mut self, ctx: &mut Context, value: String) {
+        self.label.set_text(format!("edit: {}", value));
+        self.label.update(ctx);
+    }
 }
 
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
-        self.label.draw(ui);
-        ui.label("hello label1");
         ui.horizontal(|ui| {
+            ui.add_space(100.0);
+            Label::new("当前控件的工作状态").size(24.0).draw(ui);
+        });
+        ui.horizontal(|ui| {
+            RadioButton::new(true, "Label").draw(ui);
+            ui.add_space(50.0);
+            self.label.draw(ui);
+            ui.add_space(190.0);
+            ui.checkbox(true, "文本更新");
+            ui.checkbox(false, "多样文本");
+        });
+
+        ui.horizontal(|ui| {
+            RadioButton::new(true, "Button").draw(ui);
+            ui.add_space(43.0);
             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).draw(ui);
             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
+            ui.add_space(225.0);
+            ui.checkbox(true, "回调事件");
+            ui.checkbox(false, "文本对齐");
         });
 
         ui.horizontal(|ui| {
+            RadioButton::new(true, "Slider").draw(ui);
+            ui.add_space(43.0);
             Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
             ui.slider(30.0, 0.0..100.0).connect(Self::slider);
+            ui.add_space(24.0);
+            ui.checkbox(true, "变动监测");
+            ui.checkbox(false, "颜色分离");
         });
         ui.horizontal(|ui| {
+            RadioButton::new(true, "CheckBox").draw(ui);
+            ui.add_space(30.0);
             CheckBox::new(false, "checkbox1").connect(Self::check).draw(ui);
             ui.checkbox(true, "checkbox2").connect(Self::check);
+            ui.add_space(129.0);
+            ui.checkbox(true, "变动监测");
         });
         ui.horizontal(|ui| {
+            RadioButton::new(true, "SpinBox").draw(ui);
+            ui.add_space(38.0);
             SpinBox::new(1).with_range(0..10).connect(Self::spinbox).draw(ui);
             ui.spinbox(1, 0..10).connect(Self::spinbox);
+            ui.add_space(83.0);
+            ui.checkbox(true, "变动监测");
+            ui.checkbox(false, "泛类");
         });
         ui.horizontal(|ui| {
+            RadioButton::new(true, "RadioButton").draw(ui);
+            ui.add_space(10.0);
             RadioButton::new(false, "radiobutton").connect(Self::radio).draw(ui);
             ui.radio(true, "radiobutton").connect(Self::radio);
+            ui.add_space(93.0);
+            ui.checkbox(true, "变动监测");
         });
         ui.horizontal(|ui| {
-            ComboBox::new(vec![1, 2, 3]).with_popup_height(150.0).draw(ui);
+            RadioButton::new(true, "TextEdit").draw(ui);
+            ui.add_space(30.0);
+            TextEdit::new("sdsd".to_string()).connect(Self::edit_changed).draw(ui);
+            ui.add_space(87.0);
+            ui.checkbox(true, "变动监测");
+            ui.checkbox(false, "选择");
+            ui.checkbox(false, "多行");
+            ui.checkbox(false, "滚动");
+            ui.checkbox(false, "复制");
+            ui.checkbox(false, "粘贴");
+            ui.checkbox(false, "密码");
         });
-
-
-        TextEdit::new("sdsd".to_string()).draw(ui);
+        ui.horizontal(|ui| {
+            RadioButton::new(false, "ComboBox").draw(ui);
+            ui.add_space(30.0);
+            ComboBox::new(vec![1, 2, 3]).with_popup_height(150.0).draw(ui);
+            ui.add_space(186.0);
+            ui.checkbox(false, "变动监测");
+            ui.checkbox(false, "泛类");
+        });
     }
 
     fn window_attributes(&self) -> WindowAttribute {

@@ -1,4 +1,5 @@
 //! ### 最小运行示例
+//! ![控件状态](../img/doc/img.png)
 //! ```
 //! use xlui::frame::{WindowAttribute,App};
 //! use xlui::widgets::Widget;
