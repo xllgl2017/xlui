@@ -62,6 +62,7 @@ impl State {
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
+            popup: Map::new(),
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
 
