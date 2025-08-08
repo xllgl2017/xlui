@@ -1,4 +1,4 @@
-# 🚀<img alt="logo" height="30" src="img/logo/logo_96.png" width="30"/> xlui:
+# 🚀<img alt="logo" height="30" src="res/img/logo/logo_96.png" width="30"/> xlui:
 
 [<img alt="github" src="https://img.shields.io/badge/github-xllgl2017/xlui-8da0cb?logo=github" height="20">](https://github.com/xllgl2017/xlui)
 [![Latest version](https://img.shields.io/crates/v/xlui.svg)](https://crates.io/crates/xlui)
