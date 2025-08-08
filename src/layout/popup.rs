@@ -68,6 +68,7 @@ impl Popup {
     }
 
     pub fn click(&mut self, device: &Device, context: &mut Context) {
+        if !context.popup_opened(&self.id) { return; }
         for (index, widget) in self.layout.widgets.iter_mut().enumerate() {
             if !device.device_input.click_at(widget.rect()) { continue; }
             context.send_update(self.parent_id.clone(), ContextUpdate::Combo(index));

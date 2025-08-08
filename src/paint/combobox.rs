@@ -23,6 +23,7 @@ pub struct PaintComboBox {
     fill_buffer: wgpu::Buffer,
     fill_index: usize,
     popup_id: String,
+    popup_rect: Rect,
     data: Vec<String>,
     hovered: bool,
     mouse_down: bool,
@@ -58,7 +59,6 @@ impl PaintComboBox {
         //     Vertex::new([down_rect.x.max, down_rect.y.max], &color, &ui.ui_manage.context.size),
         // ], &ui.device);
         PaintComboBox {
-            // popup,
             id: combobox.id.clone(),
             text,
             triangle,
@@ -66,6 +66,7 @@ impl PaintComboBox {
             fill_buffer,
             fill_index,
             popup_id,
+            popup_rect:combobox.popup_rect.clone(),
             data: combobox.data.clone(),
             hovered: false,
             mouse_down: false,
@@ -82,7 +83,7 @@ impl PaintComboBox {
         if self.fill_param.rect.has_position(x, y) { //在显示区域点击
             context.open_popup(&self.popup_id);
             context.window.request_redraw();
-        } else if context.popup_opened(&self.popup_id) {
+        } else if context.popup_opened(&self.popup_id)&&!device.device_input.click_at(&self.popup_rect) {
             context.close_all_popups();
             context.window.request_redraw();
         }
@@ -113,7 +114,6 @@ impl PaintComboBox {
             let index = update.combo();
             self.text.set_text(param.context, self.data[index].as_str());
             param.context.close_all_popups();
-            // param.context.send_update(self.popup_id.clone(), ContextUpdate::Popup(false));
             if let Some(ref mut callback) = self.callback {
                 callback(param.app, param.context, index);
             }

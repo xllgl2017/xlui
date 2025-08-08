@@ -35,7 +35,7 @@ pub struct ComboBox {
     pub(crate) text_buffer: TextBuffer,
     pub(crate) data: Vec<String>,
     item_style: ClickStyle,
-    popup_rect: Rect,
+    pub(crate) popup_rect: Rect,
     pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, usize)>>,
 }
 
@@ -134,7 +134,7 @@ impl Widget for ComboBox {
         let popup_id = popup.id.clone();
         ui.ui_manage.popups.insert(popup.id.clone(), popup);
         ui.ui_manage.context.popup.insert(popup_id.clone(), false);
-        let task = PaintComboBox::new(ui, self, popup_id);
+        let task = PaintComboBox::new(ui, self, popup_id);;
         ui.add_paint_task(self.id.clone(), PaintTask::ComboBox(task));
     }
 
