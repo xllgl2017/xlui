@@ -28,6 +28,7 @@ impl TD {
 
 struct ListView {
     data: Vec<TD>,
+    current_index: Option<usize>,
 }
 
 impl ListView {
@@ -46,11 +47,12 @@ impl ListView {
                 TD::new("0"),
                 TD::new("11")
             ],
+            current_index: None,
         }
     }
 
 
-    fn item_widget(&self, ui: &mut Ui, datum: &TD) {
+    fn item_widget(&self, ui: &mut Ui, datum: &TD, row: usize) {
         let mut rect = ui.available_rect();
         rect.set_height(38.0);
         let style = ClickStyle {
@@ -65,7 +67,7 @@ impl ListView {
                 clicked: Border::new(1.0).radius(Radius::same(3)).color(Color::YELLOW),
             },
         };
-        ui.paint_rect(rect, style).connect(XlUiApp::item_click);
+        ui.paint_rect(rect, style).connect(row, XlUiApp::item_click);
         ui.horizontal(|ui| {
             ui.image("logo.jpg", (30.0, 30.0));
             ui.vertical(|ui| {
@@ -80,14 +82,19 @@ impl ListView {
             });
         });
     }
+
+    fn current(&self, ctx: &mut Context) -> Option<&TD> {
+        let current = self.current_index?;
+        Some(&self.data[current])
+    }
 }
 
 
 impl Widget for ListView {
     fn draw(&mut self, ui: &mut Ui) {
         ScrollArea::new().with_size(300.0, 300.0).show(ui, |ui| {
-            for datum in self.data.iter() {
-                self.item_widget(ui, datum);
+            for (row, datum) in self.data.iter().enumerate() {
+                self.item_widget(ui, datum, row);
             }
         });
     }
@@ -151,8 +158,8 @@ impl XlUiApp {
         self.label.update(ctx);
     }
 
-    fn item_click(&mut self, ctx: &mut Context) {
-        println!("item click");
+    fn item_click(&mut self, ctx: &mut Context, row: usize) {
+        println!("item click {}", row);
     }
 
     fn combo_changed(&mut self, ctx: &mut Context, index: usize) {

@@ -107,4 +107,11 @@ impl Callback {
     //     res.combo_item = f;
     //     res
     // }
+
+    pub(crate) fn create_item<A: 'static>(r: usize, f: fn(&mut A, &mut Context, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
+        Box::new(move |target, uim| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, r)
+        })
+    }
 }

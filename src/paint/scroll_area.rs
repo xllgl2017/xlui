@@ -85,6 +85,10 @@ impl PaintScrollArea {
         }
     }
 
+    pub fn mouse_release<A:App>(&mut self,device: &Device,context: &mut Context,app:&mut A){
+        self.layout.mouse_release(device,context,app)
+    }
+
     pub fn delta_input(&mut self, device: &Device, context: &Context) {
         let (x, y) = device.device_input.mouse.lastest();
         let has_pos = self.rect.has_position(x, y);

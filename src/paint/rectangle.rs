@@ -82,7 +82,13 @@ impl PaintRectangle {
         context.window.request_redraw();
     }
 
-    pub fn connect<A: App>(&mut self, f: impl FnMut(&mut A, &mut Context) + 'static) {
-        self.callback = Some(Callback::create_click(f));
+    pub fn click<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
+        if device.device_input.click_at(&self.param.rect) && let Some(ref mut callback) = self.callback {
+            callback(app, context);
+        }
+    }
+
+    pub fn connect<A: App>(&mut self, r: usize, f: fn(&mut A, &mut Context, usize)) {
+        self.callback = Some(Callback::create_item(r, f));
     }
 }

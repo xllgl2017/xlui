@@ -223,12 +223,14 @@ impl PaintTask {
 
     pub(crate) fn mouse_release<A: App>(&mut self, device: &Device, context: &mut Context, app: &mut A) {
         match self {
+            PaintTask::Rectangle(paint_rect) => paint_rect.click(device, context, app),
             PaintTask::SpinBox(paint_spinbox) => paint_spinbox.click(device, context, app),
             PaintTask::CheckBox(paint_checkbox) => paint_checkbox.mouse_click(device, context, app),
             PaintTask::Radio(paint_radio) => paint_radio.click(device, context, app),
             PaintTask::ComboBox(paint_combo) => paint_combo.click(device, context),
             PaintTask::Slider(paint_slider) => paint_slider.mouse_release(device),
             PaintTask::Button(paint_btn) => paint_btn.click(device, context, app),
+            PaintTask::ScrollArea(paint_area) => paint_area.mouse_release(device, context, app),
             _ => {}
         }
     }

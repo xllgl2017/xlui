@@ -74,7 +74,7 @@ impl PaintSlider {
     }
 
     pub fn render<A>(&mut self, param: &mut DrawParam<A>, pass: &mut wgpu::RenderPass) {
-        self.fill.render(param,pass);
+        self.fill.render(param, pass);
         param.context.render.circle.render(self.slider_index, pass);
     }
 
@@ -94,11 +94,11 @@ impl PaintSlider {
             let cl = (slider_rect.width() / 2.0 + slider_rect.x.min - fill_rect.x.min) / fill_rect.width();
             let cv = (self.value_range.end - self.value_range.start) * cl;
             if self.value != cv { context.window.request_redraw(); }
+            self.value = cv;
             if let Some(ref mut callback) = self.callback {
                 callback(app, context, self.value);
             }
-            // resp.slider_mut(&self.id).unwrap().value = cv;
-            self.value = cv;
+
         }
         let data = self.slider_param.as_draw_param(has_pos || self.focused, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.slider_buffer, 0, data);
@@ -111,12 +111,10 @@ impl PaintSlider {
     pub fn mouse_down(&mut self, device: &Device) {
         let (x, y) = device.device_input.mouse.lastest();
         self.focused = self.slider_param.rect.has_position(x, y);
-        // resp.slider_mut(&self.id).unwrap().focused = self.focused;
     }
 
     pub fn mouse_release(&mut self, device: &Device) {
         self.focused = false;
-        // resp.slider_mut(&self.id).unwrap().focused = self.focused;
         let data = self.slider_param.as_draw_param(self.focused, device.device_input.mouse.pressed);
         device.queue.write_buffer(&self.slider_buffer, 0, data);
     }

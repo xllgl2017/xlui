@@ -29,8 +29,15 @@ impl<T> Map<T> {
     }
 
     pub fn insert(&mut self, key: impl ToString, value: T) {
-        self.keys.insert(key.to_string(), self.values.len());
-        self.values.push(MapNode { key: key.to_string(), value });
+        match self.keys.get(&key.to_string()) {
+            None => {
+                self.keys.insert(key.to_string(), self.values.len());
+                self.values.push(MapNode { key: key.to_string(), value });
+            }
+            Some(index) => self.values[*index] = MapNode { key: key.to_string(), value }
+        }
+        // self.keys.insert(key.to_string(), self.values.len());
+        // self.values.push(MapNode { key: key.to_string(), value });
     }
 
     pub fn get(&self, key: impl ToString) -> Option<&T> {
@@ -87,7 +94,7 @@ impl<T> IndexMut<usize> for Map<T> {
 //     }
 // }
 
-impl<T> Index<&String> for Map<T>{
+impl<T> Index<&String> for Map<T> {
     type Output = T;
     fn index(&self, index: &String) -> &Self::Output {
         let index = self.keys[index];
