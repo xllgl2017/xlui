@@ -4,7 +4,7 @@
 //! use xlui::widgets::combobox::ComboBox;
 //! use xlui::widgets::Widget;
 //! # xlui::_run_test(|ui|{
-//!    ComboBox::new(&vec![1,2,3,4]).with_popup_height(150.0).draw(ui);
+//!    ComboBox::new(vec![1,2,3,4]).with_popup_height(150.0).draw(ui);
 //! # });
 //! ```
 
@@ -45,6 +45,9 @@ pub struct ComboBox {
 
 impl ComboBox {
     pub fn new<T: Display>(data: Vec<T>) -> Self {
+        let mut fill_style = ClickStyle::new();
+        fill_style.fill.inactive = Color::rgb(230, 230, 230);
+        fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         let data = data.iter().map(|x| x.to_string()).collect();
         ComboBox {
             id: crate::gen_unique_id(),
@@ -66,7 +69,7 @@ impl ComboBox {
             },
             popup_rect: Rect::new(),
             callback: None,
-            fill_param: RectParam::new(Rect::new(), ClickStyle::new()),
+            fill_param: RectParam::new(Rect::new(), fill_style),
             fill_index: 0,
             fill_buffer: None,
         }

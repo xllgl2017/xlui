@@ -30,7 +30,7 @@ impl RectangleRender {
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
-        let pipeline = super::create_pipeline(device, shader, pipeline_layout);
+        let pipeline = super::create_pipeline(device, shader, pipeline_layout, &[]);
         RectangleRender {
             pipeline,
             bind_group_layout,

@@ -6,7 +6,7 @@ pub mod circle;
 pub mod image;
 pub mod triangle;
 
-fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::PipelineLayout) -> wgpu::RenderPipeline {
+fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::PipelineLayout, buffers: &[wgpu::VertexBufferLayout]) -> wgpu::RenderPipeline {
     device.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
         layout: Some(&layout),
@@ -14,7 +14,7 @@ fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::Pi
             module: &shader,
             entry_point: Some("vs_main"),
             compilation_options: Default::default(),
-            buffers: &[],
+            buffers,
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,

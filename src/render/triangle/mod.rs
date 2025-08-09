@@ -1,6 +1,7 @@
 use crate::vertex::Vertex;
-use crate::{Device, SAMPLE_COUNT};
+use crate::Device;
 use std::ops::Range;
+use wgpu::include_wgsl;
 
 pub struct TriangleRender {
     vertices: Vec<Vertex>,
@@ -10,56 +11,17 @@ pub struct TriangleRender {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-fn gen_render_pipeline(device: &Device, topology: wgpu::PrimitiveTopology) -> wgpu::RenderPipeline {
-    let shader = device.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: None,
-        source: wgpu::ShaderSource::Wgsl(include_str!("../../render/triangle.wgsl").into()),
-    });
-    let pipeline_layout = device.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: None,
-        bind_group_layouts: &[],
-        push_constant_ranges: &[],
-    });
-    let render_pipeline = device.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: None,
-        layout: Some(&pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: Some("vs_main"),
-            compilation_options: Default::default(),
-            buffers: &[Vertex::desc()],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: Some("fs_main"),
-            compilation_options: Default::default(),
-            targets: &[Some(wgpu::ColorTargetState {
-                format: device.surface_config.format,
-                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology,
-            ..Default::default()
-        },
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState {
-            count: SAMPLE_COUNT,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-        cache: None,
-    });
-    render_pipeline
-}
-
 impl TriangleRender {
     pub fn new(device: &Device) -> TriangleRender {
         let vertices = vec![];
         let indices = vec![];
-        let render_pipeline = gen_render_pipeline(device, wgpu::PrimitiveTopology::TriangleList);
+        let shader = device.device.create_shader_module(include_wgsl!("triangle.wgsl"));
+        let pipeline_layout = device.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+        let render_pipeline = super::create_pipeline(device, shader, pipeline_layout, &[Vertex::desc()]);
         let vertex_buffer = device.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: 1024,

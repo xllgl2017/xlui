@@ -35,14 +35,13 @@ impl CircleRender {
             push_constant_ranges: &[],
         });
 
-        let render_pipeline = super::create_pipeline(device, shader, pipeline_layout);
+        let render_pipeline = super::create_pipeline(device, shader, pipeline_layout, &[]);
         CircleRender {
             pipeline: render_pipeline,
             bind_group_layout,
             bind_groups: vec![],
         }
     }
-
 }
 
 impl WrcRender for CircleRender {
