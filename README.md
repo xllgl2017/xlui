@@ -79,7 +79,7 @@ impl App for XlUiApp {
 fn draw(&mut self, ui: &mut Ui) {
     ui.label("hello label");
     //或者
-    Label::new("hello label").draw(ui);
+    ui.add(Label::new("hello label"));
 }
 ```
 
@@ -87,9 +87,9 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.button("hello button").connect(Self::clicked);
+    ui.button("hello button").set_callback(Self::clicked);
     //或者
-    Button::new("hello label").connect(Self::clicked).draw(ui);
+    ui.add(Button::new("hello label").connect(Self::clicked));
 }
 ```
 
@@ -97,9 +97,9 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.slider(30.0, 0.0..100.0).connect(Self::slider);
+    ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
     //或者
-    Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
+    ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
 }
 ```
 
@@ -107,9 +107,9 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.spinbox(1, 0..10).connect(Self::changed);
+    ui.spinbox(1, 0..10).set_callback(Self::changed);
     //或者
-    SpinBox::new(1).with_range(0..10).connect(Self::changed).draw(ui);
+    ui.add(SpinBox::new(1).with_range(0..10).connect(Self::changed));
 }
 ```
 
@@ -117,9 +117,9 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.checkbox(true, "checkbox1").connect(Self::checked);
+    ui.checkbox(true, "checkbox1").set_callback(Self::checked);
     //或者
-    CheckBox::new(false, "checkbox2").connect(Self::checked).draw(ui);
+    ui.add(CheckBox::new(false, "checkbox2").connect(Self::checked));
 }
 ```
 
@@ -129,7 +129,7 @@ fn draw(&mut self, ui: &mut Ui) {
 fn draw(&mut self, ui: &mut Ui) {
     ui.image("logo.jpg", (200.0, 200.0));
     //或者
-    Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
+    ui.add(Image::new("logo.jpg").with_size(200.0, 200.0));
 }
 ```
 
@@ -137,22 +137,19 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.radio(true, "radiobutton").connect(Self::radio);
+    ui.radio(true, "radiobutton").set_callback(Self::radio);
     //或者
-    RadioButton::new(false, "radiobutton").connect(Self::radio).draw(ui);
+    ui.add(RadioButton::new(false, "radiobutton").connect(Self::radio));
 }
 ```
 
-### ✅ ComboBox
+### ⬜️ ComboBox
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    // ui.radio(true, "radiobutton").connect(Self::radio);
     //或者
     let combo_data = vec!["item1", "item2", "item3", "item4"];
-    let combo = ComboBox::new(&combo_data).connect(Self::combo_changed).with_popup_height(150.0);
-    combo.draw(ui);
-    combo.draw(ui);//再次添加一个
+    ui.add(ComboBox::new(combo_data).connect(Self::combo_changed).with_popup_height(150.0));
 }
 ```
 
@@ -160,7 +157,7 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ScrollBar::new().with_size(20.0, 100.0).draw(ui);
+    ui.add(ScrollBar::new().with_size(20.0, 100.0));
 }
 ```
 
@@ -176,8 +173,7 @@ fn edit_changed(&mut self, ctx: &mut Context, text: &str) {
 
 fn draw(&mut self, ui: &mut Ui) {
     //创建TextEdit并添加ID，以便后续获取其文本
-    TextEdit::new("sdsd".to_string()).width_id("xlui_edit")
-        .connect(Self::edit_changed).draw(ui);
+    ui.add(TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
 }
 ```
 

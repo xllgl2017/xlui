@@ -1,4 +1,3 @@
-use crate::style::color::Color;
 use crate::vertex::Vertex;
 use crate::{Device, SAMPLE_COUNT};
 use std::ops::Range;
@@ -91,11 +90,6 @@ impl TriangleRender {
         device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertices));
         device.queue.write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&self.indices));
         current as usize..current as usize + 3
-    }
-
-    pub fn set_color(&mut self, rgn: Range<usize>, color: &Color, device: &Device) {
-        self.vertices[rgn].iter_mut().for_each(|x| x.color = color.as_gamma_rgba());
-        device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertices));
     }
 
     pub fn prepare(&mut self, range: Range<usize>, device: &Device, size: [f32; 2], c: [f32; 4]) {

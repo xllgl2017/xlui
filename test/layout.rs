@@ -136,6 +136,12 @@ impl App for Frame {
         ui.label("v5");
         ui.label("v6");
     }
+
+    fn update(&mut self, ui: &mut Ui) {
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
+    }
 }
 
 

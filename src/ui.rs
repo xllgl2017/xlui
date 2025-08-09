@@ -177,6 +177,14 @@ impl<'a> Ui<'a> {
         self.layout().add_child(crate::gen_unique_id(), current_layout);
     }
 
+    pub fn vertical(&mut self, mut context: impl FnMut(&mut Ui)) {
+        let current_layout = VerticalLayout::new().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
+        let previous_layout = self.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
+        context(self);
+        let current_layout = self.layout.replace(previous_layout).unwrap();
+        self.layout().add_child(crate::gen_unique_id(), current_layout);
+    }
+
     pub fn layout(&mut self) -> &mut LayoutKind {
         self.layout.as_mut().unwrap()
     }

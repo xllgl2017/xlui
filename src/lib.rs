@@ -27,16 +27,16 @@
 //!             count: 0,
 //!         }
 //!     }
-//!     fn add(&mut self,ctx: &mut Context){
+//!     fn add(&mut self,ui: &mut Ui){
 //!         self.count += 1;
 //!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(ctx);
+//!         self.label.update(ui);
 //!     }
 //!
-//!     fn reduce(&mut self,ctx: &mut Context){
+//!     fn reduce(&mut self,ui: &mut Ui){
 //!         self.count-=1;
 //!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(ctx);
+//!         self.label.update(ui);
 //!     }
 //! }
 //!
@@ -49,6 +49,15 @@
 //!             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
 //!         });
 //!      }
+//!
+//!     fn update(&mut self, ui: &mut Ui) {
+//!         self.label.update(ui);
+//!      }
+//!
+//!     fn redraw(&mut self, ui: &mut Ui) {
+//!         self.label.redraw(ui);
+//!     }
+//!
 //!     fn window_attributes(&self) -> WindowAttribute {
 //!         WindowAttribute{
 //!             inner_size:(800.0,600.0).into(),
@@ -74,7 +83,6 @@ pub mod frame;
 pub mod ui;
 
 pub mod style;
-// pub mod paint;
 mod render;
 mod response;
 pub mod map;
