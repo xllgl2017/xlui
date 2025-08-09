@@ -1,16 +1,15 @@
 use crate::font::Font;
 use crate::frame::context::{Context, Render};
 use crate::frame::App;
+use crate::map::Map;
 use crate::size::Size;
-use crate::style::Style;
-use crate::ui::Ui;
+use crate::ui::AppContext;
 use crate::{Device, DeviceInput};
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
-use crate::map::Map;
 
 pub(crate) struct Window<A> {
-    pub(crate) ui: Ui,
+    pub(crate) app_ctx: AppContext,
     pub(crate) app: A,
 }
 
@@ -60,12 +59,14 @@ impl<A: App> Window<A> {
             updates: Map::new(),
             popup: Map::new(),
         };
-        let mut ui = Ui::new(device, context, Style::light_style());
-        app.draw(&mut ui);
+        // let mut ui = Ui::new(device, context, Style::light_style());
+        // app.draw(&mut ui);
+        let mut app_ctx = AppContext::new(device, context);
+        app_ctx.draw(&mut app);
 
         let mut state = Window {
+            app_ctx,
             app,
-            ui,
         };
         state.configure_surface();
 
@@ -73,21 +74,21 @@ impl<A: App> Window<A> {
     }
 
     pub fn get_window(&self) -> &winit::window::Window {
-        &self.ui.ui_manage.context.window
+        &self.app_ctx.context.window
     }
 
     fn configure_surface(&mut self) {
-        self.ui.ui_manage.context.surface.configure(&self.ui.device.device, &self.ui.device.surface_config);
+        self.app_ctx.context.surface.configure(&self.app_ctx.device.device, &self.app_ctx.device.surface_config);
     }
 
 
     pub(crate) fn render(&mut self) {
         // Create texture view
-        self.ui.ui_manage.context.viewport.update(&self.ui.device.queue, Resolution {
-            width: self.ui.ui_manage.context.size.width,
-            height: self.ui.ui_manage.context.size.height,
+        self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
+            width: self.app_ctx.context.size.width,
+            height: self.app_ctx.context.size.height,
         });
-        self.ui.draw(&mut self.app);
+        self.app_ctx.redraw(&mut self.app)
     }
 }
 
@@ -95,13 +96,13 @@ impl<A: App> Window<A> {
 //设备输入
 impl<A: App> Window<A> {
     pub(crate) fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.ui.ui_manage.context.resize = true;
-        self.ui.ui_manage.context.size.width = new_size.width;
-        self.ui.ui_manage.context.size.height = new_size.height;
-        self.ui.device.surface_config.width = new_size.width;
-        self.ui.device.surface_config.height = new_size.height;
+        self.app_ctx.context.resize = true;
+        self.app_ctx.context.size.width = new_size.width;
+        self.app_ctx.context.size.height = new_size.height;
+        self.app_ctx.device.surface_config.width = new_size.width;
+        self.app_ctx.device.surface_config.height = new_size.height;
         // reconfigure the surface
         self.configure_surface();
-        self.ui.resize();
+        // self.ui.resize();
     }
 }

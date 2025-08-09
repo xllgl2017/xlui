@@ -1,5 +1,5 @@
-use crate::paint::color::Color;
 use crate::size::Size;
+use crate::style::color::Color;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable, Debug)]

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct Padding {
     pub left: f32,
     pub bottom: f32,

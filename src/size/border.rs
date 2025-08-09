@@ -1,8 +1,8 @@
 use crate::radius::{Radius, RadiusBorder};
 use crate::size::rect::Rect;
 use crate::size::Size;
+use crate::style::color::Color;
 use crate::vertex::Vertex;
-use crate::paint::color::Color;
 
 #[derive(Clone)]
 pub struct Border {

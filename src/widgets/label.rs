@@ -1,60 +1,77 @@
-use crate::frame::context::Context;
 use crate::text::text_buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-
+use glyphon::Shaping;
 
 pub struct Label {
-    pub(crate) text_buffer: TextBuffer,
+    id: String,
+    change: bool,
+    buffer: TextBuffer,
 }
 
 impl Label {
     pub fn new(text: impl ToString) -> Label {
         let buffer = TextBuffer::new(text.to_string());
         Label {
-            text_buffer: buffer,
+            id: crate::gen_unique_id(),
+            change: false,
+            buffer,
         }
     }
 
     pub fn wrap(mut self, wrap: TextWrap) -> Self {
-        self.text_buffer.set_wrap(wrap);
+        self.buffer.set_wrap(wrap);
         self
     }
 
 
     pub fn set_text(&mut self, text: String) {
-        self.text_buffer.set_text(text);
+        self.buffer.set_text(text);
+        self.change = true;
     }
 
     pub fn width(mut self, w: f32) -> Self {
-        self.text_buffer.set_width(w);
+        self.buffer.set_width(w);
         self
     }
 
     pub fn height(mut self, h: f32) -> Self {
-        self.text_buffer.set_height(h);
+        self.buffer.set_height(h);
         self
     }
 
     pub fn size(mut self, s: f32) -> Self {
-        self.text_buffer.text_size.font_size = s;
+        self.buffer.text_size.font_size = s;
         self
     }
 }
 
 
 impl Widget for Label {
-    fn draw(&mut self, ui: &mut Ui) {
-        let layout = ui.current_layout.as_mut().unwrap();
-        self.text_buffer.rect = layout.available_rect.clone_with_size(&self.text_buffer.rect);
-        self.text_buffer.reset_size(&ui.ui_manage.context);
-        layout.alloc_rect(&self.text_buffer.rect);
-        self.text_buffer.draw(ui); //创建绘制任务并计算需绘制的宽高
+    fn draw(&mut self, ui: &mut Ui) -> String {
+        self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
+        self.buffer.reset_size(ui.context);
+        ui.layout().alloc_rect(&self.buffer.rect);
+        self.buffer.draw(ui);
+        self.id.clone()
     }
 
 
-    fn update(&mut self, ctx: &mut Context) {
-        self.text_buffer.update(ctx);
+    fn update(&mut self, ui: &mut Ui) { //处理鼠标键盘时间
+        if let Some(update) = ui.context.updates.remove(&self.id) {
+            self.buffer.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, update.text().as_str(), &ui.context.font.font_attr(), Shaping::Advanced);
+        }
+        if let Some(ref offset) = ui.canvas_offset {
+            self.buffer.rect.offset(offset.x, offset.y);
+        }
+        if !self.change { return; }
+        self.buffer.buffer.as_mut().unwrap().set_text(
+            &mut ui.context.render.text.font_system, &self.buffer.text,
+            &ui.context.font.font_attr(), Shaping::Advanced);
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.buffer.redraw(ui);
     }
 }

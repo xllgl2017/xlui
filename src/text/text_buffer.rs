@@ -1,32 +1,35 @@
-use crate::frame::context::{Context, ContextUpdate};
-use crate::paint::color::Color;
-use crate::paint::text::PaintText;
-use crate::paint::PaintTask;
+use crate::frame::context::Context;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
+use crate::style::color::Color;
 use crate::text::{TextSize, TextWrap};
 use crate::ui::Ui;
+use crate::SAMPLE_COUNT;
+use glyphon::Shaping;
+use wgpu::MultisampleState;
 
 pub struct TextBuffer {
-    pub(crate) id: String,
     pub(crate) text: String,
     pub(crate) rect: Rect,
     pub(crate) color: Color,
     pub(crate) text_wrap: TextWrap,
     pub(crate) text_size: TextSize,
     pub(crate) size_mode: SizeMode,
+    pub(crate) buffer: Option<glyphon::Buffer>,
+    pub(crate) render: Option<glyphon::TextRenderer>,
 }
 
 impl TextBuffer {
     pub fn new(text: String) -> TextBuffer {
         TextBuffer {
-            id: crate::gen_unique_id(),
             text,
             rect: Rect::new(),
             color: Color::BLACK,
             text_wrap: TextWrap::NoWrap,
             text_size: TextSize::new(),
             size_mode: SizeMode::Auto,
+            buffer: None,
+            render: None,
         }
     }
 
@@ -41,13 +44,43 @@ impl TextBuffer {
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui) {
-        let task = PaintTask::Text(PaintText::new(ui, self));
-        ui.add_paint_task(self.id.clone(), task);
+        let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text_size.font_size, self.text_size.line_height));
+        buffer.set_wrap(&mut ui.context.render.text.font_system, self.text_wrap.as_gamma());
+        buffer.set_text(&mut ui.context.render.text.font_system, &self.text, &ui.context.font.font_attr(), Shaping::Advanced);
+        let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
+            count: SAMPLE_COUNT,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        }, None);
+        self.buffer = Some(buffer);
+        self.render = Some(render);
     }
 
 
-    pub(crate) fn update(&mut self, ctx: &mut Context) {
-        ctx.send_update(self.id.clone(), ContextUpdate::Text(self.text.clone()));
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
+        let bounds = glyphon::TextBounds {
+            left: 0,
+            top: 0,
+            right: self.rect.right(),
+            bottom: self.rect.bottom(),
+        };
+        let area = glyphon::TextArea {
+            buffer: self.buffer.as_ref().unwrap(),
+            left: self.rect.x.min,
+            top: self.rect.y.min,
+            scale: 1.0,
+            bounds,
+            default_color: self.color.as_glyphon_color(),
+            custom_glyphs: &[],
+        };
+        self.render.as_mut().unwrap().prepare(
+            &ui.device.device, &ui.device.queue,
+            &mut ui.context.render.text.font_system,
+            &mut ui.context.render.text.atlas,
+            &ui.context.viewport, vec![area],
+            &mut ui.context.render.text.cache).unwrap();
+        let pass = ui.pass.as_mut().unwrap();
+        self.render.as_mut().unwrap().render(&mut ui.context.render.text.atlas, &ui.context.viewport, pass).unwrap()
     }
 
     pub fn set_text(&mut self, text: String) {

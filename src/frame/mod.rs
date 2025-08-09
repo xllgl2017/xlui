@@ -3,7 +3,7 @@ use crate::size::Size;
 use crate::ui::Ui;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
+use winit::event::{ElementState, MouseButton, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Icon, WindowId, WindowLevel};
 
@@ -116,7 +116,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
             WindowEvent::RedrawRequested => {
                 println!("11");
                 window.render();
-                window.ui.ui_manage.context.resize = false;
+                window.app_ctx.context.resize = false;
             }
             WindowEvent::Resized(size) => {
                 window.resize(size);
@@ -125,28 +125,35 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 // println!("{:?}", state);
                 match (state, button) {
                     (ElementState::Pressed, MouseButton::Left) => {
-                        window.ui.device.device_input.mouse.pressed_pos = window.ui.device.device_input.mouse.lastest;
-                        window.ui.mouse_down(&mut window.app)
+                        window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest;
+                        window.app_ctx.device.device_input.mouse.pressed = true;
+                        window.app_ctx.update(&mut window.app)
                     }
-                    (ElementState::Released, MouseButton::Left) => window.ui.mouse_release(&mut window.app),
+                    (ElementState::Released, MouseButton::Left) => {
+                        window.app_ctx.device.device_input.mouse.clicked = true;
+                        window.app_ctx.update(&mut window.app);
+                        window.app_ctx.device.device_input.mouse.clicked = false;
+                        window.app_ctx.device.device_input.mouse.pressed_pos = (-1.0, -1.0);
+                        window.app_ctx.device.device_input.mouse.pressed = false;
+                    }
                     (_, _) => {}
                 }
             }
             WindowEvent::MouseWheel { delta, .. } => {
-                match delta {
-                    MouseScrollDelta::LineDelta(x, y) => window.ui.device.device_input.mouse.delta = (x, y),
-                    _ => {}
-                }
-                window.ui.delta_input();
+                // match delta {
+                //     MouseScrollDelta::LineDelta(x, y) => window.ui.device.device_input.mouse.delta = (x, y),
+                //     _ => {}
+                // }
+                // window.ui.delta_input();
             }
             WindowEvent::CursorMoved { position, .. } => {
-                window.ui.device.device_input.mouse.update(position);
-                window.ui.mouse_move(&mut window.app)
+                window.app_ctx.device.device_input.mouse.update(position);
+                window.app_ctx.update(&mut window.app);
             }
             WindowEvent::KeyboardInput { device_id: _device_id, event, .. } => {
                 if !event.state.is_pressed() { return; }
-                window.ui.key_input(event.logical_key, &mut window.app);
-                window.ui.ui_manage.context.window.request_redraw();
+                window.app_ctx.key_input(event.logical_key, &mut window.app);
+                window.app_ctx.context.window.request_redraw();
             }
             _ => (),
         }
@@ -156,6 +163,8 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
 
 pub trait App: Sized + 'static {
     fn draw(&mut self, ui: &mut Ui);
+    fn update(&mut self, ui: &mut Ui);
+    fn redraw(&mut self, ui: &mut Ui);
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute::default()

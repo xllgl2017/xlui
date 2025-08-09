@@ -1,3 +1,4 @@
+use std::ops::Range;
 use crate::size::padding::Padding;
 use crate::Pos;
 
@@ -102,9 +103,46 @@ impl Rect {
         self.x.min += x;
         self.x.max += x;
     }
+
+    pub fn offset_x_limit(&mut self, ox: f32, lx: Range<f32>) -> f32 {
+        if self.x.min + ox < lx.start {
+            let oy = lx.start - self.x.min;
+            self.x.min += oy;
+            self.x.max += oy;
+            oy
+        } else if self.x.max + ox > lx.end {
+            let oy = lx.end - self.x.max;
+            self.x.min += oy;
+            self.x.max += oy;
+            oy
+        } else {
+            self.x.min += ox;
+            self.x.max += ox;
+            ox
+        }
+    }
+
     pub fn offset_y(&mut self, y: f32) {
         self.y.min += y;
         self.y.max += y;
+    }
+
+    pub fn offset_y_limit(&mut self, oy: f32, ly: Range<f32>) -> f32 {
+        if self.y.min + oy < ly.start {
+            let oy = ly.start - self.y.min;
+            self.y.min += oy;
+            self.y.max += oy;
+            oy
+        } else if self.y.max + oy > ly.end {
+            let oy = ly.end - self.y.max;
+            self.y.min += oy;
+            self.y.max += oy;
+            oy
+        } else {
+            self.y.min += oy;
+            self.y.max += oy;
+            oy
+        }
     }
 
     pub fn offset(&mut self, x: f32, y: f32) {

@@ -1,29 +1,36 @@
-use crate::frame::context::Context;
-use crate::paint::spinbox::PaintSpinBox;
-use crate::paint::PaintTask;
 use crate::response::Callback;
-use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
+use crate::style::color::Color;
 use crate::ui::Ui;
+use crate::vertex::Vertex;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
+use crate::Pos;
 use std::any::Any;
 use std::ops::Range;
+use crate::frame::App;
 
 pub struct SpinBox {
     pub(crate) id: String,
-    pub(crate) edit: TextEdit,
-    pub(crate) rect: Rect,
+    edit: TextEdit,
+    rect: Rect,
     size_mode: SizeMode,
-    pub(crate) value: i32,
-    pub(crate) range: Range<i32>,
-    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, i32)>>,
-
+    value: i32,
+    range: Range<i32>,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, i32)>>,
+    up_rect: Rect,
+    up_index: Range<usize>,
+    down_rect: Rect,
+    down_index: Range<usize>,
+    color: Color,
+    inactive_color: Color,
 }
 
 impl SpinBox {
     pub fn new(value: i32) -> SpinBox {
+        let color = Color::rgb(95, 95, 95);
+        let inactive_color = Color::rgb(153, 152, 152);
         SpinBox {
             id: crate::gen_unique_id(),
             edit: TextEdit::new(value.to_string()),
@@ -32,19 +39,24 @@ impl SpinBox {
             value,
             range: 0..1,
             callback: None,
+            up_rect: Rect::new(),
+            up_index: 0..1,
+            down_rect: Rect::new(),
+            down_index: 0..1,
+            color,
+            inactive_color,
         }
     }
-    pub fn reset_size(&mut self, context: &Context) {
-        self.edit.reset_size(context);
+    pub fn reset_size(&mut self) {
         match self.size_mode {
             SizeMode::Auto => self.rect.set_size(100.0, 25.0),
             SizeMode::FixWidth => self.rect.set_height(25.0),
             SizeMode::FixHeight => self.rect.set_width(80.0),
             SizeMode::Fix => {}
         }
-        self.edit.rect = self.rect.clone();
-        self.edit.rect.x.max = self.edit.rect.x.max - 18.0;
-        self.edit.text_buffer.rect = self.rect.clone_add_padding(&Padding::same(5.0));
+        let mut edit_rect = self.rect.clone();
+        edit_rect.x.max = edit_rect.x.max - 18.0;
+        self.edit.set_rect(edit_rect);
     }
 
     pub fn with_range(mut self, r: Range<i32>) -> Self {
@@ -52,22 +64,98 @@ impl SpinBox {
         self
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Context, i32)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, i32)) -> Self {
         self.callback = Some(Callback::create_spinbox(f));
         self
+    }
+
+    pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, i32)) {
+        self.callback = Some(Callback::create_spinbox(f));
     }
 }
 
 
 impl Widget for SpinBox {
-    fn draw(&mut self, ui: &mut Ui) {
-        let layout = ui.current_layout.as_mut().unwrap();
-        self.rect = layout.available_rect.clone_with_size(&self.rect);
-        self.reset_size(&ui.ui_manage.context);
-        layout.alloc_rect(&self.rect);
-        let task = PaintSpinBox::new(ui, self);
-        ui.add_paint_task(self.id.clone(), PaintTask::SpinBox(task));
+    fn draw(&mut self, ui: &mut Ui) -> String {
+        self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
+        self.reset_size();
+        self.edit.draw(ui);
+        let mut rect = self.rect.clone();
+        rect.set_width(18.0);
+        ui.layout().alloc_rect(&rect);
+        self.up_rect = Rect {
+            x: Pos { min: self.rect.x.max - 14.0, max: self.rect.x.max },
+            y: Pos { min: self.rect.y.min + 1.0, max: self.rect.y.min + self.rect.height() / 2.0 - 2.0 },
+        };
+        let vertices = vec![
+            Vertex::new([self.up_rect.x.min + self.up_rect.width() / 2.0, self.up_rect.y.min], &self.color, &ui.context.size),
+            Vertex::new([self.up_rect.x.min, self.up_rect.y.max], &self.color, &ui.context.size),
+            Vertex::new([self.rect.x.max, self.up_rect.y.max], &self.color, &ui.context.size),
+        ];
+        self.up_index = ui.context.render.triangle.add_triangle(vertices, &ui.device);
+        self.down_rect = Rect {
+            x: Pos { min: self.rect.x.max - 14.0, max: self.rect.x.max },
+            y: Pos { min: self.rect.y.max - self.rect.height() / 2.0 + 2.0, max: self.rect.y.max - 2.0 },
+        };
+        self.down_index = ui.context.render.triangle.add_triangle(vec![
+            Vertex::new([self.down_rect.x.min + self.down_rect.width() / 2.0, self.down_rect.y.max], &self.color, &ui.context.size),
+            Vertex::new([self.rect.x.max - 14.0, self.down_rect.y.min], &self.color, &ui.context.size),
+            Vertex::new([self.rect.x.max, self.down_rect.y.min], &self.color, &ui.context.size),
+        ], &ui.device);
+        self.id.clone()
     }
 
-    fn update(&mut self, ctx: &mut Context) {}
+    fn update(&mut self, ui: &mut Ui) {
+        self.edit.update(ui);
+        if ui.device.device_input.click_at(&self.up_rect) {
+            let is_end = self.value >= self.range.end;
+            let is_start = self.value == self.range.start;
+            if !is_end {
+                self.value += 1;
+                self.edit.update_text(ui, self.value.to_string());
+                if let Some(ref mut callback) = self.callback {
+                    let app = ui.app.take().unwrap();
+                    callback(*app, ui, self.value);
+                    ui.app.replace(app);
+                }
+            }
+            let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+            if is_start {
+                ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
+            }
+            ui.context.window.request_redraw();
+        } else if ui.device.device_input.click_at(&self.down_rect) {
+            let is_start = self.value == self.range.start;
+            let is_end = self.value >= self.range.end;
+            if !is_start {
+                self.value -= 1;
+                self.edit.update_text(ui, self.value.to_string());
+                if let Some(ref mut callback) = self.callback {
+                    let app = ui.app.take().unwrap();
+                    callback(*app, ui, self.value);
+                    ui.app.replace(app);
+                }
+            }
+            if is_end {
+                ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
+            }
+            let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+            ui.context.window.request_redraw();
+        }
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.edit.redraw(ui);
+        if ui.context.resize {
+            let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+            let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+        }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.triangle.render(self.down_index.clone(), pass);
+        ui.context.render.triangle.render(self.up_index.clone(), pass);
+    }
 }

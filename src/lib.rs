@@ -74,15 +74,38 @@ pub mod frame;
 pub mod ui;
 
 pub mod style;
-pub mod paint;
+// pub mod paint;
 mod render;
 mod response;
 pub mod map;
 
 const SAMPLE_COUNT: u32 = 4;
 
+pub struct Offset {
+    x: f32,
+    y: f32,
+}
+
+impl Offset {
+    pub fn new() -> Offset {
+        Offset {
+            x: 0.0,
+            y: 0.0,
+        }
+    }
+
+    pub fn new_y(y: f32) -> Offset {
+        Offset {
+            x: 0.0,
+            y,
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Pos {
+    // x:f32,
+    // y:f32
     pub min: f32,
     pub max: f32,
 }
@@ -114,6 +137,7 @@ pub struct MouseInput {
     delta: (f32, f32),
     pressed_pos: (f32, f32),
     pressed: bool,
+    clicked: bool,
 }
 
 impl MouseInput {
@@ -168,6 +192,7 @@ impl DeviceInput {
                 delta: (0.0, 0.0),
                 pressed_pos: (0.0, 0.0),
                 pressed: false,
+                clicked: false,
             }
         }
     }
@@ -175,9 +200,16 @@ impl DeviceInput {
     pub fn click_at(&self, rect: &Rect) -> bool {
         let (lx, ly) = self.mouse.pressed_pos;
         let (x, y) = self.mouse.lastest;
-        rect.has_position(lx, ly) && rect.has_position(x, y)
+        rect.has_position(lx, ly) && rect.has_position(x, y) && self.mouse.clicked
+    }
+    pub fn pressed_at(&self, rect: &Rect) -> bool {
+        // println!("{:?} {:?}", rect, self.mouse.pressed_pos);
+        rect.has_position(self.mouse.pressed_pos.0, self.mouse.pressed_pos.1)
     }
 
+    pub fn hovered_at(&self, rect: &Rect) -> bool {
+        rect.has_position(self.mouse.lastest.0, self.mouse.lastest.1)
+    }
     // pub fn mouse_at_extend(&self, rect: &Rect) -> bool {
     //     let (x, y) = self.mouse.lastest;
     //     rect.has_position_extend(x, y)

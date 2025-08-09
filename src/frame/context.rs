@@ -8,6 +8,7 @@ use crate::map::Map;
 use crate::render::circle::CircleRender;
 use crate::render::image::ImageRender;
 use crate::render::rectangle::RectangleRender;
+use crate::render::triangle::TriangleRender;
 
 pub enum ContextUpdate {
     Text(String),
@@ -55,19 +56,6 @@ impl Context {
         self.updates.insert(id, update);
         self.window.request_redraw(); //更新ui
     }
-
-    pub(crate) fn popup_opened(&mut self, id: &String) -> bool {
-        self.popup[id]
-    }
-
-    pub(crate) fn open_popup(&mut self, id: &String) {
-        self.popup.iter_mut().for_each(|x| *x = false);
-        self.popup[id] = true;
-    }
-
-    pub(crate) fn close_all_popups(&mut self) {
-        self.popup.iter_mut().for_each(|x| *x = false);
-    }
 }
 
 
@@ -76,6 +64,7 @@ pub struct Render {
     pub(crate) text: TextRender,
     pub(crate) circle: CircleRender,
     pub(crate) image: ImageRender,
+    pub(crate) triangle: TriangleRender,
 }
 
 impl Render {
@@ -85,6 +74,7 @@ impl Render {
             text: TextRender::new(device),
             circle: CircleRender::new(device),
             image: ImageRender::new(device),
+            triangle: TriangleRender::new(device),
         }
     }
 }

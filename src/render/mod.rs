@@ -4,6 +4,7 @@ use crate::{Device, SAMPLE_COUNT};
 pub mod rectangle;
 pub mod circle;
 pub mod image;
+pub mod triangle;
 
 fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::PipelineLayout) -> wgpu::RenderPipeline {
     device.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {

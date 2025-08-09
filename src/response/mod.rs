@@ -1,5 +1,6 @@
 use crate::frame::context::Context;
 use std::any::Any;
+use crate::ui::Ui;
 
 pub enum DrawnEvent {
     None,
@@ -31,7 +32,7 @@ impl Callback {
     //     self.click = Some(Self::create_click(f));
     // }
 
-    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Context) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
+    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Ui) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Ui)> {
         Box::new(move |target, uim| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim);
@@ -44,7 +45,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_slider<A: 'static>(f: fn(&mut A, &mut Context, f32)) -> Box<dyn FnMut(&mut dyn Any, &mut Context, f32)> {
+    pub(crate) fn create_slider<A: 'static>(f: fn(&mut A, &mut Ui, f32)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, f32)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)
@@ -57,7 +58,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut Context, bool)) -> Box<dyn FnMut(&mut dyn Any, &mut Context, bool)> {
+    pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut Ui, bool)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, bool)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)
@@ -70,7 +71,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_spinbox<A: 'static>(f: fn(&mut A, &mut Context, i32)) -> Box<dyn FnMut(&mut dyn Any, &mut Context, i32)> {
+    pub(crate) fn create_spinbox<A: 'static>(f: fn(&mut A, &mut Ui, i32)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, i32)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)
@@ -83,7 +84,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_textedit<A: 'static>(f: fn(&mut A, &mut Context, String)) -> Box<dyn FnMut(&mut dyn Any, &mut Context, String)> {
+    pub(crate) fn create_textedit<A: 'static>(f: fn(&mut A, &mut Ui, String)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, String)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)
@@ -96,7 +97,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_combobox<A: 'static>(f: fn(&mut A, &mut Context, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Context, usize)> {
+    pub(crate) fn create_combobox<A: 'static>(f: fn(&mut A, &mut Ui, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, usize)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)
@@ -108,17 +109,17 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_item<A: 'static>(r: usize, f: fn(&mut A, &mut Context, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
-        Box::new(move |target, uim| {
-            let t = target.downcast_mut::<A>().unwrap();
-            f(t, uim, r)
-        })
-    }
-
-    pub(crate) fn create_t<A: 'static, T: 'static>(r: T, f: fn(&mut A, &mut Context, &T)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
-        Box::new(move |target, uim| {
-            let t = target.downcast_mut::<A>().unwrap();
-            f(t, uim, &r)
-        })
-    }
+    // pub(crate) fn create_item<A: 'static>(r: usize, f: fn(&mut A, &mut Context, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
+    //     Box::new(move |target, uim| {
+    //         let t = target.downcast_mut::<A>().unwrap();
+    //         f(t, uim, r)
+    //     })
+    // }
+    //
+    // pub(crate) fn create_t<A: 'static, T: 'static>(r: T, f: fn(&mut A, &mut Context, &T)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
+    //     Box::new(move |target, uim| {
+    //         let t = target.downcast_mut::<A>().unwrap();
+    //         f(t, uim, &r)
+    //     })
+    // }
 }

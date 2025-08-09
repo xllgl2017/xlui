@@ -1,10 +1,6 @@
 use xlui::frame::context::Context;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
-use xlui::paint::color::Color;
-use xlui::radius::Radius;
-use xlui::size::border::Border;
-use xlui::style::{BorderStyle, ClickStyle, FillStyle};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
@@ -27,6 +23,7 @@ impl TD {
 }
 
 struct ListView {
+    id: String,
     data: Vec<TD>,
     current_index: Option<usize>,
 }
@@ -34,6 +31,7 @@ struct ListView {
 impl ListView {
     fn new() -> ListView {
         ListView {
+            id: xlui::gen_unique_id(),
             data: vec![
                 TD::new("1"),
                 TD::new("2"),
@@ -52,54 +50,65 @@ impl ListView {
     }
 
 
-    fn item_widget(&self, ui: &mut Ui, datum: &TD, row: usize) {
-        let mut rect = ui.available_rect();
-        rect.set_height(38.0);
-        let style = ClickStyle {
-            fill: FillStyle {
-                inactive: Color::TRANSPARENT,
-                hovered: Color::TRANSPARENT,
-                clicked: Color::TRANSPARENT,
-            },
-            border: BorderStyle {
-                inactive: Border::new(1.0).radius(Radius::same(3)).color(Color::BLUE),
-                hovered: Border::new(1.0).radius(Radius::same(3)).color(Color::RED),
-                clicked: Border::new(1.0).radius(Radius::same(3)).color(Color::YELLOW),
-            },
-        };
-        ui.paint_rect(rect, style).connect(row, XlUiApp::item_click);
-        ui.horizontal(|ui| {
-            ui.image("logo.jpg", (30.0, 30.0));
-            ui.vertical(|ui| {
-                ui.label(datum.name.as_str());
-                ui.horizontal(|ui| {
-                    ui.label("00:00");
-                    ui.label("200");
-                    ui.label("HTTP/1.1");
-                    ui.label("10 KB");
-                    ui.label("10 KB");
-                });
-            });
-        });
-    }
+    // fn item_widget(&self, ui: &mut Ui, datum: &TD, row: usize) {
+    //     let mut rect = ui.available_rect();
+    //     rect.set_height(38.0);
+    //     let style = ClickStyle {
+    //         fill: FillStyle {
+    //             inactive: Color::TRANSPARENT,
+    //             hovered: Color::TRANSPARENT,
+    //             clicked: Color::TRANSPARENT,
+    //         },
+    //         border: BorderStyle {
+    //             inactive: Border::new(1.0).radius(Radius::same(3)).color(Color::BLUE),
+    //             hovered: Border::new(1.0).radius(Radius::same(3)).color(Color::RED),
+    //             clicked: Border::new(1.0).radius(Radius::same(3)).color(Color::YELLOW),
+    //         },
+    //     };
+    //     ui.paint_rect(rect, style).connect(row, XlUiApp::item_click);
+    //     ui.horizontal(|ui| {
+    //         // ui.image("logo.jpg", (30.0, 30.0));
+    //         ui.vertical(|ui| {
+    //             ui.label(datum.name.as_str());
+    //             ui.horizontal(|ui| {
+    //                 ui.label("00:00");
+    //                 ui.label("200");
+    //                 ui.label("HTTP/1.1");
+    //                 ui.label("10 KB");
+    //                 ui.label("10 KB");
+    //             });
+    //         });
+    //     });
+    // }
 
     fn current(&self, ctx: &mut Context) -> Option<&TD> {
         let current = self.current_index?;
         Some(&self.data[current])
     }
+
+    pub fn remove(&mut self, index: usize) {
+        self.data.remove(index);
+    }
+
+    pub fn push(&mut self, datum: TD, ctx: &mut Context) {
+        self.data.push(datum);
+    }
 }
 
 
 impl Widget for ListView {
-    fn draw(&mut self, ui: &mut Ui) {
-        ScrollArea::new().with_size(300.0, 300.0).show(ui, |ui| {
-            for (row, datum) in self.data.iter().enumerate() {
-                self.item_widget(ui, datum, row);
-            }
-        });
+    fn draw(&mut self, ui: &mut Ui) -> String {
+        // ScrollArea::new().with_size(300.0, 300.0).show(ui, |ui| {
+        //     for (row, datum) in self.data.iter().enumerate() {
+        //         self.item_widget(ui, datum, row);
+        //     }
+        // });
+        self.id.clone()
     }
 
-    fn update(&mut self, ctx: &mut Context) {}
+    fn update(&mut self, ui: &mut Ui) {}
+
+    fn redraw(&mut self, ui: &mut Ui) {}
 }
 
 fn main() {
@@ -109,7 +118,7 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
-    list_view: ListView,
+    // list_view: ListView,
 }
 
 impl XlUiApp {
@@ -117,52 +126,52 @@ impl XlUiApp {
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,
-            list_view: ListView::new(),
+            // list_view: ListView::new(),
         }
     }
 
-    pub fn click1(&mut self, ctx: &mut Context) {
+    pub fn click1(&mut self, ui: &mut Ui) {
         self.count += 1;
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, ctx: &mut Context) {
+    pub fn click2(&mut self, ui: &mut Ui) {
         self.count += 2;
         println!("count2: {}", self.count);
     }
 
-    pub fn add(&mut self, ctx: &mut Context) {
+    pub fn add(&mut self, ui: &mut Ui) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ctx);
+        self.label.update(ui);
     }
 
-    pub fn reduce(&mut self, ctx: &mut Context) {
+    pub fn reduce(&mut self, ui: &mut Ui) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ctx);
+        self.label.update(ui);
     }
 
-    pub fn slider(&mut self, ctx: &mut Context, value: f32) {
+    pub fn slider(&mut self, ui: &mut Ui, value: f32) {
         self.label.set_text(format!("slider: {}", value));
-        self.label.update(ctx);
+        self.label.update(ui);
     }
 
-    pub fn check(&mut self, ctx: &mut Context, checked: bool) {
+    pub fn check(&mut self, ui: &mut Ui, checked: bool) {
         self.label.set_text(format!("check: {}", checked));
-        self.label.update(ctx);
+        self.label.update(ui);
     }
 
-    pub fn edit_changed(&mut self, ctx: &mut Context, text: String) {
+    pub fn edit_changed(&mut self, ui: &mut Ui, text: String) {
         self.label.set_text(format!("textedit: {}", text));
-        self.label.update(ctx);
+        self.label.update(ui);
     }
 
-    fn item_click(&mut self, ctx: &mut Context, row: usize) {
+    fn item_click(&mut self, ctx: &mut Ui, row: usize) {
         println!("item click {}", row);
     }
 
-    fn combo_changed(&mut self, ctx: &mut Context, index: usize) {
+    fn combo_changed(&mut self, ctx: &mut Ui, index: usize) {
         self.label.set_text(format!("combo: {}", index));
         self.label.update(ctx);
     }
@@ -172,30 +181,33 @@ impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         self.label.draw(ui);
         ui.horizontal(|ui| {
-            Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).draw(ui);
-            Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
+            ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
+            ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
         });
-        // println!("draw");
-        // ScrollBar::new().size(20.0, 200.0).draw(ui);
-        TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed).draw(ui);
-        SpinBox::new(1).with_range(0..10).draw(ui);
+        // // println!("draw");
+        // // ScrollBar::new().size(20.0, 200.0).draw(ui);
+        ui.add(TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
+        ui.add(SpinBox::new(1).with_range(0..10));
         ui.horizontal(|ui| {
-            Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider).draw(ui);
-            ui.slider(30.0, 0.0..100.0).connect(Self::slider);
-        });
-        ui.horizontal(|ui| {
-            CheckBox::new(false, "checkbox1").connect(Self::check).draw(ui);
-            ui.checkbox(true, "checkbox2").connect(Self::check);
+            ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
+            ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
         });
         ui.horizontal(|ui| {
+            ui.add(CheckBox::new(false, "checkbox1").connect(Self::check));
+            ui.checkbox(true, "checkbox2").set_callback(Self::check);
+        });
+        ui.horizontal(|ui| {
+            ui.label("h1");
+            ui.label("h1");
+            ui.label("h1");
             let area = ScrollArea::new().with_size(300.0, 400.0);
             area.show(ui, |ui| {
                 ui.label("start");
-                ui.vertical(|ui| {
-                    ui.label("sv1");
-                    ui.label("sv2");
-                    ui.button("sv3").connect(Self::click1)
-                });
+                // ui.vertical(|ui| {
+                //     ui.label("sv1");
+                //     ui.label("sv2");
+                //     ui.button("sv3").connect(Self::click1)
+                // });
                 ui.horizontal(|ui| {
                     ui.label("sh1");
                     ui.label("sh2");
@@ -206,34 +218,21 @@ impl App for XlUiApp {
                 }
                 ui.label("end");
             });
-            ComboBox::new(&vec!["item1", "item2", "item3", "item4"]).connect(Self::combo_changed).with_popup_height(150.0).draw(ui);
-            self.list_view.draw(ui);
+            ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4"]).connect(Self::combo_changed).with_popup_height(150.0));
+            // self.list_view.draw(ui);
         });
 
         ui.label("hello label1");
-        // ui.horizontal(|ui| {
-        //     ui.label("hello label6");
-        //     ui.label("hello label7");
-        //     ui.button("+").connect(Self::click2);
-        //     ui.button("-").connect(Self::click1);
-        // });
-        // ui.label("hello label2");
-        // ui.label("hello label3");
-        // ui.label("hello label4");
-        // ui.label("hello label5");
-        // // let mut button = Button::new("hello button1".to_string()).connect(Self::click1);
-        //
-        // ui.button("hello button1").connect(Self::click1);
-        // ui.button("hello button2");
-        // ui.button("hello button3");
-        // ui.button("hello button4");
-        // ui.button("hello button5");
-        // ui.image("logo.jpg", (200.0, 200.0));
-        Image::new("logo.jpg").with_size(200.0, 200.0).draw(ui);
         ui.image("logo.jpg", (200.0, 200.0));
+        ui.add(Image::new("logo.jpg").with_size(200.0, 200.0));
+        // ui.image("logo.jpg", (200.0, 200.0));
     }
 
-    // fn as_any(&mut self) -> &mut dyn Any {
-    //     todo!()
-    // }
+    fn update(&mut self, ui: &mut Ui) {
+        self.label.update(ui);
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.label.redraw(ui);
+    }
 }

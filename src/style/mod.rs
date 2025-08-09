@@ -1,6 +1,7 @@
-use crate::paint::color::Color;
+pub mod color;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
+use crate::style::color::Color;
 
 pub struct Frame {
     pub rect: Rect,
@@ -29,6 +30,21 @@ pub struct ClickStyle {
 }
 
 impl ClickStyle {
+    pub fn new() -> ClickStyle {
+        ClickStyle {
+            fill: FillStyle {
+                inactive: Color::rgb(230, 230, 230),
+                hovered: Color::rgb(230, 230, 230),
+                clicked: Color::rgb(165, 165, 165),
+            },
+
+            border: BorderStyle {
+                inactive: Border::new(0.0),
+                hovered: Border::new(1.0).color(Color::rgb(0, 0, 0)),
+                clicked: Border::new(1.0).color(Color::rgb(0, 0, 0)),
+            },
+        }
+    }
     pub fn dyn_fill(&self, clicked: bool, hovered: bool) -> &Color {
         if clicked && hovered { return &self.fill.clicked; }
         if hovered { return &self.fill.hovered; }
@@ -79,19 +95,7 @@ impl Style {
             },
 
             widget: WidgetStyle {
-                click: ClickStyle {
-                    fill: FillStyle {
-                        inactive: Color::rgb(230, 230, 230),
-                        hovered: Color::rgb(230, 230, 230),
-                        clicked: Color::rgb(165, 165, 165),
-                    },
-
-                    border: BorderStyle {
-                        inactive: Border::new(0.0),
-                        hovered: Border::new(1.0).color(Color::rgb(0, 0, 0)),
-                        clicked: Border::new(1.0).color(Color::rgb(0, 0, 0)),
-                    },
-                },
+                click: ClickStyle::new(),
             },
         }
     }

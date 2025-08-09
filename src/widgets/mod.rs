@@ -1,5 +1,7 @@
-use crate::frame::context::Context;
+use std::any::Any;
 use crate::ui::Ui;
+use crate::widgets::button::Button;
+use crate::widgets::label::Label;
 
 pub mod label;
 pub mod button;
@@ -12,7 +14,14 @@ pub mod checkbox;
 pub mod radio;
 pub mod combobox;
 
-pub trait Widget {
-    fn draw(&mut self, ui: &mut Ui); //初次绘制调用
-    fn update(&mut self, ctx: &mut Context); //后续更新调用
+pub trait Widget: Any {
+    fn draw(&mut self, ui: &mut Ui) -> String; //初次绘制调用
+    fn update(&mut self, ui: &mut Ui); //后续更新调用
+    fn redraw(&mut self, ui: &mut Ui);
+}
+
+pub enum WidgetKind {
+    Label(Label),
+    Button(Button),
+    Custom(Box<dyn Widget>),
 }
