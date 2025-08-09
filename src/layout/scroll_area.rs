@@ -79,7 +79,7 @@ impl ScrollArea {
         // ui.current_scrollable = true;
         //视图内容
         callback(ui);
-        previous_layout.alloc_rect(&ui.layout().drawn_rect());
+        // previous_layout.alloc_rect(&self.fill_param.rect);
         let current_layout = ui.layout.replace(previous_layout).unwrap();
         match current_layout {
             LayoutKind::Vertical(v) => { self.layout.replace(v); }
