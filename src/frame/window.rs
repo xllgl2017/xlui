@@ -34,7 +34,7 @@ impl<A: App> Window<A> {
             present_mode: wgpu::PresentMode::AutoVsync,
         };
 
-        let font = Arc::new(Font::from_vec(include_bytes!("../../res/font/simfang.ttf").to_vec()));
+        let font = Arc::new(Font::new());
         let viewport = Viewport::new(&device, &cache);
         let device = Device {
             device,

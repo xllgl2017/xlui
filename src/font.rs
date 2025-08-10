@@ -13,15 +13,20 @@ pub struct Font {
 }
 
 impl Font {
-    fn new() -> Font {
+    pub fn new() -> Font {
         let mut font_system = glyphon::FontSystem::new();
-        let face = font_system.db().faces().next().unwrap();
+        let face = font_system.db().faces().find(|x| x.families[0].0.contains("FangSong")).unwrap(); //FangSong
+        for face in font_system.db().faces() {
+            println!("{} {}", face.families[0].0, face.families[0].1);
+        }
+        let family = face.families[0].0.clone();
         let font = font_system.get_font(face.id).unwrap();
-        let glyph_font = ab_glyph::FontArc::try_from_vec(font.data().to_vec()).unwrap();
+        let font_data = Arc::new(font.data().to_vec());
+        let glyph_font = ab_glyph::FontArc::try_from_vec(font_data.to_vec()).unwrap();
         Font {
-            family: "".to_string(),
+            family,
             id: Default::default(),
-            data: Arc::new(vec![]),
+            data: font_data,
             glyph_font,
             font,
         }
