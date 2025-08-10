@@ -125,6 +125,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 // println!("{:?}", state);
                 match (state, button) {
                     (ElementState::Pressed, MouseButton::Left) => {
+                        window.app_ctx.device.device_input.mouse.previous = window.app_ctx.device.device_input.mouse.lastest;
                         window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest;
                         window.app_ctx.device.device_input.mouse.pressed = true;
                         window.app_ctx.update(&mut window.app)

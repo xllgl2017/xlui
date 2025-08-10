@@ -75,6 +75,11 @@ impl XlUiApp {
         self.label.set_text(format!("image button: {}", self.count));
         self.label.update(ui);
     }
+
+    fn combo_changed(&mut self, ui: &mut Ui, data: &TD) {
+        self.label.set_text(format!("combo: {}", data));
+        self.label.update(ui);
+    }
 }
 
 struct TD {
@@ -167,10 +172,10 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(false, "ComboBox");
             ui.add_space(30.0);
-            ui.add(ComboBox::new(vec![TD::new(1), TD::new(2), TD::new(3), TD::new(4)]).with_popup_height(150.0));
+            ui.add(ComboBox::new(vec![TD::new(1), TD::new(2), TD::new(3), TD::new(4)]).with_popup_height(150.0).connect(Self::combo_changed));
             ui.add_space(186.0);
-            ui.checkbox(false, "变动监测");
-            ui.checkbox(false, "滚动");
+            ui.checkbox(true, "变动监测");
+            ui.checkbox(true, "滚动");
         });
         ui.horizontal(|ui| {
             ui.radio(true, "Image");

@@ -51,19 +51,16 @@ impl ScrollBar {
     }
 
     pub fn with_rect(mut self, rect: Rect) -> Self {
-        self.fill_param.rect = rect;
-        self.slider_param.rect.set_width(self.fill_param.rect.width());
+        self.set_rect(rect);
         self
     }
 
-    // pub fn with_size(mut self, width: f32, height: f32) -> Self {
-    //     self.fill_param.rect.set_size(width, height);
-    //     self.slider_param.rect.set_width(width);
-    //     // self.rect.set_size(width, height);
-    //     self
-    // }
+    pub fn set_rect(&mut self, rect: Rect) {
+        self.fill_param.rect = rect;
+        self.slider_param.rect.set_width(self.fill_param.rect.width());
+    }
 
-    pub fn context_height(mut self, context_height: f32) -> Self {
+    pub fn set_context_height(&mut self, context_height: f32) {
         self.context_height = context_height;
         let mut slider_height = if self.context_height < self.fill_param.rect.height() {
             self.fill_param.rect.height()
@@ -72,6 +69,10 @@ impl ScrollBar {
         };
         if slider_height < 32.0 { slider_height = 32.0; }
         self.slider_param.rect.set_height(slider_height);
+    }
+
+    pub fn context_height(mut self, context_height: f32) -> Self {
+        self.set_context_height(context_height);
         self
     }
 

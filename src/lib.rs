@@ -1,5 +1,5 @@
 //! ### 最小运行示例
-//! ![控件状态](..//res/img/doc/img.png)
+//! ![控件状态](../res/img/doc/img.png)
 //! ```
 //! use xlui::frame::{WindowAttribute,App};
 //! use xlui::widgets::Widget;
@@ -43,7 +43,7 @@
 //! //实现App trait
 //! impl App for XlUiApp {
 //!     fn draw(&mut self, ui: &mut Ui) {
-//!         self.label.draw(ui);
+//!         ui.add_mut(&mut self.label);
 //!         ui.horizontal(|ui| {
 //!             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).draw(ui);
 //!             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);

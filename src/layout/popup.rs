@@ -1,4 +1,5 @@
 use crate::layout::{Layout, LayoutKind, VerticalLayout};
+use crate::layout::scroll_area::ScrollArea;
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
@@ -11,7 +12,7 @@ use crate::ui::Ui;
 
 pub struct Popup {
     pub(crate) id: String,
-    pub(crate) layout: Option<LayoutKind>,
+    pub(crate) scroll_area: ScrollArea,
     fill_index: usize,
     pub(crate) open: bool,
 }
@@ -28,13 +29,19 @@ impl Popup {
         let data = fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         let fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        let layout = VerticalLayout::new().max_rect(rect.clone(), Padding::same(5.0));
+        let mut area = ScrollArea::new().with_size(rect.width(), rect.height()).padding(Padding::same(5.0));
+        area.set_rect(rect);
         Popup {
             id: crate::gen_unique_id(),
-            layout: Some(LayoutKind::Vertical(layout)),
+            scroll_area: area,
             fill_index,
             open: false,
         }
+    }
+
+    pub fn show(mut self, ui: &mut Ui, context: impl FnMut(&mut Ui)) {
+        self.scroll_area.draw(ui, context);
+        ui.popups.as_mut().unwrap().insert(self.id.clone(), self);
     }
 
     pub fn popup_style() -> ClickStyle {
@@ -67,13 +74,14 @@ impl Popup {
 
 impl Layout for Popup {
     fn update(&mut self, ui: &mut Ui) {
-        self.layout.as_mut().unwrap().update(ui);
+        if !self.open { return; }
+        self.scroll_area.update(ui);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         if !self.open { return; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
-        self.layout.as_mut().unwrap().redraw(ui);
+        self.scroll_area.redraw(ui);
     }
 }

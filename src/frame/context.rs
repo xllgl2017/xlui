@@ -48,7 +48,6 @@ pub struct Context {
     pub resize: bool,
     pub render: Render,
     pub updates: Map<ContextUpdate>,
-    pub popup: Map<bool>,
 }
 
 impl Context {

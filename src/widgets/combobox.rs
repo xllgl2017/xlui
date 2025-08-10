@@ -9,6 +9,7 @@
 //! ```
 
 use std::any::Any;
+use std::cell::RefCell;
 use crate::frame::context::Context;
 use crate::layout::popup::Popup;
 use crate::radius::Radius;
@@ -22,6 +23,8 @@ use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::Widget;
 use std::fmt::Display;
+use std::rc::Rc;
+use glyphon::Shaping;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -41,6 +44,8 @@ pub struct ComboBox<T> {
     fill_index: usize,
     fill_buffer: Option<wgpu::Buffer>,
 
+    previous_select: usize,
+    selected: Rc<RefCell<usize>>,
 }
 
 impl<T: Display + 'static> ComboBox<T> {
@@ -71,6 +76,8 @@ impl<T: Display + 'static> ComboBox<T> {
             fill_param: RectParam::new(Rect::new(), fill_style),
             fill_index: 0,
             fill_buffer: None,
+            previous_select: 0,
+            selected: Rc::new(RefCell::new(0)),
         }
     }
 
@@ -86,7 +93,6 @@ impl<T: Display + 'static> ComboBox<T> {
         self.popup_rect = self.fill_param.rect.clone_with_size(&self.popup_rect);
         self.popup_rect.set_width(self.fill_param.rect.width());
         self.popup_rect.offset_y(self.fill_param.rect.height() + 5.0);
-        // self.popup.set_rect(popup_rect);
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
@@ -98,27 +104,24 @@ impl<T: Display + 'static> ComboBox<T> {
     /// 设置popup的高度
     pub fn with_popup_height(mut self, height: f32) -> Self {
         self.popup_rect.set_height(height);
-        // self.popup.rect_mut().set_height(height);
         self
     }
 
-    fn add_item(&self, ui: &mut Ui, item: &T) {
-        // ui.style.widget.click = self.item_style.clone();
+    fn add_item(&self, ui: &mut Ui, item: &T, row: usize) {
         let mut btn = Button::new(item).padding(Padding::same(3.0)).with_style(self.item_style.clone());
         btn.set_size(ui.layout().available_rect().width(), 25.0);
+        let state = self.selected.clone();
+        btn.set_callback2(move || {
+            println!("{}", row);
+            *state.borrow_mut() = row;
+        });
         ui.add(btn);
-        // let task = PaintButton::new(ui, &mut btn);
-        // popup.layout.widgets.insert(btn.id.clone(), PaintTask::Button(task));
     }
 
-    fn add_items(&self, ui: &mut Ui, popup: &mut Popup) {
-        let previous_layout = ui.layout.replace(popup.layout.take().unwrap()).unwrap();
-        // let style = ui.style.widget.click.clone();
-        for datum in self.data.iter() {
-            self.add_item(ui, datum);
+    fn add_items(&self, ui: &mut Ui) {
+        for (index, datum) in self.data.iter().enumerate() {
+            self.add_item(ui, datum, index);
         }
-        popup.layout = ui.layout.replace(previous_layout);
-        // ui.style.widget.click = style;
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, &T)) -> Self {
@@ -146,9 +149,8 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
 
         //下拉框布局
         let mut popup = Popup::new(ui, self.popup_rect.clone());
-        self.add_items(ui, &mut popup);
-        self.popup_id = popup.id.to_string();
-        ui.popups.as_mut().unwrap().insert(popup.id.clone(), popup);
+        self.popup_id = popup.id.clone();
+        popup.show(ui, |ui| self.add_items(ui));
         Response {
             id: self.id.clone(),
             rect: self.fill_param.rect.clone(),
@@ -164,6 +166,24 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
+        if *self.selected.borrow() != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
+            self.previous_select = *self.selected.borrow();
+            self.text_buffer.set_text(self.data[*self.selected.borrow()].to_string());
+            self.text_buffer.buffer.as_mut().unwrap().set_text(
+                &mut ui.context.render.text.font_system,
+                self.data[*self.selected.borrow()].to_string().as_str(),
+                &ui.context.font.font_attr(),
+                Shaping::Advanced,
+            );
+            let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
+            popup.open = false;
+            if let Some(ref mut callback) = self.callback {
+                let app = ui.app.take().unwrap();
+                callback(*app, ui, &self.data[*self.selected.borrow()]);
+                ui.app.replace(app);
+                ui.context.window.request_redraw();
+            }
+        }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);

@@ -57,7 +57,6 @@ impl<A: App> Window<A> {
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
-            popup: Map::new(),
         };
         // let mut ui = Ui::new(device, context, Style::light_style());
         // app.draw(&mut ui);

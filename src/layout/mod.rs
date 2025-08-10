@@ -88,13 +88,8 @@ impl LayoutKind {
                 rect.set_height(if v.height > v.max_rect.height() { v.max_rect.height() } else { v.height });
                 rect
             }
-            LayoutKind::Vertical(v) => {
-                let mut rect = v.max_rect.clone();
-                rect.set_width(if v.width > v.max_rect.width() { v.max_rect.width() } else { v.width });
-                rect.set_height(if v.height > v.max_rect.height() { v.max_rect.height() } else { v.height });
-                rect
-            }
-            LayoutKind::ScrollArea(v) => v.rect.clone(),
+            LayoutKind::Vertical(v) => v.drawn_rect(),
+            LayoutKind::ScrollArea(v) => v.drawn_rect().clone()
         }
     }
     pub fn add_space(&mut self, space: f32) {
@@ -215,6 +210,13 @@ impl VerticalLayout {
         self.available_rect.y.min += rect.height() + self.item_space;
         if self.width < rect.width() { self.width = rect.width() + self.item_space; }
         self.height += rect.height() + if self.height == 0.0 { 0.0 } else { self.item_space };
+    }
+
+    pub(crate) fn drawn_rect(&self) -> Rect {
+        let mut rect = self.max_rect.clone();
+        rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
+        rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
+        rect
     }
 }
 

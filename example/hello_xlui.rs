@@ -135,12 +135,12 @@ impl XlUiApp {
         }
     }
 
-    pub fn click1(&mut self, ui: &mut Ui) {
+    pub fn click1(&mut self, _ui: &mut Ui) {
         self.count += 1;
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, ui: &mut Ui) {
+    pub fn click2(&mut self, _ui: &mut Ui) {
         self.count += 2;
         println!("count2: {}", self.count);
     }
@@ -216,14 +216,14 @@ impl App for XlUiApp {
                 ui.horizontal(|ui| {
                     ui.label("sh1");
                     ui.label("sh2");
-                    ui.button("sh3");
+                    ui.button("sh3").set_callback(Self::click2);
                 });
                 for i in 0..1000 {
                     ui.label(format!("i{}", i));
                 }
                 ui.label("end");
             });
-            ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4"]).connect(Self::combo_changed).with_popup_height(150.0));
+            ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item5"]).connect(Self::combo_changed).with_popup_height(150.0));
             // self.list_view.draw(ui);
         });
 
