@@ -18,8 +18,8 @@ jobs:
     - uses: actions/checkout@v4
     - uses: Swatinem/rust-cache@v2
       with:
-        key: |
-          ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
           ${{ runner.os }}-cargo-${{ github.ref }}-
           ${{ runner.os }}-cargo-
         cache-on-failure: true
@@ -27,8 +27,8 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           ./target
-        prefix-key: |
-          ${{ runner.os }}-cargo-
+#        prefix-key: |
+#          ${{ runner.os }}-cargo-
     - name: Install mold
       run: sudo apt-get install mold -y
     - name: Build
