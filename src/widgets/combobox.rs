@@ -24,7 +24,7 @@ use crate::widgets::Widget;
 use std::fmt::Display;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
-use crate::response::Callback;
+use crate::response::{Callback, Response};
 use crate::style::color::Color;
 
 pub struct ComboBox {
@@ -130,11 +130,11 @@ impl ComboBox {
 
 
 impl Widget for ComboBox {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         //分配大小
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
-        ui.layout().alloc_rect(&self.fill_param.rect);
+        // ui.layout().alloc_rect(&self.fill_param.rect);
         //背景
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
@@ -151,7 +151,10 @@ impl Widget for ComboBox {
         self.add_items(ui, &mut popup);
         self.popup_id = popup.id.to_string();
         ui.popups.as_mut().unwrap().insert(popup.id.clone(), popup);
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.fill_param.rect.clone(),
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) {

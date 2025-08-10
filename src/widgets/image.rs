@@ -4,6 +4,7 @@ use crate::ui::Ui;
 use crate::vertex::ImageVertex;
 use crate::widgets::Widget;
 use wgpu::util::DeviceExt;
+use crate::response::Response;
 
 pub struct Image {
     pub(crate) id: String,
@@ -60,14 +61,15 @@ impl Image {
         self.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
     }
+
 }
 
 impl Widget for Image {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         let size = ui.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source);
         self.reset_size(size);
-        ui.layout().alloc_rect(&self.rect);
+        // ui.layout().alloc_rect(&self.rect);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         self.vertices = vec![
             ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], &ui.context.size),
@@ -87,7 +89,10 @@ impl Widget for Image {
             usage: wgpu::BufferUsages::INDEX,
         });
         self.index_buffer = Some(index_buffer);
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.rect.clone(),
+        }
         // let layout = ui.current_layout.as_mut().unwrap();
         // self.rect = layout.available_rect.clone_with_size(&self.rect);
         // let size = ui.ui_manage.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source);

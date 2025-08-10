@@ -3,7 +3,7 @@ use crate::radius::Radius;
 use crate::render::circle::param::CircleParam;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
-use crate::response::Callback;
+use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
@@ -98,13 +98,13 @@ impl Slider {
 }
 
 impl Widget for Slider {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         //分配大小
         self.rect = ui.layout().available_rect().clone();
         self.rect.x.min += 8.0;
         self.rect.x.max += 8.0;
         self.rect.set_size(130.0, 16.0);
-        ui.layout().alloc_rect(&self.rect);
+        // ui.layout().alloc_rect(&self.rect);
         //背景
         self.fill_param.rect = self.rect.clone();
         self.fill_param.rect.y.min += 5.0;
@@ -131,7 +131,10 @@ impl Widget for Slider {
         let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
         self.slider_index = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
         self.slider_buffer = Some(slider_buffer);
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.rect.clone(),
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) {

@@ -3,6 +3,7 @@ use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use glyphon::Shaping;
+use crate::response::Response;
 
 pub struct Label {
     id: String,
@@ -49,12 +50,15 @@ impl Label {
 
 
 impl Widget for Label {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
         self.buffer.reset_size(ui.context);
-        ui.layout().alloc_rect(&self.buffer.rect);
+        // ui.layout().alloc_rect(&self.buffer.rect);
         self.buffer.draw(ui);
-        self.id.clone()
+        Response{
+            id:self.id.clone(),
+            rect:self.buffer.rect.clone()
+        }
     }
 
 

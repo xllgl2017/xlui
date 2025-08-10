@@ -9,7 +9,7 @@
 use crate::frame::context::Context;
 use crate::render::circle::param::CircleParam;
 use crate::render::WrcRender;
-use crate::response::Callback;
+use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
@@ -104,11 +104,11 @@ impl RadioButton {
 
 
 impl Widget for RadioButton {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(&ui.context);
-        ui.layout().alloc_rect(&self.rect);
+        // ui.layout().alloc_rect(&self.rect);
         //外圆
         self.outer_param.rect = self.rect.clone();
         self.outer_param.rect.set_width(self.rect.height());
@@ -128,7 +128,10 @@ impl Widget for RadioButton {
         self.inner_buffer = Some(inner_buffer);
         //文本
         self.text.draw(ui);
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.rect.clone(),
+        }
 
         // let layout = ui.current_layout.as_mut().unwrap();
         // self.rect = layout.available_rect.clone_with_size(&self.rect);

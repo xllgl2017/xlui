@@ -165,8 +165,9 @@ impl<'a> Ui<'a> {
     }
 
     pub fn add(&mut self, mut widget: impl Widget + 'static) {
-        let wid = widget.draw(self);
-        self.layout.as_mut().unwrap().add_widget(wid, Box::new(widget));
+        let resp = widget.draw(self);
+        self.layout().alloc_rect(&resp.rect);
+        self.layout.as_mut().unwrap().add_widget(resp.id, Box::new(widget));
     }
 
     pub fn horizontal(&mut self, mut context: impl FnMut(&mut Ui)) {

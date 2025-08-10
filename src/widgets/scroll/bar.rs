@@ -8,6 +8,7 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use crate::Offset;
+use crate::response::Response;
 
 pub struct ScrollBar {
     id: String,
@@ -99,7 +100,7 @@ impl ScrollBar {
 
 
 impl Widget for ScrollBar {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         //背景
         // self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         let data = self.fill_param.as_draw_param(false, false);
@@ -112,7 +113,10 @@ impl Widget for ScrollBar {
         let slider_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.slider_index = ui.context.render.rectangle.create_bind_group(&ui.device, &slider_buffer);
         self.slider_buffer = Some(slider_buffer);
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.fill_param.rect.clone(),
+        }
 
         // let layout = ui.current_layout.as_mut().unwrap();
         // self.rect = layout.available_rect.clone_with_size(&self.rect);

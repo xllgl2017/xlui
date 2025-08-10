@@ -1,11 +1,6 @@
 use crate::ui::Ui;
 use std::any::Any;
-
-pub enum DrawnEvent {
-    None,
-    Hover,
-    Click,
-}
+use crate::size::rect::Rect;
 
 pub struct Callback {
     // click: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
@@ -121,4 +116,19 @@ impl Callback {
     //         f(t, uim, &r)
     //     })
     // }
+}
+
+pub struct Response {
+    pub(crate) id: String,
+    pub(crate) rect: Rect,
+}
+
+impl Response {
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    pub fn rect(&self) -> &Rect {
+        &self.rect
+    }
 }

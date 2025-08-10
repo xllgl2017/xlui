@@ -1,4 +1,4 @@
-use crate::response::Callback;
+use crate::response::{Callback, Response};
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
@@ -76,13 +76,13 @@ impl SpinBox {
 
 
 impl Widget for SpinBox {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size();
         self.edit.draw(ui);
         let mut rect = self.rect.clone();
         rect.set_width(18.0);
-        ui.layout().alloc_rect(&rect);
+        // ui.layout().alloc_rect(&rect);
         self.up_rect = Rect {
             x: Pos { min: self.rect.x.max - 14.0, max: self.rect.x.max },
             y: Pos { min: self.rect.y.min + 1.0, max: self.rect.y.min + self.rect.height() / 2.0 - 2.0 },
@@ -102,7 +102,10 @@ impl Widget for SpinBox {
             Vertex::new([self.rect.x.max - 14.0, self.down_rect.y.min], &self.color, &ui.context.size),
             Vertex::new([self.rect.x.max, self.down_rect.y.min], &self.color, &ui.context.size),
         ], &ui.device);
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.rect.clone(),
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) {

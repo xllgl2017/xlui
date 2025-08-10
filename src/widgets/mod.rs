@@ -1,4 +1,5 @@
 use std::any::Any;
+use crate::response::Response;
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::label::Label;
@@ -15,7 +16,7 @@ pub mod radio;
 pub mod combobox;
 
 pub trait Widget: Any {
-    fn draw(&mut self, ui: &mut Ui) -> String; //初次绘制调用
+    fn draw(&mut self, ui: &mut Ui) -> Response; //初次绘制调用
     fn update(&mut self, ui: &mut Ui); //后续更新调用
     fn redraw(&mut self, ui: &mut Ui);
 }

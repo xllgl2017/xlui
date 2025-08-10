@@ -1,7 +1,7 @@
 use crate::style::color::Color;
 use crate::frame::context::Context;
 use crate::radius::Radius;
-use crate::response::Callback;
+use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
@@ -352,10 +352,10 @@ impl TextEdit {
 
 
 impl Widget for TextEdit {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
-        ui.layout().alloc_rect(&self.fill_param.rect);
+        // ui.layout().alloc_rect(&self.fill_param.rect);
         //背景
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -382,7 +382,10 @@ impl Widget for TextEdit {
         self.cursor_buffer = Some(cursor_buffer);
         //文本
         self.text_buffer.draw(ui);
-        self.id.clone()
+        Response{
+            id:self.id.clone(),
+            rect:self.fill_param.rect.clone()
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) {

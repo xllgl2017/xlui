@@ -77,7 +77,8 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "Label");
             ui.add_space(50.0);
-            self.label.draw(ui);
+            let resp = self.label.draw(ui);
+            ui.layout().alloc_rect(resp.rect());
             ui.add_space(190.0);
             ui.checkbox(true, "文本更新");
             ui.checkbox(false, "多样文本");
@@ -115,7 +116,7 @@ impl App for XlUiApp {
             ui.add_space(38.0);
             ui.add(SpinBox::new(1).with_range(0..10).connect(Self::spinbox));
             ui.spinbox(1, 0..10).set_callback(Self::spinbox);
-            ui.add_space(73.0);
+            ui.add_space(83.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(false, "泛类");
         });
@@ -153,12 +154,12 @@ impl App for XlUiApp {
             ui.add_space(50.0);
             ui.image("logo.jpg", (50.0, 50.0));
             ui.add(Image::new("logo.jpg").with_size(50.0, 50.0))
-        })
-        // ui.horizontal(|ui| {
-        //     RadioButton::new(false, "ImageButton").draw(ui);
-        //     ui.add_space(10.0);
-        //     Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0).draw(ui);
-        // });
+        });
+        ui.horizontal(|ui| {
+            ui.radio(false, "ImageButton");
+            ui.add_space(10.0);
+            ui.add(Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0));
+        });
     }
 
     fn update(&mut self, ui: &mut Ui) {
