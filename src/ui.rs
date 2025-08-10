@@ -171,7 +171,7 @@ impl<'a> Ui<'a> {
         self.layout.as_mut().unwrap().add_widget(resp.id, Box::new(widget));
     }
 
-    pub fn add_mut(&mut self, mut widget: &mut impl Widget) {
+    pub fn add_mut(&mut self, widget: &mut impl Widget) {
         let resp = widget.draw(self);
         self.layout().alloc_rect(&resp.rect);
     }
@@ -192,7 +192,7 @@ impl<'a> Ui<'a> {
         self.layout().add_child(crate::gen_unique_id(), current_layout);
     }
 
-    pub fn layout(&mut self) -> &mut LayoutKind {
+    pub(crate) fn layout(&mut self) -> &mut LayoutKind {
         self.layout.as_mut().unwrap()
     }
 

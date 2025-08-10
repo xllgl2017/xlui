@@ -57,36 +57,14 @@ impl ScrollArea {
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
         self.fill_buffer = Some(buffer);
         let current_layout = VerticalLayout::new().max_rect(rect, self.padding.clone());
-        let mut previous_layout = ui.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
-
-
-        // let mut previous_layout = ui.current_layout.take().unwrap();
-        // self.rect = previous_layout.available_rect.clone_with_size(&self.rect);
-        // self.rect.set_width(300.0);
-        // self.rect.set_height(400.0);
-
-        // let v_bar_width = self.v_bar.rect.width();
-        // self.v_bar.rect = self.rect.clone();
-        // self.v_bar.rect.x.min = self.v_bar.rect.x.max - v_bar_width; //outer
-
-
-        // let mut current_layout = self.layout.take().unwrap();
-        // current_layout.max_rect = self.rect.clone_add_padding(&self.padding);
-        // current_layout.max_rect.set_width(self.rect.width() - v_bar_width - 2.0 - self.padding.horizontal());
-        // current_layout.available_rect = current_layout.max_rect.clone();
-
-        // ui.current_layout.replace(current_layout);
-        // ui.current_scrollable = true;
+        let previous_layout = ui.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
         //视图内容
         callback(ui);
-        // previous_layout.alloc_rect(&self.fill_param.rect);
         let current_layout = ui.layout.replace(previous_layout).unwrap();
         match current_layout {
             LayoutKind::Vertical(v) => { self.layout.replace(v); }
             _ => {}
         }
-        // self.layout.replace(current_layout);
-
         //滚动条
         let mut v_bar_rect = self.fill_param.rect.clone();
         v_bar_rect.x.min = v_bar_rect.x.max + 2.0;
@@ -95,26 +73,7 @@ impl ScrollArea {
         self.v_bar.draw(ui);
 
         ui.layout().add_child(self.id.clone(), LayoutKind::ScrollArea(self));
-        // previous_layout
-        // let mut current_layout = ui.current_layout.take().unwrap();
-        // previous_layout.alloc_rect(&self.rect); //分配大小
-        // previous_layout.alloc_layout(&current_layout);
-        // ui.current_layout.replace(previous_layout);
-        // ui.current_scrollable = false;
-        // current_layout.children.append(&mut ui.scroll_layouts);
-        // self.layout.replace(current_layout);
-        // self.layout.insert(0, current_layout);
-        // self.layout.append(&mut ui.scroll_layouts);
-        // self.draw(ui);
     }
-
-
-    // fn draw(self, ui: &mut Ui) {
-    //     let id = self.id.clone();
-    //     // ui.response.insert(self.id.clone(), ButtonResponse::new(self.rect.clone()).event(DrawnEvent::Click));
-    //     let task = PaintScrollArea::new(self, ui);
-    //     ui.add_paint_task(id, PaintTask::ScrollArea(task));
-    // }
 }
 
 impl Layout for ScrollArea {
@@ -141,6 +100,5 @@ impl Layout for ScrollArea {
         self.layout.as_mut().unwrap().redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
         pass.set_scissor_rect(0, 0, ui.context.size.width, ui.context.size.height);
-        // self.layout.as_mut().unwrap().redraw(ui);
     }
 }

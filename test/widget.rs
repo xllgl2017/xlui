@@ -19,7 +19,6 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
-    combo_data: Vec<&'static str>,
 }
 
 impl XlUiApp {
@@ -27,7 +26,6 @@ impl XlUiApp {
         Self {
             label: Label::new("这里是Label".to_string()).width(100.0),
             count: 0,
-            combo_data: vec!["item1", "item2", "item3", "item4"],
         }
     }
 
