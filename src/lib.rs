@@ -1,5 +1,5 @@
 //! ### 最小运行示例
-//! ![控件状态](../res/img/doc/img.png)
+//! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img.png)
 //! ```
 //! use xlui::frame::{WindowAttribute,App};
 //! use xlui::widgets::Widget;
