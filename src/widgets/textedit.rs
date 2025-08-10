@@ -142,7 +142,6 @@ pub struct TextEdit {
     pub(crate) id: String,
     text_buffer: TextBuffer,
     size_mode: SizeMode,
-    border: Border,
     callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, String)>>,
     char_layout: CharLayout,
 
@@ -194,7 +193,6 @@ impl TextEdit {
             id: crate::gen_unique_id(),
             text_buffer: TextBuffer::new(context),
             size_mode: SizeMode::Auto,
-            border: Border::new(1.0).color(Color::BLUE).radius(Radius::same(2)),
             callback: None,
             char_layout: CharLayout::new(),
 

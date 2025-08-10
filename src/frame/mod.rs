@@ -3,7 +3,7 @@ use crate::size::Size;
 use crate::ui::Ui;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::event::{ElementState, MouseButton, WindowEvent};
+use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Icon, WindowId, WindowLevel};
 
@@ -140,11 +140,14 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 }
             }
             WindowEvent::MouseWheel { delta, .. } => {
-                // match delta {
-                //     MouseScrollDelta::LineDelta(x, y) => window.ui.device.device_input.mouse.delta = (x, y),
-                //     _ => {}
-                // }
-                // window.ui.delta_input();
+                match delta {
+                    MouseScrollDelta::LineDelta(x, y) => {
+                        window.app_ctx.device.device_input.mouse.delta = (x, y);
+                        window.app_ctx.update(&mut window.app);
+                        window.app_ctx.device.device_input.mouse.delta = (0.0, 0.0);
+                    }
+                    _ => {}
+                }
             }
             WindowEvent::CursorMoved { position, .. } => {
                 window.app_ctx.device.device_input.mouse.update(position);

@@ -9,30 +9,26 @@
 //! # });
 //! ```
 
-use crate::align::Align;
 use crate::frame::context::Context;
 use crate::frame::App;
+use crate::render::rectangle::param::RectParam;
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
-use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
+use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
+use crate::widgets::image::Image;
 use crate::widgets::Widget;
 use std::any::Any;
-use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
-use crate::style::ClickStyle;
-use crate::widgets::image::Image;
 
 pub struct Button {
     pub(crate) id: String,
     pub(crate) text_buffer: TextBuffer,
-    text_algin: Align,
     pub(crate) rect: Rect,
     padding: Padding,
-    pub(crate) border: Border,
     size_mode: SizeMode,
     pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui)>>,
     fill_index: usize,
@@ -52,10 +48,8 @@ impl Button {
         Button {
             id: crate::gen_unique_id(),
             text_buffer,
-            text_algin: Align::Center,
             rect: Rect::new(),
             padding,
-            border: Border::new(1.0),
             size_mode: SizeMode::Auto,
             callback: None,
             fill_index: 0,

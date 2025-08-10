@@ -1,13 +1,3 @@
-use std::f32::consts::PI;
-
-pub(crate) enum RadiusBorder {
-    LeftBottom,
-    RightBottom,
-    RightTop,
-    LeftTop,
-
-}
-
 #[derive(Clone)]
 pub struct Radius {
     pub left_bottom: u8,
@@ -46,22 +36,22 @@ impl Radius {
         self
     }
 
-    #[deprecated]
-    pub(crate) fn get_p_q_pos(&self, a: f32, b: f32, r: f32, t: &RadiusBorder, segment: i32) -> [[f32; 2]; 2] {
-        let p_0 = match t {
-            RadiusBorder::LeftBottom => PI - PI / 180.0 * (segment - 1) as f32,
-            RadiusBorder::RightBottom => PI / 180.0 * (segment - 1) as f32,
-            RadiusBorder::RightTop => -PI / 180.0 * (segment - 1) as f32,
-            RadiusBorder::LeftTop => PI + PI / 180.0 * (segment - 1) as f32
-        }; //p点与x轴之间的夹角
-        let q_0 = match t {
-            RadiusBorder::LeftBottom => PI - PI / 180.0 * segment as f32,
-            RadiusBorder::RightBottom => PI / 180.0 * segment as f32,
-            RadiusBorder::RightTop => -PI / 180.0 * segment as f32,
-            RadiusBorder::LeftTop => PI + PI / 180.0 * segment as f32
-        }; //q点与x轴之间的夹角
-        let (px, py) = (a + r * p_0.cos(), b + r * p_0.sin());
-        let (qx, qy) = (a + r * q_0.cos(), b + r * q_0.sin());
-        [[px, py], [qx, qy]]
-    }
+    // #[deprecated]
+    // pub(crate) fn get_p_q_pos(&self, a: f32, b: f32, r: f32, t: &RadiusBorder, segment: i32) -> [[f32; 2]; 2] {
+    //     let p_0 = match t {
+    //         RadiusBorder::LeftBottom => PI - PI / 180.0 * (segment - 1) as f32,
+    //         RadiusBorder::RightBottom => PI / 180.0 * (segment - 1) as f32,
+    //         RadiusBorder::RightTop => -PI / 180.0 * (segment - 1) as f32,
+    //         RadiusBorder::LeftTop => PI + PI / 180.0 * (segment - 1) as f32
+    //     }; //p点与x轴之间的夹角
+    //     let q_0 = match t {
+    //         RadiusBorder::LeftBottom => PI - PI / 180.0 * segment as f32,
+    //         RadiusBorder::RightBottom => PI / 180.0 * segment as f32,
+    //         RadiusBorder::RightTop => -PI / 180.0 * segment as f32,
+    //         RadiusBorder::LeftTop => PI + PI / 180.0 * segment as f32
+    //     }; //q点与x轴之间的夹角
+    //     let (px, py) = (a + r * p_0.cos(), b + r * p_0.sin());
+    //     let (qx, qy) = (a + r * q_0.cos(), b + r * q_0.sin());
+    //     [[px, py], [qx, qy]]
+    // }
 }

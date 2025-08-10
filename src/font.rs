@@ -6,7 +6,7 @@ use crate::text::TextSize;
 
 pub struct Font {
     family: String,
-    id: glyphon::fontdb::ID,
+    // id: glyphon::fontdb::ID,
     data: Arc<Vec<u8>>,
     glyph_font: ab_glyph::FontArc,
     font: Arc<glyphon::Font>,
@@ -25,7 +25,7 @@ impl Font {
         let glyph_font = ab_glyph::FontArc::try_from_vec(font_data.to_vec()).unwrap();
         Font {
             family,
-            id: Default::default(),
+            // id: Default::default(),
             data: font_data,
             glyph_font,
             font,

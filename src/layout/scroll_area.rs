@@ -82,6 +82,11 @@ impl Layout for ScrollArea {
             let oy = ui.device.device_input.mouse.offset_y();
             ui.canvas_offset = Some(Offset::new_y(-oy));
         }
+        //鼠标滚轮
+        if ui.device.device_input.mouse.delta.1 != 0.0 && ui.device.device_input.hovered_at(&self.fill_param.rect) {
+            ui.canvas_offset = Some(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0));
+            // return;
+        }
         self.v_bar.update(ui);
         self.layout.as_mut().unwrap().update(ui);
         ui.canvas_offset = None;
