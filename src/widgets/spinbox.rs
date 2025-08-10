@@ -8,17 +8,19 @@ use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
 use crate::Pos;
 use std::any::Any;
-use std::ops::Range;
+use std::fmt::Display;
+use std::ops::{AddAssign, Range, SubAssign};
 use crate::frame::App;
 
-pub struct SpinBox {
+pub struct SpinBox<T> {
     pub(crate) id: String,
     edit: TextEdit,
     rect: Rect,
     size_mode: SizeMode,
-    value: i32,
-    range: Range<i32>,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, i32)>>,
+    value: T,
+    gap: T,
+    range: Range<T>,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, T)>>,
     up_rect: Rect,
     up_index: Range<usize>,
     down_rect: Rect,
@@ -27,17 +29,18 @@ pub struct SpinBox {
     inactive_color: Color,
 }
 
-impl SpinBox {
-    pub fn new(value: i32) -> SpinBox {
+impl<T: Display + 'static> SpinBox<T> {
+    pub fn new(v: T, g: T, r: Range<T>) -> Self {
         let color = Color::rgb(95, 95, 95);
         let inactive_color = Color::rgb(153, 152, 152);
         SpinBox {
             id: crate::gen_unique_id(),
-            edit: TextEdit::new(value.to_string()),
+            edit: TextEdit::new(format!("{:.*}", 2, v)),
             rect: Rect::new(),
             size_mode: SizeMode::Auto,
-            value,
-            range: 0..1,
+            value: v,
+            gap: g,
+            range: r,
             callback: None,
             up_rect: Rect::new(),
             up_index: 0..1,
@@ -59,23 +62,18 @@ impl SpinBox {
         self.edit.set_rect(edit_rect);
     }
 
-    pub fn with_range(mut self, r: Range<i32>) -> Self {
-        self.range = r;
-        self
-    }
-
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, i32)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, T)) -> Self {
         self.callback = Some(Callback::create_spinbox(f));
         self
     }
 
-    pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, i32)) {
+    pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, T)) {
         self.callback = Some(Callback::create_spinbox(f));
     }
 }
 
 
-impl Widget for SpinBox {
+impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static> Widget for SpinBox<T> {
     fn draw(&mut self, ui: &mut Ui) -> Response {
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size();
@@ -114,8 +112,8 @@ impl Widget for SpinBox {
             let is_end = self.value >= self.range.end;
             let is_start = self.value == self.range.start;
             if !is_end {
-                self.value += 1;
-                self.edit.update_text(ui, self.value.to_string());
+                self.value += self.gap;
+                self.edit.update_text(ui, format!("{:.*}", 2, self.value));
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
                     callback(*app, ui, self.value);
@@ -132,8 +130,8 @@ impl Widget for SpinBox {
             let is_start = self.value == self.range.start;
             let is_end = self.value >= self.range.end;
             if !is_start {
-                self.value -= 1;
-                self.edit.update_text(ui, self.value.to_string());
+                self.value -= self.gap;
+                self.edit.update_text(ui, format!("{:.*}", 2, self.value));
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
                     callback(*app, ui, self.value);

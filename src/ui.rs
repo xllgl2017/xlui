@@ -11,7 +11,8 @@ use crate::widgets::slider::Slider;
 use crate::widgets::Widget;
 use crate::{Device, Offset, SAMPLE_COUNT};
 use std::any::Any;
-use std::ops::{DerefMut, Range};
+use std::fmt::Display;
+use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use crate::layout::popup::Popup;
 use crate::map::Map;
@@ -245,13 +246,13 @@ impl<'a> Ui<'a> {
         widget.downcast_mut::<Image>().unwrap()
     }
 
-    pub fn spinbox(&mut self, v: i32, r: Range<i32>) -> &mut SpinBox {
-        let spinbox = SpinBox::new(v).with_range(r);
+    pub fn spinbox<T: Display + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
+        let spinbox = SpinBox::new(v, g, r);
         let spinbox_id = spinbox.id.clone();
         self.add(spinbox);
         let layout = self.layout.as_mut().unwrap();
         let widget = layout.get_widget(&spinbox_id).unwrap();
         let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<SpinBox>().unwrap()
+        widget.downcast_mut::<SpinBox<T>>().unwrap()
     }
 }

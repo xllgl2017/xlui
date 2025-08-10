@@ -65,7 +65,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_spinbox<A: 'static>(f: fn(&mut A, &mut Ui, i32)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, i32)> {
+    pub(crate) fn create_spinbox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, T)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, T)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)

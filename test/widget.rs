@@ -52,7 +52,12 @@ impl XlUiApp {
         self.label.update(ui);
     }
 
-    fn spinbox(&mut self, ui: &mut Ui, value: i32) {
+    fn spinbox_i32(&mut self, ui: &mut Ui, value: i32) {
+        self.label.set_text(format!("spinbox: {}", value));
+        self.label.update(ui);
+    }
+
+    fn spinbox_f32(&mut self, ui: &mut Ui, value: f32) {
         self.label.set_text(format!("spinbox: {}", value));
         self.label.update(ui);
     }
@@ -114,8 +119,8 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "SpinBox");
             ui.add_space(38.0);
-            ui.add(SpinBox::new(1).with_range(0..10).connect(Self::spinbox));
-            ui.spinbox(1, 0..10).set_callback(Self::spinbox);
+            ui.add(SpinBox::new(1,1,1..10).connect(Self::spinbox_i32));
+            ui.spinbox(1.0, 0.5,0.0..10.0).set_callback(Self::spinbox_f32);
             ui.add_space(83.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(false, "泛类");
