@@ -27,7 +27,6 @@ use std::any::Any;
 pub struct Button {
     pub(crate) id: String,
     pub(crate) text_buffer: TextBuffer,
-    pub(crate) rect: Rect,
     padding: Padding,
     size_mode: SizeMode,
     pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui)>>,
@@ -48,7 +47,6 @@ impl Button {
         Button {
             id: crate::gen_unique_id(),
             text_buffer,
-            rect: Rect::new(),
             padding,
             size_mode: SizeMode::Auto,
             callback: None,
@@ -73,42 +71,42 @@ impl Button {
             SizeMode::Auto => {
                 let width = self.text_buffer.rect.width() + self.padding.horizontal();
                 let height = self.text_buffer.rect.height() + self.padding.vertical();
-                self.rect.set_size(width, height);
+                self.fill_param.rect.set_size(width, height);
             }
-            SizeMode::FixWidth => self.rect.set_height(self.text_buffer.rect.height()),
-            SizeMode::FixHeight => self.rect.set_width(self.text_buffer.rect.width()),
+            SizeMode::FixWidth => self.fill_param.rect.set_height(self.text_buffer.rect.height()),
+            SizeMode::FixHeight => self.fill_param.rect.set_width(self.text_buffer.rect.width()),
             SizeMode::Fix => {
-                self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
+                self.text_buffer.rect = self.fill_param.rect.clone_add_padding(&self.padding);
                 println!("text {:?}", self.text_buffer.rect);
             }
         }
         if self.image.is_some() {
-            self.rect.set_width(self.rect.width() + self.rect.height());
-            self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
-            self.text_buffer.rect.offset_x(self.rect.height());
-            self.image_rect = self.rect.clone_add_padding(&self.padding);
+            self.fill_param.rect.set_width(self.fill_param.rect.width() + self.fill_param.rect.height());
+            self.text_buffer.rect = self.fill_param.rect.clone_add_padding(&self.padding);
+            self.text_buffer.rect.offset_x(self.fill_param.rect.height());
+            self.image_rect = self.fill_param.rect.clone_add_padding(&self.padding);
             self.image_rect.offset(self.padding.left,self.padding.top);
             self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
             self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
         } else {
-            self.text_buffer.rect = self.rect.clone_add_padding(&self.padding);
+            self.text_buffer.rect = self.fill_param.rect.clone_add_padding(&self.padding);
         }
     }
 
 
     pub fn set_width(&mut self, width: f32) {
-        self.rect.set_width(width);
+        self.fill_param.rect.set_width(width);
         self.size_mode.fix_width();
     }
 
     pub fn set_height(&mut self, height: f32) {
-        self.rect.set_height(height);
+        self.fill_param.rect.set_height(height);
         self.size_mode.fix_height();
     }
 
 
     pub fn set_size(&mut self, width: f32, height: f32) {
-        self.rect.set_size(width, height);
+        self.fill_param.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
     }
 
@@ -149,10 +147,9 @@ impl Button {
 
 impl Widget for Button {
     fn draw(&mut self, ui: &mut Ui) -> Response {
-        self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
+        self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
         //按钮矩形
-        self.fill_param.rect = self.rect.clone();
         let data = self.fill_param.as_draw_param(false, false);
         let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
@@ -166,7 +163,7 @@ impl Widget for Button {
         self.text_buffer.draw(ui);
         Response {
             id: self.id.clone(),
-            rect: self.rect.clone(),
+            rect: self.fill_param.rect.clone(),
         }
     }
 
@@ -181,14 +178,14 @@ impl Widget for Button {
             self.text_buffer.rect.offset(offset.x, offset.y);
         }
         let (x, y) = ui.device.device_input.mouse.lastest();
-        let has_pos = self.rect.has_position(x, y);
+        let has_pos = self.fill_param.rect.has_position(x, y);
         if self.hovered != has_pos {
             self.hovered = has_pos;
             let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
         }
-        if ui.device.device_input.click_at(&self.rect) {
+        if ui.device.device_input.click_at(&self.fill_param.rect) {
             if let Some(ref mut callback) = self.callback {
                 let app = ui.app.take().unwrap();
                 callback(*app, ui);
