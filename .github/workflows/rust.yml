@@ -24,9 +24,7 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           ./target
-        prefix-key: |
-          ${{ runner.os }}-cargo-${{ github.ref }}-
-          ${{ runner.os }}-cargo-
+        prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
     - name: Install mold
       run: sudo apt-get install mold -y
     - name: Build
