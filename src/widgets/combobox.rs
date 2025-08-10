@@ -148,7 +148,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         self.text_buffer.draw(ui);
 
         //下拉框布局
-        let mut popup = Popup::new(ui, self.popup_rect.clone());
+        let popup = Popup::new(ui, self.popup_rect.clone());
         self.popup_id = popup.id.clone();
         popup.show(ui, |ui| self.add_items(ui));
         Response {

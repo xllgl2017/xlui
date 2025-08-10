@@ -1,5 +1,5 @@
-use crate::layout::{Layout, LayoutKind, VerticalLayout};
 use crate::layout::scroll_area::ScrollArea;
+use crate::layout::Layout;
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;

@@ -170,9 +170,9 @@ impl App for XlUiApp {
             ui.checkbox(false, "密码");
         });
         ui.horizontal(|ui| {
-            ui.radio(false, "ComboBox");
+            ui.radio(true, "ComboBox");
             ui.add_space(30.0);
-            ui.add(ComboBox::new(vec![TD::new(1), TD::new(2), TD::new(3), TD::new(4)]).with_popup_height(150.0).connect(Self::combo_changed));
+            ui.add(ComboBox::new(vec![TD::new("item1"), TD::new("item2"), TD::new("item3"), TD::new("item4")]).with_popup_height(150.0).connect(Self::combo_changed));
             ui.add_space(186.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "滚动");
