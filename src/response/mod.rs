@@ -119,8 +119,8 @@ impl Callback {
 }
 
 pub struct Response {
-    pub(crate) id: String,
-    pub(crate) rect: Rect,
+    pub id: String,
+    pub rect: Rect,
 }
 
 impl Response {

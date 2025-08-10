@@ -84,7 +84,7 @@ struct TD {
 }
 impl TD {
     fn new(name: impl Display) -> Self {
-        Self { name:name.to_string() }
+        Self { name: name.to_string() }
     }
 }
 
@@ -103,8 +103,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "Label");
             ui.add_space(50.0);
-            let resp = self.label.draw(ui);
-            ui.layout().alloc_rect(resp.rect());
+            ui.add_mut(&mut self.label);
             ui.add_space(190.0);
             ui.checkbox(true, "文本更新");
             ui.checkbox(false, "多样文本");
@@ -170,7 +169,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(false, "ComboBox");
             ui.add_space(30.0);
-            ui.add(ComboBox::new(vec![TD::new(1),TD::new(2),TD::new(3),TD::new(4)]).with_popup_height(150.0));
+            ui.add(ComboBox::new(vec![TD::new(1), TD::new(2), TD::new(3), TD::new(4)]).with_popup_height(150.0));
             ui.add_space(186.0);
             ui.checkbox(false, "变动监测");
             ui.checkbox(false, "滚动");

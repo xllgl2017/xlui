@@ -13,7 +13,7 @@ pub trait Layout {
     fn redraw(&mut self, ui: &mut Ui);
 }
 
-pub enum LayoutKind {
+pub(crate) enum LayoutKind {
     Horizontal(HorizontalLayout),
     Vertical(VerticalLayout),
     ScrollArea(ScrollArea),

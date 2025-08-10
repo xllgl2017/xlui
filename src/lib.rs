@@ -84,7 +84,7 @@ pub mod ui;
 
 pub mod style;
 mod render;
-mod response;
+pub mod response;
 pub mod map;
 
 const SAMPLE_COUNT: u32 = 4;

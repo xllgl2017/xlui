@@ -171,6 +171,11 @@ impl<'a> Ui<'a> {
         self.layout.as_mut().unwrap().add_widget(resp.id, Box::new(widget));
     }
 
+    pub fn add_mut(&mut self, mut widget: &mut impl Widget) {
+        let resp = widget.draw(self);
+        self.layout().alloc_rect(&resp.rect);
+    }
+
     pub fn horizontal(&mut self, mut context: impl FnMut(&mut Ui)) {
         let current_layout = HorizontalLayout::new().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::Horizontal(current_layout)).unwrap();

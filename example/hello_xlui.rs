@@ -1,6 +1,8 @@
 use xlui::frame::context::Context;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
+use xlui::response::Response;
+use xlui::size::rect::Rect;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
@@ -97,13 +99,16 @@ impl ListView {
 
 
 impl Widget for ListView {
-    fn draw(&mut self, ui: &mut Ui) -> String {
+    fn draw(&mut self, ui: &mut Ui) -> Response {
         // ScrollArea::new().with_size(300.0, 300.0).show(ui, |ui| {
         //     for (row, datum) in self.data.iter().enumerate() {
         //         self.item_widget(ui, datum, row);
         //     }
         // });
-        self.id.clone()
+        Response {
+            id: self.id.clone(),
+            rect: Rect::new(),
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) {}
@@ -171,15 +176,15 @@ impl XlUiApp {
         println!("item click {}", row);
     }
 
-    fn combo_changed(&mut self, ctx: &mut Ui, index: usize) {
-        self.label.set_text(format!("combo: {}", index));
+    fn combo_changed(&mut self, ctx: &mut Ui, item: &&str) {
+        self.label.set_text(format!("combo: {}", item));
         self.label.update(ctx);
     }
 }
 
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
-        self.label.draw(ui);
+        ui.add_mut(&mut self.label);
         ui.horizontal(|ui| {
             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
@@ -187,7 +192,7 @@ impl App for XlUiApp {
         // // println!("draw");
         // // ScrollBar::new().size(20.0, 200.0).draw(ui);
         ui.add(TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
-        ui.add(SpinBox::new(1).with_range(0..10));
+        ui.add(SpinBox::new(1, 1, 1..10));
         ui.horizontal(|ui| {
             ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
             ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
@@ -203,11 +208,11 @@ impl App for XlUiApp {
             let area = ScrollArea::new().with_size(300.0, 400.0);
             area.show(ui, |ui| {
                 ui.label("start");
-                // ui.vertical(|ui| {
-                //     ui.label("sv1");
-                //     ui.label("sv2");
-                //     ui.button("sv3").connect(Self::click1)
-                // });
+                ui.vertical(|ui| {
+                    ui.label("sv1");
+                    ui.label("sv2");
+                    ui.button("sv3").set_callback(Self::click1);
+                });
                 ui.horizontal(|ui| {
                     ui.label("sh1");
                     ui.label("sh2");
