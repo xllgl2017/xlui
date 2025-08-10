@@ -60,6 +60,14 @@ impl App for XlUiApp {
         });
     }
 
+    fn update(&mut self, ui: &mut Ui) {
+        self.label.update(ui);
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.label.redraw(ui);
+    }
+
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
             inner_size: (800, 600).into(),
@@ -143,7 +151,7 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
-### ⬜️ ComboBox
+### ✅ ComboBox
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
@@ -221,7 +229,7 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
-### ⬜️ Popup
+### ✅ Popup
 
 ## ⬜️ 自定义窗口
 
