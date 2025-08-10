@@ -91,7 +91,7 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_combobox<A: 'static>(f: fn(&mut A, &mut Ui, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, usize)> {
+    pub(crate) fn create_combobox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, &T)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)> {
         Box::new(move |target, uim, value| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim, value)

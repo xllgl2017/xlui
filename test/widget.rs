@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use xlui::frame::{App, WindowAttribute};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
@@ -71,6 +72,26 @@ impl XlUiApp {
         self.label.set_text(format!("edit: {}", value));
         self.label.update(ui);
     }
+
+    fn image_button_click(&mut self, ui: &mut Ui) {
+        self.label.set_text(format!("image button: {}", self.count));
+        self.label.update(ui);
+    }
+}
+
+struct TD {
+    name: String,
+}
+impl TD {
+    fn new(name: impl Display) -> Self {
+        Self { name:name.to_string() }
+    }
+}
+
+impl Display for TD {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.name)
+    }
 }
 
 impl App for XlUiApp {
@@ -119,11 +140,11 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "SpinBox");
             ui.add_space(38.0);
-            ui.add(SpinBox::new(1,1,1..10).connect(Self::spinbox_i32));
-            ui.spinbox(1.0, 0.5,0.0..10.0).set_callback(Self::spinbox_f32);
+            ui.add(SpinBox::new(1, 1, 1..10).connect(Self::spinbox_i32));
+            ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
             ui.add_space(83.0);
             ui.checkbox(true, "变动监测");
-            ui.checkbox(false, "泛类");
+            ui.checkbox(true, "泛类");
         });
         ui.horizontal(|ui| {
             ui.radio(true, "RadioButton");
@@ -149,7 +170,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(false, "ComboBox");
             ui.add_space(30.0);
-            ui.add(ComboBox::new(vec![1, 2, 2, 3, 4, 6]).with_popup_height(150.0));
+            ui.add(ComboBox::new(vec![TD::new(1),TD::new(2),TD::new(3),TD::new(4)]).with_popup_height(150.0));
             ui.add_space(186.0);
             ui.checkbox(false, "变动监测");
             ui.checkbox(false, "滚动");
@@ -161,9 +182,9 @@ impl App for XlUiApp {
             ui.add(Image::new("logo.jpg").with_size(50.0, 50.0))
         });
         ui.horizontal(|ui| {
-            ui.radio(false, "ImageButton");
+            ui.radio(true, "ImageButton");
             ui.add_space(10.0);
-            ui.add(Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0));
+            ui.add(Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0).connect(Self::image_button_click));
         });
     }
 

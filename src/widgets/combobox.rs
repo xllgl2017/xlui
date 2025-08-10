@@ -27,15 +27,15 @@ use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::style::color::Color;
 
-pub struct ComboBox {
+pub struct ComboBox<T> {
     pub(crate) id: String,
     popup_id: String,
     size_mode: SizeMode,
     text_buffer: TextBuffer,
-    data: Vec<String>,
+    data: Vec<T>,
     item_style: ClickStyle,
     popup_rect: Rect,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, usize)>>,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)>>,
 
     fill_param: RectParam,
     fill_index: usize,
@@ -43,12 +43,11 @@ pub struct ComboBox {
 
 }
 
-impl ComboBox {
-    pub fn new<T: Display>(data: Vec<T>) -> Self {
+impl<T: Display + 'static> ComboBox<T> {
+    pub fn new(data: Vec<T>) -> Self {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
         fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
-        let data = data.iter().map(|x| x.to_string()).collect();
         ComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
@@ -103,7 +102,7 @@ impl ComboBox {
         self
     }
 
-    fn add_item(&self, ui: &mut Ui, item: &String) {
+    fn add_item(&self, ui: &mut Ui, item: &T) {
         // ui.style.widget.click = self.item_style.clone();
         let mut btn = Button::new(item).padding(Padding::same(3.0)).with_style(self.item_style.clone());
         btn.set_size(ui.layout().available_rect().width(), 25.0);
@@ -122,19 +121,18 @@ impl ComboBox {
         // ui.style.widget.click = style;
     }
 
-    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, usize)) -> Self {
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, &T)) -> Self {
         self.callback = Some(Callback::create_combobox(f));
         self
     }
 }
 
 
-impl Widget for ComboBox {
+impl<T: Display + 'static> Widget for ComboBox<T> {
     fn draw(&mut self, ui: &mut Ui) -> Response {
         //分配大小
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
-        // ui.layout().alloc_rect(&self.fill_param.rect);
         //背景
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
