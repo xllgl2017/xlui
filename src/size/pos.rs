@@ -25,6 +25,11 @@ impl Pos {
         self.offset_x(ox);
         self.offset_y(oy);
     }
+
+    pub fn clear(&mut self) {
+        self.x = 0.0;
+        self.y = 0.0;
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

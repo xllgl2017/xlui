@@ -67,6 +67,7 @@
 //! }
 //!```
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
@@ -127,7 +128,7 @@ pub struct MouseInput {
     delta: (f32, f32),
     pressed_pos: Pos,
     pressed: bool,
-    clicked: bool,
+    clicked: AtomicBool,
 }
 
 impl MouseInput {
@@ -166,6 +167,18 @@ impl MouseInput {
     pub fn delta_y(&self) -> f32 { self.delta.1 }
 
     pub fn pressed(&self) -> bool { self.pressed }
+
+    pub fn mouse_press(&mut self) {
+        self.previous = self.lastest.clone();
+        self.pressed_pos = self.lastest.clone();
+        self.pressed = true;
+    }
+
+    pub fn mouse_release(&mut self) {
+        self.clicked.store(true, Ordering::SeqCst);
+        self.pressed = false;
+        self.pressed_pos.clear()
+    }
 }
 
 pub struct DeviceInput {
@@ -182,16 +195,21 @@ impl DeviceInput {
                 delta: (0.0, 0.0),
                 pressed_pos: Pos::new(),
                 pressed: false,
-                clicked: false,
+                clicked: AtomicBool::new(false),
             }
         }
     }
 
     pub fn click_at(&self, rect: &Rect) -> bool {
-        rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y) &&
-            rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y) && self.mouse.clicked
+        if !self.mouse.clicked.load(Ordering::SeqCst) { return false; }
+        let press = rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y);
+        let release = rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y);
+        self.mouse.clicked.store(!(press && release), Ordering::SeqCst);
+        press && release
     }
+
     pub fn pressed_at(&self, rect: &Rect) -> bool {
+        if !self.mouse.pressed { return false; }
         rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y)
     }
 

@@ -24,7 +24,6 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::Widget;
-use glyphon::Shaping;
 use std::any::Any;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
@@ -95,22 +94,16 @@ impl<T: Display + 'static> ComboBox<T> {
         self
     }
 
-    fn add_item(&self, ui: &mut Ui, item: &T, row: usize) {
+    fn add_item(&self, ui: &mut Ui, item: &T) {
         let mut select = SelectItem::new(item.to_string()).padding(Padding::same(3.0))
             .contact(self.selected.clone());
         select.set_size(ui.layout().available_rect().width(), 25.0);
-        // let state = self.selected.clone();
-        // select.set_callback(move |value| {
-        //     // let mut state = state.write().unwrap();
-        //     // *state = Some(row);
-        //     // *value = Some(row)
-        // });
         ui.add(select);
     }
 
     fn add_items(&self, ui: &mut Ui) {
         for (index, datum) in self.data.iter().enumerate() {
-            self.add_item(ui, datum, index);
+            self.add_item(ui, datum);
         }
     }
 

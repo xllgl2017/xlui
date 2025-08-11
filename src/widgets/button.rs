@@ -36,7 +36,6 @@ pub struct Button {
     image: Option<Image>,
     image_rect: Rect,
     hovered: bool,
-    image_change: bool,
 }
 
 
@@ -56,7 +55,6 @@ impl Button {
             image: None,
             image_rect: Rect::new(),
             hovered: false,
-            image_change: false,
         }
     }
 
@@ -205,7 +203,7 @@ impl Widget for Button {
             ui.context.window.request_redraw();
         }
         if ui.device.device_input.click_at(&self.fill_param.rect) {
-            let mut callback = self.callback.take();
+            let callback = self.callback.take();
             if let Some(mut callback) = callback {
                 let app = ui.app.take().unwrap();
                 callback(*app, self, ui);
