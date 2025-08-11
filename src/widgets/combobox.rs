@@ -42,9 +42,9 @@ pub struct ComboBox<T> {
     fill_index: usize,
     fill_buffer: Option<wgpu::Buffer>,
 
-    selected: Arc<RwLock<Option<usize>>>,
+    selected: Arc<RwLock<Option<String>>>,
 
-    previous_select: Option<usize>,
+    previous_select: Option<String>,
 }
 
 impl<T: Display + 'static> ComboBox<T> {
@@ -96,15 +96,15 @@ impl<T: Display + 'static> ComboBox<T> {
     }
 
     fn add_item(&self, ui: &mut Ui, item: &T, row: usize) {
-        let mut select = SelectItem::new(item).padding(Padding::same(3.0))
+        let mut select = SelectItem::new(item.to_string()).padding(Padding::same(3.0))
             .parent(self.selected.clone());
         select.set_size(ui.layout().available_rect().width(), 25.0);
-        let state = self.selected.clone();
-        select.set_callback(move |value| {
-            let mut state = state.write().unwrap();
-            *state = Some(row);
-            *value = Some(row)
-        });
+        // let state = self.selected.clone();
+        // select.set_callback(move |value| {
+        //     // let mut state = state.write().unwrap();
+        //     // *state = Some(row);
+        //     // *value = Some(row)
+        // });
         ui.add(select);
     }
 
@@ -158,9 +158,9 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
         let select = self.selected.read().unwrap();
         if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
-            self.previous_select = *select;
-            if let Some(select) = self.previous_select {
-                self.text_buffer.set_text(self.data[select].to_string(), ui);
+            self.previous_select = select.clone();
+            if let Some(ref select) = self.previous_select {
+                self.text_buffer.set_text(select.to_string(), ui);
                 // self.text_buffer.buffer.as_mut().unwrap().set_text(
                 //     &mut ui.context.render.text.font_system,
                 //     self.data[select].to_string().as_str(),
@@ -169,7 +169,8 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
                 // );
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
-                    callback(*app, ui, &self.data[select]);
+                    let t = self.data.iter().find(|x| &x.to_string() == select).unwrap();
+                    callback(*app, ui, t);
                     ui.app.replace(app);
                     ui.context.window.request_redraw();
                 }

@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::sync::{Arc, RwLock};
 use xlui::frame::{App, WindowAttribute};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
@@ -100,6 +101,23 @@ impl Display for TD {
     }
 }
 
+#[derive(PartialEq)]
+pub enum SV {
+    S1,
+    S2,
+    S3,
+}
+
+impl Display for SV {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SV::S1 => f.write_str("S1"),
+            SV::S2 => f.write_str("S2"),
+            SV::S3 => f.write_str("S3"),
+        }
+    }
+}
+
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
@@ -192,11 +210,12 @@ impl App for XlUiApp {
             ui.add(Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0).connect(Self::image_button_click));
         });
         ui.horizontal(|ui| {
-            // let parent=Arc::new(RwLock::new(None));
-            ui.radio(true, "SelectableValue");
-            ui.add(SelectItem::<i32>::new(1));
-            ui.add(SelectItem::<i32>::new(2));
-            ui.add(SelectItem::<i32>::new(3));
+            ui.radio(true, "SelectValue");
+            ui.add_space(10.0);
+            let parent = Arc::new(RwLock::new(None));
+            ui.add(SelectItem::new(SV::S1).with_size(40.0, 25.0).parent(parent.clone()));
+            ui.add(SelectItem::new(SV::S2).with_size(40.0, 25.0).parent(parent.clone()));
+            ui.add(SelectItem::new(SV::S3).with_size(40.0, 25.0).parent(parent.clone()));
         })
     }
 

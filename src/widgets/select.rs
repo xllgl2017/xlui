@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use crate::frame::context::Context;
 use crate::radius::Radius;
@@ -19,8 +20,8 @@ pub struct SelectItem<T> {
     text: TextBuffer,
     padding: Padding,
     size_mode: SizeMode,
-    value: Option<T>,
-    selected: Arc<RwLock<Option<T>>>,
+    value: T,
+    parent_selected: Arc<RwLock<Option<String>>>,
 
     fill_param: RectParam,
     fill_index: usize,
@@ -28,10 +29,12 @@ pub struct SelectItem<T> {
 
     callback: Option<Box<dyn FnMut(&mut Option<T>)>>,
     hovered: bool,
+    selected: bool,
+
 }
 
-impl<T> SelectItem<T> {
-    pub fn new(text: impl ToString) -> Self {
+impl<T: Display> SelectItem<T> {
+    pub fn new(value: T) -> Self {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::TRANSPARENT;
         fill_style.fill.hovered = Color::rgba(153, 193, 241, 220);
@@ -41,16 +44,17 @@ impl<T> SelectItem<T> {
         fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         SelectItem {
             id: crate::gen_unique_id(),
-            text: TextBuffer::new(text.to_string()),
+            text: TextBuffer::new(value.to_string()),
             padding: Padding::same(2.0),
             size_mode: SizeMode::Auto,
-            value: None,
-            selected: Arc::new(RwLock::new(None)),
+            value,
+            parent_selected: Arc::new(RwLock::new(None)),
             fill_param: RectParam::new(Rect::new(), fill_style),
             fill_index: 0,
             fill_buffer: None,
             callback: None,
             hovered: false,
+            selected: false,
         }
     }
 
@@ -74,8 +78,18 @@ impl<T> SelectItem<T> {
         self.size_mode = SizeMode::Fix;
     }
 
+    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+        self.set_size(w, h);
+        self
+    }
+
     pub(crate) fn set_callback(&mut self, f: impl FnMut(&mut Option<T>) + 'static) {
         self.callback = Some(Box::new(f));
+    }
+
+    pub fn connect(mut self, f: impl FnMut(&mut Option<T>) + 'static) -> Self {
+        self.callback = Some(Box::new(f));
+        self
     }
 
     pub fn padding(mut self, padding: Padding) -> Self {
@@ -83,18 +97,20 @@ impl<T> SelectItem<T> {
         self
     }
 
-    pub(crate) fn parent(mut self, parent: Arc<RwLock<Option<T>>>) -> Self {
-        self.selected = parent;
+    pub fn parent(mut self, parent: Arc<RwLock<Option<String>>>) -> Self {
+        self.parent_selected = parent;
         self
     }
 }
 
-impl<T: PartialEq + 'static> Widget for SelectItem<T> {
+impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn draw(&mut self, ui: &mut Ui) -> Response {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
         //背景
-        let data = self.fill_param.as_draw_param(self.value.is_some(), self.value.is_some());
+        let current = self.parent_selected.read().unwrap();
+        let selected = current.as_ref() == Some(&self.value.to_string());
+        let data = self.fill_param.as_draw_param(selected, selected);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
         self.fill_buffer = Some(fill_buffer);
@@ -107,28 +123,31 @@ impl<T: PartialEq + 'static> Widget for SelectItem<T> {
     }
 
     fn update(&mut self, ui: &mut Ui) {
+        let current = self.parent_selected.read().unwrap();
+        let selected = current.as_ref() == Some(&self.value.to_string());
         if let Some(ref offset) = ui.canvas_offset {
             self.fill_param.rect.offset(offset.x, offset.y);
-            let data = self.fill_param.as_draw_param(self.value.is_some(), self.value.is_some());
+            let data = self.fill_param.as_draw_param(selected, selected);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             self.text.rect.offset(offset.x, offset.y);
+            ui.context.window.request_redraw();
             return;
         }
-        let selected = self.selected.read().unwrap();
-        if *selected != self.value {
-            self.value = None;
-            let data = self.fill_param.as_draw_param(self.value.is_some(), self.value.is_some());
+
+        if !selected && self.selected {
+            self.selected = false;
+            let data = self.fill_param.as_draw_param(false, false);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+            ui.context.window.request_redraw();
         }
-        drop(selected);
-        let out = self.fill_param.rect.out_of_border(&ui.current_rect);
+        drop(current);
+        let out = self.fill_param.rect.out_of_border(&ui.current_rect) && false;
         let clicked = ui.device.device_input.click_at(&self.fill_param.rect);
         if clicked && !out {
-            self.hovered = true;
-            if let Some(ref mut callback) = self.callback {
-                callback(&mut self.value);
-            }
-            let data = self.fill_param.as_draw_param(self.value.is_some(), self.value.is_some());
+            self.selected = true;
+            let mut selected = self.parent_selected.write().unwrap();
+            *selected = Some(self.value.to_string());
+            let data = self.fill_param.as_draw_param(true, true);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
             return;
@@ -136,7 +155,9 @@ impl<T: PartialEq + 'static> Widget for SelectItem<T> {
         let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
         if self.hovered != hovered {
             self.hovered = hovered;
-            let data = self.fill_param.as_draw_param(self.hovered || self.value.is_some(), ui.device.device_input.mouse.pressed || self.value.is_some());
+            let current = self.parent_selected.read().unwrap();
+            let selected = current.as_ref() == Some(&self.value.to_string());
+            let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
         }
