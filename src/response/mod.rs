@@ -117,10 +117,10 @@ impl Callback {
     //     })
     // }
 
-    pub(crate) fn create_list<A: 'static, T: 'static>(mut f: impl FnMut(&mut A, &mut Ui, &T) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)> {
-        Box::new(move |target, uim, tt| {
+    pub(crate) fn create_list<A: 'static>(mut f: impl Fn(&mut A, &mut Ui) + 'static) -> Box<dyn Fn(&mut dyn Any, &mut Ui)> {
+        Box::new(move |target, uim| {
             let t = target.downcast_mut::<A>().unwrap();
-            f(t, uim, tt);
+            f(t, uim);
         })
     }
 }

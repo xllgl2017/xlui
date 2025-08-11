@@ -37,16 +37,28 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
-    // list_view: ListView<TD>,
+    list_view: ListView<TD>,
 }
 
 impl XlUiApp {
     pub fn new() -> Self {
-
+        let data = vec![
+            TD::new("1"),
+            TD::new("2"),
+            TD::new("3"),
+            TD::new("4"),
+            TD::new("5"),
+            TD::new("6"),
+            TD::new("7"),
+            TD::new("8"),
+            TD::new("9"),
+            TD::new("0"),
+            TD::new("11")
+        ];
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,
-            // list_view: ListView::new(data).with_size(300.0, 400.0),
+            list_view: ListView::new(data).with_size(300.0, 400.0),
         }
     }
 
@@ -93,8 +105,8 @@ impl XlUiApp {
         self.label.update(ctx);
     }
 
-    fn list_changed(&mut self, ui: &mut Ui, item: &TD) {
-        self.label.set_text(format!("list: {}", item));
+    fn list_changed(&mut self, ui: &mut Ui) {
+        self.label.set_text(format!("list: {}", self.list_view.current().as_ref().unwrap()));
         self.label.update(ui);
     }
 }
@@ -106,8 +118,6 @@ impl App for XlUiApp {
             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
         });
-        // // println!("draw");
-        // // ScrollBar::new().size(20.0, 200.0).draw(ui);
         ui.add(TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
         ui.add(SpinBox::new(1, 1, 1..10));
         ui.horizontal(|ui| {
@@ -141,37 +151,20 @@ impl App for XlUiApp {
                 ui.label("end");
             });
             ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item6"]).connect(Self::combo_changed).with_popup_height(150.0));
-            let data = vec![
-                TD::new("1"),
-                TD::new("2"),
-                TD::new("3"),
-                TD::new("4"),
-                TD::new("5"),
-                TD::new("6"),
-                TD::new("7"),
-                TD::new("8"),
-                TD::new("9"),
-                TD::new("0"),
-                TD::new("11")
-            ];
-            let mut list_view =ListView::new(data).with_size(300.0, 400.0);
-            list_view.set_callback(Self::list_changed);
-            ui.add(list_view);
+            self.list_view.set_callback(Self::list_changed);
+            self.list_view.show(ui);
         });
 
         ui.label("hello label1");
         ui.image("logo.jpg", (200.0, 200.0));
         ui.add(Image::new("logo.jpg").with_size(200.0, 200.0));
-        // ui.image("logo.jpg", (200.0, 200.0));
     }
 
     fn update(&mut self, ui: &mut Ui) {
         self.label.update(ui);
-        // self.list_view.update(ui);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.label.redraw(ui);
-        // self.list_view.redraw(ui);
     }
 }

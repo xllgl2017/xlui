@@ -1,19 +1,18 @@
-use std::any::Any;
+use crate::frame::App;
 use crate::layout::scroll_area::ScrollArea;
 use crate::layout::{HorizontalLayout, LayoutKind};
 use crate::map::Map;
 use crate::radius::Radius;
-use crate::response::{Callback, Response};
+use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::item::ItemWidget;
-use crate::widgets::Widget;
+use std::any::Any;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::frame::App;
 
 pub struct ListView<T> {
     id: String,
@@ -21,7 +20,7 @@ pub struct ListView<T> {
     items: Map<usize>,
     previous: Option<String>,
     current: Arc<RwLock<Option<String>>>,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)>>,
+    callback: Arc<Option<Box<dyn Fn(&mut dyn Any, &mut Ui)>>>,
     rect: Rect,
 }
 
@@ -34,7 +33,7 @@ impl<T: Display + 'static> ListView<T> {
             previous: None,
             rect: Rect::new(),
             current: Arc::new(RwLock::new(None)),
-            callback: None,
+            callback: Arc::new(None),
         }
     }
 
@@ -60,10 +59,16 @@ impl<T: Display + 'static> ListView<T> {
         };
         let rect = ui.available_rect();
         let current = self.current.clone();
+        let callback = self.callback.clone();
         let item = ItemWidget::new(LayoutKind::Horizontal(HorizontalLayout::new()))
             .with_size(rect.width(), 38.0).with_style(style).parent(self.current.clone())
-            .connect(move |item_id| {
+            .connect(move |item_id, ui| {
                 current.write().unwrap().replace(item_id.to_string());
+                if let Some(callback) = callback.as_ref() {
+                    let app = ui.app.take().unwrap();
+                    callback(*app, ui);
+                    ui.app = Some(app);
+                }
                 println!("item clicked");
             });
         let item_id = item.id.clone();
@@ -98,13 +103,11 @@ impl<T: Display + 'static> ListView<T> {
         self.data.push(datum);
     }
 
-    pub fn set_callback<A: App>(&mut self, f: impl FnMut(&mut A, &mut Ui, &T) + 'static) {
-        self.callback = Some(Callback::create_list(f));
+    pub fn set_callback<A: App>(&mut self, f: impl Fn(&mut A, &mut Ui) + 'static) {
+        self.callback = Arc::new(Some(Callback::create_list(f)));
     }
-}
 
-impl<T: Display + 'static> Widget for ListView<T> {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    pub fn show(&mut self, ui: &mut Ui) {
         self.rect = ui.available_rect().clone_with_size(&self.rect);
         let mut area = ScrollArea::new();
         area.set_rect(self.rect.clone());
@@ -122,26 +125,6 @@ impl<T: Display + 'static> Widget for ListView<T> {
                 self.items.insert(id, row);
             }
         });
-        Response {
-            id: self.id.clone(),
-            rect: self.rect.clone(),
-        }
-    }
-
-    fn update(&mut self, _ui: &mut Ui) {}
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let current = self.current.read().unwrap();
-        if current.as_ref() != self.previous.as_ref() {
-            self.previous = current.clone();
-            if let Some(ref mut callback) = self.callback {
-                let app = ui.app.take().unwrap();
-                let current = self.current.read().unwrap();
-                let index = self.items[current.as_ref().unwrap()];
-                let data = &self.data[index];
-                callback(*app, ui, data);
-                ui.app = Some(app);
-            }
-        }
+        ui.layout().alloc_rect(&self.rect);
     }
 }

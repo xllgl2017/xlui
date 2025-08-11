@@ -18,7 +18,7 @@ pub struct ItemWidget {
     layout: Option<LayoutKind>,
     padding: Padding,
     current: Arc<RwLock<Option<String>>>,
-    callback: Option<Box<dyn Fn(&String)>>,
+    callback: Option<Box<dyn Fn(&String, &mut Ui)>>,
     selected: bool,
 }
 
@@ -73,7 +73,7 @@ impl ItemWidget {
         ui.context.window.request_redraw();
     }
 
-    pub fn connect(mut self, f: impl Fn(&String) + 'static) -> Self {
+    pub fn connect(mut self, f: impl Fn(&String, &mut Ui) + 'static) -> Self {
         self.callback = Some(Box::new(f));
         self
     }
@@ -106,7 +106,7 @@ impl Widget for ItemWidget {
         if ui.device.device_input.click_at(&self.fill_param.rect) {
             self.selected = true;
             if let Some(ref mut callback) = self.callback {
-                callback(&self.id);
+                callback(&self.id, ui);
             }
             self.update_rect(ui);
             ui.context.window.request_redraw();
