@@ -8,27 +8,26 @@
 //! # });
 //! ```
 
-use std::any::Any;
-use std::cell::RefCell;
 use crate::frame::context::Context;
 use crate::layout::popup::Popup;
 use crate::radius::Radius;
+use crate::render::rectangle::param::RectParam;
+use crate::render::WrcRender;
+use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
+use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::Widget;
-use std::fmt::Display;
-use std::rc::Rc;
 use glyphon::Shaping;
-use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
-use crate::response::{Callback, Response};
-use crate::style::color::Color;
+use std::any::Any;
+use std::fmt::Display;
+use std::sync::{Arc, RwLock};
 
 pub struct ComboBox<T> {
     pub(crate) id: String,
@@ -44,8 +43,9 @@ pub struct ComboBox<T> {
     fill_index: usize,
     fill_buffer: Option<wgpu::Buffer>,
 
-    previous_select: usize,
-    selected: Rc<RefCell<usize>>,
+    selected: Arc<RwLock<Option<usize>>>,
+
+    previous_select: Option<usize>,
 }
 
 impl<T: Display + 'static> ComboBox<T> {
@@ -76,8 +76,9 @@ impl<T: Display + 'static> ComboBox<T> {
             fill_param: RectParam::new(Rect::new(), fill_style),
             fill_index: 0,
             fill_buffer: None,
-            previous_select: 0,
-            selected: Rc::new(RefCell::new(0)),
+            previous_select: None,
+            selected: Arc::new(RwLock::new(None)),
+
         }
     }
 
@@ -113,7 +114,8 @@ impl<T: Display + 'static> ComboBox<T> {
         let state = self.selected.clone();
         btn.set_callback2(move || {
             println!("{}", row);
-            *state.borrow_mut() = row;
+            let mut state = state.write().unwrap();
+            *state = Some(row);
         });
         ui.add(btn);
     }
@@ -166,23 +168,28 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        if *self.selected.borrow() != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
-            self.previous_select = *self.selected.borrow();
-            self.text_buffer.set_text(self.data[*self.selected.borrow()].to_string());
-            self.text_buffer.buffer.as_mut().unwrap().set_text(
-                &mut ui.context.render.text.font_system,
-                self.data[*self.selected.borrow()].to_string().as_str(),
-                &ui.context.font.font_attr(),
-                Shaping::Advanced,
-            );
+        let select=self.selected.read().unwrap();
+        if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
+            self.previous_select = *select;
+            if let Some(select) = self.previous_select {
+                self.text_buffer.set_text(self.data[select].to_string());
+                self.text_buffer.buffer.as_mut().unwrap().set_text(
+                    &mut ui.context.render.text.font_system,
+                    self.data[select].to_string().as_str(),
+                    &ui.context.font.font_attr(),
+                    Shaping::Advanced,
+                );
+                if let Some(ref mut callback) = self.callback {
+                    let app = ui.app.take().unwrap();
+                    callback(*app, ui, &self.data[select]);
+                    ui.app.replace(app);
+                    ui.context.window.request_redraw();
+                }
+            }
+
             let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
             popup.open = false;
-            if let Some(ref mut callback) = self.callback {
-                let app = ui.app.take().unwrap();
-                callback(*app, ui, &self.data[*self.selected.borrow()]);
-                ui.app.replace(app);
-                ui.context.window.request_redraw();
-            }
+
         }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
