@@ -16,7 +16,7 @@ use crate::ui::Ui;
 use crate::widgets::Widget;
 
 pub struct SelectItem<T> {
-    id: String,
+    pub(crate) id: String,
     text: TextBuffer,
     padding: Padding,
     size_mode: SizeMode,
@@ -97,9 +97,13 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
-    pub fn parent(mut self, parent: Arc<RwLock<Option<String>>>) -> Self {
+    pub fn contact(mut self, parent: Arc<RwLock<Option<String>>>) -> Self {
         self.parent_selected = parent;
         self
+    }
+
+    pub fn need_contact(&self) -> Arc<RwLock<Option<String>>> {
+        self.parent_selected.clone()
     }
 }
 

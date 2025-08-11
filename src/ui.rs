@@ -19,6 +19,7 @@ use crate::map::Map;
 use crate::size::rect::Rect;
 use crate::widgets::image::Image;
 use crate::widgets::rectangle::Rectangle;
+use crate::widgets::select::SelectItem;
 use crate::widgets::spinbox::SpinBox;
 
 pub struct AppContext {
@@ -66,15 +67,16 @@ impl AppContext {
             pass: None,
             layout: None,
             canvas_offset: None,
-            popups: self.popups.take(),
+            popups: None,
             key: None,
             current_rect: Rect::new(),
         };
-        self.layout.as_mut().unwrap().update(&mut ui);
-        self.popups = ui.popups.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
         }
+        ui.popups = self.popups.take();
+        self.layout.as_mut().unwrap().update(&mut ui);
+        self.popups = ui.popups.take();
     }
 
 
@@ -179,10 +181,6 @@ impl<'a> Ui<'a> {
         self.layout.as_mut().unwrap().add_widget(resp.id, Box::new(widget));
     }
 
-    // pub fn set_size(&mut self, w: f32, h: f32) {
-    //     self.layout().set_size(w, h);
-    // }
-
     pub fn add_mut(&mut self, widget: &mut impl Widget) {
         let resp = widget.draw(self);
         self.layout().alloc_rect(&resp.rect);
@@ -281,5 +279,15 @@ impl<'a> Ui<'a> {
         let widget = layout.get_widget(&spinbox_id).unwrap();
         let widget = widget.deref_mut() as &mut dyn Any;
         widget.downcast_mut::<SpinBox<T>>().unwrap()
+    }
+
+    pub fn select_value<T: Display + PartialEq + 'static>(&mut self, t: T) -> &mut SelectItem<T> {
+        let select_value = SelectItem::new(t);
+        let select_id = select_value.id.clone();
+        self.add(select_value);
+        let layout = self.layout.as_mut().unwrap();
+        let widget = layout.get_widget(&select_id).unwrap();
+        let widget = widget.deref_mut() as &mut dyn Any;
+        widget.downcast_mut::<SelectItem<T>>().unwrap()
     }
 }

@@ -97,7 +97,7 @@ impl<T: Display + 'static> ComboBox<T> {
 
     fn add_item(&self, ui: &mut Ui, item: &T, row: usize) {
         let mut select = SelectItem::new(item.to_string()).padding(Padding::same(3.0))
-            .parent(self.selected.clone());
+            .contact(self.selected.clone());
         select.set_size(ui.layout().available_rect().width(), 25.0);
         // let state = self.selected.clone();
         // select.set_callback(move |value| {

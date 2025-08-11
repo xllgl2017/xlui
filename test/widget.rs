@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter};
-use std::sync::{Arc, RwLock};
 use xlui::frame::{App, WindowAttribute};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
@@ -215,10 +214,11 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "SelectValue");
             ui.add_space(10.0);
-            let parent = Arc::new(RwLock::new(None));
-            ui.add(SelectItem::new(SV::S1).with_size(40.0, 25.0).parent(parent.clone()));
-            ui.add(SelectItem::new(SV::S2).with_size(40.0, 25.0).parent(parent.clone()));
-            ui.add(SelectItem::new(SV::S3).with_size(40.0, 25.0).parent(parent.clone()));
+            let s1 = SelectItem::new(SV::S1).with_size(40.0, 25.0);
+            let p = s1.need_contact();
+            ui.add(s1);
+            ui.add(SelectItem::new(SV::S2).with_size(40.0, 25.0).contact(p.clone()));
+            ui.add(SelectItem::new(SV::S3).with_size(40.0, 25.0).contact(p));
         })
     }
 
