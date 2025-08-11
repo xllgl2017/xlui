@@ -202,7 +202,10 @@ impl App for XlUiApp {
             ui.radio(true, "Image");
             ui.add_space(50.0);
             ui.image("logo.jpg", (50.0, 50.0));
-            ui.add(Image::new("logo.jpg").with_size(50.0, 50.0))
+            ui.add(Image::new("logo.jpg").with_size(50.0, 50.0));
+            ui.add_space(182.0);
+            ui.checkbox(false, "网络图片");
+            ui.checkbox(false, "bytes图片流");
         });
         ui.horizontal(|ui| {
             ui.radio(true, "ImageButton");

@@ -38,13 +38,13 @@ impl XlUiApp {
         }
     }
 
-    pub fn add(&mut self, ctx: &mut Context) {
+    pub fn add(&mut self, ui: &mut Ui) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
     }
 
-    pub fn reduce(&mut self, ctx: &mut Context) {
+    pub fn reduce(&mut self, ui: &mut Ui) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(uim);
@@ -115,9 +115,9 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 fn draw(&mut self, ui: &mut Ui) {
-    ui.spinbox(1, 0..10).set_callback(Self::changed);
+    ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::changed);
     //或者
-    ui.add(SpinBox::new(1).with_range(0..10).connect(Self::changed));
+    ui.add(SpinBox::new(1, 1, 1..10).connect(Self::changed));
 }
 ```
 
@@ -174,14 +174,14 @@ fn draw(&mut self, ui: &mut Ui) {
 ```rust
 
 //文本变动监测
-fn edit_changed(&mut self, ctx: &mut Context, text: &str) {
+fn edit_changed(&mut self, ui: &mut Ui, text: &str) {
     self.label.set_text(format!("textedit: {}", text));
-    self.label.update(ctx);
+    self.label.update(ui);
 }
 
 fn draw(&mut self, ui: &mut Ui) {
     //创建TextEdit并添加ID，以便后续获取其文本
-    ui.add(TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
+    ui.add(TextEdit::new("sdsd".to_string()).connect(Self::edit_changed));
 }
 ```
 
