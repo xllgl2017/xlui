@@ -1,6 +1,7 @@
 use crate::ui::Ui;
 use std::any::Any;
 use crate::size::rect::Rect;
+use crate::widgets::button::Button;
 
 pub struct Callback {
     // click: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,
@@ -26,10 +27,10 @@ impl Callback {
     //     self.click = Some(Self::create_click(f));
     // }
 
-    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Ui) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Ui)> {
-        Box::new(move |target, uim| {
+    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Button, &mut Ui)> {
+        Box::new(move |target, btn, uim| {
             let t = target.downcast_mut::<A>().unwrap();
-            f(t, uim);
+            f(t, btn, uim);
         })
     }
 

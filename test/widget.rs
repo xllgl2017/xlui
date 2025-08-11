@@ -3,10 +3,11 @@ use xlui::frame::{App, WindowAttribute};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
-use xlui::widgets::image::Image;
 use xlui::widgets::combobox::ComboBox;
+use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
 use xlui::widgets::radio::RadioButton;
+use xlui::widgets::select::SelectItem;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::TextEdit;
@@ -29,13 +30,13 @@ impl XlUiApp {
         }
     }
 
-    fn add(&mut self, ui: &mut Ui) {
+    fn add(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);
     }
 
-    fn reduce(&mut self, ui: &mut Ui) {
+    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);
@@ -71,9 +72,11 @@ impl XlUiApp {
         self.label.update(ui);
     }
 
-    fn image_button_click(&mut self, ui: &mut Ui) {
+    fn image_button_click(&mut self, btn: &mut Button, ui: &mut Ui) {
         self.label.set_text(format!("image button: {}", self.count));
         self.label.update(ui);
+        btn.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png", ui);
+        btn.update(ui);
     }
 
     fn combo_changed(&mut self, ui: &mut Ui, data: &TD) {
@@ -188,6 +191,13 @@ impl App for XlUiApp {
             ui.add_space(10.0);
             ui.add(Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0).connect(Self::image_button_click));
         });
+        ui.horizontal(|ui| {
+            // let parent=Arc::new(RwLock::new(None));
+            ui.radio(true, "SelectableValue");
+            ui.add(SelectItem::<i32>::new(1));
+            ui.add(SelectItem::<i32>::new(2));
+            ui.add(SelectItem::<i32>::new(3));
+        })
     }
 
     fn update(&mut self, ui: &mut Ui) {

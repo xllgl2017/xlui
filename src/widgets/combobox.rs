@@ -160,13 +160,13 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
             self.previous_select = *select;
             if let Some(select) = self.previous_select {
-                self.text_buffer.set_text(self.data[select].to_string());
-                self.text_buffer.buffer.as_mut().unwrap().set_text(
-                    &mut ui.context.render.text.font_system,
-                    self.data[select].to_string().as_str(),
-                    &ui.context.font.font_attr(),
-                    Shaping::Advanced,
-                );
+                self.text_buffer.set_text(self.data[select].to_string(), ui);
+                // self.text_buffer.buffer.as_mut().unwrap().set_text(
+                //     &mut ui.context.render.text.font_system,
+                //     self.data[select].to_string().as_str(),
+                //     &ui.context.font.font_attr(),
+                //     Shaping::Advanced,
+                // );
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
                     callback(*app, ui, &self.data[select]);

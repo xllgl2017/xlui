@@ -28,7 +28,7 @@ impl Label {
 
 
     pub fn set_text(&mut self, text: String) {
-        self.buffer.set_text(text);
+        self.buffer.text = text;
         self.change = true;
     }
 
@@ -46,6 +46,10 @@ impl Label {
         self.buffer.text_size.font_size = s;
         self
     }
+
+    pub fn text(&self) -> &String {
+        &self.buffer.text
+    }
 }
 
 
@@ -55,9 +59,9 @@ impl Widget for Label {
         self.buffer.reset_size(ui.context);
         // ui.layout().alloc_rect(&self.buffer.rect);
         self.buffer.draw(ui);
-        Response{
-            id:self.id.clone(),
-            rect:self.buffer.rect.clone()
+        Response {
+            id: self.id.clone(),
+            rect: self.buffer.rect.clone(),
         }
     }
 

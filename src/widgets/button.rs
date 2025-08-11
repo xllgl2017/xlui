@@ -29,14 +29,14 @@ pub struct Button {
     pub(crate) text_buffer: TextBuffer,
     padding: Padding,
     size_mode: SizeMode,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui)>>,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Button, &mut Ui)>>,
     fill_index: usize,
     fill_param: RectParam,
     fill_buffer: Option<wgpu::Buffer>,
     image: Option<Image>,
     image_rect: Rect,
     hovered: bool,
-
+    image_change: bool,
 }
 
 
@@ -56,6 +56,7 @@ impl Button {
             image: None,
             image_rect: Rect::new(),
             hovered: false,
+            image_change: false,
         }
     }
 
@@ -129,18 +130,31 @@ impl Button {
         self
     }
 
-    pub fn connect<A: App>(mut self, f: impl FnMut(&mut A, &mut Ui) + 'static) -> Self {
+    pub fn connect<A: App>(mut self, f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Self {
         self.callback = Some(Callback::create_click(f));
         self
     }
 
-    pub fn set_callback<A: App>(&mut self, f: impl FnMut(&mut A, &mut Ui) + 'static) {
+    pub fn set_callback<A: App>(&mut self, f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) {
         self.callback = Some(Callback::create_click(f));
     }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
         self.fill_param.style = style;
         self
+    }
+
+    pub fn set_text(&mut self, text: impl ToString, ui: &mut Ui) {
+        self.text_buffer.set_text(text.to_string(), ui);
+    }
+    pub fn set_image(&mut self, source: &'static str, ui: &mut Ui) {
+        match self.image {
+            None => self.image = Some(Image::new(source)),
+            Some(ref mut image) => {
+                ui.context.render.image.insert_image(&ui.device, source.to_string(), source);
+                image.source = source
+            }
+        }
     }
 }
 
@@ -168,6 +182,11 @@ impl Widget for Button {
     }
 
     fn update(&mut self, ui: &mut Ui) {
+        // if self.image_change {
+        //     self.image_change = false;
+        //     let source = self.image.as_ref().unwrap().source;
+        //     ui.context.render.image.insert_image(&ui.device, source.to_string(), source);
+        // }
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }
@@ -186,11 +205,13 @@ impl Widget for Button {
             ui.context.window.request_redraw();
         }
         if ui.device.device_input.click_at(&self.fill_param.rect) {
-            if let Some(ref mut callback) = self.callback {
+            let mut callback = self.callback.take();
+            if let Some(mut callback) = callback {
                 let app = ui.app.take().unwrap();
-                callback(*app, ui);
+                callback(*app, self, ui);
                 ui.app.replace(app);
                 ui.context.window.request_redraw();
+                self.callback.replace(callback);
             }
         }
     }

@@ -15,10 +15,8 @@ use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 
 pub struct ListView<T> {
-    id: String,
     data: Vec<T>,
     items: Map<usize>,
-    previous: Option<String>,
     current: Arc<RwLock<Option<String>>>,
     callback: Arc<Option<Box<dyn Fn(&mut dyn Any, &mut Ui)>>>,
     rect: Rect,
@@ -27,10 +25,8 @@ pub struct ListView<T> {
 impl<T: Display + 'static> ListView<T> {
     pub fn new(data: Vec<T>) -> Self {
         ListView {
-            id: crate::gen_unique_id(),
             data,
             items: Map::new(),
-            previous: None,
             rect: Rect::new(),
             current: Arc::new(RwLock::new(None)),
             callback: Arc::new(None),

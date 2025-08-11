@@ -62,23 +62,24 @@ impl XlUiApp {
         }
     }
 
-    pub fn click1(&mut self, _ui: &mut Ui) {
+    pub fn click1(&mut self, btn: &mut Button, _ui: &mut Ui) {
         self.count += 1;
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, _ui: &mut Ui) {
+    pub fn click2(&mut self, btn: &mut Button, _ui: &mut Ui) {
         self.count += 2;
         println!("count2: {}", self.count);
     }
 
-    pub fn add(&mut self, ui: &mut Ui) {
+    pub fn add(&mut self, btn: &mut Button, ui: &mut Ui) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);
+        btn.set_text(self.label.text(), ui);
     }
 
-    pub fn reduce(&mut self, ui: &mut Ui) {
+    pub fn reduce(&mut self, btn: &mut Button, ui: &mut Ui) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);

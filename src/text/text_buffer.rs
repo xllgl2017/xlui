@@ -83,8 +83,9 @@ impl TextBuffer {
         self.render.as_mut().unwrap().render(&mut ui.context.render.text.atlas, &ui.context.viewport, pass).unwrap()
     }
 
-    pub fn set_text(&mut self, text: String) {
+    pub fn set_text(&mut self, text: String, ui: &mut Ui) {
         self.text = text;
+        self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, self.text.as_str(), &ui.context.font.font_attr(), Shaping::Advanced);
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {
