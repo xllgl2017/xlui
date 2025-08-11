@@ -6,11 +6,11 @@ use crate::ui::Ui;
 use crate::vertex::Vertex;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
-use crate::Pos;
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
 use crate::frame::App;
+use crate::size::pos::Axis;
 
 pub struct SpinBox<T> {
     pub(crate) id: String,
@@ -82,8 +82,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
         rect.set_width(18.0);
         // ui.layout().alloc_rect(&rect);
         self.up_rect = Rect {
-            x: Pos { min: self.rect.x.max - 14.0, max: self.rect.x.max },
-            y: Pos { min: self.rect.y.min + 1.0, max: self.rect.y.min + self.rect.height() / 2.0 - 2.0 },
+            x: Axis { min: self.rect.x.max - 14.0, max: self.rect.x.max },
+            y: Axis { min: self.rect.y.min + 1.0, max: self.rect.y.min + self.rect.height() / 2.0 - 2.0 },
         };
         let vertices = vec![
             Vertex::new([self.up_rect.x.min + self.up_rect.width() / 2.0, self.up_rect.y.min], &self.color, &ui.context.size),
@@ -92,8 +92,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
         ];
         self.up_index = ui.context.render.triangle.add_triangle(vertices, &ui.device);
         self.down_rect = Rect {
-            x: Pos { min: self.rect.x.max - 14.0, max: self.rect.x.max },
-            y: Pos { min: self.rect.y.max - self.rect.height() / 2.0 + 2.0, max: self.rect.y.max - 2.0 },
+            x: Axis { min: self.rect.x.max - 14.0, max: self.rect.x.max },
+            y: Axis { min: self.rect.y.max - self.rect.height() / 2.0 + 2.0, max: self.rect.y.max - 2.0 },
         };
         self.down_index = ui.context.render.triangle.add_triangle(vec![
             Vertex::new([self.down_rect.x.min + self.down_rect.width() / 2.0, self.down_rect.y.max], &self.color, &ui.context.size),

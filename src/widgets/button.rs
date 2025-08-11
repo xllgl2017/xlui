@@ -177,8 +177,8 @@ impl Widget for Button {
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             self.text_buffer.rect.offset(offset.x, offset.y);
         }
-        let (x, y) = ui.device.device_input.mouse.lastest();
-        let has_pos = self.fill_param.rect.has_position(x, y);
+        // let (x, y) = ui.device.device_input.mouse.lastest();
+        let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
         if self.hovered != has_pos {
             self.hovered = has_pos;
             let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
@@ -190,10 +190,6 @@ impl Widget for Button {
                 let app = ui.app.take().unwrap();
                 callback(*app, ui);
                 ui.app.replace(app);
-                ui.context.window.request_redraw();
-            }
-            if let Some(ref mut callback) = self.callback2 {
-                callback();
                 ui.context.window.request_redraw();
             }
         }

@@ -145,8 +145,8 @@ impl Widget for Slider {
         //滑动
         if self.focused && ui.device.device_input.mouse.pressed {
             let ox = ui.device.device_input.mouse.offset_x();
-            let lx = self.fill_param.rect.x.min..self.fill_param.rect.x.max;
-            self.slider_param.rect.offset_x_limit(ox, lx);
+            // let lx = self.fill_param.rect.x.min..self.fill_param.rect.x.max;
+            self.slider_param.rect.offset_x_limit(ox, &self.fill_param.rect.x);
             let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.x.min - self.fill_param.rect.x.min) / self.fill_param.rect.width();
             let cv = (self.range.end - self.range.start) * cl;
             self.value = cv;

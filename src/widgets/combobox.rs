@@ -19,7 +19,7 @@ use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle};
+use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;

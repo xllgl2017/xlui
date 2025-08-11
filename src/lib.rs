@@ -68,6 +68,7 @@
 //!```
 
 use std::time::SystemTime;
+use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
 
@@ -110,25 +111,6 @@ impl Offset {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub struct Pos {
-    // x:f32,
-    // y:f32
-    pub min: f32,
-    pub max: f32,
-}
-
-impl Pos {
-    pub fn center(&self) -> f32 {
-        (self.min + self.max) / 2.0
-    }
-
-    pub fn offset(&mut self, offset: f32) {
-        self.min += offset;
-        self.max += offset;
-    }
-}
-
 
 pub struct Device {
     pub device: wgpu::Device,
@@ -140,10 +122,10 @@ pub struct Device {
 }
 
 pub struct MouseInput {
-    lastest: (f32, f32),
-    previous: (f32, f32),
+    lastest: Pos,
+    previous: Pos,
     delta: (f32, f32),
-    pressed_pos: (f32, f32),
+    pressed_pos: Pos,
     pressed: bool,
     clicked: bool,
 }
@@ -154,29 +136,29 @@ impl MouseInput {
     }
 
     pub fn offset_x(&self) -> f32 {
-        self.lastest.0 - self.previous.0
+        self.lastest.x - self.previous.x
     }
 
     pub fn offset_y(&self) -> f32 {
-        self.lastest.1 - self.previous.1
+        self.lastest.y - self.previous.y
     }
 
     pub fn x(&self) -> f32 {
-        self.lastest.0
+        self.lastest.x
     }
 
     pub fn y(&self) -> f32 {
-        self.lastest.1
+        self.lastest.y
     }
 
     pub fn update(&mut self, pos: winit::dpi::PhysicalPosition<f64>) {
-        self.previous = self.lastest;
-        self.lastest.0 = pos.x as f32;
-        self.lastest.1 = pos.y as f32;
+        self.previous = self.lastest.clone();
+        self.lastest.x = pos.x as f32;
+        self.lastest.y = pos.y as f32;
     }
 
-    pub fn lastest(&self) -> (f32, f32) {
-        self.lastest
+    pub fn lastest(&self) -> &Pos {
+        &self.lastest
     }
 
     pub fn delta_x(&self) -> f32 { self.delta.0 }
@@ -195,10 +177,10 @@ impl DeviceInput {
     pub fn new() -> DeviceInput {
         DeviceInput {
             mouse: MouseInput {
-                lastest: (0.0, 0.0),
-                previous: (0.0, 0.0),
+                lastest: Pos::new(),
+                previous: Pos::new(),
                 delta: (0.0, 0.0),
-                pressed_pos: (0.0, 0.0),
+                pressed_pos: Pos::new(),
                 pressed: false,
                 clicked: false,
             }
@@ -206,22 +188,16 @@ impl DeviceInput {
     }
 
     pub fn click_at(&self, rect: &Rect) -> bool {
-        let (lx, ly) = self.mouse.pressed_pos;
-        let (x, y) = self.mouse.lastest;
-        rect.has_position(lx, ly) && rect.has_position(x, y) && self.mouse.clicked
+        rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y) &&
+            rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y) && self.mouse.clicked
     }
     pub fn pressed_at(&self, rect: &Rect) -> bool {
-        // println!("{:?} {:?}", rect, self.mouse.pressed_pos);
-        rect.has_position(self.mouse.pressed_pos.0, self.mouse.pressed_pos.1)
+        rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y)
     }
 
     pub fn hovered_at(&self, rect: &Rect) -> bool {
-        rect.has_position(self.mouse.lastest.0, self.mouse.lastest.1)
+        rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y)
     }
-    // pub fn mouse_at_extend(&self, rect: &Rect) -> bool {
-    //     let (x, y) = self.mouse.lastest;
-    //     rect.has_position_extend(x, y)
-    // }
 }
 
 

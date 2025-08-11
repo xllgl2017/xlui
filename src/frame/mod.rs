@@ -6,6 +6,7 @@ use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Icon, WindowId, WindowLevel};
+use crate::size::pos::Pos;
 
 mod window;
 pub mod context;
@@ -125,8 +126,8 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 // println!("{:?}", state);
                 match (state, button) {
                     (ElementState::Pressed, MouseButton::Left) => {
-                        window.app_ctx.device.device_input.mouse.previous = window.app_ctx.device.device_input.mouse.lastest;
-                        window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest;
+                        window.app_ctx.device.device_input.mouse.previous = window.app_ctx.device.device_input.mouse.lastest.clone();
+                        window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest.clone();
                         window.app_ctx.device.device_input.mouse.pressed = true;
                         window.app_ctx.update(&mut window.app)
                     }
@@ -134,7 +135,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                         window.app_ctx.device.device_input.mouse.clicked = true;
                         window.app_ctx.update(&mut window.app);
                         window.app_ctx.device.device_input.mouse.clicked = false;
-                        window.app_ctx.device.device_input.mouse.pressed_pos = (-1.0, -1.0);
+                        window.app_ctx.device.device_input.mouse.pressed_pos = Pos::new();
                         window.app_ctx.device.device_input.mouse.pressed = false;
                     }
                     (_, _) => {}

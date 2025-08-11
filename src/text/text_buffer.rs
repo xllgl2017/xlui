@@ -61,8 +61,8 @@ impl TextBuffer {
         let bounds = glyphon::TextBounds {
             left: 0,
             top: 0,
-            right: self.rect.right(),
-            bottom: self.rect.bottom(),
+            right: self.rect.x.max as i32,
+            bottom: self.rect.y.max as i32,
         };
         let area = glyphon::TextArea {
             buffer: self.buffer.as_ref().unwrap(),

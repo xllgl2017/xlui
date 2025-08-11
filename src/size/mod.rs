@@ -1,6 +1,7 @@
 pub mod rect;
 pub mod padding;
 pub mod border;
+pub mod pos;
 
 pub enum SizeMode {
     Auto,

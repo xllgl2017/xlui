@@ -1,39 +1,34 @@
-use std::ops::Range;
 use crate::size::padding::Padding;
-use crate::Pos;
+use crate::size::pos::Axis;
+use std::ops::Range;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Rect {
-    pub x: Pos,
-    pub y: Pos,
+    pub x: Axis,
+    pub y: Axis,
 }
+
 
 impl Rect {
     pub fn new() -> Rect {
         Rect {
-            x: Pos {
-                min: 0.0,
-                max: 0.0,
-            },
-            y: Pos {
-                min: 0.0,
-                max: 0.0,
-            },
+            x: (0.0..0.0).into(),
+            y: (0.0..0.0).into(),
         }
     }
     pub fn width(&self) -> f32 {
-        self.x.max - self.x.min
+        self.x.distance()
     }
     pub fn height(&self) -> f32 {
-        self.y.max - self.y.min
+        self.y.distance()
     }
 
     pub fn set_width(&mut self, width: f32) {
-        self.x.max = self.x.min + width;
+        self.x.set_distance(width);
     }
 
     pub fn set_height(&mut self, height: f32) {
-        self.y.max = self.y.min + height;
+        self.y.set_distance(height);
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
@@ -48,14 +43,6 @@ impl Rect {
 
     pub fn size(&self) -> (f32, f32) {
         (self.width(), self.height())
-    }
-
-    pub(crate) fn right(&self) -> i32 {
-        (self.x.min + self.width()) as i32
-    }
-
-    pub(crate) fn bottom(&self) -> i32 {
-        (self.y.min + self.height()) as i32
     }
 
     pub(crate) fn left_bottom(&self) -> [f32; 2] {
@@ -82,47 +69,39 @@ impl Rect {
 
 
     pub fn offset_x(&mut self, x: f32) {
-        self.x.min += x;
-        self.x.max += x;
+        self.x += x;
     }
 
-    pub fn offset_x_limit(&mut self, ox: f32, lx: Range<f32>) -> f32 {
-        if self.x.min + ox < lx.start {
-            let oy = lx.start - self.x.min;
-            self.x.min += oy;
-            self.x.max += oy;
-            oy
-        } else if self.x.max + ox > lx.end {
-            let oy = lx.end - self.x.max;
-            self.x.min += oy;
-            self.x.max += oy;
-            oy
+    pub fn offset_x_limit(&mut self, ox: f32, lx: &Axis) -> f32 {
+        if self.x.min + ox < lx.min {
+            let ox = lx.min - self.x.min;
+            self.x += ox;
+            ox
+        } else if self.x.max + ox > lx.max {
+            let ox = lx.max - self.x.max;
+            self.x += ox;
+            ox
         } else {
-            self.x.min += ox;
-            self.x.max += ox;
+            self.x += ox;
             ox
         }
     }
 
-    pub fn offset_y(&mut self, y: f32) {
-        self.y.min += y;
-        self.y.max += y;
+    pub fn offset_y(&mut self, oy: f32) {
+        self.y += oy;
     }
 
     pub fn offset_y_limit(&mut self, oy: f32, ly: Range<f32>) -> f32 {
         if self.y.min + oy < ly.start {
             let oy = ly.start - self.y.min;
-            self.y.min += oy;
-            self.y.max += oy;
+            self.y += oy;
             oy
         } else if self.y.max + oy > ly.end {
             let oy = ly.end - self.y.max;
-            self.y.min += oy;
-            self.y.max += oy;
+            self.y += oy;
             oy
         } else {
-            self.y.min += oy;
-            self.y.max += oy;
+            self.y += oy;
             oy
         }
     }
