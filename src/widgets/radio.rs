@@ -108,7 +108,6 @@ impl Widget for RadioButton {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(&ui.context);
-        // ui.layout().alloc_rect(&self.rect);
         //外圆
         self.outer_param.rect = self.rect.clone();
         self.outer_param.rect.set_width(self.rect.height());
@@ -132,13 +131,6 @@ impl Widget for RadioButton {
             id: self.id.clone(),
             rect: self.rect.clone(),
         }
-
-        // let layout = ui.current_layout.as_mut().unwrap();
-        // self.rect = layout.available_rect.clone_with_size(&self.rect);
-        // self.reset_size(&ui.ui_manage.context);
-        // layout.alloc_rect(&self.rect);
-        // let task = PaintRadioButton::new(ui, self);
-        // ui.add_paint_task(self.id.clone(), PaintTask::Radio(task));
     }
 
     fn update(&mut self, ui: &mut Ui) {

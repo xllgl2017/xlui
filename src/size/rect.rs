@@ -163,4 +163,10 @@ impl Rect {
         other.x.min > self.x.max || other.x.max < self.x.min ||
             other.y.min > self.y.max || other.y.max < self.y.min
     }
+
+    //处于边界或出于边界
+    pub(crate) fn out_of_border(&self, other: &Rect) -> bool {
+        self.x.min < other.x.min || self.x.max > other.x.max ||
+            self.y.min < other.y.min || self.y.max > other.y.max
+    }
 }

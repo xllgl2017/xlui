@@ -16,6 +16,7 @@ use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use crate::layout::popup::Popup;
 use crate::map::Map;
+use crate::size::rect::Rect;
 use crate::widgets::image::Image;
 use crate::widgets::spinbox::SpinBox;
 
@@ -49,6 +50,7 @@ impl AppContext {
             canvas_offset: None,
             popups: self.popups.take(),
             key: None,
+            current_rect: Rect::new(),
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -65,6 +67,7 @@ impl AppContext {
             canvas_offset: None,
             popups: self.popups.take(),
             key: None,
+            current_rect: Rect::new(),
         };
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
@@ -117,6 +120,7 @@ impl AppContext {
             canvas_offset: None,
             popups: self.popups.take(),
             key: None,
+            current_rect: Rect::new(),
         };
         app.redraw(&mut ui);
         ui.app = Some(Box::new(app));
@@ -140,6 +144,7 @@ impl AppContext {
             canvas_offset: None,
             popups: self.popups.take(),
             key: Some(key),
+            current_rect: Rect::new(),
         };
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
@@ -158,6 +163,7 @@ pub struct Ui<'a> {
     pub(crate) canvas_offset: Option<Offset>,
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) key: Option<winit::keyboard::Key>,
+    pub(crate) current_rect: Rect,
 }
 
 impl<'a> Ui<'a> {

@@ -223,7 +223,7 @@ impl App for XlUiApp {
                 }
                 ui.label("end");
             });
-            ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item5"]).connect(Self::combo_changed).with_popup_height(150.0));
+            ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item6"]).connect(Self::combo_changed).with_popup_height(150.0));
             // self.list_view.draw(ui);
         });
 

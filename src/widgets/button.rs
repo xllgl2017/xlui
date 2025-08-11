@@ -29,8 +29,7 @@ pub struct Button {
     pub(crate) text_buffer: TextBuffer,
     padding: Padding,
     size_mode: SizeMode,
-    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui)>>,
-    callback2: Option<Box<dyn FnMut()>>,
+    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui)>>,
     fill_index: usize,
     fill_param: RectParam,
     fill_buffer: Option<wgpu::Buffer>,
@@ -51,7 +50,6 @@ impl Button {
             padding,
             size_mode: SizeMode::Auto,
             callback: None,
-            callback2: None,
             fill_index: 0,
             fill_param: RectParam::new(Rect::new(), ClickStyle::new()),
             fill_buffer: None,
@@ -138,10 +136,6 @@ impl Button {
 
     pub fn set_callback<A: App>(&mut self, f: impl FnMut(&mut A, &mut Ui) + 'static) {
         self.callback = Some(Callback::create_click(f));
-    }
-
-    pub(crate) fn set_callback2(&mut self, f: impl FnMut() + 'static) {
-        self.callback2 = Some(Box::new(f));
     }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {

@@ -22,7 +22,7 @@ use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
-use crate::widgets::button::Button;
+use crate::widgets::select::SelectItem;
 use crate::widgets::Widget;
 use glyphon::Shaping;
 use std::any::Any;
@@ -35,7 +35,6 @@ pub struct ComboBox<T> {
     size_mode: SizeMode,
     text_buffer: TextBuffer,
     data: Vec<T>,
-    item_style: ClickStyle,
     popup_rect: Rect,
     callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)>>,
 
@@ -59,18 +58,6 @@ impl<T: Display + 'static> ComboBox<T> {
             size_mode: SizeMode::Auto,
             text_buffer: TextBuffer::new("".to_string()),
             data,
-            item_style: ClickStyle {
-                fill: FillStyle {
-                    inactive: Color::TRANSPARENT,
-                    hovered: Color::rgba(153, 193, 241, 220),
-                    clicked: Color::rgba(153, 193, 241, 220),
-                },
-                border: BorderStyle {
-                    inactive: Border::new(0.0),
-                    hovered: Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
-                    clicked: Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
-                },
-            },
             popup_rect: Rect::new(),
             callback: None,
             fill_param: RectParam::new(Rect::new(), fill_style),
@@ -109,15 +96,16 @@ impl<T: Display + 'static> ComboBox<T> {
     }
 
     fn add_item(&self, ui: &mut Ui, item: &T, row: usize) {
-        let mut btn = Button::new(item).padding(Padding::same(3.0)).with_style(self.item_style.clone());
-        btn.set_size(ui.layout().available_rect().width(), 25.0);
+        let mut select = SelectItem::new(item).padding(Padding::same(3.0))
+            .parent(self.selected.clone());
+        select.set_size(ui.layout().available_rect().width(), 25.0);
         let state = self.selected.clone();
-        btn.set_callback2(move || {
-            println!("{}", row);
+        select.set_callback(move |value| {
             let mut state = state.write().unwrap();
             *state = Some(row);
+            *value = Some(row)
         });
-        ui.add(btn);
+        ui.add(select);
     }
 
     fn add_items(&self, ui: &mut Ui) {
@@ -168,7 +156,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        let select=self.selected.read().unwrap();
+        let select = self.selected.read().unwrap();
         if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
             self.previous_select = *select;
             if let Some(select) = self.previous_select {
@@ -189,7 +177,6 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
 
             let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
             popup.open = false;
-
         }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);

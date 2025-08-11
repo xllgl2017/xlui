@@ -108,6 +108,7 @@ impl Layout for ScrollArea {
             ui.canvas_offset = Some(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0));
         }
         self.v_bar.update(ui);
+        ui.current_rect = self.layout.as_ref().unwrap().drawn_rect();
         self.layout.as_mut().unwrap().update(ui);
         ui.canvas_offset = None;
     }

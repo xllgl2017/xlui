@@ -72,14 +72,6 @@ impl LayoutKind {
         }
     }
 
-    // pub fn context_height(&self) -> f32 {
-    //     match self {
-    //         LayoutKind::Horizontal(v) => v.height,
-    //         LayoutKind::Vertical(v) => v.height,
-    //         LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
-    //     }
-    // }
-
     pub fn drawn_rect(&self) -> Rect {
         match self {
             LayoutKind::Horizontal(v) => {
