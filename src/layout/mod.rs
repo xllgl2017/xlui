@@ -13,7 +13,7 @@ pub trait Layout {
     fn redraw(&mut self, ui: &mut Ui);
 }
 
-pub(crate) enum LayoutKind {
+pub enum LayoutKind {
     Horizontal(HorizontalLayout),
     Vertical(VerticalLayout),
     ScrollArea(ScrollArea),
@@ -105,6 +105,22 @@ impl LayoutKind {
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
     }
+
+    pub fn set_rect(&mut self, rect: Rect, padding: &Padding) {
+        match self {
+            LayoutKind::Horizontal(v) => {
+                v.max_rect = rect;
+                v.available_rect = v.max_rect.clone_add_padding(&padding);
+                v.available_rect.x.max = f32::INFINITY;
+            }
+            LayoutKind::Vertical(v) => {
+                v.max_rect = rect;
+                v.available_rect = v.max_rect.clone_add_padding(&padding);
+                v.available_rect.y.max = f32::INFINITY;
+            }
+            LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
+        }
+    }
 }
 
 pub struct HorizontalLayout {
@@ -133,12 +149,14 @@ impl HorizontalLayout {
     pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
         self.max_rect = rect;
         self.available_rect = self.max_rect.clone_add_padding(&padding);
+        self.available_rect.x.max = f32::INFINITY;
         self
     }
 
     pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
         self.available_rect.x.min += rect.width() + self.item_space;
         self.width += rect.width() + if self.width == 0.0 { 0.0 } else { self.item_space };
+        println!("alloc rect  {} {}", self.height, rect.height());
         if self.height < rect.height() { self.height = rect.height(); }
     }
 }
@@ -195,6 +213,7 @@ impl VerticalLayout {
     pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
         self.max_rect = rect;
         self.available_rect = self.max_rect.clone_add_padding(&padding);
+        self.available_rect.y.max = f32::INFINITY;
         self
     }
 

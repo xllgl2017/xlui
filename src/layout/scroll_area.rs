@@ -42,9 +42,13 @@ impl ScrollArea {
         }
     }
 
+    pub fn set_size(&mut self, w: f32, h: f32) {
+        self.fill_param.rect.set_size(w, h);
+        self.v_bar.set_height(h);
+    }
+
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.fill_param.rect.set_size(width, height);
-        self.v_bar.set_height(height);
+        self.set_size(width, height);
         self
     }
 
@@ -59,6 +63,11 @@ impl ScrollArea {
 
     pub fn set_rect(&mut self, rect: Rect) {
         self.fill_param.rect = rect;
+        self.v_bar.set_height(self.fill_param.rect.height());
+    }
+
+    pub fn set_style(&mut self, style: ClickStyle) {
+        self.fill_param.style = style;
     }
 
     pub fn draw(&mut self, ui: &mut Ui, mut callback: impl FnMut(&mut Ui)) {
@@ -86,11 +95,12 @@ impl ScrollArea {
         v_bar_rect.y.max -= self.padding.bottom;
         v_bar_rect.set_width(5.0);
         self.v_bar.set_rect(v_bar_rect);
+        println!("scroll {}", self.layout.as_ref().unwrap().height);
         self.v_bar.set_context_height(self.layout.as_ref().unwrap().height + self.padding.vertical());
         self.v_bar.draw(ui);
     }
 
-    pub fn show(mut self, ui: &mut Ui, callback: impl Fn(&mut Ui)) {
+    pub fn show(mut self, ui: &mut Ui, callback: impl FnMut(&mut Ui)) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.draw(ui, callback);
         ui.layout().add_child(self.id.clone(), LayoutKind::ScrollArea(self));

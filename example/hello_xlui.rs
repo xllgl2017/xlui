@@ -1,14 +1,13 @@
-use xlui::frame::context::Context;
+use std::fmt::Display;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
-use xlui::response::Response;
-use xlui::size::rect::Rect;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
 use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
+use xlui::widgets::listview::ListView;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::TextEdit;
@@ -24,97 +23,12 @@ impl TD {
     }
 }
 
-struct ListView {
-    id: String,
-    data: Vec<TD>,
-    current_index: Option<usize>,
-}
-
-impl ListView {
-    fn new() -> ListView {
-        ListView {
-            id: xlui::gen_unique_id(),
-            data: vec![
-                TD::new("1"),
-                TD::new("2"),
-                TD::new("3"),
-                TD::new("4"),
-                TD::new("5"),
-                TD::new("6"),
-                TD::new("7"),
-                TD::new("8"),
-                TD::new("9"),
-                TD::new("0"),
-                TD::new("11")
-            ],
-            current_index: None,
-        }
-    }
-
-
-    // fn item_widget(&self, ui: &mut Ui, datum: &TD, row: usize) {
-    //     let mut rect = ui.available_rect();
-    //     rect.set_height(38.0);
-    //     let style = ClickStyle {
-    //         fill: FillStyle {
-    //             inactive: Color::TRANSPARENT,
-    //             hovered: Color::TRANSPARENT,
-    //             clicked: Color::TRANSPARENT,
-    //         },
-    //         border: BorderStyle {
-    //             inactive: Border::new(1.0).radius(Radius::same(3)).color(Color::BLUE),
-    //             hovered: Border::new(1.0).radius(Radius::same(3)).color(Color::RED),
-    //             clicked: Border::new(1.0).radius(Radius::same(3)).color(Color::YELLOW),
-    //         },
-    //     };
-    //     ui.paint_rect(rect, style).connect(row, XlUiApp::item_click);
-    //     ui.horizontal(|ui| {
-    //         // ui.image("logo.jpg", (30.0, 30.0));
-    //         ui.vertical(|ui| {
-    //             ui.label(datum.name.as_str());
-    //             ui.horizontal(|ui| {
-    //                 ui.label("00:00");
-    //                 ui.label("200");
-    //                 ui.label("HTTP/1.1");
-    //                 ui.label("10 KB");
-    //                 ui.label("10 KB");
-    //             });
-    //         });
-    //     });
-    // }
-
-    fn current(&self, ctx: &mut Context) -> Option<&TD> {
-        let current = self.current_index?;
-        Some(&self.data[current])
-    }
-
-    pub fn remove(&mut self, index: usize) {
-        self.data.remove(index);
-    }
-
-    pub fn push(&mut self, datum: TD, ctx: &mut Context) {
-        self.data.push(datum);
+impl Display for TD {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.name)
     }
 }
 
-
-impl Widget for ListView {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
-        // ScrollArea::new().with_size(300.0, 300.0).show(ui, |ui| {
-        //     for (row, datum) in self.data.iter().enumerate() {
-        //         self.item_widget(ui, datum, row);
-        //     }
-        // });
-        Response {
-            id: self.id.clone(),
-            rect: Rect::new(),
-        }
-    }
-
-    fn update(&mut self, ui: &mut Ui) {}
-
-    fn redraw(&mut self, ui: &mut Ui) {}
-}
 
 fn main() {
     XlUiApp::new().run();
@@ -123,15 +37,16 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
-    // list_view: ListView,
+    // list_view: ListView<TD>,
 }
 
 impl XlUiApp {
     pub fn new() -> Self {
+
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,
-            // list_view: ListView::new(),
+            // list_view: ListView::new(data).with_size(300.0, 400.0),
         }
     }
 
@@ -172,13 +87,15 @@ impl XlUiApp {
         self.label.update(ui);
     }
 
-    fn item_click(&mut self, ctx: &mut Ui, row: usize) {
-        println!("item click {}", row);
-    }
 
     fn combo_changed(&mut self, ctx: &mut Ui, item: &&str) {
         self.label.set_text(format!("combo: {}", item));
         self.label.update(ctx);
+    }
+
+    fn list_changed(&mut self, ui: &mut Ui, item: &TD) {
+        self.label.set_text(format!("list: {}", item));
+        self.label.update(ui);
     }
 }
 
@@ -224,7 +141,22 @@ impl App for XlUiApp {
                 ui.label("end");
             });
             ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item6"]).connect(Self::combo_changed).with_popup_height(150.0));
-            // self.list_view.draw(ui);
+            let data = vec![
+                TD::new("1"),
+                TD::new("2"),
+                TD::new("3"),
+                TD::new("4"),
+                TD::new("5"),
+                TD::new("6"),
+                TD::new("7"),
+                TD::new("8"),
+                TD::new("9"),
+                TD::new("0"),
+                TD::new("11")
+            ];
+            let mut list_view =ListView::new(data).with_size(300.0, 400.0);
+            list_view.set_callback(Self::list_changed);
+            ui.add(list_view);
         });
 
         ui.label("hello label1");
@@ -235,9 +167,11 @@ impl App for XlUiApp {
 
     fn update(&mut self, ui: &mut Ui) {
         self.label.update(ui);
+        // self.list_view.update(ui);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.label.redraw(ui);
+        // self.list_view.redraw(ui);
     }
 }

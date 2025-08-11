@@ -2,7 +2,7 @@ use crate::frame::context::Context;
 use crate::frame::App;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
 use crate::size::padding::Padding;
-use crate::style::Style;
+use crate::style::{ClickStyle, Style};
 use crate::widgets::button::Button;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::label::Label;
@@ -18,6 +18,7 @@ use crate::layout::popup::Popup;
 use crate::map::Map;
 use crate::size::rect::Rect;
 use crate::widgets::image::Image;
+use crate::widgets::rectangle::Rectangle;
 use crate::widgets::spinbox::SpinBox;
 
 pub struct AppContext {
@@ -164,6 +165,7 @@ pub struct Ui<'a> {
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) key: Option<winit::keyboard::Key>,
     pub(crate) current_rect: Rect,
+    // pub(crate) widget: &'a mut Box<dyn Widget>,
 }
 
 impl<'a> Ui<'a> {
@@ -200,6 +202,16 @@ impl<'a> Ui<'a> {
 
     pub(crate) fn layout(&mut self) -> &mut LayoutKind {
         self.layout.as_mut().unwrap()
+    }
+
+    pub fn available_rect(&self) -> &Rect {
+        self.layout.as_ref().unwrap().available_rect()
+    }
+
+    pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) {
+        let mut paint_rect = Rectangle::new(rect, style);
+        let resp = paint_rect.draw(self);
+        self.layout().add_widget(resp.id, Box::new(paint_rect));
     }
 
     pub fn label(&mut self, text: impl ToString) {

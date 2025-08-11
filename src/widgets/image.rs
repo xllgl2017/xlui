@@ -61,7 +61,18 @@ impl Image {
         self.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
     }
-
+    fn update_rect(&mut self, ui: &mut Ui) {
+        for (index, v) in self.vertices.iter_mut().enumerate() {
+            match index {
+                0 => v.position = self.rect.left_top(),
+                1 => v.position = self.rect.left_bottom(),
+                2 => v.position = self.rect.right_bottom(),
+                3 => v.position = self.rect.right_top(),
+                _ => {}
+            }
+            v.screen_size = ui.context.size.as_gamma_size();
+        }
+    }
 }
 
 impl Widget for Image {
@@ -93,34 +104,18 @@ impl Widget for Image {
             id: self.id.clone(),
             rect: self.rect.clone(),
         }
-        // let layout = ui.current_layout.as_mut().unwrap();
-        // self.rect = layout.available_rect.clone_with_size(&self.rect);
-        // let size = ui.ui_manage.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source);
-        // self.reset_size(size);
-        // println!("image {:?}", self.rect);
-        // layout.alloc_rect(&self.rect);
-        // let task = PaintImage::new(ui, self);
-        // ui.add_paint_task(self.id.clone(), PaintTask::Image(task));
     }
 
     fn update(&mut self, ui: &mut Ui) {
         if let Some(ref offset) = ui.canvas_offset {
-            self.rect.offset(offset.x, offset.y)
+            self.rect.offset(offset.x, offset.y);
+            self.update_rect(ui);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         if ui.context.resize {
-            for (index, v) in self.vertices.iter_mut().enumerate() {
-                match index {
-                    0 => v.position = self.rect.left_top(),
-                    1 => v.position = self.rect.left_bottom(),
-                    2 => v.position = self.rect.right_bottom(),
-                    3 => v.position = self.rect.right_top(),
-                    _ => {}
-                }
-                v.screen_size = ui.context.size.as_gamma_size();
-            }
+            self.update_rect(ui);
         }
         ui.device.queue.write_buffer(
             self.vertex_buffer.as_ref().unwrap(), 0,

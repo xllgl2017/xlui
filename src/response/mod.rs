@@ -103,10 +103,10 @@ impl Callback {
     //     res
     // }
 
-    // pub(crate) fn create_item<A: 'static>(r: usize, f: fn(&mut A, &mut Context, usize)) -> Box<dyn FnMut(&mut dyn Any, &mut Context)> {
-    //     Box::new(move |target, uim| {
-    //         let t = target.downcast_mut::<A>().unwrap();
-    //         f(t, uim, r)
+    // pub(crate) fn create_item<W: 'static>(f: fn(&mut W, &String)) -> Box<dyn FnMut(&mut dyn Any, &String)> {
+    //     Box::new(move |target, id| {
+    //         let t = target.downcast_mut::<W>().unwrap();
+    //         f(t, id)
     //     })
     // }
     //
@@ -116,6 +116,13 @@ impl Callback {
     //         f(t, uim, &r)
     //     })
     // }
+
+    pub(crate) fn create_list<A: 'static, T: 'static>(mut f: impl FnMut(&mut A, &mut Ui, &T) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)> {
+        Box::new(move |target, uim, tt| {
+            let t = target.downcast_mut::<A>().unwrap();
+            f(t, uim, tt);
+        })
+    }
 }
 
 pub struct Response {

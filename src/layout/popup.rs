@@ -29,7 +29,7 @@ impl Popup {
         let data = fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         let fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        let mut area = ScrollArea::new().with_size(rect.width(), rect.height()).padding(Padding::same(5.0));
+        let mut area = ScrollArea::new().padding(Padding::same(5.0));
         area.set_rect(rect);
         Popup {
             id: crate::gen_unique_id(),

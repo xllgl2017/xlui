@@ -15,6 +15,9 @@ pub mod checkbox;
 pub mod radio;
 pub mod combobox;
 pub mod select;
+pub mod rectangle;
+pub mod item;
+pub mod listview;
 
 pub trait Widget: Any {
     fn draw(&mut self, ui: &mut Ui) -> Response; //初次绘制调用
