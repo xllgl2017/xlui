@@ -179,6 +179,10 @@ impl<'a> Ui<'a> {
         self.layout.as_mut().unwrap().add_widget(resp.id, Box::new(widget));
     }
 
+    // pub fn set_size(&mut self, w: f32, h: f32) {
+    //     self.layout().set_size(w, h);
+    // }
+
     pub fn add_mut(&mut self, widget: &mut impl Widget) {
         let resp = widget.draw(self);
         self.layout().alloc_rect(&resp.rect);

@@ -121,6 +121,20 @@ impl LayoutKind {
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
     }
+
+    // pub fn set_size(&mut self, w: f32, h: f32) {
+    //     match self {
+    //         LayoutKind::Horizontal(v) => {
+    //             v.width = w;
+    //             v.height = h;
+    //         }
+    //         LayoutKind::Vertical(v) => {
+    //             v.width = w;
+    //             v.height = h;
+    //         }
+    //         LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
+    //     }
+    // }
 }
 
 pub struct HorizontalLayout {
@@ -163,20 +177,20 @@ impl HorizontalLayout {
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        for child in self.children.iter_mut() {
-            child.update(ui);
-        }
         for widget in self.widgets.iter_mut() {
             widget.update(ui)
+        }
+        for child in self.children.iter_mut() {
+            child.update(ui);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        for child in self.children.iter_mut() {
-            child.redraw(ui);
-        }
         for widget in self.widgets.iter_mut() {
             widget.redraw(ui)
+        }
+        for child in self.children.iter_mut() {
+            child.redraw(ui);
         }
     }
 }
@@ -234,20 +248,20 @@ impl VerticalLayout {
 
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        for child in self.children.iter_mut() {
-            child.update(ui);
-        }
         for widget in self.widgets.iter_mut() {
             widget.update(ui)
+        }
+        for child in self.children.iter_mut() {
+            child.update(ui);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        for child in self.children.iter_mut() {
-            child.redraw(ui);
-        }
         for widget in self.widgets.iter_mut() {
             widget.redraw(ui)
+        }
+        for child in self.children.iter_mut() {
+            child.redraw(ui);
         }
     }
 }
