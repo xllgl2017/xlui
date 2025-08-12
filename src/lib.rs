@@ -45,8 +45,8 @@
 //!     fn draw(&mut self, ui: &mut Ui) {
 //!         ui.add_mut(&mut self.label);
 //!         ui.horizontal(|ui| {
-//!             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).draw(ui);
-//!             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).draw(ui);
+//!             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).redraw(ui);
+//!             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).redraw(ui);
 //!         });
 //!      }
 //!

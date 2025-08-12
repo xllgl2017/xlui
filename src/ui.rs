@@ -56,6 +56,7 @@ impl AppContext {
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
+        // self.layout.as_mut().unwrap().redraw(&mut ui);
         self.popups = ui.popups.take();
     }
 
@@ -167,7 +168,6 @@ pub struct Ui<'a> {
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) key: Option<winit::keyboard::Key>,
     pub(crate) current_rect: Rect,
-    // pub(crate) widget: &'a mut Box<dyn Widget>,
 }
 
 impl<'a> Ui<'a> {
@@ -176,13 +176,13 @@ impl<'a> Ui<'a> {
     }
 
     pub fn add(&mut self, mut widget: impl Widget + 'static) {
-        let resp = widget.draw(self);
-        self.layout().alloc_rect(&resp.rect);
-        self.layout.as_mut().unwrap().add_widget(resp.id, Box::new(widget));
+        let resp = widget.redraw(self);
+        self.layout().alloc_rect(resp.rect);
+        self.layout.as_mut().unwrap().add_widget(resp.id.to_string(), Box::new(widget));
     }
 
     pub fn add_mut(&mut self, widget: &mut impl Widget) {
-        let resp = widget.draw(self);
+        let resp = widget.redraw(self);
         self.layout().alloc_rect(&resp.rect);
     }
 
@@ -212,8 +212,8 @@ impl<'a> Ui<'a> {
 
     pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) {
         let mut paint_rect = Rectangle::new(rect, style);
-        let resp = paint_rect.draw(self);
-        self.layout().add_widget(resp.id, Box::new(paint_rect));
+        let resp = paint_rect.redraw(self);
+        self.layout().add_widget(resp.id.to_string(), Box::new(paint_rect));
     }
 
     pub fn label(&mut self, text: impl ToString) {

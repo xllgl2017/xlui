@@ -50,19 +50,21 @@ impl Label {
     pub fn text(&self) -> &String {
         &self.buffer.text
     }
+
+    fn init(&mut self, ui: &mut Ui) {
+        self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
+        self.buffer.reset_size(ui.context);
+        self.buffer.draw(ui);
+    }
 }
 
 
 impl Widget for Label {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
-        self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
-        self.buffer.reset_size(ui.context);
-        // ui.layout().alloc_rect(&self.buffer.rect);
-        self.buffer.draw(ui);
-        Response {
-            id: self.id.clone(),
-            rect: self.buffer.rect.clone(),
-        }
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.buffer.buffer.is_none() { self.init(ui); }
+        if ui.pass.is_none() { return Response::new(&self.id, &self.buffer.rect); }
+        self.buffer.redraw(ui);
+        Response::new(&self.id, &self.buffer.rect)
     }
 
 
@@ -77,9 +79,5 @@ impl Widget for Label {
         self.buffer.buffer.as_mut().unwrap().set_text(
             &mut ui.context.render.text.font_system, &self.buffer.text,
             &ui.context.font.font_attr(), Shaping::Advanced);
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.buffer.redraw(ui);
     }
 }

@@ -121,20 +121,28 @@ impl LayoutKind {
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
     }
+}
 
-    // pub fn set_size(&mut self, w: f32, h: f32) {
-    //     match self {
-    //         LayoutKind::Horizontal(v) => {
-    //             v.width = w;
-    //             v.height = h;
-    //         }
-    //         LayoutKind::Vertical(v) => {
-    //             v.width = w;
-    //             v.height = h;
-    //         }
-    //         LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
-    //     }
-    // }
+
+fn update_or_redraw(widgets: &mut Map<Box<dyn Widget>>, children: &mut Map<LayoutKind>, ui: &mut Ui, update: bool) {
+    match update {
+        true => {
+            for widget in widgets.iter_mut() {
+                widget.update(ui)
+            }
+            for child in children.iter_mut() {
+                child.update(ui);
+            }
+        }
+        false => {
+            for widget in widgets.iter_mut() {
+                widget.redraw(ui);
+            }
+            for child in children.iter_mut() {
+                child.redraw(ui);
+            }
+        }
+    }
 }
 
 pub struct HorizontalLayout {
@@ -177,21 +185,11 @@ impl HorizontalLayout {
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        for widget in self.widgets.iter_mut() {
-            widget.update(ui)
-        }
-        for child in self.children.iter_mut() {
-            child.update(ui);
-        }
+        update_or_redraw(&mut self.widgets,&mut self.children, ui, true);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        for widget in self.widgets.iter_mut() {
-            widget.redraw(ui)
-        }
-        for child in self.children.iter_mut() {
-            child.redraw(ui);
-        }
+        update_or_redraw(&mut self.widgets,&mut self.children, ui, false);
     }
 }
 
@@ -248,20 +246,10 @@ impl VerticalLayout {
 
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        for widget in self.widgets.iter_mut() {
-            widget.update(ui)
-        }
-        for child in self.children.iter_mut() {
-            child.update(ui);
-        }
+        update_or_redraw(&mut self.widgets,&mut self.children, ui, true);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        for widget in self.widgets.iter_mut() {
-            widget.redraw(ui)
-        }
-        for child in self.children.iter_mut() {
-            child.redraw(ui);
-        }
+        update_or_redraw(&mut self.widgets,&mut self.children, ui, false);
     }
 }

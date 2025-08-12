@@ -97,7 +97,7 @@ impl ScrollArea {
         self.v_bar.set_rect(v_bar_rect);
         println!("scroll {}", self.layout.as_ref().unwrap().height);
         self.v_bar.set_context_height(self.layout.as_ref().unwrap().height + self.padding.vertical());
-        self.v_bar.draw(ui);
+        self.v_bar.redraw(ui);
     }
 
     pub fn show(mut self, ui: &mut Ui, callback: impl FnMut(&mut Ui)) {

@@ -105,10 +105,8 @@ impl<T: Display> SelectItem<T> {
     pub fn need_contact(&self) -> Arc<RwLock<Option<String>>> {
         self.parent_selected.clone()
     }
-}
 
-impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
         //背景
@@ -120,10 +118,18 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
         self.fill_buffer = Some(fill_buffer);
         //
         self.text.draw(ui);
-        Response {
-            id: self.id.clone(),
-            rect: self.fill_param.rect.clone(),
-        }
+    }
+}
+
+impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.fill_param.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.fill_index, pass);
+        self.text.redraw(ui);
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -165,11 +171,5 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
         }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        self.text.redraw(ui);
     }
 }

@@ -5,7 +5,7 @@
 //!
 //! # xlui::_run_test(|ui|{
 //!    let mut btn=Button::new("hello button");
-//!    btn.draw(ui);
+//!    btn.redraw(ui);
 //! # });
 //! ```
 
@@ -154,11 +154,8 @@ impl Button {
             }
         }
     }
-}
 
-
-impl Widget for Button {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
         //按钮矩形
@@ -168,23 +165,30 @@ impl Widget for Button {
         self.fill_buffer = Some(buffer);
         //
         if let Some(ref mut image) = self.image {
-            image.draw(ui);
+            image.redraw(ui);
             image.rect = self.image_rect.clone();
         }
         //按钮文本
         self.text_buffer.draw(ui);
-        Response {
-            id: self.id.clone(),
-            rect: self.fill_param.rect.clone(),
+    }
+}
+
+
+impl Widget for Button {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.fill_param.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.fill_index, pass);
+        if let Some(ref mut image) = self.image {
+            image.redraw(ui);
         }
+        self.text_buffer.redraw(ui);
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        // if self.image_change {
-        //     self.image_change = false;
-        //     let source = self.image.as_ref().unwrap().source;
-        //     ui.context.render.image.insert_image(&ui.device, source.to_string(), source);
-        // }
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }
@@ -194,7 +198,6 @@ impl Widget for Button {
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
             self.text_buffer.rect.offset(offset.x, offset.y);
         }
-        // let (x, y) = ui.device.device_input.mouse.lastest();
         let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
         if self.hovered != has_pos {
             self.hovered = has_pos;
@@ -212,14 +215,5 @@ impl Widget for Button {
                 self.callback.replace(callback);
             }
         }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        if let Some(ref mut image) = self.image {
-            image.redraw(ui);
-        }
-        self.text_buffer.redraw(ui);
     }
 }

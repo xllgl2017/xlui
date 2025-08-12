@@ -13,7 +13,6 @@ use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-use glyphon::Shaping;
 use std::any::Any;
 
 struct TextChar {
@@ -279,10 +278,11 @@ impl TextEdit {
                         let xm = self.char_layout.remove_last();
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
-                        self.text_buffer.buffer.as_mut().unwrap().set_text(
-                            &mut ui.context.render.text.font_system, text.as_str(),
-                            &ui.context.font.font_attr(), Shaping::Advanced,
-                        );
+                        self.text_buffer.set_text(text, ui);
+                        // self.text_buffer.buffer.as_mut().unwrap().set_text(
+                        //     &mut ui.context.render.text.font_system, text.as_str(),
+                        //     &ui.context.font.font_attr(), Shaping::Advanced,
+                        // );
                     }
                     winit::keyboard::NamedKey::ArrowLeft => {
                         let xm = self.char_layout.cursor_reduce();
@@ -295,19 +295,21 @@ impl TextEdit {
                     winit::keyboard::NamedKey::Delete => {
                         self.char_layout.remove_after();
                         let text = self.char_layout.text();
-                        self.text_buffer.buffer.as_mut().unwrap().set_text(
-                            &mut ui.context.render.text.font_system, text.as_str(),
-                            &ui.context.font.font_attr(), Shaping::Advanced,
-                        );
+                        self.text_buffer.set_text(text, ui);
+                        // self.text_buffer.buffer.as_mut().unwrap().set_text(
+                        //     &mut ui.context.render.text.font_system, text.as_str(),
+                        //     &ui.context.font.font_attr(), Shaping::Advanced,
+                        // );
                     }
                     winit::keyboard::NamedKey::Space => {
                         let xm = self.char_layout.push_char(' ', &ui.context);
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
-                        self.text_buffer.buffer.as_mut().unwrap().set_text(
-                            &mut ui.context.render.text.font_system, text.as_str(),
-                            &ui.context.font.font_attr(), Shaping::Advanced,
-                        );
+                        self.text_buffer.set_text(text, ui);
+                        // self.text_buffer.buffer.as_mut().unwrap().set_text(
+                        //     &mut ui.context.render.text.font_system, text.as_str(),
+                        //     &ui.context.font.font_attr(), Shaping::Advanced,
+                        // );
                     }
                     _ => {}
                 }
@@ -317,11 +319,11 @@ impl TextEdit {
                 let xm = self.char_layout.push_char(c, &ui.context);
                 self.update_cursor(ui, xm);
                 let text = self.char_layout.text();
-                // self.text.set_text(context, text);
-                self.text_buffer.buffer.as_mut().unwrap().set_text(
-                    &mut ui.context.render.text.font_system, text.as_str(),
-                    &ui.context.font.font_attr(), Shaping::Advanced,
-                );
+                self.text_buffer.set_text(text, ui);
+                // self.text_buffer.buffer.as_mut().unwrap().set_text(
+                //     &mut ui.context.render.text.font_system, text.as_str(),
+                //     &ui.context.font.font_attr(), Shaping::Advanced,
+                // );
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
@@ -334,21 +336,19 @@ impl TextEdit {
     }
 
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
-        self.text_buffer.buffer.as_mut().unwrap().set_text(
-            &mut ui.context.render.text.font_system, text.as_str(),
-            &ui.context.font.font_attr(), Shaping::Advanced,
-        );
+        self.text_buffer.set_text(text, ui);
+        // self.text_buffer.buffer.as_mut().unwrap().set_text(
+        //     &mut ui.context.render.text.font_system, text.as_str(),
+        //     &ui.context.font.font_attr(), Shaping::Advanced,
+        // );
         let wx = self.text_buffer.rect.x.min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
         self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
         let data = self.cursor_param.as_draw_param(false, false);
         ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
     }
-}
 
-
-impl Widget for TextEdit {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
         //背景
@@ -377,10 +377,22 @@ impl Widget for TextEdit {
         self.cursor_buffer = Some(cursor_buffer);
         //文本
         self.text_buffer.draw(ui);
-        Response {
-            id: self.id.clone(),
-            rect: self.fill_param.rect.clone(),
-        }
+    }
+}
+
+
+impl Widget for TextEdit {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.fill_param.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.fill_index, pass);
+        self.text_buffer.redraw(ui);
+        let pass = ui.pass.as_mut().unwrap();
+        if self.had_focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
+        ui.context.render.rectangle.render(self.select_index, pass);
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -443,14 +455,5 @@ impl Widget for TextEdit {
             self.text_select(ui);
             return;
         }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        self.text_buffer.redraw(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        if self.had_focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
-        ui.context.render.rectangle.render(self.select_index, pass);
     }
 }

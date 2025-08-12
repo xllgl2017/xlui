@@ -62,12 +62,12 @@ impl XlUiApp {
         }
     }
 
-    pub fn click1(&mut self, btn: &mut Button, _ui: &mut Ui) {
+    pub fn click1(&mut self, _: &mut Button, _ui: &mut Ui) {
         self.count += 1;
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, btn: &mut Button, _ui: &mut Ui) {
+    pub fn click2(&mut self, _: &mut Button, _ui: &mut Ui) {
         self.count += 2;
         println!("count2: {}", self.count);
     }
@@ -79,7 +79,7 @@ impl XlUiApp {
         btn.set_text(self.label.text(), ui);
     }
 
-    pub fn reduce(&mut self, btn: &mut Button, ui: &mut Ui) {
+    pub fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);
@@ -153,7 +153,19 @@ impl App for XlUiApp {
             });
             ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item6"]).connect(Self::combo_changed).with_popup_height(150.0));
             self.list_view.set_callback(Self::list_changed);
-            self.list_view.show(ui);
+            self.list_view.show(ui, |ui, datum| {
+                ui.image("logo.jpg", (30.0, 30.0));
+                ui.vertical(|ui| {
+                    ui.label(datum.to_string());
+                    ui.horizontal(|ui| {
+                        ui.label("00:00");
+                        ui.label("200");
+                        ui.label("HTTP/1.1");
+                        ui.label("10 KB");
+                        ui.label("10 KB");
+                    });
+                });
+            });
         });
 
         ui.label("hello label1");

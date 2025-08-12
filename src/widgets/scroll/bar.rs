@@ -97,11 +97,8 @@ impl ScrollBar {
         let scroll_ratio = oy / scrollable_slider; // 内容偏移占比：
         scroll_ratio * scrollable_content // 滑块应偏移：
     }
-}
 
-
-impl Widget for ScrollBar {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         //背景
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -113,10 +110,25 @@ impl Widget for ScrollBar {
         let slider_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.slider_index = ui.context.render.rectangle.create_bind_group(&ui.device, &slider_buffer);
         self.slider_buffer = Some(slider_buffer);
-        Response {
-            id: self.id.clone(),
-            rect: self.fill_param.rect.clone(),
+    }
+}
+
+
+impl Widget for ScrollBar {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.fill_param.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.fill_index, pass);
+        if self.context_height > self.fill_param.rect.height() {
+            ui.context.render.rectangle.render(self.slider_index, pass);
         }
+        resp
+        // Response {
+        //     id: &self.id,
+        //     rect: &self.fill_param.rect,
+        // }
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -145,12 +157,8 @@ impl Widget for ScrollBar {
         }
     }
 
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        if self.context_height>self.fill_param.rect.height() {
-            ui.context.render.rectangle.render(self.slider_index, pass);
-        }
-
-    }
+    // fn redraw(&mut self, ui: &mut Ui) {
+    //
+    //
+    // }
 }

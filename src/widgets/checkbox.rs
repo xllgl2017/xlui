@@ -1,6 +1,4 @@
 use crate::frame::context::Context;
-// use crate::paint::checkbox::PaintCheckBox;
-// use crate::paint::PaintTask;
 use crate::response::{Callback, Response};
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
@@ -88,14 +86,11 @@ impl CheckBox {
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, bool)) {
         self.callback = Some(Callback::create_check(f));
     }
-}
 
-impl Widget for CheckBox {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(&ui.context);
-        // ui.layout().alloc_rect(&self.rect);
         //复选框
         self.check_param.rect = self.rect.clone();
         self.check_param.rect.set_width(15.0);
@@ -108,18 +103,20 @@ impl Widget for CheckBox {
         self.text.draw(ui);
         self.check_text.reset_size(&ui.context);
         self.check_text.rect = self.check_param.rect.clone();
-        // self.check_text.rect.y.min += 2.0;
         self.check_text.draw(ui);
-        Response {
-            id: self.id.clone(),
-            rect: self.rect.clone(),
-        }
-        // let layout = ui.current_layout.as_mut().unwrap();
-        // self.rect = layout.available_rect.clone_with_size(&self.rect);
-        // self.reset_size(&ui.ui_manage.context);
-        // layout.alloc_rect(&self.rect);
-        // let task = PaintCheckBox::new(ui, self);
-        // ui.add_paint_task(self.id.clone(), PaintTask::CheckBox(task));
+    }
+}
+
+impl Widget for CheckBox {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.check_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.check_index, pass);
+        self.text.redraw(ui);
+        if self.value { self.check_text.redraw(ui); }
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -143,12 +140,5 @@ impl Widget for CheckBox {
             ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
         }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.check_index, pass);
-        self.text.redraw(ui);
-        if self.value { self.check_text.redraw(ui); }
     }
 }

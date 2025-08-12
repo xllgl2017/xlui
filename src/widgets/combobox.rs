@@ -1,10 +1,10 @@
 //!### ComboBox的示例用法
 //!
-//! ```
+//!```
 //! use xlui::widgets::combobox::ComboBox;
 //! use xlui::widgets::Widget;
 //! # xlui::_run_test(|ui|{
-//!    ComboBox::new(vec![1,2,3,4]).with_popup_height(150.0).draw(ui);
+//!    ComboBox::new(vec![1,2,3,4]).with_popup_height(150.0).redraw(ui);
 //! # });
 //! ```
 
@@ -102,7 +102,7 @@ impl<T: Display + 'static> ComboBox<T> {
     }
 
     fn add_items(&self, ui: &mut Ui) {
-        for (index, datum) in self.data.iter().enumerate() {
+        for datum in self.data.iter() {
             self.add_item(ui, datum);
         }
     }
@@ -111,11 +111,8 @@ impl<T: Display + 'static> ComboBox<T> {
         self.callback = Some(Callback::create_combobox(f));
         self
     }
-}
 
-
-impl<T: Display + 'static> Widget for ComboBox<T> {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
@@ -134,32 +131,20 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         let popup = Popup::new(ui, self.popup_rect.clone());
         self.popup_id = popup.id.clone();
         popup.show(ui, |ui| self.add_items(ui));
-        Response {
-            id: self.id.clone(),
-            rect: self.fill_param.rect.clone(),
-        }
     }
+}
 
-    fn update(&mut self, ui: &mut Ui) {
-        if ui.device.device_input.click_at(&self.fill_param.rect) {
-            let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
-            popup.open = !popup.open;
-            ui.context.window.request_redraw();
-        }
-    }
 
-    fn redraw(&mut self, ui: &mut Ui) {
+impl<T: Display + 'static> Widget for ComboBox<T> {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.fill_param.rect);
+        if ui.pass.is_none() { return resp }
         let select = self.selected.read().unwrap();
         if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
             self.previous_select = select.clone();
             if let Some(ref select) = self.previous_select {
                 self.text_buffer.set_text(select.to_string(), ui);
-                // self.text_buffer.buffer.as_mut().unwrap().set_text(
-                //     &mut ui.context.render.text.font_system,
-                //     self.data[select].to_string().as_str(),
-                //     &ui.context.font.font_attr(),
-                //     Shaping::Advanced,
-                // );
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
                     let t = self.data.iter().find(|x| &x.to_string() == select).unwrap();
@@ -175,5 +160,37 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);
+        resp
     }
+
+    fn update(&mut self, ui: &mut Ui) {
+        if ui.device.device_input.click_at(&self.fill_param.rect) {
+            let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
+            popup.open = !popup.open;
+            ui.context.window.request_redraw();
+        }
+    }
+
+    // fn redraw(&mut self, ui: &mut Ui) {
+    //     let select = self.selected.read().unwrap();
+    //     if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
+    //         self.previous_select = select.clone();
+    //         if let Some(ref select) = self.previous_select {
+    //             self.text_buffer.set_text(select.to_string(), ui);
+    //             if let Some(ref mut callback) = self.callback {
+    //                 let app = ui.app.take().unwrap();
+    //                 let t = self.data.iter().find(|x| &x.to_string() == select).unwrap();
+    //                 callback(*app, ui, t);
+    //                 ui.app.replace(app);
+    //                 ui.context.window.request_redraw();
+    //             }
+    //         }
+    //
+    //         let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
+    //         popup.open = false;
+    //     }
+    //     let pass = ui.pass.as_mut().unwrap();
+    //     ui.context.render.rectangle.render(self.fill_index, pass);
+    //     self.text_buffer.redraw(ui);
+    // }
 }

@@ -40,7 +40,7 @@ impl<T: Display + 'static> ListView<T> {
     }
 
 
-    fn item_widget(&self, ui: &mut Ui, datum: &T, mut item_widget: &mut impl FnMut(&mut Ui, &T)) -> String {
+    fn item_widget(&self, ui: &mut Ui, datum: &T, item_widget: &mut impl FnMut(&mut Ui, &T)) -> String {
         let style = ClickStyle {
             fill: FillStyle {
                 inactive: Color::TRANSPARENT,

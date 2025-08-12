@@ -73,14 +73,11 @@ impl Image {
             v.screen_size = ui.context.size.as_gamma_size();
         }
     }
-}
 
-impl Widget for Image {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         let size = ui.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source);
         self.reset_size(size);
-        // ui.layout().alloc_rect(&self.rect);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         self.vertices = vec![
             ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], &ui.context.size),
@@ -100,23 +97,14 @@ impl Widget for Image {
             usage: wgpu::BufferUsages::INDEX,
         });
         self.index_buffer = Some(index_buffer);
-        Response {
-            id: self.id.clone(),
-            rect: self.rect.clone(),
-        }
     }
+}
 
-    fn update(&mut self, ui: &mut Ui) {
-        if let Some(ref offset) = ui.canvas_offset {
-            self.rect.offset(offset.x, offset.y);
-            self.update_rect(ui);
-        }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        if ui.context.resize {
-            self.update_rect(ui);
-        }
+impl Widget for Image {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.index_buffer.is_none() { self.init(ui); }
+        if ui.pass.is_none() { return Response::new(&self.id, &self.rect); }
+        if ui.context.resize { self.update_rect(ui); }
         ui.device.queue.write_buffer(
             self.vertex_buffer.as_ref().unwrap(), 0,
             bytemuck::cast_slice(self.vertices.as_slice()));
@@ -127,5 +115,13 @@ impl Widget for Image {
             self.index_buffer.as_ref().unwrap(),
             pass,
         );
+        Response::new(&self.id, &self.rect)
+    }
+
+    fn update(&mut self, ui: &mut Ui) {
+        if let Some(ref offset) = ui.canvas_offset {
+            self.rect.offset(offset.x, offset.y);
+            self.update_rect(ui);
+        }
     }
 }

@@ -95,10 +95,8 @@ impl Slider {
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, f32)) {
         self.callback = Some(Callback::create_slider(f));
     }
-}
 
-impl Widget for Slider {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone();
         self.rect.x.min += 8.0;
@@ -131,10 +129,19 @@ impl Widget for Slider {
         let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
         self.slider_index = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
         self.slider_buffer = Some(slider_buffer);
-        Response {
-            id: self.id.clone(),
-            rect: self.rect.clone(),
-        }
+    }
+}
+
+impl Widget for Slider {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(self.slided_index, pass);
+        ui.context.render.circle.render(self.slider_index, pass);
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -172,12 +179,5 @@ impl Widget for Slider {
             ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
         }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        ui.context.render.rectangle.render(self.slided_index, pass);
-        ui.context.render.circle.render(self.slider_index, pass);
     }
 }

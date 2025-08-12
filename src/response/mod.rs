@@ -118,7 +118,7 @@ impl Callback {
     //     })
     // }
 
-    pub(crate) fn create_list<A: 'static>(mut f: impl Fn(&mut A, &mut Ui) + 'static) -> Box<dyn Fn(&mut dyn Any, &mut Ui)> {
+    pub(crate) fn create_list<A: 'static>(f: impl Fn(&mut A, &mut Ui) + 'static) -> Box<dyn Fn(&mut dyn Any, &mut Ui)> {
         Box::new(move |target, uim| {
             let t = target.downcast_mut::<A>().unwrap();
             f(t, uim);
@@ -126,12 +126,16 @@ impl Callback {
     }
 }
 
-pub struct Response {
-    pub id: String,
-    pub rect: Rect,
+pub struct Response<'a> {
+    pub id: &'a String,
+    pub rect: &'a Rect,
 }
 
-impl Response {
+impl<'a> Response<'a> {
+    pub fn new(id: &'a String, rect: &'a Rect) -> Self {
+        Response { id, rect }
+    }
+
     pub fn id(&self) -> &str {
         &self.id
     }

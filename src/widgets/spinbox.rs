@@ -27,6 +27,7 @@ pub struct SpinBox<T> {
     down_index: Range<usize>,
     color: Color,
     inactive_color: Color,
+    init: bool,
 }
 
 impl<T: Display + 'static> SpinBox<T> {
@@ -48,6 +49,7 @@ impl<T: Display + 'static> SpinBox<T> {
             down_index: 0..1,
             color,
             inactive_color,
+            init: false,
         }
     }
     pub fn reset_size(&mut self) {
@@ -70,14 +72,12 @@ impl<T: Display + 'static> SpinBox<T> {
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, T)) {
         self.callback = Some(Callback::create_spinbox(f));
     }
-}
 
-
-impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static> Widget for SpinBox<T> {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
+        self.init = true;
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size();
-        self.edit.draw(ui);
+        self.edit.redraw(ui);
         let mut rect = self.rect.clone();
         rect.set_width(18.0);
         // ui.layout().alloc_rect(&rect);
@@ -100,10 +100,26 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
             Vertex::new([self.rect.x.max - 14.0, self.down_rect.y.min], &self.color, &ui.context.size),
             Vertex::new([self.rect.x.max, self.down_rect.y.min], &self.color, &ui.context.size),
         ], &ui.device);
-        Response {
-            id: self.id.clone(),
-            rect: self.rect.clone(),
+    }
+}
+
+
+impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static> Widget for SpinBox<T> {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if !self.init { self.init(ui); }
+        let resp = Response::new(&self.id, &self.rect);
+        if ui.pass.is_none() { return resp; }
+        self.edit.redraw(ui);
+        if ui.context.resize {
+            let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+            let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
         }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.triangle.render(self.down_index.clone(), pass);
+        ui.context.render.triangle.render(self.up_index.clone(), pass);
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -145,18 +161,5 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
             ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
             ui.context.window.request_redraw();
         }
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.edit.redraw(ui);
-        if ui.context.resize {
-            let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-            let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-        }
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.triangle.render(self.down_index.clone(), pass);
-        ui.context.render.triangle.render(self.up_index.clone(), pass);
     }
 }

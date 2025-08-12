@@ -58,8 +58,6 @@ impl<A: App> Window<A> {
             render: Render::new(&device),
             updates: Map::new(),
         };
-        // let mut ui = Ui::new(device, context, Style::light_style());
-        // app.draw(&mut ui);
         let mut app_ctx = AppContext::new(device, context);
         app_ctx.draw(&mut app);
 

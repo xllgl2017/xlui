@@ -3,7 +3,7 @@
 //! use xlui::widgets::Widget;
 //! # xlui::_run_test(|ui|{
 //! let mut btn=RadioButton::new(false,"radio");
-//! btn.draw(ui);
+//! btn.redraw(ui);
 //! #  });
 
 use crate::frame::context::Context;
@@ -100,11 +100,8 @@ impl RadioButton {
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, bool)) {
         self.callback = Some(Callback::create_check(f));
     }
-}
 
-
-impl Widget for RadioButton {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(&ui.context);
@@ -127,10 +124,20 @@ impl Widget for RadioButton {
         self.inner_buffer = Some(inner_buffer);
         //文本
         self.text.draw(ui);
-        Response {
-            id: self.id.clone(),
-            rect: self.rect.clone(),
-        }
+    }
+}
+
+
+impl Widget for RadioButton {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.outer_buffer.is_none() { self.init(ui); }
+        let resp = Response::new(&self.id, &self.rect);
+        if ui.pass.is_none() { return resp; }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.circle.render(self.outer_index, pass);
+        ui.context.render.circle.render(self.inner_index, pass);
+        self.text.redraw(ui);
+        resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -157,13 +164,5 @@ impl Widget for RadioButton {
             ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
             ui.context.window.request_redraw();
         }
-    }
-
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.circle.render(self.outer_index, pass);
-        ui.context.render.circle.render(self.inner_index, pass);
-        self.text.redraw(ui);
     }
 }

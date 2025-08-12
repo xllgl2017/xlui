@@ -1,8 +1,7 @@
-use std::any::Any;
 use crate::response::Response;
+use crate::size::rect::Rect;
 use crate::ui::Ui;
-use crate::widgets::button::Button;
-use crate::widgets::label::Label;
+use std::any::Any;
 
 pub mod label;
 pub mod button;
@@ -20,13 +19,16 @@ pub mod item;
 pub mod listview;
 
 pub trait Widget: Any {
-    fn draw(&mut self, ui: &mut Ui) -> Response; //初次绘制调用
+    fn redraw(&mut self, ui: &mut Ui) -> Response; //绘制调用
     fn update(&mut self, ui: &mut Ui); //后续更新调用
-    fn redraw(&mut self, ui: &mut Ui);
+    // fn redraw(&mut self, ui: &mut Ui);
 }
 
-pub enum WidgetKind {
-    Label(Label),
-    Button(Button),
-    Custom(Box<dyn Widget>),
+pub struct WidgetKind {
+    widget: Box<dyn Widget>,
+    rect: Rect,
+}
+
+impl WidgetKind {
+
 }

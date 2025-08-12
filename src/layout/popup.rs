@@ -12,7 +12,7 @@ use crate::ui::Ui;
 
 pub struct Popup {
     pub(crate) id: String,
-    pub(crate) scroll_area: ScrollArea,
+    scroll_area: ScrollArea,
     fill_index: usize,
     pub(crate) open: bool,
 }

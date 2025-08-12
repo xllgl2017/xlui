@@ -82,18 +82,29 @@ impl ItemWidget {
         self.current = parent;
         self
     }
-}
 
-impl Widget for ItemWidget {
-    fn draw(&mut self, ui: &mut Ui) -> Response {
+    fn init(&mut self, ui: &mut Ui) {
         let data = self.fill_param.as_draw_param(false, false);
         let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
         self.fill_buffer = Some(buffer);
-        Response {
-            id: self.id.clone(),
-            rect: self.fill_param.rect.clone(),
+    }
+}
+
+impl Widget for ItemWidget {
+    fn redraw(&mut self, ui: &mut Ui) -> Response {
+        if self.fill_buffer.is_none() { self.init(ui); }
+        if ui.pass.is_none() { return Response::new(&self.id, &self.fill_param.rect); }
+        let current = self.current.read().unwrap();
+        if current.as_ref() != Some(&self.id) && self.selected {
+            drop(current);
+            self.selected = false;
+            self.update_rect(ui);
         }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(self.fill_index, pass);
+        self.layout.as_mut().unwrap().redraw(ui);
+        Response::new(&self.id, &self.fill_param.rect)
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -121,15 +132,15 @@ impl Widget for ItemWidget {
         }
     }
 
-    fn redraw(&mut self, ui: &mut Ui) {
-        let current = self.current.read().unwrap();
-        if current.as_ref() != Some(&self.id) && self.selected {
-            drop(current);
-            self.selected = false;
-            self.update_rect(ui);
-        }
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        self.layout.as_mut().unwrap().redraw(ui);
-    }
+    // fn redraw(&mut self, ui: &mut Ui) {
+    //     let current = self.current.read().unwrap();
+    //     if current.as_ref() != Some(&self.id) && self.selected {
+    //         drop(current);
+    //         self.selected = false;
+    //         self.update_rect(ui);
+    //     }
+    //     let pass = ui.pass.as_mut().unwrap();
+    //     ui.context.render.rectangle.render(self.fill_index, pass);
+    //     self.layout.as_mut().unwrap().redraw(ui);
+    // }
 }
