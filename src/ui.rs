@@ -1,26 +1,26 @@
 use crate::frame::context::Context;
 use crate::frame::App;
+use crate::layout::popup::Popup;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
+use crate::map::Map;
 use crate::size::padding::Padding;
+use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Style};
 use crate::widgets::button::Button;
 use crate::widgets::checkbox::CheckBox;
+use crate::widgets::image::Image;
 use crate::widgets::label::Label;
 use crate::widgets::radio::RadioButton;
+use crate::widgets::rectangle::Rectangle;
+use crate::widgets::select::SelectItem;
 use crate::widgets::slider::Slider;
+use crate::widgets::spinbox::SpinBox;
 use crate::widgets::{Widget, WidgetKind};
 use crate::{Device, Offset, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
-use crate::layout::popup::Popup;
-use crate::map::Map;
-use crate::size::rect::Rect;
-use crate::widgets::image::Image;
-use crate::widgets::rectangle::Rectangle;
-use crate::widgets::select::SelectItem;
-use crate::widgets::spinbox::SpinBox;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -28,6 +28,7 @@ pub struct AppContext {
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) style: Style,
     pub(crate) context: Context,
+    pub(crate) need_rebuild: bool,
 }
 
 impl AppContext {
@@ -39,6 +40,7 @@ impl AppContext {
             popups: Some(Map::new()),
             style: Style::light_style(),
             context,
+            need_rebuild: false,
         }
     }
 
@@ -80,9 +82,29 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
+    pub fn configure_surface(&mut self) {
+        self.context.surface.configure(&self.device.device, &self.device.surface_config);
+    }
+
 
     pub fn redraw(&mut self, app: &mut impl App) {
-        let surface_texture = self.context.surface.get_current_texture().unwrap();
+        self.update(app);
+        let surface_texture = match self.context.surface.get_current_texture() {
+            Ok(res) => res,
+            Err(wgpu::SurfaceError::Lost) | Err(wgpu::SurfaceError::Outdated) => {
+                self.need_rebuild = true;
+                return;
+            }
+            //     {
+            //     self.configure_surface();
+            //     self.context.window.request_redraw();
+            //     return;
+            // }
+            Err(e) => {
+                println!("Failed to get surface texture: {:?}", e);
+                return;
+            }
+        };
         let view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let msaa_texture = self.device.device.create_texture(&wgpu::TextureDescriptor {
             label: None,

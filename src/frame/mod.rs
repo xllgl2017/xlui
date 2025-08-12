@@ -115,6 +115,15 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
             }
             WindowEvent::RedrawRequested => {
                 println!("11");
+                if window.app_ctx.need_rebuild {
+                    let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
+                    let window = self.windows.remove(pos);
+                    let mut window = pollster::block_on(Window::new(window.app_ctx.context.window, window.app));
+                    window.render();
+                    window.app_ctx.context.resize = false;
+                    self.windows.push(window);
+                    return;
+                }
                 window.render();
                 window.app_ctx.context.resize = false;
             }
@@ -129,12 +138,13 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                         // window.app_ctx.device.device_input.mouse.previous = window.app_ctx.device.device_input.mouse.lastest.clone();
                         // window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest.clone();
                         // window.app_ctx.device.device_input.mouse.pressed = true;
-                        window.app_ctx.update(&mut window.app)
+                        window.app_ctx.update(&mut window.app);
                     }
                     (ElementState::Released, MouseButton::Left) => {
                         window.app_ctx.device.device_input.mouse.mouse_release();
                         // window.app_ctx.device.device_input.mouse.clicked = true;
                         window.app_ctx.update(&mut window.app);
+                        window.app_ctx.device.device_input.mouse.a = 0.0;
                         // window.app_ctx.device.device_input.mouse.clicked = false;
                         // window.app_ctx.device.device_input.mouse.pressed_pos = Pos::new();
                         // window.app_ctx.device.device_input.mouse.pressed = false;

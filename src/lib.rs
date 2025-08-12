@@ -89,6 +89,10 @@ mod render;
 pub mod response;
 pub mod map;
 
+pub(crate) fn time_ms() -> u128 {
+    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
+}
+
 const SAMPLE_COUNT: u32 = 4;
 
 pub struct Offset {
@@ -126,9 +130,13 @@ pub struct MouseInput {
     lastest: Pos,
     previous: Pos,
     delta: (f32, f32),
-    pressed_pos: Pos,
+
     pressed: bool,
+    pressed_pos: Pos,
+    pressed_time: u128,
+
     clicked: AtomicBool,
+    a: f32,
 }
 
 impl MouseInput {
@@ -171,10 +179,14 @@ impl MouseInput {
     pub fn mouse_press(&mut self) {
         self.previous = self.lastest.clone();
         self.pressed_pos = self.lastest.clone();
+        self.pressed_time = time_ms();
         self.pressed = true;
     }
 
     pub fn mouse_release(&mut self) {
+        let et = time_ms();
+        self.a = self.offset_y() * 120.0 / (et - self.pressed_time) as f32 / (et - self.pressed_time) as f32;
+        println!("{} m/s2", self.a);
         self.clicked.store(true, Ordering::SeqCst);
         self.pressed = false;
         self.pressed_pos.clear()
@@ -196,6 +208,8 @@ impl DeviceInput {
                 pressed_pos: Pos::new(),
                 pressed: false,
                 clicked: AtomicBool::new(false),
+                pressed_time: 0,
+                a: 0.0,
             }
         }
     }

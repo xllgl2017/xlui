@@ -21,7 +21,7 @@ pub struct ScrollArea {
     fill_index: usize,
     fill_param: RectParam,
     fill_buffer: Option<wgpu::Buffer>,
-
+    a: f32,
 }
 
 impl ScrollArea {
@@ -39,6 +39,7 @@ impl ScrollArea {
             fill_index: 0,
             fill_param: RectParam::new(Rect::new(), fill_style),
             fill_buffer: None,
+            a: 0.0,
         }
     }
 
@@ -113,6 +114,21 @@ impl Layout for ScrollArea {
             let oy = ui.device.device_input.mouse.offset_y();
             ui.canvas_offset = Some(Offset::new_y(-oy));
         }
+        if ui.device.device_input.mouse.a != 0.0 && ui.device.device_input.hovered_at(&self.fill_param.rect) { self.a = ui.device.device_input.mouse.a; }
+        if self.a != 0.0 {
+            let oy = self.a * 20.0 * 20.0;
+            ui.canvas_offset = Some(Offset::new_y(-oy));
+            println!("{}-{}-{}-{}", self.id, self.a, self.a < 0.0, self.a + 0.0005 < 0.0);
+            if self.a.abs() - 0.0005 < 0.0 {
+                self.a = 0.0;
+            } else if self.a > 0.0 {
+                self.a -= 0.0005;
+            } else if self.a < 0.0 {
+                self.a += 0.0005;
+            }
+            ui.context.window.request_redraw();
+            println!("{}-{}", self.id, self.a);
+        }
         //鼠标滚轮
         if ui.device.device_input.mouse.delta.1 != 0.0 && ui.device.device_input.hovered_at(&self.fill_param.rect) {
             ui.canvas_offset = Some(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0));
@@ -120,6 +136,9 @@ impl Layout for ScrollArea {
         self.v_bar.update(ui);
         ui.current_rect = self.layout.as_ref().unwrap().drawn_rect();
         self.layout.as_mut().unwrap().update(ui);
+        if let Some(ref o) = ui.canvas_offset && o.y == 0.0 {
+            self.a = 0.0;
+        }
         ui.canvas_offset = None;
     }
 

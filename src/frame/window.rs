@@ -58,8 +58,12 @@ impl<A: App> Window<A> {
             render: Render::new(&device),
             updates: Map::new(),
         };
+        device.device.on_uncaptured_error(Box::new(|err| {
+            println!("Error: {:?}", err);
+        }));
         let mut app_ctx = AppContext::new(device, context);
         app_ctx.draw(&mut app);
+
 
         let mut state = Window {
             app_ctx,
@@ -80,6 +84,7 @@ impl<A: App> Window<A> {
 
 
     pub(crate) fn render(&mut self) {
+        // self.app_ctx.device.device.poll(wgpu::MaintainBase::Poll).unwrap();
         // Create texture view
         self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
             width: self.app_ctx.context.size.width,
