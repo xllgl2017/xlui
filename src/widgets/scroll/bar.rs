@@ -27,9 +27,9 @@ pub struct ScrollBar {
 impl ScrollBar {
     pub fn new() -> ScrollBar {
         let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::rgb(215, 215, 215);
-        fill_style.fill.hovered = Color::rgb(215, 215, 215);
-        fill_style.fill.clicked = Color::rgb(215, 215, 215);
+        fill_style.fill.inactive = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
+        fill_style.fill.hovered = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
+        fill_style.fill.clicked = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
         let mut slider_style = ClickStyle::new();
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
@@ -103,7 +103,6 @@ impl ScrollBar {
 impl Widget for ScrollBar {
     fn draw(&mut self, ui: &mut Ui) -> Response {
         //背景
-        // self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
@@ -118,14 +117,6 @@ impl Widget for ScrollBar {
             id: self.id.clone(),
             rect: self.fill_param.rect.clone(),
         }
-
-        // let layout = ui.current_layout.as_mut().unwrap();
-        // self.rect = layout.available_rect.clone_with_size(&self.rect);
-        // self.rect.x.min += 5.0;
-        // layout.alloc_rect(&self.rect);
-        // let paint_rectangle = PaintScrollBar::new(ui, &self.rect, 10000.0);
-        // let rectangle_id = format!("{}_rectangle", self.id);
-        // ui.add_paint_task(rectangle_id.clone(), PaintTask::ScrollBar(paint_rectangle));
     }
 
     fn update(&mut self, ui: &mut Ui) {
@@ -157,6 +148,9 @@ impl Widget for ScrollBar {
     fn redraw(&mut self, ui: &mut Ui) {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
-        ui.context.render.rectangle.render(self.slider_index, pass);
+        if self.context_height>self.fill_param.rect.height() {
+            ui.context.render.rectangle.render(self.slider_index, pass);
+        }
+
     }
 }

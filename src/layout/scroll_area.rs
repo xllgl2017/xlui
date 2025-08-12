@@ -77,7 +77,7 @@ impl ScrollArea {
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
         self.fill_buffer = Some(buffer);
         self.context_rect = self.fill_param.rect.clone();
-        self.context_rect.set_width(self.fill_param.rect.width() - 10.0 - self.padding.right);
+        self.context_rect.set_width(self.fill_param.rect.width() - 5.0 - self.padding.right);
 
         let current_layout = VerticalLayout::new().max_rect(self.context_rect.clone(), self.padding.clone());
         let previous_layout = ui.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
