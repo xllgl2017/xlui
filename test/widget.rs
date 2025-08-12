@@ -121,7 +121,7 @@ impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.add_space(100.0);
-            ui.add(Label::new("当前控件的工作状态").size(24.0))
+            ui.add(Label::new("当前控件的工作状态").size(24.0));
         });
         ui.horizontal(|ui| {
             ui.radio(true, "Label");

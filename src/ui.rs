@@ -8,7 +8,7 @@ use crate::widgets::checkbox::CheckBox;
 use crate::widgets::label::Label;
 use crate::widgets::radio::RadioButton;
 use crate::widgets::slider::Slider;
-use crate::widgets::Widget;
+use crate::widgets::{Widget, WidgetKind};
 use crate::{Device, Offset, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
@@ -175,10 +175,14 @@ impl<'a> Ui<'a> {
         self.layout().add_space(space);
     }
 
-    pub fn add(&mut self, mut widget: impl Widget + 'static) {
-        let resp = widget.redraw(self);
-        self.layout().alloc_rect(resp.rect);
-        self.layout.as_mut().unwrap().add_widget(resp.id.to_string(), Box::new(widget));
+    pub fn add<T: Widget>(&mut self, widget: T) -> &mut T {
+        let widget = WidgetKind::new(self, widget);
+        let wid = widget.id.clone();
+        self.layout().alloc_rect(&widget.rect);
+        self.layout.as_mut().unwrap().add_widget(widget.id.clone(), widget);
+        let widget = self.layout().get_widget(&wid).unwrap();
+        let widget = widget.deref_mut() as &mut dyn Any;
+        widget.downcast_mut::<T>().unwrap()
     }
 
     pub fn add_mut(&mut self, widget: &mut impl Widget) {
@@ -211,9 +215,9 @@ impl<'a> Ui<'a> {
     }
 
     pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) {
-        let mut paint_rect = Rectangle::new(rect, style);
-        let resp = paint_rect.redraw(self);
-        self.layout().add_widget(resp.id.to_string(), Box::new(paint_rect));
+        let paint_rect = Rectangle::new(rect, style);
+        let widget = WidgetKind::new(self, paint_rect);
+        self.layout().add_widget(widget.id.clone(), widget);
     }
 
     pub fn label(&mut self, text: impl ToString) {
@@ -223,71 +227,36 @@ impl<'a> Ui<'a> {
 
     pub fn button(&mut self, text: impl ToString) -> &mut Button {
         let btn = Button::new(text);
-        let btn_id = btn.id.clone();
-        self.add(btn);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&btn_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<Button>().unwrap()
+        self.add(btn)
     }
 
     pub fn radio(&mut self, v: bool, l: impl ToString) -> &mut RadioButton {
         let radio = RadioButton::new(v, l);
-        let radio_id = radio.id.clone();
-        self.add(radio);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&radio_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<RadioButton>().unwrap()
+        self.add(radio)
     }
 
     pub fn checkbox(&mut self, v: bool, l: impl ToString) -> &mut CheckBox {
         let checkbox = CheckBox::new(v, l);
-        let btn_id = checkbox.id.clone();
-        self.add(checkbox);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&btn_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<CheckBox>().unwrap()
+        self.add(checkbox)
     }
 
     pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut Slider {
         let slider = Slider::new(v).with_range(r);
-        let btn_id = slider.id.clone();
-        self.add(slider);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&btn_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<Slider>().unwrap()
+        self.add(slider)
     }
 
     pub fn image(&mut self, source: &'static str, size: (f32, f32)) -> &mut Image {
         let image = Image::new(source).with_size(size.0, size.1);
-        let image_id = image.id.clone();
-        self.add(image);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&image_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<Image>().unwrap()
+        self.add(image)
     }
 
     pub fn spinbox<T: Display + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
         let spinbox = SpinBox::new(v, g, r);
-        let spinbox_id = spinbox.id.clone();
-        self.add(spinbox);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&spinbox_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<SpinBox<T>>().unwrap()
+        self.add(spinbox)
     }
 
     pub fn select_value<T: Display + PartialEq + 'static>(&mut self, t: T) -> &mut SelectItem<T> {
         let select_value = SelectItem::new(t);
-        let select_id = select_value.id.clone();
-        self.add(select_value);
-        let layout = self.layout.as_mut().unwrap();
-        let widget = layout.get_widget(&select_id).unwrap();
-        let widget = widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<SelectItem<T>>().unwrap()
+        self.add(select_value)
     }
 }

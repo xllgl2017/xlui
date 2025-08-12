@@ -6,7 +6,7 @@ use crate::map::Map;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
-use crate::widgets::Widget;
+use crate::widgets::{Widget, WidgetKind};
 
 pub trait Layout {
     fn update(&mut self, ui: &mut Ui);
@@ -36,7 +36,7 @@ impl LayoutKind {
         }
     }
 
-    pub fn add_widget(&mut self, id: String, widget: Box<dyn Widget>) {
+    pub fn add_widget(&mut self, id: String, widget: WidgetKind) {
         match self {
             LayoutKind::Horizontal(v) => v.widgets.insert(id, widget),
             LayoutKind::Vertical(v) => v.widgets.insert(id, widget),
@@ -100,8 +100,8 @@ impl LayoutKind {
 
     pub fn get_widget(&mut self, id: &String) -> Option<&mut Box<dyn Widget>> {
         match self {
-            LayoutKind::Horizontal(v) => v.widgets.get_mut(id),
-            LayoutKind::Vertical(v) => v.widgets.get_mut(id),
+            LayoutKind::Horizontal(v) => Some(&mut v.widgets.get_mut(id)?.widget),
+            LayoutKind::Vertical(v) => Some(&mut v.widgets.get_mut(id)?.widget),
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
     }
@@ -124,7 +124,7 @@ impl LayoutKind {
 }
 
 
-fn update_or_redraw(widgets: &mut Map<Box<dyn Widget>>, children: &mut Map<LayoutKind>, ui: &mut Ui, update: bool) {
+fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind>, ui: &mut Ui, update: bool) {
     match update {
         true => {
             for widget in widgets.iter_mut() {
@@ -147,7 +147,8 @@ fn update_or_redraw(widgets: &mut Map<Box<dyn Widget>>, children: &mut Map<Layou
 
 pub struct HorizontalLayout {
     children: Map<LayoutKind>,
-    widgets: Map<Box<dyn Widget>>,
+    widgets: Map<WidgetKind>,
+    display: Map<usize>,
     max_rect: Rect,
     available_rect: Rect,
     width: f32,
@@ -160,6 +161,7 @@ impl HorizontalLayout {
         HorizontalLayout {
             children: Map::new(),
             widgets: Map::new(),
+            display: Map::new(),
             max_rect: Rect::new(),
             available_rect: Rect::new(),
             width: 0.0,
@@ -185,17 +187,17 @@ impl HorizontalLayout {
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        update_or_redraw(&mut self.widgets,&mut self.children, ui, true);
+        update_or_redraw(&mut self.widgets, &mut self.children, ui, true);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        update_or_redraw(&mut self.widgets,&mut self.children, ui, false);
+        update_or_redraw(&mut self.widgets, &mut self.children, ui, false);
     }
 }
 
 pub struct VerticalLayout {
     children: Map<LayoutKind>,
-    widgets: Map<Box<dyn Widget>>,
+    widgets: Map<WidgetKind>,
     max_rect: Rect,
     available_rect: Rect,
     width: f32,
@@ -246,10 +248,10 @@ impl VerticalLayout {
 
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        update_or_redraw(&mut self.widgets,&mut self.children, ui, true);
+        update_or_redraw(&mut self.widgets, &mut self.children, ui, true);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        update_or_redraw(&mut self.widgets,&mut self.children, ui, false);
+        update_or_redraw(&mut self.widgets, &mut self.children, ui, false);
     }
 }
