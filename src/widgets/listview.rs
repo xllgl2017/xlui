@@ -40,7 +40,7 @@ impl<T: Display + 'static> ListView<T> {
     }
 
 
-    fn item_widget(&self, ui: &mut Ui, datum: &T) -> String {
+    fn item_widget(&self, ui: &mut Ui, datum: &T, mut item_widget: &mut impl FnMut(&mut Ui, &T)) -> String {
         let style = ClickStyle {
             fill: FillStyle {
                 inactive: Color::TRANSPARENT,
@@ -68,19 +68,7 @@ impl<T: Display + 'static> ListView<T> {
                 println!("item clicked");
             });
         let item_id = item.id.clone();
-        item.show(ui, |ui| {
-            ui.image("logo.jpg", (30.0, 30.0));
-            ui.vertical(|ui| {
-                ui.label(datum.to_string());
-                ui.horizontal(|ui| {
-                    ui.label("00:00");
-                    ui.label("200");
-                    ui.label("HTTP/1.1");
-                    ui.label("10 KB");
-                    ui.label("10 KB");
-                });
-            });
-        });
+        item.show(ui, |ui| item_widget(ui, datum));
         item_id
     }
 
@@ -103,7 +91,7 @@ impl<T: Display + 'static> ListView<T> {
         self.callback = Arc::new(Some(Callback::create_list(f)));
     }
 
-    pub fn show(&mut self, ui: &mut Ui) {
+    pub fn show(&mut self, ui: &mut Ui, mut item_widget: impl FnMut(&mut Ui, &T)) {
         self.rect = ui.available_rect().clone_with_size(&self.rect);
         let mut area = ScrollArea::new();
         area.set_rect(self.rect.clone());
@@ -117,7 +105,7 @@ impl<T: Display + 'static> ListView<T> {
         area.set_style(fill_style);
         area.show(ui, |ui| {
             for (row, datum) in self.data.iter().enumerate() {
-                let id = self.item_widget(ui, datum);
+                let id = self.item_widget(ui, datum, &mut item_widget);
                 self.items.insert(id, row);
             }
         });
