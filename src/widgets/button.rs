@@ -9,7 +9,7 @@
 //! # });
 //! ```
 
-use crate::frame::context::Context;
+use crate::frame::context::{Context, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
@@ -192,28 +192,38 @@ impl Widget for Button {
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }
-        if let Some(ref offset) = ui.canvas_offset {
-            self.fill_param.rect.offset(offset.x, offset.y);
-            let data = self.fill_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            self.text_buffer.rect.offset(offset.x, offset.y);
-        }
-        let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
-        if self.hovered != has_pos {
-            self.hovered = has_pos;
-            let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
-        if ui.device.device_input.click_at(&self.fill_param.rect) {
-            let callback = self.callback.take();
-            if let Some(mut callback) = callback {
-                let app = ui.app.take().unwrap();
-                callback(*app, self, ui);
-                ui.app.replace(app);
-                ui.context.window.request_redraw();
-                self.callback.replace(callback);
+        match &mut ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                if self.hovered != has_pos {
+                    self.hovered = has_pos;
+                    let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                }
             }
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.click_at(&self.fill_param.rect) {
+                    let callback = self.callback.take();
+                    if let Some(mut callback) = callback {
+                        let app = ui.app.take().unwrap();
+                        callback(*app, self, ui);
+                        ui.app.replace(app);
+                        ui.context.window.request_redraw();
+                        self.callback.replace(callback);
+                    }
+                    ui.update_type=UpdateType::None;
+                }
+            }
+            UpdateType::Offset(o) => {
+                self.fill_param.rect.offset(o.x, o.y);
+                let data = self.fill_param.as_draw_param(false, false);
+                ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                self.text_buffer.rect.offset(o.x, o.y);
+            }
+            UpdateType::None => {}
+            _=>{}
         }
     }
 }

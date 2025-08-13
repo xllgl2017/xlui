@@ -89,9 +89,6 @@ mod render;
 pub mod response;
 pub mod map;
 
-pub(crate) fn time_ms() -> u128 {
-    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
-}
 
 const SAMPLE_COUNT: u32 = 4;
 
@@ -189,7 +186,7 @@ impl MouseInput {
         println!("{} m/s2", self.a);
         self.clicked.store(true, Ordering::SeqCst);
         self.pressed = false;
-        self.pressed_pos.clear()
+        // self.pressed_pos.clear()
     }
 }
 
@@ -216,6 +213,7 @@ impl DeviceInput {
 
     pub fn click_at(&self, rect: &Rect) -> bool {
         if !self.mouse.clicked.load(Ordering::SeqCst) { return false; }
+
         let press = rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y);
         let release = rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y);
         self.mouse.clicked.store(!(press && release), Ordering::SeqCst);
@@ -230,6 +228,10 @@ impl DeviceInput {
     pub fn hovered_at(&self, rect: &Rect) -> bool {
         rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y)
     }
+}
+
+pub(crate) fn time_ms() -> u128 {
+    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
 }
 
 

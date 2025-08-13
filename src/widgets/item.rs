@@ -8,6 +8,7 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::sync::{Arc, RwLock};
+use crate::frame::context::UpdateType;
 
 pub struct ItemWidget {
     pub(crate) id: String,
@@ -109,27 +110,54 @@ impl Widget for ItemWidget {
 
     fn update(&mut self, ui: &mut Ui) {
         self.layout.as_mut().unwrap().update(ui);
-        if let Some(ref offset) = ui.canvas_offset {
-            self.fill_param.rect.offset(offset.x, offset.y);
-            self.update_rect(ui);
-            return;
-        }
-        if ui.device.device_input.click_at(&self.fill_param.rect) {
-            self.selected = true;
-            if let Some(ref mut callback) = self.callback {
-                callback(&self.id, ui);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                println!("hovered");
+                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                if self.hovered != hovered {
+                    self.hovered = hovered;
+                    self.update_rect(ui);
+                }
             }
-            self.update_rect(ui);
-            ui.context.window.request_redraw();
-            return;
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.click_at(&self.fill_param.rect) {
+                    self.selected = true;
+                    if let Some(ref mut callback) = self.callback {
+                        callback(&self.id, ui);
+                    }
+                    self.update_rect(ui);
+                    ui.context.window.request_redraw();
+                    return;
+                }
+            }
+            UpdateType::Offset(ref o) => {
+                self.fill_param.rect.offset(o.x, o.y);
+                self.update_rect(ui);
+            }
+            _ => {}
         }
+        // if let Some(ref offset) = ui.canvas_offset {
+        //     self.fill_param.rect.offset(offset.x, offset.y);
+        //     self.update_rect(ui);
+        //     return;
+        // }
+        // if ui.device.device_input.click_at(&self.fill_param.rect) {
+        //     self.selected = true;
+        //     if let Some(ref mut callback) = self.callback {
+        //         callback(&self.id, ui);
+        //     }
+        //     self.update_rect(ui);
+        //     ui.context.window.request_redraw();
+        //     return;
+        // }
 
 
-        let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
-        if self.hovered != hovered {
-            self.hovered = hovered;
-            self.update_rect(ui);
-        }
+        // let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+        // if self.hovered != hovered {
+        //     self.hovered = hovered;
+        //     self.update_rect(ui);
+        // }
     }
 
     // fn redraw(&mut self, ui: &mut Ui) {

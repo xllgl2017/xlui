@@ -4,6 +4,7 @@ use crate::ui::Ui;
 use crate::vertex::ImageVertex;
 use crate::widgets::Widget;
 use wgpu::util::DeviceExt;
+use crate::frame::context::UpdateType;
 use crate::response::Response;
 
 pub struct Image {
@@ -119,9 +120,14 @@ impl Widget for Image {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        if let Some(ref offset) = ui.canvas_offset {
-            self.rect.offset(offset.x, offset.y);
-            self.update_rect(ui);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::Offset(ref o) => {
+                self.rect.offset(o.x, o.y);
+                self.update_rect(ui);
+            }
+            _=>{}
+
         }
     }
 }

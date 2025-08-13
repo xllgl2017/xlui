@@ -1,4 +1,4 @@
-use crate::frame::context::Context;
+use crate::frame::context::{Context, UpdateType};
 use crate::response::{Callback, Response};
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
@@ -120,25 +120,33 @@ impl Widget for CheckBox {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        if ui.device.device_input.click_at(&self.rect) {
-            self.value = !self.value;
-            let data = self.check_param.as_draw_param(self.value, self.value);
-            ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
-            if let Some(ref mut callback) = self.callback {
-                let app = ui.app.take().unwrap();
-                callback(*app, ui, self.value);
-                ui.app.replace(app);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                let hovered = ui.device.device_input.hovered_at(&self.rect);
+                if self.hovered != hovered {
+                    self.hovered = hovered;
+                    let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+                    ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                }
             }
-            ui.context.window.request_redraw();
-            return;
-        }
-
-        let hovered = ui.device.device_input.hovered_at(&self.rect);
-        if self.hovered != hovered {
-            self.hovered = hovered;
-            let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-            ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
+            UpdateType::MousePress => {}
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.click_at(&self.rect) {
+                    self.value = !self.value;
+                    let data = self.check_param.as_draw_param(self.value, self.value);
+                    ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
+                    if let Some(ref mut callback) = self.callback {
+                        let app = ui.app.take().unwrap();
+                        callback(*app, ui, self.value);
+                        ui.app.replace(app);
+                    }
+                    ui.update_type=UpdateType::None;
+                    ui.context.window.request_redraw();
+                }
+            }
+            _ => {}
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::frame::context::Context;
+use crate::frame::context::{Context, UpdateType};
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
@@ -124,6 +124,14 @@ impl<T: Display> SelectItem<T> {
 impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn redraw(&mut self, ui: &mut Ui) -> Response {
         if self.fill_buffer.is_none() { self.init(ui); }
+        let current = self.parent_selected.read().unwrap();
+        let selected = current.as_ref() == Some(&self.value.to_string());
+        if !selected && self.selected {
+            self.selected = false;
+            let data = self.fill_param.as_draw_param(false, false);
+            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        }
+        drop(current);
         let resp = Response::new(&self.id, &self.fill_param.rect);
         if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
@@ -133,43 +141,60 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        let current = self.parent_selected.read().unwrap();
-        let selected = current.as_ref() == Some(&self.value.to_string());
-        if let Some(ref offset) = ui.canvas_offset {
-            self.fill_param.rect.offset(offset.x, offset.y);
-            let data = self.fill_param.as_draw_param(selected, selected);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            self.text.rect.offset(offset.x, offset.y);
-            ui.context.window.request_redraw();
-            return;
+        match ui.update_type {
+            UpdateType::None => {}
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                if self.hovered != hovered {
+                    self.hovered = hovered;
+                    let current = self.parent_selected.read().unwrap();
+                    let selected = current.as_ref() == Some(&self.value.to_string());
+                    let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
+                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                }
+            }
+            UpdateType::MousePress => {}
+            UpdateType::MouseRelease => {
+                let out = self.fill_param.rect.out_of_border(&ui.current_rect) && false;
+                let clicked = ui.device.device_input.click_at(&self.fill_param.rect);
+                if clicked && !out {
+                    self.selected = true;
+                    let mut selected = self.parent_selected.write().unwrap();
+                    *selected = Some(self.value.to_string());
+                    let data = self.fill_param.as_draw_param(true, true);
+                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    ui.update_type=UpdateType::None;
+                    ui.context.window.request_redraw();
+                    return;
+                }
+            }
+            UpdateType::MouseWheel => {}
+            UpdateType::KeyRelease(_) => {}
+            UpdateType::Offset(ref o) => {
+                let current = self.parent_selected.read().unwrap();
+                let selected = current.as_ref() == Some(&self.value.to_string());
+                self.fill_param.rect.offset(o.x, o.y);
+                let data = self.fill_param.as_draw_param(selected, selected);
+                ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                self.text.rect.offset(o.x, o.y);
+                ui.context.window.request_redraw();
+                return;
+            }
         }
+        // if let Some(ref offset) = ui.canvas_offset {
+        //
+        // }
 
-        if !selected && self.selected {
-            self.selected = false;
-            let data = self.fill_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
-        drop(current);
-        let out = self.fill_param.rect.out_of_border(&ui.current_rect) && false;
-        let clicked = ui.device.device_input.click_at(&self.fill_param.rect);
-        if clicked && !out {
-            self.selected = true;
-            let mut selected = self.parent_selected.write().unwrap();
-            *selected = Some(self.value.to_string());
-            let data = self.fill_param.as_draw_param(true, true);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-            return;
-        }
-        let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
-        if self.hovered != hovered {
-            self.hovered = hovered;
-            let current = self.parent_selected.read().unwrap();
-            let selected = current.as_ref() == Some(&self.value.to_string());
-            let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
+        // if !selected && self.selected {
+        //     self.selected = false;
+        //     let data = self.fill_param.as_draw_param(false, false);
+        //     ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        //     ui.context.window.request_redraw();
+        // }
+        // drop(current);
+
+
     }
 }

@@ -1,3 +1,4 @@
+use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutKind, VerticalLayout};
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
@@ -97,7 +98,7 @@ impl ScrollArea {
         v_bar_rect.set_width(5.0);
         self.v_bar.set_rect(v_bar_rect);
         println!("scroll {}", self.layout.as_ref().unwrap().height);
-        self.v_bar.set_context_height(self.layout.as_ref().unwrap().height + self.padding.vertical());
+        self.v_bar.set_context_height(self.layout.as_ref().unwrap().height);
         self.v_bar.redraw(ui);
     }
 
@@ -110,14 +111,39 @@ impl ScrollArea {
 
 impl Layout for ScrollArea {
     fn update(&mut self, ui: &mut Ui) {
-        if ui.device.device_input.pressed_at(&self.context_rect) && ui.device.device_input.mouse.offset_y() != 0.0 {
-            let oy = ui.device.device_input.mouse.offset_y();
-            ui.canvas_offset = Some(Offset::new_y(-oy));
+        match ui.update_type {
+            UpdateType::None => {}
+            // UpdateType::Init => {}
+            UpdateType::MouseMove => {
+                if ui.device.device_input.pressed_at(&self.context_rect) && ui.device.device_input.mouse.offset_y() != 0.0 {
+                    let oy = ui.device.device_input.mouse.offset_y();
+                    ui.update_type = UpdateType::Offset(Offset::new_y(-oy));
+                }
+            }
+            UpdateType::MousePress => {}
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.hovered_at(&self.fill_param.rect) {
+                    self.a = ui.device.device_input.mouse.a;
+                }
+            }
+            UpdateType::MouseWheel => ui.update_type = UpdateType::Offset(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0)),
+            UpdateType::KeyRelease(_) => {}
+            UpdateType::Offset(_) => {}
         }
-        if ui.device.device_input.mouse.a != 0.0 && ui.device.device_input.hovered_at(&self.fill_param.rect) { self.a = ui.device.device_input.mouse.a; }
+
+        self.v_bar.update(ui);
+        ui.current_rect = self.layout.as_ref().unwrap().drawn_rect();
+        self.layout.as_mut().unwrap().update(ui);
+        if let Some(o) = ui.update_type.is_offset() {
+            if o.y == 0.0 { self.a = 0.0; }
+            ui.update_type = UpdateType::None;
+        }
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
         if self.a != 0.0 {
             let oy = self.a * 20.0 * 20.0;
-            ui.canvas_offset = Some(Offset::new_y(-oy));
+            ui.update_type = UpdateType::Offset(Offset::new_y(-oy));
             println!("{}-{}-{}-{}", self.id, self.a, self.a < 0.0, self.a + 0.0005 < 0.0);
             if self.a.abs() - 0.0005 < 0.0 {
                 self.a = 0.0;
@@ -128,21 +154,13 @@ impl Layout for ScrollArea {
             }
             ui.context.window.request_redraw();
             println!("{}-{}", self.id, self.a);
+            self.v_bar.update(ui);
+            self.layout.as_mut().unwrap().update(ui);
+            if let Some(o) = ui.update_type.is_offset() {
+                if o.y == 0.0 { self.a = 0.0; }
+                ui.update_type = UpdateType::None;
+            }
         }
-        //鼠标滚轮
-        if ui.device.device_input.mouse.delta.1 != 0.0 && ui.device.device_input.hovered_at(&self.fill_param.rect) {
-            ui.canvas_offset = Some(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0));
-        }
-        self.v_bar.update(ui);
-        ui.current_rect = self.layout.as_ref().unwrap().drawn_rect();
-        self.layout.as_mut().unwrap().update(ui);
-        if let Some(ref o) = ui.canvas_offset && o.y == 0.0 {
-            self.a = 0.0;
-        }
-        ui.canvas_offset = None;
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
         let pass = ui.pass.as_mut().unwrap();
         //滚动区域
         ui.context.render.rectangle.render(self.fill_index, pass);

@@ -1,4 +1,4 @@
-use crate::frame::context::Context;
+use crate::frame::context::{Context, UpdateType};
 use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
@@ -53,8 +53,8 @@ impl AppContext {
             layout: Some(self.layout.take().unwrap()),
             canvas_offset: None,
             popups: self.popups.take(),
-            key: None,
             current_rect: Rect::new(),
+            update_type: UpdateType::None,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -62,7 +62,7 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
-    pub fn update(&mut self, app: &mut impl App) {
+    pub fn update(&mut self, ut: UpdateType, app: &mut impl App) {
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
@@ -71,8 +71,8 @@ impl AppContext {
             layout: None,
             canvas_offset: None,
             popups: None,
-            key: None,
             current_rect: Rect::new(),
+            update_type: ut,
         };
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
@@ -88,18 +88,12 @@ impl AppContext {
 
 
     pub fn redraw(&mut self, app: &mut impl App) {
-        self.update(app);
         let surface_texture = match self.context.surface.get_current_texture() {
             Ok(res) => res,
             Err(wgpu::SurfaceError::Lost) | Err(wgpu::SurfaceError::Outdated) => {
                 self.need_rebuild = true;
                 return;
             }
-            //     {
-            //     self.configure_surface();
-            //     self.context.window.request_redraw();
-            //     return;
-            // }
             Err(e) => {
                 println!("Failed to get surface texture: {:?}", e);
                 return;
@@ -145,8 +139,8 @@ impl AppContext {
             layout: None,
             canvas_offset: None,
             popups: self.popups.take(),
-            key: None,
             current_rect: Rect::new(),
+            update_type: UpdateType::None,
         };
         app.redraw(&mut ui);
         ui.app = Some(Box::new(app));
@@ -160,7 +154,7 @@ impl AppContext {
         surface_texture.present();
     }
 
-    pub fn key_input<A: App>(&mut self, key: winit::keyboard::Key, app: &mut A) {
+    pub fn key_input<A: App>(&mut self, ut: UpdateType, app: &mut A) {
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
@@ -169,8 +163,8 @@ impl AppContext {
             layout: None,
             canvas_offset: None,
             popups: self.popups.take(),
-            key: Some(key),
             current_rect: Rect::new(),
+            update_type: ut,
         };
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
@@ -188,8 +182,8 @@ pub struct Ui<'a> {
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) canvas_offset: Option<Offset>,
     pub(crate) popups: Option<Map<Popup>>,
-    pub(crate) key: Option<winit::keyboard::Key>,
     pub(crate) current_rect: Rect,
+    pub(crate) update_type: UpdateType,
 }
 
 impl<'a> Ui<'a> {

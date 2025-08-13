@@ -1,11 +1,11 @@
-use crate::frame::context::Context;
+use crate::frame::context::{Context, UpdateType};
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
-use crate::size::pos::{Axis, Pos};
+use crate::size::pos::Axis;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
@@ -160,8 +160,6 @@ pub struct TextEdit {
     hovered: bool,
     focused: bool,
     mouse_press: bool,
-    had_focused: bool,
-    press_pos: Pos,
 }
 
 impl TextEdit {
@@ -210,8 +208,6 @@ impl TextEdit {
             hovered: false,
             focused: false,
             mouse_press: false,
-            had_focused: false,
-            press_pos: Pos::new(),
         }
     }
 
@@ -269,9 +265,8 @@ impl TextEdit {
         ui.context.window.request_redraw();
     }
 
-    fn key_input(&mut self, ui: &mut Ui) {
-        if !self.had_focused || ui.key.is_none() { return; }
-        match ui.key.as_ref().unwrap() {
+    fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
+        match key.unwrap() {
             winit::keyboard::Key::Named(name) => {
                 match name {
                     winit::keyboard::NamedKey::Backspace => {
@@ -279,10 +274,6 @@ impl TextEdit {
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
-                        // self.text_buffer.buffer.as_mut().unwrap().set_text(
-                        //     &mut ui.context.render.text.font_system, text.as_str(),
-                        //     &ui.context.font.font_attr(), Shaping::Advanced,
-                        // );
                     }
                     winit::keyboard::NamedKey::ArrowLeft => {
                         let xm = self.char_layout.cursor_reduce();
@@ -296,20 +287,12 @@ impl TextEdit {
                         self.char_layout.remove_after();
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
-                        // self.text_buffer.buffer.as_mut().unwrap().set_text(
-                        //     &mut ui.context.render.text.font_system, text.as_str(),
-                        //     &ui.context.font.font_attr(), Shaping::Advanced,
-                        // );
                     }
                     winit::keyboard::NamedKey::Space => {
                         let xm = self.char_layout.push_char(' ', &ui.context);
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
-                        // self.text_buffer.buffer.as_mut().unwrap().set_text(
-                        //     &mut ui.context.render.text.font_system, text.as_str(),
-                        //     &ui.context.font.font_attr(), Shaping::Advanced,
-                        // );
                     }
                     _ => {}
                 }
@@ -320,10 +303,6 @@ impl TextEdit {
                 self.update_cursor(ui, xm);
                 let text = self.char_layout.text();
                 self.text_buffer.set_text(text, ui);
-                // self.text_buffer.buffer.as_mut().unwrap().set_text(
-                //     &mut ui.context.render.text.font_system, text.as_str(),
-                //     &ui.context.font.font_attr(), Shaping::Advanced,
-                // );
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
@@ -390,70 +369,63 @@ impl Widget for TextEdit {
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
-        if self.had_focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
+        if self.focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
         ui.context.render.rectangle.render(self.select_index, pass);
         resp
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        if ui.device.device_input.pressed_at(&self.fill_param.rect) && !self.focused {
-            //鼠标按下
-            let x = ui.device.device_input.mouse.lastest().x;
-            if x < self.char_layout.x_min {
-                self.select_param.rect.x.min = self.char_layout.x_min;
-                self.select_param.rect.x.max = self.char_layout.x_min;
-                self.update_cursor(ui, self.char_layout.x_min);
-                self.char_layout.reset_cursor(0);
-                ui.context.window.request_redraw();
-            } else if x > self.char_layout.x_min + self.char_layout.width {
-                self.select_param.rect.x.min = self.char_layout.x_min + self.char_layout.width;
-                self.select_param.rect.x.max = self.char_layout.x_min + self.char_layout.width;
-                self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width);
-                self.char_layout.reset_cursor(self.char_layout.chars.len());
-                ui.context.window.request_redraw();
-            } else {
-                let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < x && x < tc.x.max);
-                if let Some(pos) = pos {
-                    let ct = &self.char_layout.chars[pos];
-                    self.select_param.rect.x.min = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
-                    self.select_param.rect.x.max = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
-                    self.char_layout.reset_cursor(if x >= ct.half_x() { pos + 1 } else { pos });
-                    self.update_cursor(ui, self.select_param.rect.x.min);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                if self.hovered != hovered {
+                    self.hovered = hovered;
+                    let data = self.fill_param.as_draw_param(self.hovered || self.focused, false);
+                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                     ui.context.window.request_redraw();
                 }
+                if self.focused && ui.device.device_input.mouse.pressed { self.text_select(ui); }
             }
-        }
-        self.mouse_press = ui.device.device_input.mouse.pressed;
-        if !self.had_focused && ui.device.device_input.pressed_at(&self.fill_param.rect) {
-            self.had_focused = true;
-            self.press_pos = ui.device.device_input.mouse.pressed_pos.clone();
-            let data = self.fill_param.as_draw_param(true, false);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        } else if self.had_focused && self.press_pos.x != ui.device.device_input.mouse.pressed_pos.x && ui.device.device_input.mouse.pressed {
-            self.had_focused = false;
-            let data = self.fill_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
-        let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
-        if self.hovered != hovered {
-            self.hovered = hovered;
-            let data = self.fill_param.as_draw_param(self.hovered || self.had_focused, false);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
-        self.key_input(ui);
-        match self.focused {
-            true => self.focused = self.focused && ui.device.device_input.mouse.pressed,
-            false => {
+            UpdateType::MousePress => {
+                self.mouse_press = true;
                 self.focused = ui.device.device_input.pressed_at(&self.fill_param.rect);
-                return;
+                if ui.device.device_input.pressed_at(&self.fill_param.rect) {
+                    //鼠标按下
+                    let x = ui.device.device_input.mouse.lastest().x;
+                    if x < self.char_layout.x_min {
+                        self.select_param.rect.x.min = self.char_layout.x_min;
+                        self.select_param.rect.x.max = self.char_layout.x_min;
+                        self.update_cursor(ui, self.char_layout.x_min);
+                        self.char_layout.reset_cursor(0);
+                        ui.context.window.request_redraw();
+                    } else if x > self.char_layout.x_min + self.char_layout.width {
+                        self.select_param.rect.x.min = self.char_layout.x_min + self.char_layout.width;
+                        self.select_param.rect.x.max = self.char_layout.x_min + self.char_layout.width;
+                        self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width);
+                        self.char_layout.reset_cursor(self.char_layout.chars.len());
+                        ui.context.window.request_redraw();
+                    } else {
+                        let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < x && x < tc.x.max);
+                        if let Some(pos) = pos {
+                            let ct = &self.char_layout.chars[pos];
+                            self.select_param.rect.x.min = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
+                            self.select_param.rect.x.max = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
+                            self.char_layout.reset_cursor(if x >= ct.half_x() { pos + 1 } else { pos });
+                            self.update_cursor(ui, self.select_param.rect.x.min);
+                            ui.context.window.request_redraw();
+                        }
+                    }
+                }
+                let data = self.select_param.as_draw_param(false, false);
+                ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
             }
-        }
-        if ui.device.device_input.mouse.pressed && self.focused {
-            self.text_select(ui);
-            return;
+            UpdateType::MouseRelease => self.mouse_press = false,
+            UpdateType::KeyRelease(ref mut key) => {
+                if !self.focused || key.is_none() { return; }
+                self.key_input(key.take(), ui)
+            }
+            _ => {}
         }
     }
 }

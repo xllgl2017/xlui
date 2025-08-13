@@ -1,7 +1,7 @@
 use crate::font::Font;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
-use crate::Device;
+use crate::{Device, Offset};
 use glyphon::Viewport;
 use std::sync::Arc;
 use crate::map::Map;
@@ -37,6 +37,26 @@ impl ContextUpdate {
     //         _ => panic!("应该是:ContextUpdate::Text")
     //     }
     // }
+}
+
+pub enum UpdateType {
+    None,
+    // Init,
+    MouseMove,
+    MousePress,
+    MouseRelease,
+    MouseWheel,
+    KeyRelease(Option<winit::keyboard::Key>),
+    Offset(Offset),
+}
+
+impl UpdateType {
+    pub(crate) fn is_offset(&self) -> Option<&Offset> {
+        match self {
+            UpdateType::Offset(o) => Some(o),
+            _ => None,
+        }
+    }
 }
 
 pub struct Context {

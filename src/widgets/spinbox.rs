@@ -10,6 +10,7 @@ use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
 use crate::frame::App;
+use crate::frame::context::UpdateType;
 use crate::size::pos::Axis;
 
 pub struct SpinBox<T> {
@@ -124,42 +125,50 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
 
     fn update(&mut self, ui: &mut Ui) {
         self.edit.update(ui);
-        if ui.device.device_input.click_at(&self.up_rect) {
-            let is_end = self.value >= self.range.end;
-            let is_start = self.value == self.range.start;
-            if !is_end {
-                self.value += self.gap;
-                self.edit.update_text(ui, format!("{:.*}", 2, self.value));
-                if let Some(ref mut callback) = self.callback {
-                    let app = ui.app.take().unwrap();
-                    callback(*app, ui, self.value);
-                    ui.app.replace(app);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.click_at(&self.up_rect) {
+                    let is_end = self.value >= self.range.end;
+                    let is_start = self.value == self.range.start;
+                    if !is_end {
+                        self.value += self.gap;
+                        self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+                        if let Some(ref mut callback) = self.callback {
+                            let app = ui.app.take().unwrap();
+                            callback(*app, ui, self.value);
+                            ui.app.replace(app);
+                        }
+                    }
+                    let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+                    ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+                    if is_start {
+                        ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
+                    }
+                    ui.update_type = UpdateType::None;
+                    ui.context.window.request_redraw();
+                } else if ui.device.device_input.click_at(&self.down_rect) {
+                    let is_start = self.value == self.range.start;
+                    let is_end = self.value >= self.range.end;
+                    if !is_start {
+                        self.value -= self.gap;
+                        self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+                        if let Some(ref mut callback) = self.callback {
+                            let app = ui.app.take().unwrap();
+                            callback(*app, ui, self.value);
+                            ui.app.replace(app);
+                        }
+                    }
+                    if is_end {
+                        ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
+                    }
+                    let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+                    ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+                    ui.update_type = UpdateType::None;
+                    ui.context.window.request_redraw();
                 }
             }
-            let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-            if is_start {
-                ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
-            }
-            ui.context.window.request_redraw();
-        } else if ui.device.device_input.click_at(&self.down_rect) {
-            let is_start = self.value == self.range.start;
-            let is_end = self.value >= self.range.end;
-            if !is_start {
-                self.value -= self.gap;
-                self.edit.update_text(ui, format!("{:.*}", 2, self.value));
-                if let Some(ref mut callback) = self.callback {
-                    let app = ui.app.take().unwrap();
-                    callback(*app, ui, self.value);
-                    ui.app.replace(app);
-                }
-            }
-            if is_end {
-                ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
-            }
-            let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-            ui.context.window.request_redraw();
+            _ => {}
         }
     }
 }

@@ -6,6 +6,7 @@ use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Icon, WindowId, WindowLevel};
+use crate::frame::context::UpdateType;
 
 mod window;
 pub mod context;
@@ -138,12 +139,12 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                         // window.app_ctx.device.device_input.mouse.previous = window.app_ctx.device.device_input.mouse.lastest.clone();
                         // window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest.clone();
                         // window.app_ctx.device.device_input.mouse.pressed = true;
-                        window.app_ctx.update(&mut window.app);
+                        window.app_ctx.update(UpdateType::MousePress, &mut window.app);
                     }
                     (ElementState::Released, MouseButton::Left) => {
                         window.app_ctx.device.device_input.mouse.mouse_release();
                         // window.app_ctx.device.device_input.mouse.clicked = true;
-                        window.app_ctx.update(&mut window.app);
+                        window.app_ctx.update(UpdateType::MouseRelease, &mut window.app);
                         window.app_ctx.device.device_input.mouse.a = 0.0;
                         // window.app_ctx.device.device_input.mouse.clicked = false;
                         // window.app_ctx.device.device_input.mouse.pressed_pos = Pos::new();
@@ -156,7 +157,7 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 match delta {
                     MouseScrollDelta::LineDelta(x, y) => {
                         window.app_ctx.device.device_input.mouse.delta = (x, y);
-                        window.app_ctx.update(&mut window.app);
+                        window.app_ctx.update(UpdateType::MouseWheel, &mut window.app);
                         window.app_ctx.device.device_input.mouse.delta = (0.0, 0.0);
                     }
                     _ => {}
@@ -164,11 +165,11 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
             }
             WindowEvent::CursorMoved { position, .. } => {
                 window.app_ctx.device.device_input.mouse.update(position);
-                window.app_ctx.update(&mut window.app);
+                window.app_ctx.update(UpdateType::MouseMove, &mut window.app);
             }
             WindowEvent::KeyboardInput { device_id: _device_id, event, .. } => {
                 if !event.state.is_pressed() { return; }
-                window.app_ctx.key_input(event.logical_key, &mut window.app);
+                window.app_ctx.key_input(UpdateType::KeyRelease(Some(event.logical_key)), &mut window.app);
                 window.app_ctx.context.window.request_redraw();
             }
             _ => (),

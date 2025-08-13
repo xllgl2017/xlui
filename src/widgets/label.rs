@@ -1,9 +1,9 @@
+use crate::frame::context::UpdateType;
+use crate::response::Response;
 use crate::text::text_buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-use glyphon::Shaping;
-use crate::response::Response;
 
 pub struct Label {
     id: String,
@@ -69,15 +69,12 @@ impl Widget for Label {
 
 
     fn update(&mut self, ui: &mut Ui) { //处理鼠标键盘时间
-        if let Some(update) = ui.context.updates.remove(&self.id) {
-            self.buffer.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, update.text().as_str(), &ui.context.font.font_attr(), Shaping::Advanced);
-        }
-        if let Some(ref offset) = ui.canvas_offset {
-            self.buffer.rect.offset(offset.x, offset.y);
+        match &ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::Offset(o) => self.buffer.rect.offset(o.x, o.y),
+            _ => {}
         }
         if !self.change { return; }
-        self.buffer.buffer.as_mut().unwrap().set_text(
-            &mut ui.context.render.text.font_system, &self.buffer.text,
-            &ui.context.font.font_attr(), Shaping::Advanced);
+        self.buffer.set_text(self.buffer.text.clone(), ui);
     }
 }

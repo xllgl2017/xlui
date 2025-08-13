@@ -12,6 +12,7 @@ use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
 use std::ops::Range;
+use crate::frame::context::UpdateType;
 
 pub struct Slider {
     pub(crate) id: String,
@@ -145,39 +146,42 @@ impl Widget for Slider {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        match self.focused {
-            true => self.focused = self.focused && ui.device.device_input.mouse.pressed,
-            false => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect)
-        }
-        //滑动
-        if self.focused && ui.device.device_input.mouse.pressed {
-            let ox = ui.device.device_input.mouse.offset_x();
-            // let lx = self.fill_param.rect.x.min..self.fill_param.rect.x.max;
-            self.slider_param.rect.offset_x_limit(ox, &self.fill_param.rect.x);
-            let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.x.min - self.fill_param.rect.x.min) / self.fill_param.rect.width();
-            let cv = (self.range.end - self.range.start) * cl;
-            self.value = cv;
-            let scale = self.value / (self.range.end - self.range.start);
-            self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
-            let data = self.slided_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
-            let data = self.slider_param.as_draw_param(true, true);
-            ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-            if let Some(ref mut callback) = self.callback {
-                let app = ui.app.take().unwrap();
-                callback(*app, ui, self.value);
-                ui.app.replace(app);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => { //滑动
+                if self.focused && ui.device.device_input.mouse.pressed {
+                    let ox = ui.device.device_input.mouse.offset_x();
+                    self.slider_param.rect.offset_x_limit(ox, &self.fill_param.rect.x);
+                    let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.x.min - self.fill_param.rect.x.min) / self.fill_param.rect.width();
+                    let cv = (self.range.end - self.range.start) * cl;
+                    self.value = cv;
+                    let scale = self.value / (self.range.end - self.range.start);
+                    self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
+                    let data = self.slided_param.as_draw_param(false, false);
+                    ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
+                    let data = self.slider_param.as_draw_param(true, true);
+                    ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                    println!("{}", self.callback.is_some());
+                    if let Some(ref mut callback) = self.callback {
+                        let app = ui.app.take().unwrap();
+                        callback(*app, ui, self.value);
+                        ui.app.replace(app);
+                    }
+                    ui.update_type = UpdateType::None;
+                    return;
+                }
+                let hovered = ui.device.device_input.hovered_at(&self.slider_param.rect);
+                if self.hovered != hovered {
+                    self.hovered = hovered;
+                    let data = self.slider_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+                    ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                }
             }
-            return;
+            UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
+            _ => {}
         }
 
-        let hovered = ui.device.device_input.hovered_at(&self.slider_param.rect);
-        if self.hovered != hovered {
-            self.hovered = hovered;
-            let data = self.slider_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-            ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
     }
 }

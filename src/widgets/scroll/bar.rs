@@ -1,3 +1,4 @@
+use crate::frame::context::UpdateType;
 use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
@@ -19,7 +20,6 @@ pub struct ScrollBar {
     slider_index: usize,
     slider_buffer: Option<wgpu::Buffer>,
     context_height: f32,
-    // hovered: bool,
     focused: bool,
 }
 
@@ -93,7 +93,6 @@ impl ScrollBar {
         let scrollable_content = self.context_height - self.fill_param.rect.height();
         let scrollable_slider = self.fill_param.rect.height() - self.slider_param.rect.height();
         if scrollable_slider == 0.0 { return 0.0; }
-        // println!("{} {}", scrollable_content, scrollable_slider);
         let scroll_ratio = oy / scrollable_slider; // 内容偏移占比：
         scroll_ratio * scrollable_content // 滑块应偏移：
     }
@@ -125,40 +124,33 @@ impl Widget for ScrollBar {
             ui.context.render.rectangle.render(self.slider_index, pass);
         }
         resp
-        // Response {
-        //     id: &self.id,
-        //     rect: &self.fill_param.rect,
-        // }
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        if let Some(ref offset) = ui.canvas_offset {
-            let oy = self.slider_offset_y(offset.y);
-            let ly = self.fill_param.rect.y.min..self.fill_param.rect.y.max;
-            let roy = self.slider_param.rect.offset_y_limit(oy, ly);
-            ui.canvas_offset = Some(Offset::new_y(self.context_offset_y(-roy)));
-            let data = self.slider_param.as_draw_param(true, true);
-            ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-            return;
-        }
-        match self.focused {
-            true => self.focused = self.focused && ui.device.device_input.mouse.pressed,
-            false => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect)
-        }
-        if self.focused && ui.device.device_input.mouse.pressed {
-            let oy = ui.device.device_input.mouse.offset_y();
-            let ly = self.fill_param.rect.y.min..self.fill_param.rect.y.max;
-            let roy = self.slider_param.rect.offset_y_limit(oy, ly);
-            ui.canvas_offset = Some(Offset::new_y(self.context_offset_y(-roy)));
-            let data = self.slider_param.as_draw_param(true, true);
-            ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                if self.focused && ui.device.device_input.mouse.pressed {
+                    let oy = ui.device.device_input.mouse.offset_y();
+                    let ly = self.fill_param.rect.y.min..self.fill_param.rect.y.max;
+                    let roy = self.slider_param.rect.offset_y_limit(oy, ly);
+                    ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
+                    let data = self.slider_param.as_draw_param(true, true);
+                    ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                }
+            }
+            UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
+            UpdateType::Offset(ref o) => {
+                let oy = self.slider_offset_y(o.y);
+                let ly = self.fill_param.rect.y.min..self.fill_param.rect.y.max;
+                let roy = self.slider_param.rect.offset_y_limit(oy, ly);
+                ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
+                let data = self.slider_param.as_draw_param(true, true);
+                ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+                ui.context.window.request_redraw();
+            }
+            _ => {}
         }
     }
-
-    // fn redraw(&mut self, ui: &mut Ui) {
-    //
-    //
-    // }
 }

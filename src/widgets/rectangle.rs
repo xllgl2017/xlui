@@ -1,3 +1,4 @@
+use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::Response;
@@ -50,15 +51,20 @@ impl Widget for Rectangle {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        if let Some(ref offset) = ui.canvas_offset {
-            self.fill_param.rect.offset(offset.x, offset.y);
-            self.update_rect(ui);
-            return;
-        }
-        let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
-        if self.hovered != hovered {
-            self.hovered = hovered;
-            self.update_rect(ui);
+        match ui.update_type {
+            // UpdateType::Init => self.init(ui),
+            UpdateType::MouseMove => {
+                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                if self.hovered != hovered {
+                    self.hovered = hovered;
+                    self.update_rect(ui);
+                }
+            }
+            UpdateType::Offset(ref o) => {
+                self.fill_param.rect.offset(o.x, o.y);
+                self.update_rect(ui);
+            }
+            _ => {}
         }
     }
 }
