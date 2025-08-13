@@ -105,6 +105,8 @@ impl Slider {
         self.fill_param.rect = self.rect.clone();
         self.fill_param.rect.y.min += 5.0;
         self.fill_param.rect.y.max -= 5.0;
+        self.fill_param.rect.x.min += 8.0;
+        self.fill_param.rect.x.max -= 8.0;
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
@@ -148,7 +150,9 @@ impl Widget for Slider {
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let ox = ui.device.device_input.mouse.offset_x();
-                    self.slider_param.rect.offset_x_limit(ox, &self.fill_param.rect.x);
+                    let mut lx = self.fill_param.rect.x.clone();
+                    lx.extend(self.slider_param.rect.width() / 2.0);
+                    self.slider_param.rect.offset_x_limit(ox, &lx);
                     let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.x.min - self.fill_param.rect.x.min) / self.fill_param.rect.width();
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = cv;
@@ -179,6 +183,5 @@ impl Widget for Slider {
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
             _ => {}
         }
-
     }
 }
