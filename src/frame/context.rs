@@ -16,6 +16,7 @@ pub enum ContextUpdate {
     I32(i32),
     F32(f32),
     U8(u8),
+    Bool(bool),
 }
 
 impl ContextUpdate {
@@ -25,6 +26,7 @@ impl ContextUpdate {
             ContextUpdate::I32(v) => *value = *v,
             ContextUpdate::F32(v) => *value = *v as i32,
             ContextUpdate::U8(v) => *value = *v as i32,
+            _ => {}
         }
     }
     pub fn update_f32(&self, value: &mut f32) {
@@ -33,6 +35,7 @@ impl ContextUpdate {
             ContextUpdate::I32(v) => *value = *v as f32,
             ContextUpdate::F32(v) => *value = *v,
             ContextUpdate::U8(v) => *value = *v as f32,
+            _ => {}
         }
     }
 
@@ -42,6 +45,14 @@ impl ContextUpdate {
             ContextUpdate::I32(v) => *value = T::from_num(*v as f64),
             ContextUpdate::F32(v) => *value = T::from_num(*v as f64),
             ContextUpdate::U8(v) => *value = T::from_num(*v as f64),
+            _ => {}
+        }
+    }
+
+    pub fn update_bool(&self, value: &mut bool) {
+        match self {
+            ContextUpdate::Bool(v) => *value = *v,
+            _ => {}
         }
     }
 }

@@ -145,7 +145,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "Slider");
             ui.add_space(43.0);
-            ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
+            ui.add(Slider::new(10.0).id("s").contact("sb").with_range(0.0..100.0).connect(Self::slider));
             ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
             ui.add_space(24.0);
             ui.checkbox(true, "变动监测");
@@ -154,7 +154,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "CheckBox");
             ui.add_space(30.0);
-            ui.add(CheckBox::new(false, "checkbox1").connect(Self::check));
+            ui.add(CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check));
             ui.checkbox(true, "checkbox2").set_callback(Self::check);
             ui.add_space(129.0);
             ui.checkbox(true, "变动监测");
@@ -162,7 +162,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "SpinBox");
             ui.add_space(38.0);
-            ui.add(SpinBox::new(1, 1, 1..10).connect(Self::spinbox_i32));
+            ui.add(SpinBox::new(10, 1, 1..100).id("sb").contact("s").connect(Self::spinbox_i32));
             ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
             ui.add_space(83.0);
             ui.checkbox(true, "变动监测");
@@ -171,7 +171,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "RadioButton");
             ui.add_space(10.0);
-            ui.add(RadioButton::new(false, "radiobutton").connect(Self::radio));
+            ui.add(RadioButton::new(false, "radiobutton").id("rb").contact("cb").connect(Self::radio));
             ui.radio(true, "radiobutton").set_callback(Self::radio);
             ui.add_space(93.0);
             ui.checkbox(true, "变动监测");

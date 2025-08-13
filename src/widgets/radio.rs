@@ -6,7 +6,7 @@
 //! btn.redraw(ui);
 //! #  });
 
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::render::circle::param::CircleParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -38,6 +38,7 @@ pub struct RadioButton {
     inner_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
+    contact_ids: Vec<String>,
 }
 
 impl RadioButton {
@@ -71,6 +72,7 @@ impl RadioButton {
             inner_index: 0,
             inner_buffer: None,
             hovered: false,
+            contact_ids: vec![],
         }
     }
     fn reset_size(&mut self, context: &Context) {
@@ -101,6 +103,16 @@ impl RadioButton {
         self.callback = Some(Callback::create_check(f));
     }
 
+    pub fn id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
+    pub fn contact(mut self, id: impl ToString) -> Self {
+        self.contact_ids.push(id.to_string());
+        self
+    }
+
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
@@ -125,6 +137,14 @@ impl RadioButton {
         //文本
         self.text.draw(ui);
     }
+
+    fn update_radio(&mut self, ui: &mut Ui) {
+        let data = self.outer_param.as_draw_param(self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+        ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
+        let data = self.inner_param.as_draw_param(self.value, ui.device.device_input.mouse.pressed || self.value);
+        ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
+        ui.context.window.request_redraw();
+    }
 }
 
 
@@ -147,31 +167,33 @@ impl Widget for RadioButton {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if hovered != self.hovered {
                     self.hovered = hovered;
-                    let data = self.outer_param.as_draw_param(hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-                    ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
-                    let data = self.inner_param.as_draw_param(hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-                    ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
-                    ui.context.window.request_redraw();
+                    self.update_radio(ui);
                 }
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.rect) {
                     self.value = !self.value;
-                    let data = self.outer_param.as_draw_param(self.value, self.value);
-                    ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
-                    let data = self.inner_param.as_draw_param(self.value, self.value);
-                    ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
+                    self.update_radio(ui);
+                    // let data = self.outer_param.as_draw_param(self.value, self.value);
+                    // ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
+                    // let data = self.inner_param.as_draw_param(self.value, self.value);
+                    // ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(*app, ui, self.value);
                         ui.app.replace(app);
                     }
                     ui.update_type = UpdateType::None;
-                    ui.context.window.request_redraw();
+                    ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
+                    // ui.context.window.request_redraw();
                     return;
                 }
             }
             _ => {}
+        }
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_bool(&mut self.value);
+            self.update_radio(ui);
         }
     }
 }

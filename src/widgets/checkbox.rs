@@ -1,4 +1,4 @@
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::response::{Callback, Response};
 use crate::size::rect::Rect;
 use crate::text::text_buffer::TextBuffer;
@@ -28,6 +28,7 @@ pub struct CheckBox {
     check_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
+    contact_ids: Vec<String>,
 }
 
 impl CheckBox {
@@ -51,6 +52,7 @@ impl CheckBox {
             check_index: 0,
             check_buffer: None,
             hovered: false,
+            contact_ids: vec![],
         }
     }
 
@@ -83,6 +85,16 @@ impl CheckBox {
         self
     }
 
+    pub fn id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
+    pub fn contact(mut self, id: impl ToString) -> Self {
+        self.contact_ids.push(id.to_string());
+        self
+    }
+
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, bool)) {
         self.callback = Some(Callback::create_check(f));
     }
@@ -105,11 +117,20 @@ impl CheckBox {
         self.check_text.rect = self.check_param.rect.clone();
         self.check_text.draw(ui);
     }
+
+    fn update_check(&mut self, ui: &mut Ui) {
+        let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+        ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
+    }
 }
 
 impl Widget for CheckBox {
     fn redraw(&mut self, ui: &mut Ui) -> Response {
         if self.check_buffer.is_none() { self.init(ui); }
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_bool(&mut self.value);
+            self.update_check(ui);
+        }
         let resp = Response::new(&self.id, &self.rect);
         if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
@@ -121,13 +142,11 @@ impl Widget for CheckBox {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
-                    let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-                    ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
+                    self.update_check(ui);
                     ui.context.window.request_redraw();
                 }
             }
@@ -135,18 +154,19 @@ impl Widget for CheckBox {
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.rect) {
                     self.value = !self.value;
-                    let data = self.check_param.as_draw_param(self.value, self.value);
-                    ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
+                    self.update_check(ui);
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(*app, ui, self.value);
                         ui.app.replace(app);
                     }
-                    ui.update_type=UpdateType::None;
+                    ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
                     ui.context.window.request_redraw();
+                    ui.update_type = UpdateType::None;
                 }
             }
             _ => {}
         }
+
     }
 }
