@@ -126,7 +126,11 @@ impl Layout for ScrollArea {
                     self.a = ui.device.device_input.mouse.a;
                 }
             }
-            UpdateType::MouseWheel => ui.update_type = UpdateType::Offset(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0)),
+            UpdateType::MouseWheel => {
+                if ui.device.device_input.hovered_at(&self.fill_param.rect) {
+                    ui.update_type = UpdateType::Offset(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0));
+                }
+            }
             UpdateType::KeyRelease(_) => {}
             UpdateType::Offset(_) => {}
         }
