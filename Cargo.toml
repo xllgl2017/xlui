@@ -29,6 +29,10 @@ path = "test/layout.rs"
 name = "test_widget"
 path = "test/widget.rs"
 
+[[bin]]
+name = "test_frame"
+path = "test/frame.rs"
+
 [dependencies]
 winit = "0.30.11"
 wgpu = "25.0.2"

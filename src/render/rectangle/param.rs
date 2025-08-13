@@ -24,7 +24,7 @@ pub struct RectDrawParam {
 pub struct RectParam {
     pub(crate) rect: Rect,
     pub(crate) style: ClickStyle,
-    shadow: Shadow,
+    pub(crate) shadow: Shadow,
     draw: RectDrawParam,
 }
 
@@ -77,6 +77,9 @@ impl RectParam {
         self.draw.border_width = border.width;
         self.draw.border_color = border.color.as_gamma_rgba();
         self.draw.fill_color = fill_color;
+        self.draw.shadow_offset = self.shadow.offset;
+        self.draw.shadow_spread = self.shadow.spread;
+        self.draw.shadow_color = self.shadow.color.as_gamma_rgba();
         bytemuck::bytes_of(&self.draw)
     }
 }
