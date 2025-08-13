@@ -50,6 +50,12 @@ impl Axis {
     pub fn center(&self) -> f32 {
         (self.min + self.max) / 2.0
     }
+
+    //min-distance max+distance
+    pub fn extend(&mut self, distance: f32) {
+        self.min -= distance;
+        self.max += distance;
+    }
 }
 
 impl AddAssign<f32> for Axis {

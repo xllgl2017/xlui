@@ -100,8 +100,24 @@ impl LayoutKind {
 
     pub fn get_widget(&mut self, id: &String) -> Option<&mut Box<dyn Widget>> {
         match self {
-            LayoutKind::Horizontal(v) => Some(&mut v.widgets.get_mut(id)?.widget),
-            LayoutKind::Vertical(v) => Some(&mut v.widgets.get_mut(id)?.widget),
+            LayoutKind::Horizontal(v) => {
+                let widget = v.widgets.get_mut(id);
+                if widget.is_some() { return Some(&mut widget?.widget); }
+                for child in v.children.iter_mut() {
+                    let widget = child.get_widget(id);
+                    if widget.is_some() { return widget; }
+                }
+                None
+            }
+            LayoutKind::Vertical(v) => {
+                let widget = v.widgets.get_mut(id);
+                if widget.is_some() { return Some(&mut widget?.widget); }
+                for child in v.children.iter_mut() {
+                    let widget = child.get_widget(id);
+                    if widget.is_some() { return widget; }
+                }
+                None
+            }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
     }

@@ -51,7 +51,6 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::item::ItemWidget;
 use std::any::Any;
-use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 
 pub struct ListView<T> {

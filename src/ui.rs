@@ -16,7 +16,7 @@ use crate::widgets::select::SelectItem;
 use crate::widgets::slider::Slider;
 use crate::widgets::spinbox::SpinBox;
 use crate::widgets::{Widget, WidgetKind};
-use crate::{Device, Offset, SAMPLE_COUNT};
+use crate::{Device, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
@@ -51,7 +51,6 @@ impl AppContext {
             app: None,
             pass: None,
             layout: Some(self.layout.take().unwrap()),
-            canvas_offset: None,
             popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::None,
@@ -62,22 +61,24 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
-    pub fn update(&mut self, ut: UpdateType, app: &mut impl App) {
+    pub fn update<A: App + Any>(&mut self, ut: UpdateType, app: &mut A) {
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
-            app: Some(Box::new(app)),
+            app: None,
             pass: None,
-            layout: None,
-            canvas_offset: None,
+            layout: self.layout.take(),
             popups: None,
             current_rect: Rect::new(),
             update_type: ut,
         };
+        app.update(&mut ui);
+        ui.app = Some(Box::new(app));
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
         }
         ui.popups = self.popups.take();
+        self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
     }
@@ -137,7 +138,6 @@ impl AppContext {
             app: None,
             pass: Some(pass),
             layout: None,
-            canvas_offset: None,
             popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::None,
@@ -161,7 +161,6 @@ impl AppContext {
             app: Some(Box::new(app)),
             pass: None,
             layout: None,
-            canvas_offset: None,
             popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: ut,
@@ -180,7 +179,6 @@ pub struct Ui<'a> {
     pub(crate) app: Option<Box<&'a mut dyn Any>>,
     pub(crate) pass: Option<wgpu::RenderPass<'a>>,
     pub(crate) layout: Option<LayoutKind>,
-    pub(crate) canvas_offset: Option<Offset>,
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
@@ -199,6 +197,12 @@ impl<'a> Ui<'a> {
         let widget = self.layout().get_widget(&wid).unwrap();
         let widget = widget.deref_mut() as &mut dyn Any;
         widget.downcast_mut::<T>().unwrap()
+    }
+
+    pub fn get_widget<T: Widget>(&mut self, id: impl ToString) -> Option<&mut T> {
+        let widget = self.layout().get_widget(&id.to_string())?;
+        let widget = widget.deref_mut() as &mut dyn Any;
+        widget.downcast_mut::<T>()
     }
 
     pub fn add_mut(&mut self, widget: &mut impl Widget) {

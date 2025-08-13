@@ -79,7 +79,6 @@ impl Widget for Rectangle {
             ui.context.window.request_redraw();
         }
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {

@@ -29,6 +29,7 @@ pub struct SpinBox<T> {
     color: Color,
     inactive_color: Color,
     init: bool,
+    change: bool,
 }
 
 impl<T: Display + 'static> SpinBox<T> {
@@ -51,8 +52,14 @@ impl<T: Display + 'static> SpinBox<T> {
             color,
             inactive_color,
             init: false,
+            change: false,
         }
     }
+    pub fn id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
     pub fn reset_size(&mut self) {
         match self.size_mode {
             SizeMode::Auto => self.rect.set_size(100.0, 25.0),
@@ -72,6 +79,11 @@ impl<T: Display + 'static> SpinBox<T> {
 
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, T)) {
         self.callback = Some(Callback::create_spinbox(f));
+    }
+
+    pub fn set_value(&mut self, value: T) {
+        self.change = true;
+        self.value = value;
     }
 
     fn init(&mut self, ui: &mut Ui) {
@@ -108,6 +120,9 @@ impl<T: Display + 'static> SpinBox<T> {
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) -> Response {
         if !self.init { self.init(ui); }
+        if self.change {
+            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+        }
         let resp = Response::new(&self.id, &self.rect);
         if ui.pass.is_none() { return resp; }
         self.edit.redraw(ui);

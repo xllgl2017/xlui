@@ -35,7 +35,6 @@ pub struct Slider {
 
     focused: bool,
     hovered: bool,
-
 }
 
 impl Slider {
@@ -81,6 +80,11 @@ impl Slider {
             focused: false,
             hovered: false,
         }
+    }
+
+    pub fn id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, f32)) -> Self {
@@ -130,6 +134,16 @@ impl Slider {
         self.slider_index = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
         self.slider_buffer = Some(slider_buffer);
     }
+
+    fn update_slider(&mut self, ui: &mut Ui) {
+        let scale = self.value / (self.range.end - self.range.start);
+        self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
+        let data = self.slided_param.as_draw_param(false, false);
+        ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
+        let data = self.slider_param.as_draw_param(true, true);
+        ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+        ui.context.window.request_redraw();
+    }
 }
 
 impl Widget for Slider {
@@ -156,13 +170,7 @@ impl Widget for Slider {
                     let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.x.min - self.fill_param.rect.x.min) / self.fill_param.rect.width();
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = cv;
-                    let scale = self.value / (self.range.end - self.range.start);
-                    self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
-                    let data = self.slided_param.as_draw_param(false, false);
-                    ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
-                    let data = self.slider_param.as_draw_param(true, true);
-                    ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-                    ui.context.window.request_redraw();
+                    self.update_slider(ui);
                     println!("{}", self.callback.is_some());
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
