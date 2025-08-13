@@ -1,3 +1,43 @@
+//! #ListView的泛类可以是任意类型
+//! ```
+//! use xlui::frame::App;
+//! use xlui::ui::Ui;//!
+//!
+//! use xlui::widgets::listview::ListView;
+//!
+//! struct XlUi{
+//!     list_view: ListView<i32>
+//! }
+//!
+//! impl XlUi{
+//!     fn item_changed(&mut self,ui:&mut Ui){
+//!         if let Some(datum) = self.list_view.current() {
+//!             println!("list: {}", self.list_view.current());
+//!         }
+//!     }
+//! }
+//!
+//! impl App for XlUi{
+//!     fn draw(&mut self, ui: &mut Ui) {
+//!         self.list_view.set_callback(Self::item_changed);
+//!         self.list_view.show(ui,|ui,datum|ui.label(datum.to_string()));
+//!     }
+//!
+//!     fn update(&mut self, ui: &mut Ui) {
+//!
+//!     }
+//!
+//!     fn redraw(&mut self, ui: &mut Ui) {
+//!
+//!     }
+//!
+//! }
+//! ```
+//!
+//!
+//!
+
+
 use crate::frame::App;
 use crate::layout::scroll_area::ScrollArea;
 use crate::layout::{HorizontalLayout, LayoutKind};
@@ -22,7 +62,7 @@ pub struct ListView<T> {
     rect: Rect,
 }
 
-impl<T: Display + 'static> ListView<T> {
+impl<T:'static> ListView<T> {
     pub fn new(data: Vec<T>) -> Self {
         ListView {
             data,

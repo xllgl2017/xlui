@@ -187,6 +187,48 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ### ⬜️ ListView(debug下流畅显示10w条数据)
 
+```rust
+use std::fmt::Display;
+
+struct APP {
+    listview: ListView<i32>,
+}
+
+impl APP {
+    fn new() -> Self {
+        APP {
+            listview: ListView::new(vec![1, 2, 3]).with_size(300.0, 400.0)
+        }
+    }
+    fn list_changed(&mut self, ui: &mut Ui) {
+        if let Some(datum) = self.listview.current {
+            println!("list: {}", self.list_view.current())
+        }
+    }
+}
+
+impl App for APP {
+    fn draw(&mut self, ui: &mut Ui) {
+        self.list_view.set_callback(Self::list_changed);
+        self.list_view.show(ui, |ui, datum| {
+            ui.image("logo.jpg", (30.0, 30.0));
+            ui.vertical(|ui| {
+                ui.label(datum.to_string());
+                ui.horizontal(|ui| {
+                    ui.label("00:00");
+                    ui.label("200");
+                    ui.label("HTTP/1.1");
+                    ui.label("10 KB");
+                    ui.label("10 KB");
+                });
+            });
+        });
+    }
+}
+
+
+```
+
 ### ⬜️ TableView(debug下流畅显示10w条数据)
 
 ## 布局
