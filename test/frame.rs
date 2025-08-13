@@ -76,7 +76,6 @@ impl App for XlUi {
                     ui.label("偏移:");
                     ui.label("x:");
                     ui.slider(5.0,0.0..100.0).set_callback(Self::shadow_offset_x);
-                    ui.add_space(20.0);
                     ui.label("y:");
                     ui.slider(5.0,0.0..100.0).set_callback(Self::shadow_offset_y);
                 });

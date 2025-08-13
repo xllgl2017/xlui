@@ -100,10 +100,7 @@ impl Slider {
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone();
-        self.rect.x.min += 8.0;
-        self.rect.x.max += 8.0;
         self.rect.set_size(130.0, 16.0);
-        // ui.layout().alloc_rect(&self.rect);
         //背景
         self.fill_param.rect = self.rect.clone();
         self.fill_param.rect.y.min += 5.0;
