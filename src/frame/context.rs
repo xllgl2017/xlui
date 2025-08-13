@@ -1,7 +1,7 @@
 use crate::font::Font;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
-use crate::{Device, Offset};
+use crate::{Device, NumCastExt, Offset};
 use glyphon::Viewport;
 use std::sync::Arc;
 use crate::map::Map;
@@ -10,38 +10,44 @@ use crate::render::image::ImageRender;
 use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
 
+#[derive(Clone)]
 pub enum ContextUpdate {
-    Text(String),
-    Combo(usize),
-    // Popup(bool),
+    String(String),
+    I32(i32),
+    F32(f32),
+    U8(u8),
 }
 
 impl ContextUpdate {
-    pub fn text(self) -> String {
+    pub fn update_i32(&self, value: &mut i32) {
         match self {
-            ContextUpdate::Text(text) => text,
-            _ => panic!("应该是:ContextUpdate::Text")
+            ContextUpdate::String(v) => *value = v.parse::<i32>().unwrap_or(*value),
+            ContextUpdate::I32(v) => *value = *v,
+            ContextUpdate::F32(v) => *value = *v as i32,
+            ContextUpdate::U8(v) => *value = *v as i32,
+        }
+    }
+    pub fn update_f32(&self, value: &mut f32) {
+        match self {
+            ContextUpdate::String(v) => *value = v.parse::<f32>().unwrap_or(*value),
+            ContextUpdate::I32(v) => *value = *v as f32,
+            ContextUpdate::F32(v) => *value = *v,
+            ContextUpdate::U8(v) => *value = *v as f32,
         }
     }
 
-    pub fn combo(self) -> usize {
+    pub fn update_t<T: NumCastExt>(&self, value: &mut T) {
         match self {
-            ContextUpdate::Combo(v) => v,
-            _ => panic!("应该是:ContextUpdate::Text")
+            ContextUpdate::String(v) => *value = T::from_num(v.parse::<f64>().unwrap_or(value.as_f32() as f64)),
+            ContextUpdate::I32(v) => *value = T::from_num(*v as f64),
+            ContextUpdate::F32(v) => *value = T::from_num(*v as f64),
+            ContextUpdate::U8(v) => *value = T::from_num(*v as f64),
         }
     }
-
-    // pub fn popup(self) -> bool {
-    //     match self {
-    //         ContextUpdate::Popup(v) => v,
-    //         _ => panic!("应该是:ContextUpdate::Text")
-    //     }
-    // }
 }
 
 pub enum UpdateType {
     None,
-    // Init,
     MouseMove,
     MousePress,
     MouseRelease,

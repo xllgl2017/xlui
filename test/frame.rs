@@ -73,16 +73,13 @@ impl App for XlUi {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("边框:");
-                    ui.add(SpinBox::new(1.0, 1.0, 0.0..20.0).id("sbw").connect(Self::border_with));
-                    // ui.spinbox(1.0, 1.0, 0.0..20.0).set_callback(Self::border_with);
-                    // ui.slider(1.0, 0.0..20.0).set_callback(Self::border_with);
-                    ui.add(Slider::new(1.0).with_range(0.0..20.0).id("sb").connect(Self::border_with));
+                    ui.add(SpinBox::new(1.0, 1.0, 0.0..20.0).id("sbw").contact("sb").connect(Self::border_with));
+                    ui.add(Slider::new(1.0).with_range(0.0..20.0).id("sb").contact("sbw").connect(Self::border_with));
                 });
                 ui.horizontal(|ui| {
                     ui.label("圆角:");
-                    ui.add(SpinBox::new(5, 1, 0..50).id("sbr").connect(Self::border_radius));
-                    // ui.spinbox(5, 1, 0..50).set_callback(Self::border_radius);
-                    ui.slider(5.0, 0.0..50.0).set_callback(Self::border_radius_f32);
+                    ui.add(SpinBox::new(5, 1, 0..50).id("sbr").contact("sr").connect(Self::border_radius));
+                    ui.add(Slider::new(5.0).with_range(0.0..50.0).id("sr").contact("sbr").connect(Self::border_radius_f32));
                 });
                 ui.horizontal(|ui| {
                     ui.label("偏移:");
@@ -95,10 +92,7 @@ impl App for XlUi {
         });
     }
 
-    fn update(&mut self, ui: &mut Ui) {
-        ui.get_widget::<SpinBox<f32>>("sbw").unwrap().set_value(self.border_width);
-        ui.get_widget::<SpinBox<u8>>("sbr").unwrap().set_value(self.border_radius);
-    }
+    fn update(&mut self, ui: &mut Ui) {}
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.frame.redraw(ui);

@@ -10,7 +10,8 @@ use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
 use crate::frame::App;
-use crate::frame::context::UpdateType;
+use crate::frame::context::{ContextUpdate, UpdateType};
+use crate::NumCastExt;
 use crate::size::pos::Axis;
 
 pub struct SpinBox<T> {
@@ -30,9 +31,10 @@ pub struct SpinBox<T> {
     inactive_color: Color,
     init: bool,
     change: bool,
+    contact_ids: Vec<String>,
 }
 
-impl<T: Display + 'static> SpinBox<T> {
+impl<T: Display + NumCastExt + 'static> SpinBox<T> {
     pub fn new(v: T, g: T, r: Range<T>) -> Self {
         let color = Color::rgb(95, 95, 95);
         let inactive_color = Color::rgb(153, 152, 152);
@@ -53,6 +55,7 @@ impl<T: Display + 'static> SpinBox<T> {
             inactive_color,
             init: false,
             change: false,
+            contact_ids: vec![],
         }
     }
     pub fn id(mut self, id: impl ToString) -> Self {
@@ -86,6 +89,11 @@ impl<T: Display + 'static> SpinBox<T> {
         self.value = value;
     }
 
+    pub fn contact(mut self, id: impl ToString) -> Self {
+        self.contact_ids.push(id.to_string());
+        self
+    }
+
     fn init(&mut self, ui: &mut Ui) {
         self.init = true;
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
@@ -117,7 +125,7 @@ impl<T: Display + 'static> SpinBox<T> {
 }
 
 
-impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static> Widget for SpinBox<T> {
+impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) -> Response {
         if !self.init { self.init(ui); }
         if self.change {
@@ -154,6 +162,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
                             callback(*app, ui, self.value);
                             ui.app.replace(app);
                         }
+                        ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
                     }
                     let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
                     ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
@@ -173,6 +182,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
                             callback(*app, ui, self.value);
                             ui.app.replace(app);
                         }
+                        ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
                     }
                     if is_end {
                         ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
@@ -184,6 +194,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + 'static
                 }
             }
             _ => {}
+        }
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_t(&mut self.value);
+            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+            ui.context.window.request_redraw();
         }
     }
 }

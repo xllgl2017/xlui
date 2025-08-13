@@ -1,4 +1,4 @@
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
@@ -16,7 +16,7 @@ use crate::widgets::select::SelectItem;
 use crate::widgets::slider::Slider;
 use crate::widgets::spinbox::SpinBox;
 use crate::widgets::{Widget, WidgetKind};
-use crate::{Device, SAMPLE_COUNT};
+use crate::{Device, NumCastExt, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
@@ -184,6 +184,19 @@ pub struct Ui<'a> {
     pub(crate) update_type: UpdateType,
 }
 
+
+impl<'a> Ui<'a> {
+    pub(crate) fn layout(&mut self) -> &mut LayoutKind {
+        self.layout.as_mut().unwrap()
+    }
+
+    pub(crate) fn send_updates(&mut self, ids: &Vec<String>, ct: ContextUpdate) {
+        for id in ids {
+            self.context.updates.insert(id.to_string(), ct.clone());
+        }
+    }
+}
+
 impl<'a> Ui<'a> {
     pub fn add_space(&mut self, space: f32) {
         self.layout().add_space(space);
@@ -226,9 +239,6 @@ impl<'a> Ui<'a> {
         self.layout().add_child(crate::gen_unique_id(), current_layout);
     }
 
-    pub(crate) fn layout(&mut self) -> &mut LayoutKind {
-        self.layout.as_mut().unwrap()
-    }
 
     pub fn available_rect(&self) -> &Rect {
         self.layout.as_ref().unwrap().available_rect()
@@ -270,7 +280,7 @@ impl<'a> Ui<'a> {
         self.add(image)
     }
 
-    pub fn spinbox<T: Display + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
+    pub fn spinbox<T: Display + NumCastExt + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
         let spinbox = SpinBox::new(v, g, r);
         self.add(spinbox)
     }

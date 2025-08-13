@@ -12,7 +12,7 @@ use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
 use std::ops::Range;
-use crate::frame::context::UpdateType;
+use crate::frame::context::{ContextUpdate, UpdateType};
 
 pub struct Slider {
     pub(crate) id: String,
@@ -20,6 +20,7 @@ pub struct Slider {
     value: f32,
     range: Range<f32>,
     callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, f32)>>,
+    contact_ids: Vec<String>,
 
     fill_param: RectParam,
     fill_index: usize,
@@ -68,6 +69,7 @@ impl Slider {
             value: v,
             range: 0.0..1.0,
             callback: None,
+            contact_ids: vec![],
             fill_param: RectParam::new(Rect::new(), fill_style),
             fill_index: 0,
             fill_buffer: None,
@@ -99,6 +101,11 @@ impl Slider {
 
     pub fn set_callback<A: App>(&mut self, f: fn(&mut A, &mut Ui, f32)) {
         self.callback = Some(Callback::create_slider(f));
+    }
+
+    pub fn contact(mut self, id: impl ToString) -> Self {
+        self.contact_ids.push(id.to_string());
+        self
     }
 
     fn init(&mut self, ui: &mut Ui) {
@@ -140,7 +147,7 @@ impl Slider {
         self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
         let data = self.slided_param.as_draw_param(false, false);
         ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
-        let data = self.slider_param.as_draw_param(true, true);
+        let data = self.slider_param.as_draw_param(self.hovered||self.focused, ui.device.device_input.mouse.pressed);
         ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
         ui.context.window.request_redraw();
     }
@@ -177,6 +184,7 @@ impl Widget for Slider {
                         callback(*app, ui, self.value);
                         ui.app.replace(app);
                     }
+                    ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value));
                     ui.update_type = UpdateType::None;
                     return;
                 }
@@ -190,6 +198,15 @@ impl Widget for Slider {
             }
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
             _ => {}
+        }
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_f32(&mut self.value);
+            self.slider_param.rect = self.rect.clone();
+            self.slider_param.rect.x.min -= self.rect.height() / 2.0;
+            self.slider_param.rect.set_width(self.rect.height());
+            let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
+            self.slider_param.rect.offset_x(offset);
+            self.update_slider(ui);
         }
     }
 }

@@ -89,6 +89,29 @@ mod render;
 pub mod response;
 pub mod map;
 
+trait NumCastExt: Sized {
+    fn as_f32(&self) -> f32;
+    fn from_num<N: Into<f64>>(n: N) -> Self;
+}
+
+macro_rules! impl_num_cast_ext {
+    ($($t:ty),*) => {
+        $(
+            impl NumCastExt for $t {
+                fn as_f32(&self) -> f32 {
+                    *self as f32
+                }
+                fn from_num<N: Into<f64>>(n: N) -> Self {
+                    n.into() as $t
+                }
+            }
+        )*
+    }
+}
+
+// 支持的类型
+impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+
 
 const SAMPLE_COUNT: u32 = 4;
 
