@@ -128,7 +128,6 @@ impl Widget for ScrollBar {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let oy = ui.device.device_input.mouse.offset_y();

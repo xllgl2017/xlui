@@ -1,6 +1,7 @@
 pub mod scroll_area;
 pub mod popup;
 
+use crate::frame::context::UpdateType;
 use crate::layout::scroll_area::ScrollArea;
 use crate::map::Map;
 use crate::size::padding::Padding;
@@ -122,6 +123,36 @@ impl LayoutKind {
         }
     }
 
+    pub fn get_layout(&mut self, id: &String) -> Option<&mut LayoutKind> {
+        match self {
+            LayoutKind::Horizontal(_) | LayoutKind::Vertical(_) => {
+                for (k, v) in self.children().entry_mut() {
+                    if k == id { return Some(v); }
+                    let layout = v.get_layout(id);
+                    if layout.is_some() { return layout; }
+                }
+                None
+            }
+            LayoutKind::ScrollArea(v) => if &v.id == id { Some(self) } else { None }
+        }
+    }
+
+    // fn _remove_widget(widgets: &mut Map<WidgetKind>, id: &String) -> Option<WidgetKind> {
+    //     let pos = widgets.iter().position(|x| &x.id == id);
+    //     if pos.is_none() { return None }
+    //     let pos=pos.unwrap();
+    // }
+
+    pub fn remove_widget(&mut self, wid: &String) -> Option<WidgetKind> {
+        let widget = self.widgets().remove(wid);
+        if widget.is_some() { return widget; }
+        for child in self.children().iter_mut() {
+            let widget = child.remove_widget(wid);
+            if widget.is_some() { return widget; }
+        }
+        None
+    }
+
     pub fn set_rect(&mut self, rect: Rect, padding: &Padding) {
         match self {
             LayoutKind::Horizontal(v) => {
@@ -135,6 +166,24 @@ impl LayoutKind {
                 v.available_rect.y.max = f32::INFINITY;
             }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
+        }
+    }
+
+    fn widgets(&mut self) -> &mut Map<WidgetKind> {
+        match self {
+            LayoutKind::Horizontal(v) => &mut v.widgets,
+            LayoutKind::Vertical(v) => &mut v.widgets,
+            LayoutKind::ScrollArea(v) => {
+                &mut v.layout.as_mut().unwrap().widgets
+            }
+        }
+    }
+
+    fn children(&mut self) -> &mut Map<LayoutKind> {
+        match self {
+            LayoutKind::Horizontal(v) => &mut v.children,
+            LayoutKind::Vertical(v) => &mut v.children,
+            LayoutKind::ScrollArea(v) => &mut v.layout.as_mut().unwrap().children,
         }
     }
 }
@@ -265,6 +314,10 @@ impl VerticalLayout {
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) {
         update_or_redraw(&mut self.widgets, &mut self.children, ui, true);
+        match &ui.update_type {
+            UpdateType::Offset(o) => self.available_rect.offset(o.x, o.y),
+            _ => {}
+        }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {

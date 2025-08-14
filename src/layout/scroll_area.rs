@@ -14,7 +14,7 @@ use crate::widgets::Widget;
 use crate::Offset;
 
 pub struct ScrollArea {
-    id: String,
+    pub(crate) id: String,
     context_rect: Rect,
     pub(crate) layout: Option<VerticalLayout>,
     padding: Padding,
@@ -86,9 +86,8 @@ impl ScrollArea {
         //视图内容
         callback(ui);
         let current_layout = ui.layout.replace(previous_layout).unwrap();
-        match current_layout {
-            LayoutKind::Vertical(v) => { self.layout.replace(v); }
-            _ => {}
+        if let LayoutKind::Vertical(v) = current_layout {
+            self.layout.replace(v);
         }
         //滚动条
         let mut v_bar_rect = self.fill_param.rect.clone();
@@ -98,7 +97,7 @@ impl ScrollArea {
         v_bar_rect.set_width(5.0);
         self.v_bar.set_rect(v_bar_rect);
         println!("scroll {}", self.layout.as_ref().unwrap().height);
-        self.v_bar.set_context_height(self.layout.as_ref().unwrap().height);
+        self.v_bar.set_context_height(self.layout.as_ref().unwrap().height + self.padding.bottom);
         self.v_bar.redraw(ui);
     }
 
@@ -107,13 +106,16 @@ impl ScrollArea {
         self.draw(ui, callback);
         ui.layout().add_child(self.id.clone(), LayoutKind::ScrollArea(self));
     }
+
+    pub fn reset_context_height(&mut self) {
+        self.v_bar.set_context_height(self.layout.as_ref().unwrap().height + self.padding.bottom);
+    }
 }
 
 impl Layout for ScrollArea {
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
             UpdateType::None => {}
-            // UpdateType::Init => {}
             UpdateType::MouseMove => {
                 if ui.device.device_input.pressed_at(&self.context_rect) && ui.device.device_input.mouse.offset_y() != 0.0 {
                     let oy = ui.device.device_input.mouse.offset_y();
@@ -146,15 +148,15 @@ impl Layout for ScrollArea {
 
     fn redraw(&mut self, ui: &mut Ui) {
         if self.a != 0.0 {
-            let oy = self.a * 20.0 * 20.0;
+            let oy = self.a * 10.0 * 10.0;
             ui.update_type = UpdateType::Offset(Offset::new_y(-oy));
-            println!("{}-{}-{}-{}", self.id, self.a, self.a < 0.0, self.a + 0.0005 < 0.0);
-            if self.a.abs() - 0.0005 < 0.0 {
+            println!("{}-{}-{}-{}", self.id, self.a, self.a < 0.0, self.a + 0.001 < 0.0);
+            if self.a.abs() - 0.001 < 0.0 {
                 self.a = 0.0;
             } else if self.a > 0.0 {
-                self.a -= 0.0005;
+                self.a -= 0.001;
             } else if self.a < 0.0 {
-                self.a += 0.0005;
+                self.a += 0.001;
             }
             ui.context.window.request_redraw();
             println!("{}-{}", self.id, self.a);

@@ -195,8 +195,8 @@ impl App for XlUiApp {
             ui.checkbox(false, "粘贴");
             ui.checkbox(false, "密码");
         });
-        let cb=ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4]).with_popup_height(150.0).connect(Self::combo_changed);
-        let p=cb.parent();
+        let cb = ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4, SV::Item5, SV::Item6]).with_popup_height(150.0).connect(Self::combo_changed);
+        let p = cb.parent();
         ui.horizontal(|ui| {
             ui.radio(true, "ComboBox");
             ui.add_space(30.0);

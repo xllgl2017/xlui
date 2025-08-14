@@ -37,7 +37,6 @@
 //!
 //!
 
-
 use crate::frame::App;
 use crate::layout::scroll_area::ScrollArea;
 use crate::layout::{HorizontalLayout, LayoutKind};
@@ -53,22 +52,33 @@ use crate::widgets::item::ItemWidget;
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 
+pub enum ListUpdate {
+    Push(usize),
+    Remove(usize),
+}
+
 pub struct ListView<T> {
+    lid: String,
     data: Vec<T>,
     items: Map<usize>,
     current: Arc<RwLock<Option<String>>>,
     callback: Arc<Option<Box<dyn Fn(&mut dyn Any, &mut Ui)>>>,
+    dyn_item_widget: Box<dyn Fn(&mut Ui, &T)>,
     rect: Rect,
+    updates: Vec<ListUpdate>,
 }
 
-impl<T:'static> ListView<T> {
+impl<T: 'static> ListView<T> {
     pub fn new(data: Vec<T>) -> Self {
         ListView {
+            lid: "".to_string(),
             data,
             items: Map::new(),
             rect: Rect::new(),
             current: Arc::new(RwLock::new(None)),
             callback: Arc::new(None),
+            dyn_item_widget: Box::new(|ui, _| ui.label("ListItem")),
+            updates: vec![],
         }
     }
 
@@ -78,8 +88,12 @@ impl<T:'static> ListView<T> {
         self
     }
 
+    pub fn set_item_widget(&mut self, item_widget: impl Fn(&mut Ui, &T) + 'static) {
+        self.dyn_item_widget = Box::new(item_widget);
+    }
 
-    fn item_widget(&self, ui: &mut Ui, datum: &T, item_widget: &mut impl FnMut(&mut Ui, &T)) -> String {
+
+    fn item_widget(&self, ui: &mut Ui, datum: &T) -> String {
         let style = ClickStyle {
             fill: FillStyle {
                 inactive: Color::TRANSPARENT,
@@ -107,8 +121,14 @@ impl<T:'static> ListView<T> {
                 println!("item clicked");
             });
         let item_id = item.id.clone();
-        item.show(ui, |ui| item_widget(ui, datum));
+        item.show(ui, |ui| (self.dyn_item_widget)(ui, &datum));
         item_id
+    }
+
+    pub fn current_index(&self) -> Option<usize> {
+        let current = self.current.read().unwrap();
+        let current = current.as_ref()?;
+        Some(self.items[current])
     }
 
     pub fn current(&self) -> Option<&T> {
@@ -118,11 +138,35 @@ impl<T:'static> ListView<T> {
         Some(&self.data[current_index])
     }
 
-    pub fn remove(&mut self, index: usize) {
-        self.data.remove(index);
+    fn _remove(&mut self, index: usize, ui: &mut Ui) {
+        let (wid, _) = self.items.remove_map_by_index(index);
+        let area = ui.get_layout(&self.lid).expect("找不到ListView");
+        area.remove_widget(&wid);
+    }
+
+    pub fn remove(&mut self, index: usize) -> T {
+        let res = self.data.remove(index);
+        self.updates.push(ListUpdate::Remove(index));
+        res
+    }
+
+    fn _push(&mut self, index: usize, ui: &mut Ui) {
+        let mut layout = ui.layout.take().unwrap();
+        let area = layout.get_layout(&self.lid).expect("找不到ListView");
+        if let LayoutKind::ScrollArea(area) = area {
+            ui.layout = Some(LayoutKind::Vertical(area.layout.take().unwrap()));
+            let wid = self.item_widget(ui, &self.data[index]);
+            if let LayoutKind::Vertical(layout) = ui.layout.take().unwrap() {
+                area.layout = Some(layout);
+            }
+            area.reset_context_height();
+            self.items.insert(wid, self.data.len() - 1);
+        }
+        ui.layout = Some(layout);
     }
 
     pub fn push(&mut self, datum: T) {
+        self.updates.push(ListUpdate::Push(self.data.len()));
         self.data.push(datum);
     }
 
@@ -130,9 +174,10 @@ impl<T:'static> ListView<T> {
         self.callback = Arc::new(Some(Callback::create_list(f)));
     }
 
-    pub fn show(&mut self, ui: &mut Ui, mut item_widget: impl FnMut(&mut Ui, &T)) {
+    pub fn show(&mut self, ui: &mut Ui) {
         self.rect = ui.available_rect().clone_with_size(&self.rect);
         let mut area = ScrollArea::new();
+        self.lid = area.id.clone();
         area.set_rect(self.rect.clone());
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::TRANSPARENT;
@@ -144,10 +189,19 @@ impl<T:'static> ListView<T> {
         area.set_style(fill_style);
         area.show(ui, |ui| {
             for (row, datum) in self.data.iter().enumerate() {
-                let id = self.item_widget(ui, datum, &mut item_widget);
+                let id = self.item_widget(ui, datum);
                 self.items.insert(id, row);
             }
         });
         ui.layout().alloc_rect(&self.rect);
+    }
+
+    pub fn update(&mut self, ui: &mut Ui) {
+        for update in std::mem::take(&mut self.updates) {
+            match update {
+                ListUpdate::Push(i) => self._push(i, ui),
+                ListUpdate::Remove(i) => self._remove(i, ui)
+            }
+        }
     }
 }

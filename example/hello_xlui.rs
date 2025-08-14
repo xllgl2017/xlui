@@ -42,7 +42,7 @@ struct XlUiApp {
 
 impl XlUiApp {
     pub fn new() -> Self {
-        let data = vec![
+        let mut data = vec![
             TD::new("1"),
             TD::new("2"),
             TD::new("3"),
@@ -52,9 +52,16 @@ impl XlUiApp {
             TD::new("7"),
             TD::new("8"),
             TD::new("9"),
-            TD::new("0"),
-            TD::new("11")
+            TD::new("10"),
+            TD::new("11"),
+            TD::new("12"),
+            TD::new("13"),
+            TD::new("14"),
+            TD::new("15")
         ];
+        // for i in 0..30 {
+        //     data.push(TD::new(i));
+        // }
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,
@@ -110,6 +117,16 @@ impl XlUiApp {
         self.label.set_text(format!("list: {}", self.list_view.current().as_ref().unwrap()));
         self.label.update(ui);
     }
+
+    fn list_add(&mut self, btn: &mut Button, ui: &mut Ui) {
+        self.list_view.push(TD::new(self.count));
+        self.count += 1;
+    }
+
+    fn list_delete(&mut self, btn: &mut Button, ui: &mut Ui) {
+        let current = self.list_view.current_index().unwrap();
+        self.list_view.remove(current);
+    }
 }
 
 impl App for XlUiApp {
@@ -152,19 +169,26 @@ impl App for XlUiApp {
                 ui.label("end");
             });
             ui.add(ComboBox::new(vec!["item1", "item2", "item3", "item4", "item5", "item6"]).connect(Self::combo_changed).with_popup_height(150.0));
-            self.list_view.set_callback(Self::list_changed);
-            self.list_view.show(ui, |ui, datum| {
-                ui.image("logo.jpg", (30.0, 30.0));
-                ui.vertical(|ui| {
-                    ui.label(datum.to_string());
-                    ui.horizontal(|ui| {
-                        ui.label("00:00");
-                        ui.label("200");
-                        ui.label("HTTP/1.1");
-                        ui.label("10 KB");
-                        ui.label("10 KB");
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.button("添加").set_callback(Self::list_add);
+                    ui.button("删除").set_callback(Self::list_delete);
+                });
+                self.list_view.set_callback(Self::list_changed);
+                self.list_view.set_item_widget(|ui, datum| {
+                    ui.image("logo.jpg", (30.0, 30.0));
+                    ui.vertical(|ui| {
+                        ui.label(datum.to_string());
+                        ui.horizontal(|ui| {
+                            ui.label("00:00");
+                            ui.label("200");
+                            ui.label("HTTP/1.1");
+                            ui.label("10 KB");
+                            ui.label("10 KB");
+                        });
                     });
                 });
+                self.list_view.show(ui);
             });
         });
 
@@ -174,7 +198,7 @@ impl App for XlUiApp {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        self.label.update(ui);
+        self.list_view.update(ui);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {

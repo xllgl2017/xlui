@@ -187,13 +187,17 @@ pub struct Ui<'a> {
 
 impl<'a> Ui<'a> {
     pub(crate) fn layout(&mut self) -> &mut LayoutKind {
-        self.layout.as_mut().unwrap()
+        self.layout.as_mut().expect("仅能在App::update中调用")
     }
 
     pub(crate) fn send_updates(&mut self, ids: &Vec<String>, ct: ContextUpdate) {
         for id in ids {
             self.context.updates.insert(id.to_string(), ct.clone());
         }
+    }
+
+    pub(crate) fn get_layout(&mut self, id: impl ToString) -> Option<&mut LayoutKind> {
+        self.layout().get_layout(&id.to_string())
     }
 }
 
@@ -206,7 +210,7 @@ impl<'a> Ui<'a> {
         let widget = WidgetKind::new(self, widget);
         let wid = widget.id.clone();
         self.layout().alloc_rect(&widget.rect);
-        self.layout.as_mut().unwrap().add_widget(widget.id.clone(), widget);
+        self.layout().add_widget(widget.id.clone(), widget);
         let widget = self.layout().get_widget(&wid).unwrap();
         let widget = widget.deref_mut() as &mut dyn Any;
         widget.downcast_mut::<T>().unwrap()
@@ -221,6 +225,10 @@ impl<'a> Ui<'a> {
     pub fn add_mut(&mut self, widget: &mut impl Widget) {
         let resp = widget.redraw(self);
         self.layout().alloc_rect(&resp.rect);
+    }
+
+    pub fn request_update(&mut self) {
+        self.context.window.request_redraw();
     }
 
     pub fn horizontal(&mut self, mut context: impl FnOnce(&mut Ui)) {
