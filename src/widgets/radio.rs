@@ -126,9 +126,12 @@ impl RadioButton {
         self.outer_buffer = Some(outer_buffer);
         //内圆
         self.inner_param.rect = self.rect.clone();
-        self.inner_param.rect.x.min += 4.0;
-        self.inner_param.rect.y.min += 4.0;
-        self.inner_param.rect.y.max -= 4.0;
+
+        // self.inner_param.rect.dx.min += 4.0;
+        self.inner_param.rect.add_min_x(4.0);
+        self.inner_param.rect.contract_y(4.0);
+        // self.inner_param.rect.dy.min += 4.0;
+        // self.inner_param.rect.dy.max -= 4.0;
         self.inner_param.rect.set_width(self.inner_param.rect.height());
         let data = self.inner_param.as_draw_param(self.value, self.value);
         let inner_buffer = ui.context.render.circle.create_buffer(&ui.device, data);

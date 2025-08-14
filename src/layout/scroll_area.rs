@@ -91,9 +91,12 @@ impl ScrollArea {
         }
         //滚动条
         let mut v_bar_rect = self.fill_param.rect.clone();
-        v_bar_rect.x.min = self.fill_param.rect.x.max - 7.0;
-        v_bar_rect.y.min += self.padding.top;
-        v_bar_rect.y.max -= self.padding.bottom;
+        v_bar_rect.set_x_min(self.fill_param.rect.dx().max - 7.0);
+        // v_bar_rect.dx.min = self.fill_param.rect.dx.max - 7.0;
+        v_bar_rect.add_min_y(self.padding.top);
+        v_bar_rect.add_max_y(-self.padding.bottom);
+        // v_bar_rect.dy.min += self.padding.top;
+        // v_bar_rect.dy.max -= self.padding.bottom;
         v_bar_rect.set_width(5.0);
         self.v_bar.set_rect(v_bar_rect);
         println!("scroll {}", self.layout.as_ref().unwrap().height);
@@ -175,7 +178,7 @@ impl Layout for ScrollArea {
         let pass = ui.pass.as_mut().unwrap();
         //视图内容
         let clip = self.fill_param.rect.clone_add_padding(&self.padding);
-        pass.set_scissor_rect(clip.x.min as u32, clip.y.min as u32, clip.width() as u32, clip.height() as u32);
+        pass.set_scissor_rect(clip.dx().min as u32, clip.dy().min as u32, clip.width() as u32, clip.height() as u32);
         self.layout.as_mut().unwrap().redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
         pass.set_scissor_rect(0, 0, ui.context.size.width, ui.context.size.height);

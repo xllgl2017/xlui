@@ -21,7 +21,7 @@ impl CircleParam {
     pub fn new(rect: Rect, style: ClickStyle) -> Self {
         let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
         let border = style.dyn_border(false, false);
-        let center = [rect.x.center(), rect.y.center()];
+        let center = [rect.dx().center(), rect.dy().center()];
         let radius = rect.height() / 2.0;
         let draw = CircleDrawParam {
             center,
@@ -40,7 +40,7 @@ impl CircleParam {
     pub fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);
-        let center = [self.rect.x.center(), self.rect.y.center()];
+        let center = [self.rect.dx().center(), self.rect.dy().center()];
         let radius = self.rect.height() / 2.0;
         self.draw.center = center;
         self.draw.radius = radius;

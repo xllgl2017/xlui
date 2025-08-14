@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Range, SubAssign};
+use std::ops::{Add, AddAssign, Range, SubAssign};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Pos {
@@ -32,7 +32,7 @@ impl Pos {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Axis {
     pub(crate) min: f32,
     pub(crate) max: f32,
@@ -56,6 +56,11 @@ impl Axis {
         self.min -= distance;
         self.max += distance;
     }
+
+    pub fn contract(&mut self, distance: f32) {
+        self.min += distance;
+        self.max -= distance;
+    }
 }
 
 impl AddAssign<f32> for Axis {
@@ -78,5 +83,15 @@ impl From<Range<f32>> for Axis {
             min: range.start,
             max: range.end,
         }
+    }
+}
+
+impl Add<f32> for Axis {
+    type Output = Axis;
+
+    fn add(mut self, rhs: f32) -> Self::Output {
+        self.min += rhs;
+        self.max += rhs;
+        self
     }
 }

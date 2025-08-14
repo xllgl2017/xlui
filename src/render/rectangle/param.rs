@@ -34,7 +34,7 @@ impl RectParam {
         let border = style.dyn_border(false, false);
         let shadow = Shadow::new();
         let draw = RectDrawParam {
-            pos: [rect.x.min, rect.y.min],
+            pos: [rect.dx().min, rect.dy().min],
             size: [rect.width(), rect.height()],
             radius_bl: border.radius.left_bottom as f32,
             radius_br: border.radius.right_bottom as f32,
@@ -68,7 +68,7 @@ impl RectParam {
     pub fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);
-        self.draw.pos = [self.rect.x.min, self.rect.y.min];
+        self.draw.pos = [self.rect.dx().min, self.rect.dy().min];
         self.draw.size = [self.rect.width(), self.rect.height()];
         self.draw.radius_bl = border.radius.left_bottom as f32;
         self.draw.radius_br = border.radius.right_bottom as f32;

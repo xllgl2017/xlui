@@ -1,3 +1,5 @@
+use crate::frame::context::{ContextUpdate, UpdateType};
+use crate::frame::App;
 use crate::response::{Callback, Response};
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
@@ -6,13 +8,10 @@ use crate::ui::Ui;
 use crate::vertex::Vertex;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
+use crate::NumCastExt;
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
-use crate::frame::App;
-use crate::frame::context::{ContextUpdate, UpdateType};
-use crate::NumCastExt;
-use crate::size::pos::Axis;
 
 pub struct SpinBox<T> {
     pub(crate) id: String,
@@ -71,7 +70,8 @@ impl<T: Display + NumCastExt + 'static> SpinBox<T> {
             SizeMode::Fix => {}
         }
         let mut edit_rect = self.rect.clone();
-        edit_rect.x.max = edit_rect.x.max - 18.0;
+        edit_rect.set_x_max(edit_rect.dx().max - 18.0);
+        // edit_rect.dx.max = edit_rect.dx.max - 18.0;
         self.edit.set_rect(edit_rect);
     }
 
@@ -102,24 +102,37 @@ impl<T: Display + NumCastExt + 'static> SpinBox<T> {
         let mut rect = self.rect.clone();
         rect.set_width(18.0);
         // ui.layout().alloc_rect(&rect);
-        self.up_rect = Rect {
-            x: Axis { min: self.rect.x.max - 14.0, max: self.rect.x.max },
-            y: Axis { min: self.rect.y.min + 1.0, max: self.rect.y.min + self.rect.height() / 2.0 - 2.0 },
-        };
+        self.up_rect.set_x_min(self.rect.dx().max - 14.0);
+        self.up_rect.set_x_max(self.rect.dx().max);
+        self.up_rect.set_y_min(self.rect.dy().min + 1.0);
+        self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
+        // self.up_rect =
+        //     Rect {
+        //         dx: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
+        //         ox: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
+        //         dy: Axis { min: self.rect.dy().min + 1.0, max: self.rect.dy().min + self.rect.height() / 2.0 - 2.0 },
+        //         oy: Axis { min: self.rect.dy().min + 1.0, max: self.rect.dy().min + self.rect.height() / 2.0 - 2.0 },
+        //     };
         let vertices = vec![
-            Vertex::new([self.up_rect.x.min + self.up_rect.width() / 2.0, self.up_rect.y.min], &self.color, &ui.context.size),
-            Vertex::new([self.up_rect.x.min, self.up_rect.y.max], &self.color, &ui.context.size),
-            Vertex::new([self.rect.x.max, self.up_rect.y.max], &self.color, &ui.context.size),
+            Vertex::new([self.up_rect.dx().min + self.up_rect.width() / 2.0, self.up_rect.dy().min], &self.color, &ui.context.size),
+            Vertex::new([self.up_rect.dx().min, self.up_rect.dy().max], &self.color, &ui.context.size),
+            Vertex::new([self.rect.dx().max, self.up_rect.dy().max], &self.color, &ui.context.size),
         ];
         self.up_index = ui.context.render.triangle.add_triangle(vertices, &ui.device);
-        self.down_rect = Rect {
-            x: Axis { min: self.rect.x.max - 14.0, max: self.rect.x.max },
-            y: Axis { min: self.rect.y.max - self.rect.height() / 2.0 + 2.0, max: self.rect.y.max - 2.0 },
-        };
+        self.down_rect.set_x_min(self.rect.dx().max - 14.0);
+        self.down_rect.set_x_max(self.rect.dx().max);
+        self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
+        self.down_rect.set_y_max(self.rect.dy().max - 2.0);
+        // self.down_rect = Rect {
+        //     dx: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
+        //     ox: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
+        //     dy: Axis { min: self.rect.dy().max - self.rect.height() / 2.0 + 2.0, max: self.rect.dy().max - 2.0 },
+        //     oy: Axis { min: self.rect.dy().max - self.rect.height() / 2.0 + 2.0, max: self.rect.dy().max - 2.0 },
+        // };
         self.down_index = ui.context.render.triangle.add_triangle(vec![
-            Vertex::new([self.down_rect.x.min + self.down_rect.width() / 2.0, self.down_rect.y.max], &self.color, &ui.context.size),
-            Vertex::new([self.rect.x.max - 14.0, self.down_rect.y.min], &self.color, &ui.context.size),
-            Vertex::new([self.rect.x.max, self.down_rect.y.min], &self.color, &ui.context.size),
+            Vertex::new([self.down_rect.dx().min + self.down_rect.width() / 2.0, self.down_rect.dy().max], &self.color, &ui.context.size),
+            Vertex::new([self.rect.dx().max - 14.0, self.down_rect.dy().min], &self.color, &ui.context.size),
+            Vertex::new([self.rect.dx().max, self.down_rect.dy().min], &self.color, &ui.context.size),
         ], &ui.device);
     }
 }

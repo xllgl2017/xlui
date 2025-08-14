@@ -21,13 +21,14 @@ pub struct ScrollBar {
     slider_buffer: Option<wgpu::Buffer>,
     context_height: f32,
     focused: bool,
+    offset: f32,
 }
 
 
 impl ScrollBar {
     pub fn new() -> ScrollBar {
         let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
+        fill_style.fill.inactive = Color::rgb(215, 215, 215); //Color::TRANSPARENT; //
         fill_style.fill.hovered = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
         fill_style.fill.clicked = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
         let mut slider_style = ClickStyle::new();
@@ -47,6 +48,7 @@ impl ScrollBar {
             slider_buffer: None,
             context_height: 0.0,
             focused: false,
+            offset: 0.0,
         }
     }
 
@@ -131,8 +133,10 @@ impl Widget for ScrollBar {
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let oy = ui.device.device_input.mouse.offset_y();
-                    let ly = self.fill_param.rect.y.min..self.fill_param.rect.y.max;
-                    let roy = self.slider_param.rect.offset_y_limit(oy, ly);
+                    println!("{} {} {:?}", self.offset, self.slider_param.rect.dy().max + self.offset, self.fill_param.rect.dy());
+                    // let ly = self.fill_param.rect.dy.min..self.fill_param.rect.dy.max;
+                    let roy = self.slider_param.rect.offset_y_limit(self.offset + oy, self.fill_param.rect.dy());
+                    self.offset = roy;
                     ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
                     let data = self.slider_param.as_draw_param(true, true);
                     ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
@@ -142,8 +146,9 @@ impl Widget for ScrollBar {
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
             UpdateType::Offset(ref o) => {
                 let oy = self.slider_offset_y(o.y);
-                let ly = self.fill_param.rect.y.min..self.fill_param.rect.y.max;
-                let roy = self.slider_param.rect.offset_y_limit(oy, ly);
+                // let ly = self.fill_param.rect.dy.min..self.fill_param.rect.dy.max;
+                let roy = self.slider_param.rect.offset_y_limit(self.offset + oy, self.fill_param.rect.dy());
+                self.offset = roy;
                 ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
                 let data = self.slider_param.as_draw_param(true, true);
                 ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);

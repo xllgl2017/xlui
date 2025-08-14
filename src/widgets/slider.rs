@@ -36,6 +36,7 @@ pub struct Slider {
 
     focused: bool,
     hovered: bool,
+    offset: f32,
 }
 
 impl Slider {
@@ -81,6 +82,7 @@ impl Slider {
             slided_buffer: None,
             focused: false,
             hovered: false,
+            offset: 0.0,
         }
     }
 
@@ -114,10 +116,13 @@ impl Slider {
         self.rect.set_size(130.0, 16.0);
         //背景
         self.fill_param.rect = self.rect.clone();
-        self.fill_param.rect.y.min += 5.0;
-        self.fill_param.rect.y.max -= 5.0;
-        self.fill_param.rect.x.min += 8.0;
-        self.fill_param.rect.x.max -= 8.0;
+        self.fill_param.rect.contract(8.0, 5.0);
+        // self.fill_param.rect.dy.contract(5.0);
+        // self.fill_param.rect.oy.contract(5.0);
+        // self.fill_param.rect.dy.min += 5.0;
+        // self.fill_param.rect.dy.max -= 5.0;
+        // self.fill_param.rect.dx.min += 8.0;
+        // self.fill_param.rect.dx.max -= 8.0;
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
@@ -132,10 +137,11 @@ impl Slider {
         self.slided_buffer = Some(slided_buffer);
         //滑块
         self.slider_param.rect = self.rect.clone();
-        self.slider_param.rect.x.min -= self.rect.height() / 2.0;
+        self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
+        // self.slider_param.rect.dx.min -= self.rect.height() / 2.0;
         self.slider_param.rect.set_width(self.rect.height());
-        let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-        self.slider_param.rect.offset_x(offset);
+        self.offset = self.value * self.rect.width() / (self.range.end - self.range.start);
+        self.slider_param.rect.offset_x(self.offset);
         let data = self.slider_param.as_draw_param(false, false);
         let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
         self.slider_index = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
@@ -147,7 +153,7 @@ impl Slider {
         self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
         let data = self.slided_param.as_draw_param(false, false);
         ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
-        let data = self.slider_param.as_draw_param(self.hovered||self.focused, ui.device.device_input.mouse.pressed);
+        let data = self.slider_param.as_draw_param(self.hovered || self.focused, ui.device.device_input.mouse.pressed);
         ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
         ui.context.window.request_redraw();
     }
@@ -171,10 +177,11 @@ impl Widget for Slider {
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let ox = ui.device.device_input.mouse.offset_x();
-                    let mut lx = self.fill_param.rect.x.clone();
+                    let mut lx = self.fill_param.rect.dx().clone();
                     lx.extend(self.slider_param.rect.width() / 2.0);
-                    self.slider_param.rect.offset_x_limit(ox, &lx);
-                    let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.x.min - self.fill_param.rect.x.min) / self.fill_param.rect.width();
+                    let rox = self.slider_param.rect.offset_x_limit(self.offset + ox, &lx);
+                    self.offset = rox;
+                    let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.dx().min - self.fill_param.rect.dx().min) / self.fill_param.rect.width();
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = cv;
                     self.update_slider(ui);
@@ -202,7 +209,8 @@ impl Widget for Slider {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
             self.slider_param.rect = self.rect.clone();
-            self.slider_param.rect.x.min -= self.rect.height() / 2.0;
+            self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
+            // self.slider_param.rect.dx.min -=;
             self.slider_param.rect.set_width(self.rect.height());
             let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
             self.slider_param.rect.offset_x(offset);

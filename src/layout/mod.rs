@@ -88,11 +88,13 @@ impl LayoutKind {
     pub fn add_space(&mut self, space: f32) {
         match self {
             LayoutKind::Horizontal(v) => {
-                v.available_rect.x.min += space;
+                v.available_rect.add_min_x(space);
+                // v.available_rect.dx.min += space;
                 v.width += space;
             }
             LayoutKind::Vertical(v) => {
-                v.available_rect.y.min += space;
+                v.available_rect.add_min_y(space);
+                // v.available_rect.dy.min += space;
                 v.height += space;
             }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
@@ -158,12 +160,14 @@ impl LayoutKind {
             LayoutKind::Horizontal(v) => {
                 v.max_rect = rect;
                 v.available_rect = v.max_rect.clone_add_padding(&padding);
-                v.available_rect.x.max = f32::INFINITY;
+                v.available_rect.set_x_max(f32::INFINITY);
+                // v.available_rect.dx.max = f32::INFINITY;
             }
             LayoutKind::Vertical(v) => {
                 v.max_rect = rect;
                 v.available_rect = v.max_rect.clone_add_padding(&padding);
-                v.available_rect.y.max = f32::INFINITY;
+                v.available_rect.set_y_max(f32::INFINITY);
+                // v.available_rect.dy.max = f32::INFINITY;
             }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
@@ -238,12 +242,14 @@ impl HorizontalLayout {
     pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
         self.max_rect = rect;
         self.available_rect = self.max_rect.clone_add_padding(&padding);
-        self.available_rect.x.max = f32::INFINITY;
+        self.available_rect.set_x_max(f32::INFINITY);
+        // self.available_rect.dx.max = f32::INFINITY;
         self
     }
 
     pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
-        self.available_rect.x.min += rect.width() + self.item_space;
+        self.available_rect.add_min_x(rect.width() + self.item_space);
+        // self.available_rect.dx.min += rect.width() + self.item_space;
         self.width += rect.width() + if self.width == 0.0 { 0.0 } else { self.item_space };
         println!("alloc rect  {} {}", self.height, rect.height());
         if self.height < rect.height() { self.height = rect.height(); }
@@ -292,12 +298,14 @@ impl VerticalLayout {
     pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
         self.max_rect = rect;
         self.available_rect = self.max_rect.clone_add_padding(&padding);
-        self.available_rect.y.max = f32::INFINITY;
+        self.available_rect.set_y_max(f32::INFINITY);
+        // self.available_rect.dy.max = f32::INFINITY;
         self
     }
 
     pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
-        self.available_rect.y.min += rect.height() + self.item_space;
+        self.available_rect.add_min_y(rect.height() + self.item_space);
+        // self.available_rect.dy.min += rect.height() + self.item_space;
         if self.width < rect.width() { self.width = rect.width() + self.item_space; }
         self.height += rect.height() + if self.height == 0.0 { 0.0 } else { self.item_space };
     }

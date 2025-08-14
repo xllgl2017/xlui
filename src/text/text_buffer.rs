@@ -61,13 +61,13 @@ impl TextBuffer {
         let bounds = glyphon::TextBounds {
             left: 0,
             top: 0,
-            right: self.rect.x.max as i32,
-            bottom: self.rect.y.max as i32,
+            right: self.rect.dx().max as i32,
+            bottom: self.rect.dy().max as i32,
         };
         let area = glyphon::TextArea {
             buffer: self.buffer.as_ref().unwrap(),
-            left: self.rect.x.min,
-            top: self.rect.y.min,
+            left: self.rect.dx().min,
+            top: self.rect.dy().min,
             scale: 1.0,
             bounds,
             default_color: self.color.as_glyphon_color(),
