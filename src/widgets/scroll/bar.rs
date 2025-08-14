@@ -133,8 +133,6 @@ impl Widget for ScrollBar {
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let oy = ui.device.device_input.mouse.offset_y();
-                    println!("{} {} {:?}", self.offset, self.slider_param.rect.dy().max + self.offset, self.fill_param.rect.dy());
-                    // let ly = self.fill_param.rect.dy.min..self.fill_param.rect.dy.max;
                     let roy = self.slider_param.rect.offset_y_limit(self.offset + oy, self.fill_param.rect.dy());
                     self.offset = roy;
                     ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
@@ -146,7 +144,6 @@ impl Widget for ScrollBar {
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
             UpdateType::Offset(ref o) => {
                 let oy = self.slider_offset_y(o.y);
-                // let ly = self.fill_param.rect.dy.min..self.fill_param.rect.dy.max;
                 let roy = self.slider_param.rect.offset_y_limit(self.offset + oy, self.fill_param.rect.dy());
                 self.offset = roy;
                 ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
