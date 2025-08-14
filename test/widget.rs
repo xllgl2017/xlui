@@ -79,7 +79,7 @@ impl XlUiApp {
         btn.update(ui);
     }
 
-    fn combo_changed(&mut self, ui: &mut Ui, data: &TD) {
+    fn combo_changed(&mut self, ui: &mut Ui, data: &SV) {
         self.label.set_text(format!("combo: {}", data));
         self.label.update(ui);
     }
@@ -102,17 +102,23 @@ impl Display for TD {
 
 #[derive(PartialEq)]
 pub enum SV {
-    S1,
-    S2,
-    S3,
+    Item1,
+    Item2,
+    Item3,
+    Item4,
+    Item5,
+    Item6,
 }
 
 impl Display for SV {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SV::S1 => f.write_str("S1"),
-            SV::S2 => f.write_str("S2"),
-            SV::S3 => f.write_str("S3"),
+            SV::Item1 => f.write_str("Item1"),
+            SV::Item2 => f.write_str("Item2"),
+            SV::Item3 => f.write_str("Item3"),
+            SV::Item4 => f.write_str("Item4"),
+            SV::Item5 => f.write_str("Item5"),
+            SV::Item6 => f.write_str("Item6"),
         }
     }
 }
@@ -189,10 +195,12 @@ impl App for XlUiApp {
             ui.checkbox(false, "粘贴");
             ui.checkbox(false, "密码");
         });
+        let cb=ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4]).with_popup_height(150.0).connect(Self::combo_changed);
+        let p=cb.parent();
         ui.horizontal(|ui| {
             ui.radio(true, "ComboBox");
             ui.add_space(30.0);
-            ui.add(ComboBox::new(vec![TD::new("item1"), TD::new("item2"), TD::new("item3"), TD::new("item4")]).with_popup_height(150.0).connect(Self::combo_changed));
+            ui.add(cb);
             ui.add_space(186.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "滚动");
@@ -214,11 +222,10 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "SelectValue");
             ui.add_space(10.0);
-            let s1 = SelectItem::new(SV::S1).with_size(40.0, 25.0);
-            let p = s1.need_contact();
-            ui.add(s1);
-            ui.add(SelectItem::new(SV::S2).with_size(40.0, 25.0).contact(p.clone()));
-            ui.add(SelectItem::new(SV::S3).with_size(40.0, 25.0).contact(p));
+            ui.add(SelectItem::new(SV::Item1).with_size(40.0, 25.0).contact(p.clone()));
+            ui.add(SelectItem::new(SV::Item2).with_size(40.0, 25.0).contact(p.clone()));
+            ui.add(SelectItem::new(SV::Item3).with_size(40.0, 25.0).contact(p.clone()));
+            ui.add(SelectItem::new(SV::Item4).with_size(40.0, 25.0).contact(p.clone()));
         })
     }
 

@@ -223,7 +223,7 @@ impl<'a> Ui<'a> {
         self.layout().alloc_rect(&resp.rect);
     }
 
-    pub fn horizontal(&mut self, mut context: impl FnMut(&mut Ui)) {
+    pub fn horizontal(&mut self, mut context: impl FnOnce(&mut Ui)) {
         let current_layout = HorizontalLayout::new().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::Horizontal(current_layout)).unwrap();
         context(self);

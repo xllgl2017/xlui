@@ -83,9 +83,9 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
-    pub(crate) fn set_callback(&mut self, f: impl FnMut(&mut Option<T>) + 'static) {
-        self.callback = Some(Box::new(f));
-    }
+    // pub(crate) fn set_callback(&mut self, f: impl FnMut(&mut Option<T>) + 'static) {
+    //     self.callback = Some(Box::new(f));
+    // }
 
     pub fn connect(mut self, f: impl FnMut(&mut Option<T>) + 'static) -> Self {
         self.callback = Some(Box::new(f));
@@ -130,7 +130,13 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             self.selected = false;
             let data = self.fill_param.as_draw_param(false, false);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        }else if selected&&!self.selected {
+            self.selected = true;
+            let data = self.fill_param.as_draw_param(true, true);
+            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         }
+        // let data = self.fill_param.as_draw_param(selected, selected);
+        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         drop(current);
         let resp = Response::new(&self.id, &self.fill_param.rect);
         if ui.pass.is_none() { return resp; }

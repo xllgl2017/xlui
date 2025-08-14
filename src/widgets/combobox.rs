@@ -132,6 +132,10 @@ impl<T: Display + 'static> ComboBox<T> {
         self.popup_id = popup.id.clone();
         popup.show(ui, |ui| self.add_items(ui));
     }
+
+    pub fn parent(&self) -> Arc<RwLock<Option<String>>> {
+        self.selected.clone()
+    }
 }
 
 
@@ -141,7 +145,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         let resp = Response::new(&self.id, &self.fill_param.rect);
         if ui.pass.is_none() { return resp; }
         let select = self.selected.read().unwrap();
-        if *select != self.previous_select && ui.popups.as_mut().unwrap()[&self.popup_id].open {
+        if *select != self.previous_select  {
             self.previous_select = select.clone();
             if let Some(ref select) = self.previous_select {
                 self.text_buffer.set_text(select.to_string(), ui);

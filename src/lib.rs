@@ -89,7 +89,7 @@ mod render;
 pub mod response;
 pub mod map;
 
-trait NumCastExt: Sized {
+pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;
     fn from_num<N: Into<f64>>(n: N) -> Self;
 }
