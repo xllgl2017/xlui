@@ -108,7 +108,7 @@ impl Rect {
 
     pub fn add_max_y(&mut self, value: f32) {
         self.oy.max += value;
-        self.oy.max += value;
+        self.dy.max += value;
     }
 
     pub fn dx(&self) -> &Axis { &self.dx }
