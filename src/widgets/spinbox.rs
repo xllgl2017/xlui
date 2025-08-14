@@ -71,7 +71,6 @@ impl<T: Display + NumCastExt + 'static> SpinBox<T> {
         }
         let mut edit_rect = self.rect.clone();
         edit_rect.set_x_max(edit_rect.dx().max - 18.0);
-        // edit_rect.dx.max = edit_rect.dx.max - 18.0;
         self.edit.set_rect(edit_rect);
     }
 
@@ -106,13 +105,6 @@ impl<T: Display + NumCastExt + 'static> SpinBox<T> {
         self.up_rect.set_x_max(self.rect.dx().max);
         self.up_rect.set_y_min(self.rect.dy().min + 1.0);
         self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
-        // self.up_rect =
-        //     Rect {
-        //         dx: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
-        //         ox: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
-        //         dy: Axis { min: self.rect.dy().min + 1.0, max: self.rect.dy().min + self.rect.height() / 2.0 - 2.0 },
-        //         oy: Axis { min: self.rect.dy().min + 1.0, max: self.rect.dy().min + self.rect.height() / 2.0 - 2.0 },
-        //     };
         let vertices = vec![
             Vertex::new([self.up_rect.dx().min + self.up_rect.width() / 2.0, self.up_rect.dy().min], &self.color, &ui.context.size),
             Vertex::new([self.up_rect.dx().min, self.up_rect.dy().max], &self.color, &ui.context.size),
@@ -123,12 +115,6 @@ impl<T: Display + NumCastExt + 'static> SpinBox<T> {
         self.down_rect.set_x_max(self.rect.dx().max);
         self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
         self.down_rect.set_y_max(self.rect.dy().max - 2.0);
-        // self.down_rect = Rect {
-        //     dx: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
-        //     ox: Axis { min: self.rect.dx().max - 14.0, max: self.rect.dx().max },
-        //     dy: Axis { min: self.rect.dy().max - self.rect.height() / 2.0 + 2.0, max: self.rect.dy().max - 2.0 },
-        //     oy: Axis { min: self.rect.dy().max - self.rect.height() / 2.0 + 2.0, max: self.rect.dy().max - 2.0 },
-        // };
         self.down_index = ui.context.render.triangle.add_triangle(vec![
             Vertex::new([self.down_rect.dx().min + self.down_rect.width() / 2.0, self.down_rect.dy().max], &self.color, &ui.context.size),
             Vertex::new([self.rect.dx().max - 14.0, self.down_rect.dy().min], &self.color, &ui.context.size),
@@ -162,7 +148,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     fn update(&mut self, ui: &mut Ui) {
         self.edit.update(ui);
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.up_rect) {
                     let is_end = self.value >= self.range.end;

@@ -28,7 +28,7 @@ pub struct ScrollBar {
 impl ScrollBar {
     pub fn new() -> ScrollBar {
         let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::rgb(215, 215, 215); //Color::TRANSPARENT; //
+        fill_style.fill.inactive = Color::TRANSPARENT; //Color::rgb(215, 215, 215); //
         fill_style.fill.hovered = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
         fill_style.fill.clicked = Color::TRANSPARENT; //Color::rgb(215, 215, 215);
         let mut slider_style = ClickStyle::new();

@@ -59,9 +59,6 @@ impl XlUiApp {
             TD::new("14"),
             TD::new("15")
         ];
-        // for i in 0..30 {
-        //     data.push(TD::new(i));
-        // }
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,
@@ -141,7 +138,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
             ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
-        });
+        })
         ui.horizontal(|ui| {
             ui.add(CheckBox::new(false, "checkbox1").connect(Self::check));
             ui.checkbox(true, "checkbox2").set_callback(Self::check);

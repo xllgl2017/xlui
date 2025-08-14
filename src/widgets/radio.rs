@@ -127,11 +127,8 @@ impl RadioButton {
         //内圆
         self.inner_param.rect = self.rect.clone();
 
-        // self.inner_param.rect.dx.min += 4.0;
         self.inner_param.rect.add_min_x(4.0);
         self.inner_param.rect.contract_y(4.0);
-        // self.inner_param.rect.dy.min += 4.0;
-        // self.inner_param.rect.dy.max -= 4.0;
         self.inner_param.rect.set_width(self.inner_param.rect.height());
         let data = self.inner_param.as_draw_param(self.value, self.value);
         let inner_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
@@ -165,7 +162,6 @@ impl Widget for RadioButton {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if hovered != self.hovered {
@@ -177,10 +173,6 @@ impl Widget for RadioButton {
                 if ui.device.device_input.click_at(&self.rect) {
                     self.value = !self.value;
                     self.update_radio(ui);
-                    // let data = self.outer_param.as_draw_param(self.value, self.value);
-                    // ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
-                    // let data = self.inner_param.as_draw_param(self.value, self.value);
-                    // ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(*app, ui, self.value);
@@ -188,8 +180,6 @@ impl Widget for RadioButton {
                     }
                     ui.update_type = UpdateType::None;
                     ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
-                    // ui.context.window.request_redraw();
-                    return;
                 }
             }
             _ => {}

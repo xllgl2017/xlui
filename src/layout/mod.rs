@@ -161,13 +161,11 @@ impl LayoutKind {
                 v.max_rect = rect;
                 v.available_rect = v.max_rect.clone_add_padding(&padding);
                 v.available_rect.set_x_max(f32::INFINITY);
-                // v.available_rect.dx.max = f32::INFINITY;
             }
             LayoutKind::Vertical(v) => {
                 v.max_rect = rect;
                 v.available_rect = v.max_rect.clone_add_padding(&padding);
                 v.available_rect.set_y_max(f32::INFINITY);
-                // v.available_rect.dy.max = f32::INFINITY;
             }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
@@ -243,13 +241,11 @@ impl HorizontalLayout {
         self.max_rect = rect;
         self.available_rect = self.max_rect.clone_add_padding(&padding);
         self.available_rect.set_x_max(f32::INFINITY);
-        // self.available_rect.dx.max = f32::INFINITY;
         self
     }
 
     pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
         self.available_rect.add_min_x(rect.width() + self.item_space);
-        // self.available_rect.dx.min += rect.width() + self.item_space;
         self.width += rect.width() + if self.width == 0.0 { 0.0 } else { self.item_space };
         println!("alloc rect  {} {}", self.height, rect.height());
         if self.height < rect.height() { self.height = rect.height(); }
@@ -322,10 +318,6 @@ impl VerticalLayout {
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) {
         update_or_redraw(&mut self.widgets, &mut self.children, ui, true);
-        match &ui.update_type {
-            UpdateType::Offset(o) => self.available_rect.offset(o.x, o.y),
-            _ => {}
-        }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {

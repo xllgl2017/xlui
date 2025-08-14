@@ -117,12 +117,6 @@ impl Slider {
         //背景
         self.fill_param.rect = self.rect.clone();
         self.fill_param.rect.contract(8.0, 5.0);
-        // self.fill_param.rect.dy.contract(5.0);
-        // self.fill_param.rect.oy.contract(5.0);
-        // self.fill_param.rect.dy.min += 5.0;
-        // self.fill_param.rect.dy.max -= 5.0;
-        // self.fill_param.rect.dx.min += 8.0;
-        // self.fill_param.rect.dx.max -= 8.0;
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
@@ -173,7 +167,6 @@ impl Widget for Slider {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let ox = ui.device.device_input.mouse.offset_x();
@@ -185,7 +178,6 @@ impl Widget for Slider {
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = cv;
                     self.update_slider(ui);
-                    println!("{}", self.callback.is_some());
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(*app, ui, self.value);

@@ -149,7 +149,6 @@ impl Layout for ScrollArea {
         if self.a != 0.0 {
             let oy = self.a * 10.0 * 10.0;
             ui.update_type = UpdateType::Offset(Offset::new_y(-oy));
-            // println!("{}-{}-{}-{}", self.id, self.a, self.a < 0.0, self.a + 0.001 < 0.0);
             if self.a.abs() - 0.001 < 0.0 {
                 self.a = 0.0;
             } else if self.a > 0.0 {
@@ -158,7 +157,6 @@ impl Layout for ScrollArea {
                 self.a += 0.001;
             }
             ui.context.window.request_redraw();
-            // println!("{}-{}", self.id, self.a);
             self.v_bar.update(ui);
             self.layout.as_mut().unwrap().update(ui);
             if let Some(o) = ui.update_type.is_offset() {
