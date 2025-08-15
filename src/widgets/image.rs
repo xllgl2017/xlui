@@ -9,7 +9,7 @@ use crate::response::Response;
 
 pub struct Image {
     pub(crate) id: String,
-    pub(crate) source: &'static str,
+    source: String,
     pub(crate) rect: Rect,
     size_mode: SizeMode,
 
@@ -19,10 +19,10 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(fp: &'static str) -> Self {
+    pub fn new(fp: &str) -> Self {
         Image {
             id: crate::gen_unique_id(),
-            source: fp,
+            source: fp.to_string(),
             rect: Rect::new(),
             size_mode: SizeMode::Fix,
             vertices: vec![],
@@ -62,6 +62,12 @@ impl Image {
         self.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
     }
+
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
     fn update_rect(&mut self, ui: &mut Ui) {
         for (index, v) in self.vertices.iter_mut().enumerate() {
             match index {
@@ -75,9 +81,14 @@ impl Image {
         }
     }
 
+    pub fn set_image(&mut self, source: impl ToString) {
+        self.source = source.to_string();
+
+    }
+
     fn init(&mut self, ui: &mut Ui) {
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
-        let size = ui.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source);
+        let size = ui.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source.as_str());
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         self.vertices = vec![

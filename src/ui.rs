@@ -304,4 +304,8 @@ impl<'a> Ui<'a> {
         let select_value = SelectItem::new(t);
         self.add(select_value)
     }
+
+    pub fn set_image_handle(&mut self,source:&str){
+        self.context.render.image.insert_image(&self.device, source.to_string(), source);
+    }
 }

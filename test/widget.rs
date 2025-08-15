@@ -20,6 +20,7 @@ fn main() {
 struct XlUiApp {
     label: Label,
     count: i32,
+    source: String,
 }
 
 impl XlUiApp {
@@ -27,6 +28,7 @@ impl XlUiApp {
         Self {
             label: Label::new("这里是Label".to_string()).width(100.0),
             count: 0,
+            source: "".to_string(),
         }
     }
 
@@ -75,6 +77,7 @@ impl XlUiApp {
     fn image_button_click(&mut self, btn: &mut Button, ui: &mut Ui) {
         self.label.set_text(format!("image button: {}", self.count));
         self.label.update(ui);
+        self.source = "/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png".to_string();
         btn.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png", ui);
         btn.update(ui);
     }
@@ -194,7 +197,7 @@ impl App for XlUiApp {
             ui.radio(true, "Image");
             ui.add_space(50.0);
             ui.image("logo.jpg", (50.0, 50.0));
-            ui.add(Image::new("logo.jpg").with_size(50.0, 50.0));
+            ui.add(Image::new("logo.jpg").with_size(50.0, 50.0).with_id("test_image"));
             ui.add_space(182.0);
             ui.checkbox(false, "网络图片");
             ui.checkbox(false, "bytes图片流");
@@ -215,6 +218,12 @@ impl App for XlUiApp {
     }
 
     fn update(&mut self, ui: &mut Ui) {
+        if !self.source.is_empty() {
+            ui.set_image_handle(&self.source);
+            let image: &mut Image = ui.get_widget("test_image").unwrap();
+            image.set_image(self.source.clone());
+            self.source = "".to_string();
+        }
         self.label.update(ui);
     }
 

@@ -154,7 +154,7 @@ impl Button {
             None => self.image = Some(Image::new(source)),
             Some(ref mut image) => {
                 ui.context.render.image.insert_image(&ui.device, source.to_string(), source);
-                image.source = source
+                image.set_image(source)
             }
         }
     }
