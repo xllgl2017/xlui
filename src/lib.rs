@@ -1,5 +1,9 @@
-//! ### 最小运行示例
-//! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img.png)
+//!
+//! xlui是一个Rust的2D GUI库。目标是利用Rust语言原生构建GUI、体积小(最小第三方依赖)，简单易用，
+//! 在保证性能的前提下尽量减少CPU的开销。
+//! ###目前的控件工作状态如下图
+//! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img.png?raw=true)
+//! ### 下面是xlui的最小运行示例
 //! ```
 //! use xlui::frame::{WindowAttribute,App};
 //! use xlui::widgets::Widget;
@@ -66,6 +70,18 @@
 //!     }
 //! }
 //!```
+//! * xlui可以在App.update中获取Widget的可变引用，以便修改控件
+//! * update函数是后台接收到系统事件时才会调用，这里不应该直接修改，应根据条件修改。
+//!```
+//! use xlui::ui::Ui;
+//! use xlui::widgets::label::Label;
+//!
+//! fn update(&mut self,ui:&mut Ui){
+//!    if !label_change { return; }
+//!    let label:&mut Label=ui.get_widget("my_label").unwrap();
+//!    label.set_text("这里是修改后的文本".to_string());
+//! }
+//! ```
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
