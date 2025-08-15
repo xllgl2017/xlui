@@ -42,7 +42,7 @@ struct XlUiApp {
 
 impl XlUiApp {
     pub fn new() -> Self {
-        let mut data = vec![
+        let data = vec![
             TD::new("1"),
             TD::new("2"),
             TD::new("3"),
@@ -115,12 +115,12 @@ impl XlUiApp {
         self.label.update(ui);
     }
 
-    fn list_add(&mut self, btn: &mut Button, ui: &mut Ui) {
+    fn list_add(&mut self, _: &mut Button, _: &mut Ui) {
         self.list_view.push(TD::new(self.count));
         self.count += 1;
     }
 
-    fn list_delete(&mut self, btn: &mut Button, ui: &mut Ui) {
+    fn list_delete(&mut self, _: &mut Button, _: &mut Ui) {
         let current = self.list_view.current_index().unwrap();
         self.list_view.remove(current);
     }
@@ -138,7 +138,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
             ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
-        })
+        });
         ui.horizontal(|ui| {
             ui.add(CheckBox::new(false, "checkbox1").connect(Self::check));
             ui.checkbox(true, "checkbox2").set_callback(Self::check);

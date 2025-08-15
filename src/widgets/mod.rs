@@ -27,6 +27,7 @@ pub struct WidgetKind {
     pub(crate) widget: Box<dyn Widget>,
     pub(crate) id: String,
     pub(crate) rect: Rect,
+    pub(crate) display: bool,
 }
 
 impl WidgetKind {
@@ -36,13 +37,18 @@ impl WidgetKind {
             id: resp.id.to_string(),
             rect: resp.rect.clone(),
             widget: Box::new(widget),
+            display: true,
         }
     }
     pub fn update(&mut self, ui: &mut Ui) {
         self.widget.update(ui);
     }
 
-    pub fn redraw(&mut self, ui: &mut Ui) {
-        self.widget.redraw(ui);
+    pub fn redraw(&mut self, ui: &mut Ui, pr: &Rect) {
+        let resp = self.widget.redraw(ui);
+        if resp.rect != &self.rect {
+            self.rect = resp.rect.clone();
+            self.display = !self.rect.out_of_rect(pr);
+        }
     }
 }

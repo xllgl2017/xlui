@@ -54,6 +54,7 @@ impl AppContext {
             popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::None,
+            can_offset: false,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -71,6 +72,7 @@ impl AppContext {
             popups: None,
             current_rect: Rect::new(),
             update_type: ut,
+            can_offset: false,
         };
         app.update(&mut ui);
         ui.app = Some(Box::new(app));
@@ -141,6 +143,7 @@ impl AppContext {
             popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::None,
+            can_offset: false,
         };
         app.redraw(&mut ui);
         ui.app = Some(Box::new(app));
@@ -164,6 +167,7 @@ impl AppContext {
             popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: ut,
+            can_offset: false,
         };
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
@@ -182,6 +186,7 @@ pub struct Ui<'a> {
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
+    pub(crate) can_offset: bool,
 }
 
 
@@ -196,9 +201,9 @@ impl<'a> Ui<'a> {
         }
     }
 
-    pub(crate) fn get_layout(&mut self, id: impl ToString) -> Option<&mut LayoutKind> {
-        self.layout().get_layout(&id.to_string())
-    }
+    // pub(crate) fn get_layout(&mut self, id: impl ToString) -> Option<&mut LayoutKind> {
+    //     self.layout().get_layout(&id.to_string())
+    // }
 }
 
 impl<'a> Ui<'a> {
@@ -227,8 +232,10 @@ impl<'a> Ui<'a> {
         self.layout().alloc_rect(&resp.rect);
     }
 
-    pub fn request_update(&mut self) {
-        self.context.window.request_redraw();
+    pub fn request_update(&mut self, ut: UpdateType) {
+        let wid = self.context.window.id();
+        self.context.sender.send((wid, ut)).unwrap();
+        self.context.event.send_event(()).unwrap();
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {

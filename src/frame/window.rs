@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::frame::context::{Context, Render};
+use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
 use crate::map::Map;
 use crate::size::Size;
@@ -7,6 +7,8 @@ use crate::ui::AppContext;
 use crate::{Device, DeviceInput};
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
+use std::sync::mpsc::Sender;
+use winit::event_loop::EventLoopProxy;
 
 pub(crate) struct Window<A> {
     pub(crate) app_ctx: AppContext,
@@ -14,7 +16,7 @@ pub(crate) struct Window<A> {
 }
 
 impl<A: App> Window<A> {
-    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: A) -> Self {
+    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: A, sender: Sender<(winit::window::WindowId, UpdateType)>, event: EventLoopProxy<()>) -> Self {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await.unwrap();
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await.unwrap();
@@ -57,6 +59,8 @@ impl<A: App> Window<A> {
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
+            sender,
+            event,
         };
         device.device.on_uncaptured_error(Box::new(|err| {
             println!("Error: {:?}", err);
@@ -74,9 +78,9 @@ impl<A: App> Window<A> {
         state
     }
 
-    pub fn get_window(&self) -> &winit::window::Window {
-        &self.app_ctx.context.window
-    }
+    // pub fn get_window(&self) -> &winit::window::Window {
+    //     &self.app_ctx.context.window
+    // }
 
     fn configure_surface(&mut self) {
         self.app_ctx.context.surface.configure(&self.app_ctx.device.device, &self.app_ctx.device.surface_config);
@@ -84,7 +88,6 @@ impl<A: App> Window<A> {
 
 
     pub(crate) fn render(&mut self) {
-        // self.app_ctx.device.device.poll(wgpu::MaintainBase::Poll).unwrap();
         // Create texture view
         self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
             width: self.app_ctx.context.size.width,

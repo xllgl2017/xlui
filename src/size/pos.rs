@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Range, SubAssign};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Copy)]
 pub struct Pos {
     pub x: f32,
     pub y: f32,

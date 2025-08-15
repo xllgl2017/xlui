@@ -76,7 +76,6 @@ use crate::ui::Ui;
 pub mod widgets;
 mod align;
 pub mod vertex;
-pub mod radius;
 pub mod layout;
 pub mod text;
 pub mod font;
@@ -94,6 +93,7 @@ pub trait NumCastExt: Sized {
     fn from_num<N: Into<f64>>(n: N) -> Self;
 }
 
+#[macro_export]
 macro_rules! impl_num_cast_ext {
     ($($t:ty),*) => {
         $(
@@ -116,23 +116,35 @@ impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 const SAMPLE_COUNT: u32 = 4;
 
 pub struct Offset {
+    pos: Pos,
     x: f32,
     y: f32,
+    delete: bool,
 }
 
 impl Offset {
-    pub fn new() -> Offset {
+    pub fn new(pos: Pos) -> Offset {
         Offset {
+            pos,
             x: 0.0,
             y: 0.0,
+            delete: false,
         }
     }
 
-    pub fn new_y(y: f32) -> Offset {
-        Offset {
-            x: 0.0,
-            y,
-        }
+    pub fn with_y(mut self, y: f32) -> Offset {
+        self.y = y;
+        self
+    }
+
+    pub fn with_x(mut self, x: f32) -> Offset {
+        self.x = x;
+        self
+    }
+
+    pub fn with_delete(mut self) -> Offset {
+        self.delete = true;
+        self
     }
 }
 
@@ -237,19 +249,19 @@ impl DeviceInput {
     pub fn click_at(&self, rect: &Rect) -> bool {
         if !self.mouse.clicked.load(Ordering::SeqCst) { return false; }
 
-        let press = rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y);
-        let release = rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y);
+        let press = rect.has_position(self.mouse.pressed_pos);
+        let release = rect.has_position(self.mouse.lastest);
         self.mouse.clicked.store(!(press && release), Ordering::SeqCst);
         press && release
     }
 
     pub fn pressed_at(&self, rect: &Rect) -> bool {
         if !self.mouse.pressed { return false; }
-        rect.has_position(self.mouse.pressed_pos.x, self.mouse.pressed_pos.y)
+        rect.has_position(self.mouse.pressed_pos)
     }
 
     pub fn hovered_at(&self, rect: &Rect) -> bool {
-        rect.has_position(self.mouse.lastest.x, self.mouse.lastest.y)
+        rect.has_position(self.mouse.lastest)
     }
 }
 

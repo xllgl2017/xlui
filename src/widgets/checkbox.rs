@@ -6,10 +6,10 @@ use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
 use crate::frame::App;
-use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::size::border::Border;
+use crate::size::radius::Radius;
 use crate::size::SizeMode;
 use crate::style::ClickStyle;
 use crate::style::color::Color;
@@ -60,7 +60,9 @@ impl CheckBox {
     pub fn reset_size(&mut self, context: &Context) {
         self.text.rect = self.rect.clone();
         self.text.reset_size(context);
-        self.text.rect.offset_x(15.0);
+        self.text.rect.add_min_x(15.0);
+        self.text.rect.add_max_x(15.0);
+        // self.text.rect.offset_x(15.0);
         match self.size_mode {
             SizeMode::Auto => {
                 self.rect.set_width(15.0 + self.text.rect.width());
@@ -167,6 +169,5 @@ impl Widget for CheckBox {
             }
             _ => {}
         }
-
     }
 }

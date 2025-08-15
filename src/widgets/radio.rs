@@ -78,7 +78,8 @@ impl RadioButton {
     fn reset_size(&mut self, context: &Context) {
         self.rect.set_height(16.0);
         self.text.rect = self.rect.clone();
-        self.text.rect.offset_x(18.0);
+        self.text.rect.add_min_x(18.0);
+        self.text.rect.add_max_x(18.0);
         self.text.reset_size(context);
         match self.size_mode {
             SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),

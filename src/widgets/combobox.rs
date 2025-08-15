@@ -10,7 +10,6 @@
 
 use crate::frame::context::{Context, UpdateType};
 use crate::layout::popup::Popup;
-use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -27,6 +26,7 @@ use crate::widgets::Widget;
 use std::any::Any;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use crate::size::radius::Radius;
 
 pub struct ComboBox<T> {
     pub(crate) id: String,
@@ -79,7 +79,8 @@ impl<T: Display + 'static> ComboBox<T> {
         self.text_buffer.rect = self.fill_param.rect.clone_add_padding(&Padding::same(2.0));
         self.popup_rect = self.fill_param.rect.clone_with_size(&self.popup_rect);
         self.popup_rect.set_width(self.fill_param.rect.width());
-        self.popup_rect.offset_y(self.fill_param.rect.height() + 5.0);
+        self.popup_rect.add_min_y(self.fill_param.rect.height() + 5.0);
+        self.popup_rect.add_max_y(self.fill_param.rect.height() + 5.0);
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
@@ -145,7 +146,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         let resp = Response::new(&self.id, &self.fill_param.rect);
         if ui.pass.is_none() { return resp; }
         let select = self.selected.read().unwrap();
-        if *select != self.previous_select  {
+        if *select != self.previous_select {
             self.previous_select = select.clone();
             if let Some(ref select) = self.previous_select {
                 self.text_buffer.set_text(select.to_string(), ui);
@@ -169,7 +170,6 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.fill_param.rect) {
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];

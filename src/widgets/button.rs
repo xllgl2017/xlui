@@ -82,9 +82,13 @@ impl Button {
         if self.image.is_some() {
             self.fill_param.rect.set_width(self.fill_param.rect.width() + self.fill_param.rect.height());
             self.text_buffer.rect = self.fill_param.rect.clone_add_padding(&self.padding);
-            self.text_buffer.rect.offset_x(self.fill_param.rect.height());
+            self.text_buffer.rect.add_min_x(self.fill_param.rect.height());
+            self.text_buffer.rect.add_max_x(self.fill_param.rect.height());
             self.image_rect = self.fill_param.rect.clone_add_padding(&self.padding);
-            self.image_rect.offset(self.padding.left, self.padding.top);
+            self.image_rect.add_min_x(self.padding.left);
+            self.image_rect.add_max_x(self.padding.left);
+            self.image_rect.add_min_y(self.padding.top);
+            self.image_rect.add_max_y(self.padding.top);
             self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
             self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
         } else {
@@ -193,7 +197,6 @@ impl Widget for Button {
             image.update(ui);
         }
         match &mut ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != has_pos {
@@ -213,17 +216,18 @@ impl Widget for Button {
                         ui.context.window.request_redraw();
                         self.callback.replace(callback);
                     }
-                    ui.update_type=UpdateType::None;
+                    ui.update_type = UpdateType::None;
                 }
             }
             UpdateType::Offset(o) => {
-                self.fill_param.rect.offset(o.x, o.y);
+                if !ui.can_offset { return; }
+                self.fill_param.rect.offset(o);
                 let data = self.fill_param.as_draw_param(false, false);
                 ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-                self.text_buffer.rect.offset(o.x, o.y);
+                self.text_buffer.rect.offset(o);
             }
             UpdateType::None => {}
-            _=>{}
+            _ => {}
         }
     }
 }

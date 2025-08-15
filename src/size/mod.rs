@@ -2,6 +2,7 @@ pub mod rect;
 pub mod padding;
 pub mod border;
 pub mod pos;
+pub mod radius;
 
 pub enum SizeMode {
     Auto,

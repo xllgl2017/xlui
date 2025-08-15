@@ -1,6 +1,7 @@
 use crate::render::RoundedBorderRenderer;
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
+use std::sync::mpsc::{channel, Receiver, Sender};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use winit::{
     application::ApplicationHandler,
@@ -8,8 +9,9 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
+use winit::event_loop::EventLoopProxy;
 use xlui::font::Font;
-use xlui::frame::context::{Context, Render};
+use xlui::frame::context::{Context, Render, UpdateType};
 use xlui::size::Size;
 use xlui::{Device, DeviceInput};
 use xlui::map::Map;
@@ -23,7 +25,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: Arc<Window>) -> State {
+    async fn new(window: Arc<Window>, sender: Sender<(WindowId, UpdateType)>, event: EventLoopProxy<()>) -> State {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await.unwrap();
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await.unwrap();
@@ -62,6 +64,8 @@ impl State {
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
+            sender,
+            event,
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
 
@@ -78,7 +82,6 @@ impl State {
     }
 
     fn configure_surface(&mut self) {
-        // self.buttons.iter_mut().for_each(|button| button.need_repaint = true);
         self.context.surface.configure(&self.device.device, &self.device.surface_config);
     }
 
@@ -87,7 +90,6 @@ impl State {
         self.context.size.height = new_size.height;
         self.device.surface_config.width = new_size.width;
         self.device.surface_config.height = new_size.height;
-        // reconfigure the surface
         self.configure_surface();
     }
 
@@ -139,9 +141,10 @@ impl State {
     }
 }
 
-#[derive(Default)]
 struct App {
     state: Option<State>,
+    channel: (Sender<(WindowId, UpdateType)>, Receiver<(WindowId, UpdateType)>),
+    event: EventLoopProxy<()>,
 }
 
 
@@ -153,8 +156,9 @@ impl ApplicationHandler for App {
                 .create_window(Window::default_attributes())
                 .unwrap(),
         );
-
-        let state = pollster::block_on(State::new(window.clone()));
+        let sender = self.channel.0.clone();
+        let event = self.event.clone();
+        let state = pollster::block_on(State::new(window.clone(), sender, event));
         self.state = Some(state);
 
         window.request_redraw();
@@ -194,7 +198,13 @@ impl ApplicationHandler for App {
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
+    let proxy_event = event_loop.create_proxy();
     event_loop.set_control_flow(ControlFlow::Wait);
-    let mut app = App::default();
+    let mut app = App {
+        state: None,
+        channel: channel(),
+        event: proxy_event,
+    };
+
     event_loop.run_app(&mut app).unwrap();
 }

@@ -70,8 +70,11 @@ impl Widget for Label {
 
     fn update(&mut self, ui: &mut Ui) { //处理鼠标键盘时间
         match &ui.update_type {
-            // UpdateType::Init => self.init(ui),
-            UpdateType::Offset(o) => self.buffer.rect.offset(o.x, o.y),
+            UpdateType::Offset(o) => {
+                if !ui.can_offset { return; }
+                self.buffer.rect.offset(o);
+                ui.context.window.request_redraw();
+            }
             _ => {}
         }
         if !self.change { return; }

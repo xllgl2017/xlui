@@ -85,21 +85,6 @@ impl XlUiApp {
     }
 }
 
-struct TD {
-    name: String,
-}
-impl TD {
-    fn new(name: impl Display) -> Self {
-        Self { name: name.to_string() }
-    }
-}
-
-impl Display for TD {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.name)
-    }
-}
-
 #[derive(PartialEq)]
 pub enum SV {
     Item1,

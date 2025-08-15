@@ -121,13 +121,12 @@ impl Widget for Image {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::Offset(ref o) => {
-                self.rect.offset(o.x, o.y);
+                if !ui.can_offset { return; }
+                self.rect.offset(o);
                 self.update_rect(ui);
             }
-            _=>{}
-
+            _ => {}
         }
     }
 }

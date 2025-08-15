@@ -1,12 +1,12 @@
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use crate::frame::context::{Context, UpdateType};
-use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
@@ -83,10 +83,6 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
-    // pub(crate) fn set_callback(&mut self, f: impl FnMut(&mut Option<T>) + 'static) {
-    //     self.callback = Some(Box::new(f));
-    // }
-
     pub fn connect(mut self, f: impl FnMut(&mut Option<T>) + 'static) -> Self {
         self.callback = Some(Box::new(f));
         self
@@ -116,7 +112,7 @@ impl<T: Display> SelectItem<T> {
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
         self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
         self.fill_buffer = Some(fill_buffer);
-        //
+        //文本
         self.text.draw(ui);
     }
 }
@@ -135,8 +131,6 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             let data = self.fill_param.as_draw_param(true, true);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         }
-        // let data = self.fill_param.as_draw_param(selected, selected);
-        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         drop(current);
         let resp = Response::new(&self.id, &self.fill_param.rect);
         if ui.pass.is_none() { return resp; }
@@ -149,7 +143,6 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
             UpdateType::None => {}
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
@@ -163,9 +156,8 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             }
             UpdateType::MousePress => {}
             UpdateType::MouseRelease => {
-                let out = self.fill_param.rect.out_of_border(&ui.current_rect) && false;
                 let clicked = ui.device.device_input.click_at(&self.fill_param.rect);
-                if clicked && !out {
+                if clicked {
                     self.selected = true;
                     let mut selected = self.parent_selected.write().unwrap();
                     *selected = Some(self.value.to_string());
@@ -179,28 +171,17 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(_) => {}
             UpdateType::Offset(ref o) => {
+                if !ui.can_offset { return; }
                 let current = self.parent_selected.read().unwrap();
                 let selected = current.as_ref() == Some(&self.value.to_string());
-                self.fill_param.rect.offset(o.x, o.y);
+                self.fill_param.rect.offset(o);
                 let data = self.fill_param.as_draw_param(selected, selected);
                 ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-                self.text.rect.offset(o.x, o.y);
+                self.text.rect.offset(o);
                 ui.context.window.request_redraw();
                 return;
             }
         }
-        // if let Some(ref offset) = ui.canvas_offset {
-        //
-        // }
-
-        // if !selected && self.selected {
-        //     self.selected = false;
-        //     let data = self.fill_param.as_draw_param(false, false);
-        //     ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-        //     ui.context.window.request_redraw();
-        // }
-        // drop(current);
-
 
     }
 }

@@ -20,7 +20,8 @@
 //! impl App for XlUi{
 //!     fn draw(&mut self, ui: &mut Ui) {
 //!         self.list_view.set_callback(Self::item_changed);
-//!         self.list_view.show(ui,|ui,datum|ui.label(datum.to_string()));
+//!         self.list_view.set_item_widget(|ui,_|ui.label("Item"));
+//!         self.list_view.show(ui);
 //!     }
 //!
 //!     fn update(&mut self, ui: &mut Ui) {
@@ -41,7 +42,6 @@ use crate::frame::App;
 use crate::layout::scroll_area::ScrollArea;
 use crate::layout::{HorizontalLayout, LayoutKind};
 use crate::map::Map;
-use crate::radius::Radius;
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
@@ -50,22 +50,24 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::item::ItemWidget;
 use std::any::Any;
+use std::mem;
 use std::sync::{Arc, RwLock};
+use crate::size::radius::Radius;
 
-pub enum ListUpdate {
-    Push(usize),
-    Remove(usize),
+pub enum ListUpdate<T> {
+    Push(T),
+    Remove(String),
 }
 
 pub struct ListView<T> {
     lid: String,
     data: Vec<T>,
-    items: Map<usize>,
+    items: Map<T>,
     current: Arc<RwLock<Option<String>>>,
     callback: Arc<Option<Box<dyn Fn(&mut dyn Any, &mut Ui)>>>,
     dyn_item_widget: Box<dyn Fn(&mut Ui, &T)>,
     rect: Rect,
-    updates: Vec<ListUpdate>,
+    updates: Vec<ListUpdate<T>>,
 }
 
 impl<T: 'static> ListView<T> {
@@ -126,48 +128,54 @@ impl<T: 'static> ListView<T> {
     }
 
     pub fn current_index(&self) -> Option<usize> {
-        let current = self.current.read().unwrap();
-        let current = current.as_ref()?;
-        Some(self.items[current])
+        let wid = self.current.read().unwrap();
+        let index = self.items.position(wid.as_ref()?)?;
+        Some(*index)
     }
 
     pub fn current(&self) -> Option<&T> {
         let current = self.current.read().unwrap();
-        let current = current.as_ref()?;
-        let current_index = self.items[current];
-        Some(&self.data[current_index])
+        self.items.get(current.as_ref()?)
+        // let current = current.as_ref()?;
+        // let current_index = self.items[current];
+        // Some(&self.data[current_index])
     }
 
-    fn _remove(&mut self, index: usize, ui: &mut Ui) {
-        let (wid, _) = self.items.remove_map_by_index(index);
-        let area = ui.get_layout(&self.lid).expect("找不到ListView");
-        area.remove_widget(&wid);
+    fn _remove(&mut self, wid: String, ui: &mut Ui) {
+        let mut layout = ui.layout.take().expect("应在App::update中调用");
+        let area = layout.get_layout(&self.lid).expect("找不到ListView");
+        area.remove_widget(ui, &wid);
+        if let LayoutKind::ScrollArea(area) = area {
+            area.reset_context_height();
+        }
+        ui.layout = Some(layout);
     }
 
     pub fn remove(&mut self, index: usize) -> T {
-        let res = self.data.remove(index);
-        self.updates.push(ListUpdate::Remove(index));
-        res
+        let (wid, t) = self.items.remove_map_by_index(index);
+        let mut current = self.current.write().unwrap();
+        if current.as_ref() == Some(&wid) { *current = None; }
+        self.updates.push(ListUpdate::Remove(wid));
+        t
     }
 
-    fn _push(&mut self, index: usize, ui: &mut Ui) {
-        let mut layout = ui.layout.take().unwrap();
+    fn _push(&mut self, datum: T, ui: &mut Ui) {
+        let mut layout = ui.layout.take().expect("应在App::update中调用");
         let area = layout.get_layout(&self.lid).expect("找不到ListView");
         if let LayoutKind::ScrollArea(area) = area {
             ui.layout = Some(LayoutKind::Vertical(area.layout.take().unwrap()));
-            let wid = self.item_widget(ui, &self.data[index]);
+            let wid = self.item_widget(ui, &datum);
             if let LayoutKind::Vertical(layout) = ui.layout.take().unwrap() {
                 area.layout = Some(layout);
             }
             area.reset_context_height();
-            self.items.insert(wid, self.data.len() - 1);
+            self.items.insert(wid, datum);
         }
         ui.layout = Some(layout);
     }
 
     pub fn push(&mut self, datum: T) {
-        self.updates.push(ListUpdate::Push(self.data.len()));
-        self.data.push(datum);
+        self.updates.push(ListUpdate::Push(datum));
     }
 
     pub fn set_callback<A: App>(&mut self, f: impl Fn(&mut A, &mut Ui) + 'static) {
@@ -188,19 +196,19 @@ impl<T: 'static> ListView<T> {
         fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         area.set_style(fill_style);
         area.show(ui, |ui| {
-            for (row, datum) in self.data.iter().enumerate() {
-                let id = self.item_widget(ui, datum);
-                self.items.insert(id, row);
+            for datum in mem::take(&mut self.data) {
+                let id = self.item_widget(ui, &datum);
+                self.items.insert(id, datum);
             }
         });
         ui.layout().alloc_rect(&self.rect);
     }
 
     pub fn update(&mut self, ui: &mut Ui) {
-        for update in std::mem::take(&mut self.updates) {
+        for update in mem::take(&mut self.updates) {
             match update {
-                ListUpdate::Push(i) => self._push(i, ui),
-                ListUpdate::Remove(i) => self._remove(i, ui)
+                ListUpdate::Push(datum) => self._push(datum, ui),
+                ListUpdate::Remove(wid) => self._remove(wid, ui)
             }
         }
     }

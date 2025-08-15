@@ -20,6 +20,16 @@ impl<T> Map<T> {
             values: vec![],
         }
     }
+
+    pub fn insert(&mut self, key: impl ToString, value: T) {
+        match self.keys.get(&key.to_string()) {
+            None => {
+                self.keys.insert(key.to_string(), self.values.len());
+                self.values.push(MapNode { key: key.to_string(), value });
+            }
+            Some(index) => self.values[*index] = MapNode { key: key.to_string(), value }
+        }
+    }
     pub fn iter(&self) -> MapIter<T> {
         MapIter { inner: self.values.iter() }
     }
@@ -32,15 +42,6 @@ impl<T> Map<T> {
         EntryMapIterMut { inner: self.values.iter_mut() }
     }
 
-    pub fn insert(&mut self, key: impl ToString, value: T) {
-        match self.keys.get(&key.to_string()) {
-            None => {
-                self.keys.insert(key.to_string(), self.values.len());
-                self.values.push(MapNode { key: key.to_string(), value });
-            }
-            Some(index) => self.values[*index] = MapNode { key: key.to_string(), value }
-        }
-    }
 
     pub fn get(&self, key: impl ToString) -> Option<&T> {
         let k = key.to_string();
@@ -67,6 +68,10 @@ impl<T> Map<T> {
     pub fn remove_map_by_index(&mut self, index: usize) -> (String, T) {
         let res = self.values.remove(index);
         self.keys.remove(&res.key);
+        self.keys.clear();
+        self.values.iter().enumerate().for_each(|(i, v)| {
+            self.keys.insert(v.key.clone(), i);
+        });
         (res.key, res.value)
     }
 
@@ -80,6 +85,14 @@ impl<T> Map<T> {
 
     pub fn last_mut(&mut self) -> Option<&mut T> {
         Some(&mut self.values.last_mut()?.value)
+    }
+
+    pub fn has_key(&mut self, key: &String) -> bool {
+        self.keys.contains_key(key)
+    }
+
+    pub fn position(&self, key: &String) -> Option<&usize> {
+        self.keys.get(key)
     }
 }
 
@@ -111,16 +124,6 @@ impl<T> IndexMut<&String> for Map<T> {
         &mut self.values[index].value
     }
 }
-
-// impl<T> Index<RangeFrom<usize>> for Map<T> {
-//     type Output = [T];
-//
-//     fn index(&self, index: RangeFrom<usize>) -> &Self::Output {
-//         let items = &self.values[index];
-//         let t=items.iter().map(|item| &item.value).collect::<[_]>();
-//         &t
-//     }
-// }
 
 pub struct MapIter<'a, T> {
     inner: Iter<'a, MapNode<T>>,

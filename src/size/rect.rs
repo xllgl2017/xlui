@@ -1,7 +1,8 @@
+use crate::Offset;
 use crate::size::padding::Padding;
-use crate::size::pos::Axis;
+use crate::size::pos::{Axis, Pos};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug)]
 pub struct Rect {
     dx: Axis,
     ox: Axis,
@@ -136,8 +137,8 @@ impl Rect {
     }
 
 
-    pub fn has_position(&self, x: f32, y: f32) -> bool {
-        x > self.dx.min && x < self.dx.max && y > self.dy.min && y < self.dy.max
+    pub fn has_position(&self, pos: Pos) -> bool {
+        pos.x > self.dx.min && pos.x < self.dx.max && pos.y > self.dy.min && pos.y < self.dy.max
     }
 
     pub(crate) fn clone_with_size(&self, other: &Rect) -> Rect {
@@ -157,12 +158,22 @@ impl Rect {
         self.dx.min < other.dx.min || self.dx.max > other.dx.max ||
             self.dy.min < other.dy.min || self.dy.max > other.dy.max
     }
+
+    // pub(crate) fn in_other(&self, rect: &Rect) -> bool {
+    //     self.dx.min >= rect.dx.min && self.dx.max <= rect.dx.max
+    //         && self.dy.min >= rect.dy.min && self.dy.max <= rect.dy.max
+    // }
 }
 
 //位移数值为总位移
 impl Rect {
-    pub fn offset_x(&mut self, x: f32) {
-        self.dx = self.ox + x;
+    pub fn offset_x(&mut self, o: &Offset) {
+        if o.delete {
+            self.dx += o.x;
+            self.ox += o.x;
+        } else {
+            self.dx = self.ox + o.x;
+        }
     }
 
     pub fn offset_x_limit(&mut self, ox: f32, lx: &Axis) -> f32 {
@@ -180,8 +191,13 @@ impl Rect {
         }
     }
 
-    pub fn offset_y(&mut self, oy: f32) {
-        self.dy = self.oy + oy;
+    pub fn offset_y(&mut self, o: &Offset) {
+        if o.delete {
+            self.oy += o.y;
+            self.dy += o.y;
+        } else {
+            self.dy = self.oy + o.y;
+        }
     }
 
     pub fn offset_y_limit(&mut self, oy: f32, ly: &Axis) -> f32 {
@@ -199,23 +215,30 @@ impl Rect {
         }
     }
 
-    pub fn offset(&mut self, x: f32, y: f32) {
-        self.offset_x(x);
-        self.offset_y(y);
+    pub fn offset(&mut self, o: &Offset) {
+        self.offset_x(o);
+        self.offset_y(o);
     }
 
     pub fn offset_x_to(&mut self, tx: f32) {
         let ox = tx - self.ox.min;
-        self.offset_x(ox)
+        self.dx = self.ox + ox;
     }
 
     pub fn offset_y_to(&mut self, ty: f32) {
         let oy = ty - self.oy.min;
-        self.offset_y(oy)
+        self.dy = self.oy + oy;
     }
 
     pub fn offset_to(&mut self, tx: f32, ty: f32) {
         self.offset_x_to(tx);
         self.offset_y_to(ty);
+    }
+}
+
+impl PartialEq for Rect {
+    fn eq(&self, other: &Self) -> bool {
+        self.dx.min == other.dx.min && self.dx.max == other.dx.max
+            && self.dy.min == other.dy.min && self.dy.max == other.dy.max
     }
 }

@@ -87,7 +87,8 @@ impl Widget for Rectangle {
                 }
             }
             UpdateType::Offset(ref o) => {
-                self.fill_param.rect.offset(o.x, o.y);
+                if !ui.can_offset { return; }
+                self.fill_param.rect.offset(o);
                 self.update_rect(ui);
             }
             _ => {}

@@ -4,6 +4,8 @@ use crate::text::text_render::TextRender;
 use crate::{Device, NumCastExt, Offset};
 use glyphon::Viewport;
 use std::sync::Arc;
+use std::sync::mpsc::Sender;
+use winit::event_loop::EventLoopProxy;
 use crate::map::Map;
 use crate::render::circle::CircleRender;
 use crate::render::image::ImageRender;
@@ -85,6 +87,8 @@ pub struct Context {
     pub resize: bool,
     pub render: Render,
     pub updates: Map<ContextUpdate>,
+    pub sender: Sender<(winit::window::WindowId, UpdateType)>,
+    pub event: EventLoopProxy<()>,
 }
 
 impl Context {

@@ -1,5 +1,4 @@
 use crate::frame::context::UpdateType;
-use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::size::border::Border;
@@ -10,6 +9,7 @@ use crate::ui::Ui;
 use crate::widgets::Widget;
 use crate::Offset;
 use crate::response::Response;
+use crate::size::radius::Radius;
 
 pub struct ScrollBar {
     id: String,
@@ -82,6 +82,10 @@ impl ScrollBar {
         self.fill_param.rect.set_height(height);
     }
 
+    pub fn scrolling(&self) -> bool {
+        self.offset < (self.fill_param.rect.height() - self.slider_param.rect.height()) && self.offset != 0.0
+    }
+
     //计算滑块位移
     fn slider_offset_y(&self, cy: f32) -> f32 {
         let scrollable_content = self.context_height - self.fill_param.rect.height();
@@ -135,10 +139,13 @@ impl Widget for ScrollBar {
                     let oy = ui.device.device_input.mouse.offset_y();
                     let roy = self.slider_param.rect.offset_y_limit(self.offset + oy, self.fill_param.rect.dy());
                     self.offset = roy;
-                    ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
+                    let ut = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(self.context_offset_y(-roy)));
+
+                    ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y(self.context_offset_y(-roy)));
                     let data = self.slider_param.as_draw_param(true, true);
                     ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
                     ui.context.window.request_redraw();
+                    ui.request_update(ut);
                 }
             }
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
@@ -146,10 +153,12 @@ impl Widget for ScrollBar {
                 let oy = self.slider_offset_y(o.y);
                 let roy = self.slider_param.rect.offset_y_limit(self.offset + oy, self.fill_param.rect.dy());
                 self.offset = roy;
-                ui.update_type = UpdateType::Offset(Offset::new_y(self.context_offset_y(-roy)));
+
+                let ut = UpdateType::Offset(Offset::new(o.pos).with_y(self.context_offset_y(-roy)));
+                ui.update_type = UpdateType::None;
                 let data = self.slider_param.as_draw_param(true, true);
                 ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-                ui.context.window.request_redraw();
+                ui.request_update(ut);
             }
             _ => {}
         }

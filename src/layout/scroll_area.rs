@@ -1,6 +1,5 @@
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutKind, VerticalLayout};
-use crate::radius::Radius;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::size::border::Border;
@@ -12,6 +11,8 @@ use crate::ui::Ui;
 use crate::widgets::scroll::bar::ScrollBar;
 use crate::widgets::Widget;
 use crate::Offset;
+use crate::size::pos::Pos;
+use crate::size::radius::Radius;
 
 pub struct ScrollArea {
     pub(crate) id: String,
@@ -118,27 +119,40 @@ impl Layout for ScrollArea {
             UpdateType::MouseMove => {
                 if ui.device.device_input.pressed_at(&self.context_rect) && ui.device.device_input.mouse.offset_y() != 0.0 {
                     let oy = ui.device.device_input.mouse.offset_y();
-                    ui.update_type = UpdateType::Offset(Offset::new_y(-oy));
+                    ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(-oy));
+                    ui.current_rect = self.fill_param.rect.clone();
+                    self.v_bar.update(ui);
+                    return;
                 }
+                self.layout.as_mut().unwrap().update(ui);
             }
-            UpdateType::MousePress => {}
+            UpdateType::MousePress => self.layout.as_mut().unwrap().update(ui),
             UpdateType::MouseRelease => {
                 if ui.device.device_input.hovered_at(&self.fill_param.rect) {
                     self.a = ui.device.device_input.mouse.a;
                 }
+                self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseWheel => {
                 if ui.device.device_input.hovered_at(&self.fill_param.rect) {
-                    ui.update_type = UpdateType::Offset(Offset::new_y(-ui.device.device_input.mouse.delta_y() * 10.0));
+                    ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y(-ui.device.device_input.mouse.delta_y() * 10.0));
+                    self.v_bar.update(ui);
+                    return;
                 }
             }
             UpdateType::KeyRelease(_) => {}
-            UpdateType::Offset(_) => {}
+            UpdateType::Offset(ref o) => {
+                if !self.fill_param.rect.has_position(o.pos) { return; }
+                ui.can_offset = true;
+                self.layout.as_mut().unwrap().update(ui);
+                ui.update_type = UpdateType::None;
+                ui.can_offset = false;
+            }
         }
-
+        ui.current_rect = self.context_rect.clone();
         self.v_bar.update(ui);
-        ui.current_rect = self.layout.as_ref().unwrap().drawn_rect();
-        self.layout.as_mut().unwrap().update(ui);
+        //
+        // self.layout.as_mut().unwrap().update(ui);
         if let Some(o) = ui.update_type.is_offset() {
             if o.y == 0.0 { self.a = 0.0; }
             ui.update_type = UpdateType::None;
@@ -148,7 +162,10 @@ impl Layout for ScrollArea {
     fn redraw(&mut self, ui: &mut Ui) {
         if self.a != 0.0 {
             let oy = self.a * 10.0 * 10.0;
-            ui.update_type = UpdateType::Offset(Offset::new_y(-oy));
+            let mut pos = Pos::new();
+            pos.x = self.fill_param.rect.dx().center();
+            pos.y = self.fill_param.rect.dy().center();
+            ui.update_type = UpdateType::Offset(Offset::new(pos).with_y(-oy));
             if self.a.abs() - 0.001 < 0.0 {
                 self.a = 0.0;
             } else if self.a > 0.0 {
@@ -156,13 +173,8 @@ impl Layout for ScrollArea {
             } else if self.a < 0.0 {
                 self.a += 0.001;
             }
-            ui.context.window.request_redraw();
             self.v_bar.update(ui);
-            self.layout.as_mut().unwrap().update(ui);
-            if let Some(o) = ui.update_type.is_offset() {
-                if o.y == 0.0 { self.a = 0.0; }
-                ui.update_type = UpdateType::None;
-            }
+            if !self.v_bar.scrolling() { self.a = 0.0; }
         }
         let pass = ui.pass.as_mut().unwrap();
         //滚动区域

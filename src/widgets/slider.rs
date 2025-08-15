@@ -1,5 +1,4 @@
 use crate::frame::App;
-use crate::radius::Radius;
 use crate::render::circle::param::CircleParam;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
@@ -13,6 +12,9 @@ use crate::widgets::Widget;
 use std::any::Any;
 use std::ops::Range;
 use crate::frame::context::{ContextUpdate, UpdateType};
+use crate::Offset;
+use crate::size::pos::Pos;
+use crate::size::radius::Radius;
 
 pub struct Slider {
     pub(crate) id: String,
@@ -135,7 +137,7 @@ impl Slider {
         // self.slider_param.rect.dx.min -= self.rect.height() / 2.0;
         self.slider_param.rect.set_width(self.rect.height());
         self.offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-        self.slider_param.rect.offset_x(self.offset);
+        self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
         let data = self.slider_param.as_draw_param(false, false);
         let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
         self.slider_index = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
@@ -202,10 +204,9 @@ impl Widget for Slider {
             v.update_f32(&mut self.value);
             self.slider_param.rect = self.rect.clone();
             self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
-            // self.slider_param.rect.dx.min -=;
             self.slider_param.rect.set_width(self.rect.height());
             let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-            self.slider_param.rect.offset_x(offset);
+            self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(offset));
             self.update_slider(ui);
         }
     }

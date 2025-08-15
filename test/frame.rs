@@ -1,6 +1,6 @@
 use xlui::frame::App;
 use xlui::layout::popup::Popup;
-use xlui::radius::Radius;
+use xlui::size::radius::Radius;
 use xlui::size::rect::Rect;
 use xlui::style::color::Color;
 use xlui::style::Shadow;
@@ -27,7 +27,10 @@ impl XlUi {
             color: Color::rgba(0, 0, 0, 30),
         };
         let mut rect = Rect::new().with_size(300.0, 200.0);
-        rect.offset(10.0, 10.0);
+        rect.add_min_x(10.0);
+        rect.add_max_x(10.0);
+        rect.add_min_y(10.0);
+        rect.add_max_y(10.0);
         XlUi {
             frame: Rectangle::new(rect, Popup::popup_style()).with_shadow(shadow),
             border_width: 1.0,

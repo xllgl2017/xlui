@@ -1,12 +1,14 @@
+use crate::frame::context::UpdateType;
 use crate::frame::window::Window;
 use crate::size::Size;
 use crate::ui::Ui;
+use std::collections::HashMap;
+use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
-use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy};
 use winit::window::{Icon, WindowId, WindowLevel};
-use crate::frame::context::UpdateType;
 
 mod window;
 pub mod context;
@@ -72,17 +74,21 @@ impl Default for WindowAttribute {
 
 
 struct Application<A> {
-    windows: Vec<Window<A>>,
+    windows: HashMap<WindowId, Window<A>>,
     attribute: WindowAttribute,
     app: Option<A>,
+    channel: (Sender<(WindowId, UpdateType)>, Receiver<(WindowId, UpdateType)>),
+    proxy_event: Option<EventLoopProxy<()>>,
 }
 
 impl<A> Application<A> {
     fn new() -> Self {
         Application {
-            windows: vec![],
+            windows: HashMap::new(),
             attribute: WindowAttribute::default(),
             app: None,
+            channel: channel(),
+            proxy_event: None,
         }
     }
 
@@ -96,35 +102,49 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         println!("111111111111111111111111111111");
         let app = self.app.take().unwrap();
+        let event = self.proxy_event.take().unwrap();
         let attr = self.attribute.as_winit_attributes();
         let winit_window = Arc::new(event_loop.create_window(attr).unwrap());
-        let window = pollster::block_on(Window::new(winit_window.clone(), app));
-        self.windows.push(window);
+        let window = pollster::block_on(Window::new(winit_window.clone(), app, self.channel.0.clone(), event));
+        self.windows.insert(winit_window.id(), window);
         winit_window.request_redraw();
     }
 
+    fn user_event(&mut self, _: &ActiveEventLoop, _: ()) {
+        let mut lastest_res: Result<(WindowId, UpdateType), TryRecvError> = Err(TryRecvError::Empty);
+        loop {
+            let res = self.channel.1.try_recv();
+            if res.is_err() { break; }
+            lastest_res = res;
+        }
+        if let Ok((wid, ut)) = lastest_res {
+            let window = self.windows.get_mut(&wid).unwrap();
+            window.app_ctx.update(ut, &mut window.app)
+        }
+    }
+
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
-        let window = self.windows.iter_mut().find(|x| x.get_window().id() == id);
+        let window = self.windows.get_mut(&id);
         if window.is_none() { return; }
         let window = window.unwrap();
         match event {
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
-                let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
-                self.windows.remove(pos);
+                // let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
+                self.windows.remove(&id);
                 if self.windows.len() == 0 { event_loop.exit(); }
             }
             WindowEvent::RedrawRequested => {
                 println!("11");
-                if window.app_ctx.need_rebuild {
-                    let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
-                    let window = self.windows.remove(pos);
-                    let mut window = pollster::block_on(Window::new(window.app_ctx.context.window, window.app));
-                    window.render();
-                    window.app_ctx.context.resize = false;
-                    self.windows.push(window);
-                    return;
-                }
+                // if window.app_ctx.need_rebuild {
+                //     // let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
+                //     let window = self.windows.remove(&id).unwrap();
+                //     let mut window = pollster::block_on(Window::new(window.app_ctx.context.window, window.app));
+                //     window.render();
+                //     window.app_ctx.context.resize = false;
+                //     self.windows.insert(id, window);
+                //     return;
+                // }
                 window.render();
                 window.app_ctx.context.resize = false;
             }
@@ -132,23 +152,15 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 window.resize(size);
             }
             WindowEvent::MouseInput { state, button, .. } => {
-                // println!("{:?}", state);
                 match (state, button) {
                     (ElementState::Pressed, MouseButton::Left) => {
                         window.app_ctx.device.device_input.mouse.mouse_press();
-                        // window.app_ctx.device.device_input.mouse.previous = window.app_ctx.device.device_input.mouse.lastest.clone();
-                        // window.app_ctx.device.device_input.mouse.pressed_pos = window.app_ctx.device.device_input.mouse.lastest.clone();
-                        // window.app_ctx.device.device_input.mouse.pressed = true;
                         window.app_ctx.update(UpdateType::MousePress, &mut window.app);
                     }
                     (ElementState::Released, MouseButton::Left) => {
                         window.app_ctx.device.device_input.mouse.mouse_release();
-                        // window.app_ctx.device.device_input.mouse.clicked = true;
                         window.app_ctx.update(UpdateType::MouseRelease, &mut window.app);
                         window.app_ctx.device.device_input.mouse.a = 0.0;
-                        // window.app_ctx.device.device_input.mouse.clicked = false;
-                        // window.app_ctx.device.device_input.mouse.pressed_pos = Pos::new();
-                        // window.app_ctx.device.device_input.mouse.pressed = false;
                     }
                     (_, _) => {}
                 }
@@ -189,9 +201,11 @@ pub trait App: Sized + 'static {
 
     fn run(self) {
         let event_loop = EventLoop::new().unwrap();
+        let proxy_event = event_loop.create_proxy();
         event_loop.set_control_flow(ControlFlow::Wait);
         let mut application = Application::new().with_attrs(self.window_attributes());
         application.app = Some(self);
+        application.proxy_event = Some(proxy_event);
         event_loop.run_app(&mut application).unwrap()
     }
 }
