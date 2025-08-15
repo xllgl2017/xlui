@@ -33,7 +33,7 @@ pub struct SpinBox<T> {
     contact_ids: Vec<String>,
 }
 
-impl<T: Display + NumCastExt + 'static> SpinBox<T> {
+impl<T: Display + NumCastExt + PartialOrd + Copy + 'static> SpinBox<T> {
     pub fn new(v: T, g: T, r: Range<T>) -> Self {
         let color = Color::rgb(95, 95, 95);
         let inactive_color = Color::rgb(153, 152, 152);
@@ -121,24 +121,37 @@ impl<T: Display + NumCastExt + 'static> SpinBox<T> {
             Vertex::new([self.rect.dx().max, self.down_rect.dy().min], &self.color, &ui.context.size),
         ], &ui.device);
     }
+
+    fn update_value(&mut self, ui: &mut Ui) {
+        let c = if self.value <= self.range.start {
+            self.value = self.range.start;
+            self.inactive_color.as_gamma_rgba()
+        } else {
+            self.color.as_gamma_rgba()
+        };
+        ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+        let c = if self.value >= self.range.end {
+            self.value = self.range.end;
+            self.inactive_color.as_gamma_rgba()
+        } else {
+            self.color.as_gamma_rgba()
+        };
+        ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+        self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+    }
 }
 
 
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) -> Response {
         if !self.init { self.init(ui); }
-        if self.change {
-            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+        if ui.context.resize {
+            self.update_value(ui);
         }
         let resp = Response::new(&self.id, &self.rect);
         if ui.pass.is_none() { return resp; }
         self.edit.redraw(ui);
-        if ui.context.resize {
-            let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-            let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-        }
+
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.triangle.render(self.down_index.clone(), pass);
         ui.context.render.triangle.render(self.up_index.clone(), pass);
@@ -146,14 +159,26 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        self.edit.update(ui);
         match ui.update_type {
+            UpdateType::MousePress => {
+                let focused = self.edit.focused;
+                self.edit.update(ui);
+                if focused && self.edit.focused != focused {
+                    let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
+                    self.value = T::from_num(v);
+                    self.update_value(ui);
+                    ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
+                    ui.context.window.request_redraw();
+                }
+                return;
+            }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.up_rect) {
                     let is_end = self.value >= self.range.end;
                     let is_start = self.value == self.range.start;
                     if !is_end {
                         self.value += self.gap;
+                        if self.value > self.range.end { self.value = self.range.end }
                         self.edit.update_text(ui, format!("{:.*}", 2, self.value));
                         if let Some(ref mut callback) = self.callback {
                             let app = ui.app.take().unwrap();
@@ -170,10 +195,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
                 } else if ui.device.device_input.click_at(&self.down_rect) {
-                    let is_start = self.value == self.range.start;
+                    let is_start = self.value <= self.range.start;
                     let is_end = self.value >= self.range.end;
                     if !is_start {
                         self.value -= self.gap;
+                        if self.value < self.range.start { self.value = self.range.start }
                         self.edit.update_text(ui, format!("{:.*}", 2, self.value));
                         if let Some(ref mut callback) = self.callback {
                             let app = ui.app.take().unwrap();
@@ -185,17 +211,25 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     if is_end {
                         ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
                     }
-                    let c = if self.value == self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
+                    let c = if self.value <= self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
                     ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
                 }
+                return;
+            }
+            UpdateType::KeyRelease(_) => {
+                if !self.edit.focused { return; }
+                self.edit.update(ui);
+
+                return;
             }
             _ => {}
         }
+        self.edit.update(ui);
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_t(&mut self.value);
-            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+            self.update_value(ui);
             ui.context.window.request_redraw();
         }
     }

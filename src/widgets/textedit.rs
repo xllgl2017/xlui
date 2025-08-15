@@ -158,7 +158,7 @@ pub struct TextEdit {
     cursor_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
-    focused: bool,
+    pub(crate) focused: bool,
     mouse_press: bool,
 
     contact_ids: Vec<String>,
@@ -331,6 +331,10 @@ impl TextEdit {
         self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
         let data = self.cursor_param.as_draw_param(false, false);
         ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
+    }
+
+    pub(crate) fn text(&self) -> String {
+        self.char_layout.text()
     }
 
     fn init(&mut self, ui: &mut Ui) {
