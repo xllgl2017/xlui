@@ -1,4 +1,4 @@
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -25,7 +25,7 @@ impl TextChar {
     pub fn new(c: char, xm: f32, w: f32) -> TextChar {
         TextChar {
             char: c,
-            x: (xm..xm + w).into(), //Pos { min: xm, max: xm + w },
+            x: (xm..xm + w).into(),
             width: w,
         }
     }
@@ -160,6 +160,8 @@ pub struct TextEdit {
     hovered: bool,
     focused: bool,
     mouse_press: bool,
+
+    contact_ids: Vec<String>,
 }
 
 impl TextEdit {
@@ -208,6 +210,7 @@ impl TextEdit {
             hovered: false,
             focused: false,
             mouse_press: false,
+            contact_ids: vec![],
         }
     }
 
@@ -221,7 +224,6 @@ impl TextEdit {
         }
         let mut rect = self.fill_param.rect.clone_add_padding(&Padding::same(3.0));
         rect.add_min_x(5.0);
-        // rect.dx.min += 5.0;
         self.text_buffer.rect = rect;
     }
 
@@ -240,6 +242,11 @@ impl TextEdit {
         self
     }
 
+    pub fn contact(mut self, id: impl ToString) -> Self {
+        self.contact_ids.push(id.to_string());
+        self
+    }
+
     fn update_cursor(&mut self, ui: &mut Ui, xm: f32) {
         self.cursor_param.rect.offset_x_to(xm);
         let data = self.cursor_param.as_draw_param(false, false);
@@ -253,10 +260,8 @@ impl TextEdit {
             let ct = &self.char_layout.chars[pos];
             if lx > ui.device.device_input.mouse.pressed_pos.x { //向右选择
                 self.select_param.rect.set_x_max(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
-                // self.select_param.rect.dx.max = if lx >= ct.half_x() { ct.x.max } else { ct.x.min };
             } else { //向左选择
                 self.select_param.rect.set_x_min(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
-                // self.select_param.rect.dx.min = if lx >= ct.half_x() { ct.x.max } else { ct.x.min };
             }
 
             self.char_layout.reset_cursor(if lx >= ct.half_x() { pos + 1 } else { pos });
@@ -315,14 +320,12 @@ impl TextEdit {
             callback(*app, ui, self.char_layout.text());
             ui.app.replace(app);
         }
+        ui.send_updates(&self.contact_ids, ContextUpdate::String(self.char_layout.text()));
+        ui.context.window.request_redraw();
     }
 
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
         self.text_buffer.set_text(text, ui);
-        // self.text_buffer.buffer.as_mut().unwrap().set_text(
-        //     &mut ui.context.render.text.font_system, text.as_str(),
-        //     &ui.context.font.font_attr(), Shaping::Advanced,
-        // );
         let wx = self.text_buffer.rect.dx().min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
         self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
@@ -352,8 +355,6 @@ impl TextEdit {
         self.cursor_param.rect = self.fill_param.rect.clone_add_padding(&Padding::same(5.0));
         self.cursor_param.rect.set_x_min(self.cursor_param.rect.dx().min - 2.0);
         self.cursor_param.rect.set_x_max(self.cursor_param.rect.dx().min + 2.0);
-        // self.cursor_param.rect.dx.min = self.cursor_param.rect.dx.min - 2.0;
-        // self.cursor_param.rect.dx.max = self.cursor_param.rect.dx.min + 2.0;
         self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
         let data = self.cursor_param.as_draw_param(false, false);
         let cursor_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -381,7 +382,6 @@ impl Widget for TextEdit {
 
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            // UpdateType::Init => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
@@ -401,16 +401,12 @@ impl Widget for TextEdit {
                     if x < self.char_layout.x_min {
                         self.select_param.rect.set_x_min(self.char_layout.x_min);
                         self.select_param.rect.set_x_max(self.char_layout.x_min);
-                        // self.select_param.rect.dx.min = self.char_layout.x_min;
-                        // self.select_param.rect.dx.max = self.char_layout.x_min;
                         self.update_cursor(ui, self.char_layout.x_min);
                         self.char_layout.reset_cursor(0);
                         ui.context.window.request_redraw();
                     } else if x > self.char_layout.x_min + self.char_layout.width {
                         self.select_param.rect.set_x_min(self.char_layout.x_min + self.char_layout.width);
                         self.select_param.rect.set_x_max(self.char_layout.x_min + self.char_layout.width);
-                        // self.select_param.rect.dx.min = self.char_layout.x_min + self.char_layout.width;
-                        // self.select_param.rect.dx.max = self.char_layout.x_min + self.char_layout.width;
                         self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width);
                         self.char_layout.reset_cursor(self.char_layout.chars.len());
                         ui.context.window.request_redraw();
@@ -420,8 +416,6 @@ impl Widget for TextEdit {
                             let ct = &self.char_layout.chars[pos];
                             self.select_param.rect.set_x_min(if x >= ct.half_x() { ct.x.max } else { ct.x.min });
                             self.select_param.rect.set_x_max(if x >= ct.half_x() { ct.x.max } else { ct.x.min });
-                            // self.select_param.rect.dx.min = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
-                            // self.select_param.rect.dx.max = if x >= ct.half_x() { ct.x.max } else { ct.x.min };
                             self.char_layout.reset_cursor(if x >= ct.half_x() { pos + 1 } else { pos });
                             self.update_cursor(ui, self.select_param.rect.dx().min);
                             ui.context.window.request_redraw();

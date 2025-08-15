@@ -51,6 +51,10 @@ impl Label {
         &self.buffer.text
     }
 
+    pub fn get_id(&self) -> &str {
+        &self.id
+    }
+
     fn init(&mut self, ui: &mut Ui) {
         self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
         self.buffer.reset_size(ui.context);
@@ -63,6 +67,14 @@ impl Widget for Label {
     fn redraw(&mut self, ui: &mut Ui) -> Response {
         if self.buffer.buffer.is_none() { self.init(ui); }
         if ui.pass.is_none() { return Response::new(&self.id, &self.buffer.rect); }
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_str(&mut self.buffer.text);
+            self.change = true;
+        }
+        if self.change {
+            self.buffer.set_text(self.buffer.text.clone(), ui);
+            self.change = false;
+        }
         self.buffer.redraw(ui);
         Response::new(&self.id, &self.buffer.rect)
     }
@@ -77,7 +89,5 @@ impl Widget for Label {
             }
             _ => {}
         }
-        if !self.change { return; }
-        self.buffer.set_text(self.buffer.text.clone(), ui);
     }
 }

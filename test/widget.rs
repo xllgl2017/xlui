@@ -170,7 +170,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
-            ui.add(TextEdit::new("sdsd".to_string()).connect(Self::edit_changed));
+            ui.add(TextEdit::new("sdsd".to_string()).contact(self.label.get_id()));
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");

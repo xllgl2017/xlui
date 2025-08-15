@@ -57,6 +57,16 @@ impl ContextUpdate {
             _ => {}
         }
     }
+
+    pub fn update_str(mut self,value:&mut String){
+        match self {
+            ContextUpdate::String(v) => *value=v,
+            ContextUpdate::I32(v) => *value=v.to_string(),
+            ContextUpdate::F32(v) => *value=v.to_string(),
+            ContextUpdate::U8(v) => *value=v.to_string(),
+            ContextUpdate::Bool(v) => *value=v.to_string(),
+        }
+    }
 }
 
 pub enum UpdateType {
