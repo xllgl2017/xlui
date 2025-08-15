@@ -58,7 +58,7 @@ impl ContextUpdate {
         }
     }
 
-    pub fn update_str(mut self,value:&mut String){
+    pub fn update_str(self,value:&mut String){
         match self {
             ContextUpdate::String(v) => *value=v,
             ContextUpdate::I32(v) => *value=v.to_string(),

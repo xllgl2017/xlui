@@ -170,7 +170,6 @@ impl Widget for Slider {
     fn update(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
-            println!("{}", self.value);
             self.slider_param.rect = self.rect.clone();
             self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
             self.slider_param.rect.set_width(self.rect.height());
