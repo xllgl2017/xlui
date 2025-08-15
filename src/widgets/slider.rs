@@ -168,6 +168,19 @@ impl Widget for Slider {
     }
 
     fn update(&mut self, ui: &mut Ui) {
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_f32(&mut self.value);
+            println!("{}", self.value);
+            self.slider_param.rect = self.rect.clone();
+            self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
+            self.slider_param.rect.set_width(self.rect.height());
+            let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
+            let mut lx = self.fill_param.rect.dx().clone();
+            lx.extend(self.slider_param.rect.width() / 2.0);
+            self.offset = self.slider_param.rect.offset_x_limit(offset, &lx);
+            // self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(offset));
+            self.update_slider(ui);
+        }
         match ui.update_type {
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
@@ -199,15 +212,6 @@ impl Widget for Slider {
             }
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
             _ => {}
-        }
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_f32(&mut self.value);
-            self.slider_param.rect = self.rect.clone();
-            self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
-            self.slider_param.rect.set_width(self.rect.height());
-            let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-            self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(offset));
-            self.update_slider(ui);
         }
     }
 }
