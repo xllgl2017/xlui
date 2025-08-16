@@ -1,9 +1,9 @@
-use crate::frame::context::UpdateType;
+use crate::frame::context::{Render, UpdateType};
 use crate::frame::window::Window;
 use crate::size::Size;
 use crate::ui::Ui;
+use glyphon::Viewport;
 use std::collections::HashMap;
-use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
@@ -77,8 +77,8 @@ struct Application<A> {
     windows: HashMap<WindowId, Window<A>>,
     attribute: WindowAttribute,
     app: Option<A>,
-    channel: (Sender<(WindowId, UpdateType)>, Receiver<(WindowId, UpdateType)>),
-    proxy_event: Option<EventLoopProxy<()>>,
+    proxy_event: Option<EventLoopProxy<(WindowId, UpdateType)>>,
+    rebuilding: bool,
 }
 
 impl<A> Application<A> {
@@ -87,8 +87,8 @@ impl<A> Application<A> {
             windows: HashMap::new(),
             attribute: WindowAttribute::default(),
             app: None,
-            channel: channel(),
             proxy_event: None,
+            rebuilding: false,
         }
     }
 
@@ -98,28 +98,46 @@ impl<A> Application<A> {
     }
 }
 
-impl<A: App + 'static> ApplicationHandler for Application<A> {
+impl<A: App> ApplicationHandler<(WindowId, UpdateType)> for Application<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         println!("111111111111111111111111111111");
         let app = self.app.take().unwrap();
         let event = self.proxy_event.take().unwrap();
         let attr = self.attribute.as_winit_attributes();
         let winit_window = Arc::new(event_loop.create_window(attr).unwrap());
-        let window = pollster::block_on(Window::new(winit_window.clone(), app, self.channel.0.clone(), event));
+        let window = pollster::block_on(Window::new(winit_window.clone(), app, event)).unwrap();
         self.windows.insert(winit_window.id(), window);
         winit_window.request_redraw();
     }
 
-    fn user_event(&mut self, _: &ActiveEventLoop, _: ()) {
-        let mut lastest_res: Result<(WindowId, UpdateType), TryRecvError> = Err(TryRecvError::Empty);
-        loop {
-            let res = self.channel.1.try_recv();
-            if res.is_err() { break; }
-            lastest_res = res;
+    fn user_event(&mut self, _: &ActiveEventLoop, (wid, t): (WindowId, UpdateType)) {
+        if self.rebuilding {
+            println!("Rebuilding");
+            return;
         }
-        if let Ok((wid, ut)) = lastest_res {
+        if let UpdateType::ReInit = t {
+            self.rebuilding = true;
+            println!("sleep start");
+            std::thread::sleep(std::time::Duration::from_secs(30));
+            println!("sleep end");
             let window = self.windows.get_mut(&wid).unwrap();
-            window.app_ctx.update(ut, &mut window.app)
+            println!("recv {:?}", window.app_ctx.context.window.inner_size());
+            window.app_ctx.device = pollster::block_on(async { Window::<A>::rebuild_device(&window.app_ctx.context.window, window.app_ctx.context.event.clone()).await }).unwrap();
+            println!("1");
+            window.app_ctx.context.viewport = Viewport::new(&window.app_ctx.device.device, &window.app_ctx.device.cache);
+            println!("2");
+            window.app_ctx.context.render = Render::new(&window.app_ctx.device);
+            println!("3");
+            window.configure_surface();
+            println!("4");
+            window.app_ctx.update(UpdateType::ReInit, &mut window.app);
+            println!("5");
+            self.rebuilding = false;
+            println!("re init finished");
+        } else {
+            println!("recv event");
+            let window = self.windows.get_mut(&wid).unwrap();
+            window.app_ctx.update(t, &mut window.app)
         }
     }
 
@@ -135,16 +153,11 @@ impl<A: App + 'static> ApplicationHandler for Application<A> {
                 if self.windows.len() == 0 { event_loop.exit(); }
             }
             WindowEvent::RedrawRequested => {
+                if self.rebuilding {
+                    println!("rebuilding window");
+                    return;
+                }
                 println!("11");
-                // if window.app_ctx.need_rebuild {
-                //     // let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
-                //     let window = self.windows.remove(&id).unwrap();
-                //     let mut window = pollster::block_on(Window::new(window.app_ctx.context.window, window.app));
-                //     window.render();
-                //     window.app_ctx.context.resize = false;
-                //     self.windows.insert(id, window);
-                //     return;
-                // }
                 window.render();
                 window.app_ctx.context.resize = false;
             }
@@ -200,7 +213,7 @@ pub trait App: Sized + 'static {
     }
 
     fn run(self) {
-        let event_loop = EventLoop::new().unwrap();
+        let event_loop = EventLoop::with_user_event().build().unwrap();
         let proxy_event = event_loop.create_proxy();
         event_loop.set_control_flow(ControlFlow::Wait);
         let mut application = Application::new().with_attrs(self.window_attributes());

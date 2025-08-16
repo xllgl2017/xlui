@@ -172,6 +172,7 @@ pub struct Device {
     pub texture_format: wgpu::TextureFormat,
     pub surface_config: wgpu::SurfaceConfiguration,
     pub device_input: DeviceInput,
+    pub surface: wgpu::Surface<'static>,
 }
 
 pub struct MouseInput {

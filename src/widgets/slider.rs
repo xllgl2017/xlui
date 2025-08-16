@@ -116,6 +116,10 @@ impl Slider {
         //分配大小
         self.rect = ui.layout().available_rect().clone();
         self.rect.set_size(130.0, 16.0);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //背景
         self.fill_param.rect = self.rect.clone();
         self.fill_param.rect.contract(8.0, 5.0);
@@ -156,18 +160,18 @@ impl Slider {
 }
 
 impl Widget for Slider {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.fill_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.rect);
-        if ui.pass.is_none() { return resp; }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.fill_buffer.is_none() { self.init(ui); }
+        // let resp = Response::new(&self.id, &self.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         ui.context.render.rectangle.render(self.slided_index, pass);
         ui.context.render.circle.render(self.slider_index, pass);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
             self.slider_param.rect = self.rect.clone();
@@ -181,6 +185,8 @@ impl Widget for Slider {
             self.update_slider(ui);
         }
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let ox = ui.device.device_input.mouse.offset_x();
@@ -199,7 +205,7 @@ impl Widget for Slider {
                     }
                     ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value));
                     ui.update_type = UpdateType::None;
-                    return;
+                    return Response::new(&self.id, &self.rect);
                 }
                 let hovered = ui.device.device_input.hovered_at(&self.slider_param.rect);
                 if self.hovered != hovered {
@@ -212,5 +218,6 @@ impl Widget for Slider {
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
             _ => {}
         }
+        Response::new(&self.id, &self.rect)
     }
 }

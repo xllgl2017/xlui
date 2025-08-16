@@ -28,7 +28,6 @@ pub struct AppContext {
     pub(crate) popups: Option<Map<Popup>>,
     pub(crate) style: Style,
     pub(crate) context: Context,
-    pub(crate) need_rebuild: bool,
 }
 
 impl AppContext {
@@ -40,7 +39,6 @@ impl AppContext {
             popups: Some(Map::new()),
             style: Style::light_style(),
             context,
-            need_rebuild: false,
         }
     }
 
@@ -53,8 +51,9 @@ impl AppContext {
             layout: Some(self.layout.take().unwrap()),
             popups: self.popups.take(),
             current_rect: Rect::new(),
-            update_type: UpdateType::None,
+            update_type: UpdateType::Init,
             can_offset: false,
+            request_update: None,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -73,6 +72,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
+            request_update: None,
         };
         app.update(&mut ui);
         ui.app = Some(Box::new(app));
@@ -83,22 +83,21 @@ impl AppContext {
         self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
+        if let Some(u) = ui.request_update.take() {
+            ui.context.event.send_event(u).unwrap();
+        }
     }
 
     pub fn configure_surface(&mut self) {
-        self.context.surface.configure(&self.device.device, &self.device.surface_config);
+        self.device.surface.configure(&self.device.device, &self.device.surface_config);
     }
 
 
     pub fn redraw(&mut self, app: &mut impl App) {
-        let surface_texture = match self.context.surface.get_current_texture() {
+        let surface_texture = match self.device.surface.get_current_texture() {
             Ok(res) => res,
-            Err(wgpu::SurfaceError::Lost) | Err(wgpu::SurfaceError::Outdated) => {
-                self.need_rebuild = true;
-                return;
-            }
             Err(e) => {
-                println!("Failed to get surface texture: {:?}", e);
+                println!("{:?}", e);
                 return;
             }
         };
@@ -144,6 +143,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: UpdateType::None,
             can_offset: false,
+            request_update: None,
         };
         app.redraw(&mut ui);
         ui.app = Some(Box::new(app));
@@ -151,6 +151,9 @@ impl AppContext {
         self.popups = ui.popups.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.redraw(&mut ui);
+        }
+        if let Some(u) = ui.request_update.take() {
+            ui.context.event.send_event(u).unwrap();
         }
         drop(ui);
         self.device.queue.submit([encoder.finish()]);
@@ -168,6 +171,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
+            request_update: None,
         };
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
@@ -187,6 +191,7 @@ pub struct Ui<'a> {
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
     pub(crate) can_offset: bool,
+    pub(crate) request_update: Option<(winit::window::WindowId, UpdateType)>,
 }
 
 
@@ -200,10 +205,6 @@ impl<'a> Ui<'a> {
             self.context.updates.insert(id.to_string(), ct.clone());
         }
     }
-
-    // pub(crate) fn get_layout(&mut self, id: impl ToString) -> Option<&mut LayoutKind> {
-    //     self.layout().get_layout(&id.to_string())
-    // }
 }
 
 impl<'a> Ui<'a> {
@@ -228,14 +229,13 @@ impl<'a> Ui<'a> {
     }
 
     pub fn add_mut(&mut self, widget: &mut impl Widget) {
-        let resp = widget.redraw(self);
+        let resp = widget.update(self);
         self.layout().alloc_rect(&resp.rect);
     }
 
     pub fn request_update(&mut self, ut: UpdateType) {
         let wid = self.context.window.id();
-        self.context.sender.send((wid, ut)).unwrap();
-        self.context.event.send_event(()).unwrap();
+        self.request_update = Some((wid, ut));
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
@@ -305,7 +305,7 @@ impl<'a> Ui<'a> {
         self.add(select_value)
     }
 
-    pub fn set_image_handle(&mut self,source:&str){
+    pub fn set_image_handle(&mut self, source: &str) {
         self.context.render.image.insert_image(&self.device, source.to_string(), source);
     }
 }

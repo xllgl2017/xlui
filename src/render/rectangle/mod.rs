@@ -38,27 +38,6 @@ impl RectangleRender {
         }
     }
 
-    // pub fn create_buffer(&self, device: &Device, param: &RectParam) -> wgpu::Buffer {
-    //     device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-    //         label: None,
-    //         contents: bytemuck::bytes_of(&param.as_draw_param(false, false)),
-    //         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    //     })
-    // }
-    //
-    // pub fn create_bind_group(&mut self, device: &Device, buffer: &wgpu::Buffer) -> usize {
-    //     let bind_group_entry = wgpu::BindGroupEntry {
-    //         binding: 0,
-    //         resource: buffer.as_entire_binding(),
-    //     };
-    //     let bind_group = device.device.create_bind_group(&wgpu::BindGroupDescriptor {
-    //         layout: &self.bind_group_layout,
-    //         entries: &[bind_group_entry],
-    //         label: None,
-    //     });
-    //     self.bind_groups.push(bind_group);
-    //     self.bind_groups.len() - 1
-    // }
 
     pub fn render(&self, index: usize, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.pipeline);

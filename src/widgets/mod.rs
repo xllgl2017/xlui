@@ -19,8 +19,8 @@ pub mod item;
 pub mod listview;
 
 pub trait Widget: Any {
-    fn redraw(&mut self, ui: &mut Ui) -> Response; //绘制调用
-    fn update(&mut self, ui: &mut Ui); //后续更新调用
+    fn redraw(&mut self, ui: &mut Ui); //绘制调用
+    fn update(&mut self, ui: &mut Ui) -> Response; //后续更新调用
 }
 
 pub struct WidgetKind {
@@ -32,7 +32,7 @@ pub struct WidgetKind {
 
 impl WidgetKind {
     pub fn new(ui: &mut Ui, mut widget: impl Widget) -> Self {
-        let resp = widget.redraw(ui);
+        let resp = widget.update(ui);
         WidgetKind {
             id: resp.id.to_string(),
             rect: resp.rect.clone(),
@@ -40,15 +40,15 @@ impl WidgetKind {
             display: true,
         }
     }
-    pub fn update(&mut self, ui: &mut Ui) {
-        self.widget.update(ui);
-    }
-
-    pub fn redraw(&mut self, ui: &mut Ui, pr: &Rect) {
-        let resp = self.widget.redraw(ui);
+    pub fn update(&mut self, ui: &mut Ui, pr: &Rect) {
+        let resp = self.widget.update(ui);
         if resp.rect != &self.rect {
             self.rect = resp.rect.clone();
             self.display = !self.rect.out_of_rect(pr);
         }
+    }
+
+    pub fn redraw(&mut self, ui: &mut Ui) {
+        self.widget.redraw(ui);
     }
 }

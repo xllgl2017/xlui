@@ -340,6 +340,10 @@ impl TextEdit {
     fn init(&mut self, ui: &mut Ui) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //背景
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -371,21 +375,23 @@ impl TextEdit {
 
 
 impl Widget for TextEdit {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.fill_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.fill_param.rect);
-        if ui.pass.is_none() { return resp; }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.fill_buffer.is_none() { self.init(ui); }
+        // let resp = Response::new(&self.id, &self.fill_param.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
         if self.focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
         ui.context.render.rectangle.render(self.select_index, pass);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
@@ -431,10 +437,11 @@ impl Widget for TextEdit {
             }
             UpdateType::MouseRelease => self.mouse_press = false,
             UpdateType::KeyRelease(ref mut key) => {
-                if !self.focused || key.is_none() { return; }
+                if !self.focused || key.is_none() { return Response::new(&self.id, &self.fill_param.rect); }
                 self.key_input(key.take(), ui)
             }
             _ => {}
         }
+        Response::new(&self.id, &self.fill_param.rect)
     }
 }

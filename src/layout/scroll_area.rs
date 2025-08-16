@@ -74,11 +74,6 @@ impl ScrollArea {
     }
 
     pub fn draw(&mut self, ui: &mut Ui, mut callback: impl FnMut(&mut Ui)) {
-        //滚动区域
-        let data = self.fill_param.as_draw_param(false, false);
-        let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        self.fill_buffer = Some(buffer);
         self.context_rect = self.fill_param.rect.clone();
         self.context_rect.set_width(self.fill_param.rect.width() - 5.0 - self.padding.right);
 
@@ -98,7 +93,16 @@ impl ScrollArea {
         v_bar_rect.set_width(5.0);
         self.v_bar.set_rect(v_bar_rect);
         self.v_bar.set_context_height(self.layout.as_ref().unwrap().height + self.padding.bottom);
-        self.v_bar.redraw(ui);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
+        //滚动区域
+        let data = self.fill_param.as_draw_param(false, false);
+        let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
+        self.fill_buffer = Some(buffer);
+        self.v_bar.update(ui);
     }
 
     pub fn show(mut self, ui: &mut Ui, callback: impl FnMut(&mut Ui)) {
@@ -115,7 +119,10 @@ impl ScrollArea {
 impl Layout for ScrollArea {
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
-            UpdateType::None => {}
+            UpdateType::ReInit => {
+                self.re_init(ui);
+                self.layout.as_mut().unwrap().update(ui);
+            }
             UpdateType::MouseMove => {
                 if ui.device.device_input.pressed_at(&self.context_rect) && ui.device.device_input.mouse.offset_y() != 0.0 {
                     let oy = ui.device.device_input.mouse.offset_y();
@@ -140,7 +147,6 @@ impl Layout for ScrollArea {
                     return;
                 }
             }
-            UpdateType::KeyRelease(_) => {}
             UpdateType::Offset(ref o) => {
                 if !self.fill_param.rect.has_position(o.pos) { return; }
                 ui.can_offset = true;
@@ -148,6 +154,7 @@ impl Layout for ScrollArea {
                 ui.update_type = UpdateType::None;
                 ui.can_offset = false;
             }
+            _ => {}
         }
         ui.current_rect = self.context_rect.clone();
         self.v_bar.update(ui);

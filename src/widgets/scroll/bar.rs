@@ -120,20 +120,21 @@ impl ScrollBar {
 
 
 impl Widget for ScrollBar {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.fill_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.fill_param.rect);
-        if ui.pass.is_none() { return resp; }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.fill_buffer.is_none() { self.init(ui); }
+        // let resp = Response::new(&self.id, &self.fill_param.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         if self.context_height > self.fill_param.rect.height() {
             ui.context.render.rectangle.render(self.slider_index, pass);
         }
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let oy = ui.device.device_input.mouse.offset_y();
@@ -162,5 +163,6 @@ impl Widget for ScrollBar {
             }
             _ => {}
         }
+        Response::new(&self.id, &self.fill_param.rect)
     }
 }

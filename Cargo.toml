@@ -33,6 +33,10 @@ path = "test/widget.rs"
 name = "test_frame"
 path = "test/frame.rs"
 
+[[bin]]
+name = "test_hibernate"
+path = "test/hibernate.rs"
+
 [dependencies]
 winit = "0.30.11"
 wgpu = "25.0.2"

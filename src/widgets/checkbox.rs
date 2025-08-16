@@ -117,6 +117,10 @@ impl CheckBox {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(&ui.context);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //复选框
         self.check_param.rect = self.rect.clone();
         self.check_param.rect.set_width(15.0);
@@ -139,23 +143,25 @@ impl CheckBox {
 }
 
 impl Widget for CheckBox {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.check_buffer.is_none() { self.init(ui); }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.check_buffer.is_none() { self.init(ui); }
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_bool(&mut self.value);
             self.update_check(ui);
         }
-        let resp = Response::new(&self.id, &self.rect);
-        if ui.pass.is_none() { return resp; }
+        // let resp = Response::new(&self.id, &self.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.check_index, pass);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if self.hovered != hovered {
@@ -181,5 +187,6 @@ impl Widget for CheckBox {
             }
             _ => {}
         }
+        Response::new(&self.id, &self.rect)
     }
 }

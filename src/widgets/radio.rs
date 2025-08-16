@@ -118,6 +118,10 @@ impl RadioButton {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(&ui.context);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //外圆
         self.outer_param.rect = self.rect.clone();
         self.outer_param.rect.set_width(self.rect.height());
@@ -150,19 +154,21 @@ impl RadioButton {
 
 
 impl Widget for RadioButton {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.outer_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.rect);
-        if ui.pass.is_none() { return resp; }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.outer_buffer.is_none() { self.init(ui); }
+        // let resp = Response::new(&self.id, &self.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.circle.render(self.outer_index, pass);
         ui.context.render.circle.render(self.inner_index, pass);
         self.text.redraw(ui);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if hovered != self.hovered {
@@ -189,5 +195,6 @@ impl Widget for RadioButton {
             v.update_bool(&mut self.value);
             self.update_radio(ui);
         }
+        Response::new(&self.id, &self.rect)
     }
 }

@@ -97,11 +97,14 @@ impl Image {
 
     pub fn set_image(&mut self, source: impl ToString) {
         self.source = source.to_string();
-
     }
 
     fn init(&mut self, ui: &mut Ui) {
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         let size = ui.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source.as_str());
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
@@ -127,9 +130,9 @@ impl Image {
 }
 
 impl Widget for Image {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.index_buffer.is_none() { self.init(ui); }
-        if ui.pass.is_none() { return Response::new(&self.id, &self.rect); }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.index_buffer.is_none() { self.init(ui); }
+        // if ui.pass.is_none() { return Response::new(&self.id, &self.rect); }
         if ui.context.resize { self.update_rect(ui); }
         ui.device.queue.write_buffer(
             self.vertex_buffer.as_ref().unwrap(), 0,
@@ -141,17 +144,19 @@ impl Widget for Image {
             self.index_buffer.as_ref().unwrap(),
             pass,
         );
-        Response::new(&self.id, &self.rect)
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return; }
+                if !ui.can_offset { return Response::new(&self.id, &self.rect); }
                 self.rect.offset(o);
                 self.update_rect(ui);
             }
             _ => {}
         }
+        Response::new(&self.id, &self.rect)
     }
 }

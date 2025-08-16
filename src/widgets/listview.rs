@@ -52,6 +52,7 @@ use crate::widgets::item::ItemWidget;
 use std::any::Any;
 use std::mem;
 use std::sync::{Arc, RwLock};
+use crate::frame::context::UpdateType;
 use crate::size::radius::Radius;
 
 pub enum ListUpdate<T> {
@@ -136,9 +137,6 @@ impl<T: 'static> ListView<T> {
     pub fn current(&self) -> Option<&T> {
         let current = self.current.read().unwrap();
         self.items.get(current.as_ref()?)
-        // let current = current.as_ref()?;
-        // let current_index = self.items[current];
-        // Some(&self.data[current_index])
     }
 
     fn _remove(&mut self, wid: String, ui: &mut Ui) {
@@ -164,10 +162,12 @@ impl<T: 'static> ListView<T> {
         let area = layout.get_layout(&self.lid).expect("找不到ListView");
         if let LayoutKind::ScrollArea(area) = area {
             ui.layout = Some(LayoutKind::Vertical(area.layout.take().unwrap()));
+            ui.update_type = UpdateType::Init;
             let wid = self.item_widget(ui, &datum);
             if let LayoutKind::Vertical(layout) = ui.layout.take().unwrap() {
                 area.layout = Some(layout);
             }
+            ui.update_type=UpdateType::None;
             area.reset_context_height();
             self.items.insert(wid, datum);
         }

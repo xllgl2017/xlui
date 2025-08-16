@@ -1,10 +1,10 @@
+use std::fmt::Debug;
 use crate::font::Font;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
 use crate::{Device, NumCastExt, Offset};
 use glyphon::Viewport;
 use std::sync::Arc;
-use std::sync::mpsc::Sender;
 use winit::event_loop::EventLoopProxy;
 use crate::map::Map;
 use crate::render::circle::CircleRender;
@@ -58,19 +58,21 @@ impl ContextUpdate {
         }
     }
 
-    pub fn update_str(self,value:&mut String){
+    pub fn update_str(self, value: &mut String) {
         match self {
-            ContextUpdate::String(v) => *value=v,
-            ContextUpdate::I32(v) => *value=v.to_string(),
-            ContextUpdate::F32(v) => *value=v.to_string(),
-            ContextUpdate::U8(v) => *value=v.to_string(),
-            ContextUpdate::Bool(v) => *value=v.to_string(),
+            ContextUpdate::String(v) => *value = v,
+            ContextUpdate::I32(v) => *value = v.to_string(),
+            ContextUpdate::F32(v) => *value = v.to_string(),
+            ContextUpdate::U8(v) => *value = v.to_string(),
+            ContextUpdate::Bool(v) => *value = v.to_string(),
         }
     }
 }
 
 pub enum UpdateType {
     None,
+    Init,
+    ReInit,
     MouseMove,
     MousePress,
     MouseRelease,
@@ -88,17 +90,31 @@ impl UpdateType {
     }
 }
 
+impl Debug for UpdateType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UpdateType::None => f.write_str("None"),
+            UpdateType::Init => f.write_str("Init"),
+            UpdateType::ReInit => f.write_str("ReInit"),
+            UpdateType::MouseMove => f.write_str("MouseMove"),
+            UpdateType::MousePress => f.write_str("MousePress"),
+            UpdateType::MouseRelease => f.write_str("MouseRelease"),
+            UpdateType::MouseWheel => f.write_str("MouseWheel"),
+            UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
+            UpdateType::Offset(_) => f.write_str("Offset"),
+        }
+    }
+}
+
 pub struct Context {
     pub size: Size,
     pub viewport: Viewport,
     pub window: Arc<winit::window::Window>,
     pub font: Arc<Font>,
-    pub surface: wgpu::Surface<'static>,
     pub resize: bool,
     pub render: Render,
     pub updates: Map<ContextUpdate>,
-    pub sender: Sender<(winit::window::WindowId, UpdateType)>,
-    pub event: EventLoopProxy<()>,
+    pub event: EventLoopProxy<(winit::window::WindowId, UpdateType)>,
 }
 
 impl Context {

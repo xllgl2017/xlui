@@ -163,6 +163,10 @@ impl Button {
     fn init(&mut self, ui: &mut Ui) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //按钮矩形
         let data = self.fill_param.as_draw_param(false, false);
         let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -170,7 +174,7 @@ impl Button {
         self.fill_buffer = Some(buffer);
         //
         if let Some(ref mut image) = self.image {
-            image.redraw(ui);
+            image.update(ui);
             image.rect = self.image_rect.clone();
         }
         //按钮文本
@@ -180,24 +184,26 @@ impl Button {
 
 
 impl Widget for Button {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
+    fn redraw(&mut self, ui: &mut Ui) {
         if self.fill_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.fill_param.rect);
-        if ui.pass.is_none() { return resp; }
+        // let resp = Response::new(&self.id, &self.fill_param.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         if let Some(ref mut image) = self.image {
             image.redraw(ui);
         }
         self.text_buffer.redraw(ui);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }
         match &mut ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
                 let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != has_pos {
@@ -221,7 +227,7 @@ impl Widget for Button {
                 }
             }
             UpdateType::Offset(o) => {
-                if !ui.can_offset { return; }
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
                 self.fill_param.rect.offset(o);
                 let data = self.fill_param.as_draw_param(false, false);
                 ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
@@ -230,5 +236,6 @@ impl Widget for Button {
             UpdateType::None => {}
             _ => {}
         }
+        Response::new(&self.id, &self.fill_param.rect)
     }
 }

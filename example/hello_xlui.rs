@@ -195,6 +195,7 @@ impl App for XlUiApp {
     }
 
     fn update(&mut self, ui: &mut Ui) {
+        self.label.update(ui);
         self.list_view.update(ui);
     }
 

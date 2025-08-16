@@ -149,8 +149,9 @@ impl LayoutKind {
         let ut = UpdateType::Offset(offset);
         ui.update_type = ut;
         ui.can_offset = true;
+        let rect = layout.drawn_rect();
         for i in pos..layout.widgets().len() {
-            layout.widgets()[i].update(ui);
+            layout.widgets()[i].update(ui, &rect);
         }
         ui.can_offset = false;
         ui.update_type = UpdateType::None;
@@ -232,7 +233,7 @@ fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind
     match update {
         true => {
             for widget in widgets.iter_mut() {
-                widget.update(ui)
+                widget.update(ui, &draw_rect)
             }
             for child in children.iter_mut() {
                 child.update(ui);
@@ -240,7 +241,7 @@ fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind
         }
         false => {
             for widget in widgets.iter_mut() {
-                widget.redraw(ui, &draw_rect);
+                widget.redraw(ui);
             }
             for child in children.iter_mut() {
                 child.redraw(ui);
@@ -284,7 +285,7 @@ impl HorizontalLayout {
     pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
         self.available_rect.add_min_x(rect.width() + self.item_space);
         self.width += rect.width() + if self.width == 0.0 { 0.0 } else { self.item_space };
-        println!("alloc rect  {} {}", self.height, rect.height());
+        println!("alloc rect  {} {} {:?}", self.height, rect.height(), rect);
         if self.height < rect.height() { self.height = rect.height(); }
     }
 

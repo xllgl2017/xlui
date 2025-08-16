@@ -63,22 +63,14 @@ impl Rectangle {
 }
 
 impl Widget for Rectangle {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.fill_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.fill_param.rect);
-        if ui.pass.is_none() { return resp; }
+    fn redraw(&mut self, ui: &mut Ui) {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
-        resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
-        if self.changed {
-            let data = self.fill_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(&self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
-        }
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
@@ -87,11 +79,18 @@ impl Widget for Rectangle {
                 }
             }
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return; }
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
                 self.fill_param.rect.offset(o);
                 self.update_rect(ui);
             }
             _ => {}
         }
+        if self.changed {
+            self.changed = false;
+            let data = self.fill_param.as_draw_param(false, false);
+            ui.device.queue.write_buffer(&self.fill_buffer.as_ref().unwrap(), 0, data);
+            ui.context.window.request_redraw();
+        }
+        Response::new(&self.id, &self.fill_param.rect)
     }
 }

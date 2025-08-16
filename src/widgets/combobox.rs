@@ -117,6 +117,14 @@ impl<T: Display + 'static> ComboBox<T> {
         //分配大小
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
+        //下拉框布局
+        let popup = Popup::new(ui, self.popup_rect.clone());
+        self.popup_id = popup.id.clone();
+        popup.show(ui, |ui| self.add_items(ui));
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //背景
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
@@ -128,10 +136,7 @@ impl<T: Display + 'static> ComboBox<T> {
         //文本
         self.text_buffer.draw(ui);
 
-        //下拉框布局
-        let popup = Popup::new(ui, self.popup_rect.clone());
-        self.popup_id = popup.id.clone();
-        popup.show(ui, |ui| self.add_items(ui));
+
     }
 
     pub fn parent(&self) -> Arc<RwLock<Option<String>>> {
@@ -141,10 +146,10 @@ impl<T: Display + 'static> ComboBox<T> {
 
 
 impl<T: Display + 'static> Widget for ComboBox<T> {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
+    fn redraw(&mut self, ui: &mut Ui) {
         if self.fill_buffer.is_none() { self.init(ui); }
-        let resp = Response::new(&self.id, &self.fill_param.rect);
-        if ui.pass.is_none() { return resp; }
+        // let resp = Response::new(&self.id, &self.fill_param.rect);
+        // if ui.pass.is_none() { return resp; }
         let select = self.selected.read().unwrap();
         if *select != self.previous_select {
             self.previous_select = select.clone();
@@ -165,11 +170,13 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.fill_param.rect) {
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
@@ -180,5 +187,6 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             }
             _ => {}
         }
+        Response::new(&self.id, &self.fill_param.rect)
     }
 }

@@ -1,3 +1,4 @@
+use crate::frame::context::UpdateType;
 use crate::layout::scroll_area::ScrollArea;
 use crate::layout::Layout;
 use crate::render::rectangle::param::RectParam;
@@ -74,8 +75,11 @@ impl Popup {
 
 impl Layout for Popup {
     fn update(&mut self, ui: &mut Ui) {
-        if !self.open { return; }
-        self.scroll_area.update(ui);
+        match ui.update_type {
+            UpdateType::Init | UpdateType::ReInit => self.scroll_area.update(ui),
+            _ => if self.open { self.scroll_area.update(ui); }
+        }
+
     }
 
     fn redraw(&mut self, ui: &mut Ui) {

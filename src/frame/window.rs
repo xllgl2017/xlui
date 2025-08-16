@@ -1,3 +1,4 @@
+use std::error::Error;
 use crate::font::Font;
 use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
@@ -7,7 +8,6 @@ use crate::ui::AppContext;
 use crate::{Device, DeviceInput};
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
-use std::sync::mpsc::Sender;
 use winit::event_loop::EventLoopProxy;
 
 pub(crate) struct Window<A> {
@@ -16,12 +16,40 @@ pub(crate) struct Window<A> {
 }
 
 impl<A: App> Window<A> {
-    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: A, sender: Sender<(winit::window::WindowId, UpdateType)>, event: EventLoopProxy<()>) -> Self {
+    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: A, event: EventLoopProxy<(winit::window::WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
+        let device = Self::rebuild_device(&window, event.clone()).await?;
+        let font = Arc::new(Font::new());
+        let viewport = Viewport::new(&device.device, &device.cache);
+        let context = Context {
+            size: Size {
+                width: window.inner_size().width,
+                height: window.inner_size().height,
+            },
+            font: font.clone(),
+            viewport,
+            window,
+            resize: false,
+            render: Render::new(&device),
+            updates: Map::new(),
+            event,
+        };
+        let mut app_ctx = AppContext::new(device, context);
+        app_ctx.draw(&mut app);
+        let mut state = Window {
+            app_ctx,
+            app,
+        };
+        state.configure_surface();
+
+        Ok(state)
+    }
+
+    pub(crate) async fn rebuild_device(window: &Arc<winit::window::Window>, event: EventLoopProxy<(winit::window::WindowId, UpdateType)>) -> Result<Device, Box<dyn Error>> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
-        let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await.unwrap();
-        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await.unwrap();
+        let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
+        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
         let cache = Cache::new(&device);
-        let surface = instance.create_surface(window.clone()).unwrap();
+        let surface = instance.create_surface(window.clone())?;
         let cap = surface.get_capabilities(&adapter);
         let size = window.inner_size();
         let surface_config = wgpu::SurfaceConfiguration {
@@ -35,55 +63,25 @@ impl<A: App> Window<A> {
             desired_maximum_frame_latency: 2,
             present_mode: wgpu::PresentMode::AutoVsync,
         };
-
-        let font = Arc::new(Font::new());
-        let viewport = Viewport::new(&device, &cache);
-        let device = Device {
+        let wid = window.id();
+        let e = event.clone();
+        device.on_uncaptured_error(Box::new(move |err| {
+            e.send_event((wid, UpdateType::ReInit)).unwrap();
+            println!("Error: {:?}", err);
+        }));
+        Ok(Device {
             device,
             queue,
             cache,
+            surface,
             texture_format: cap.formats[0],
             surface_config,
-
             device_input: DeviceInput::new(),
-        };
-        let context = Context {
-            size: Size {
-                width: size.width,
-                height: size.height,
-            },
-            font: font.clone(),
-            viewport,
-            window,
-            surface,
-            resize: false,
-            render: Render::new(&device),
-            updates: Map::new(),
-            sender,
-            event,
-        };
-        device.device.on_uncaptured_error(Box::new(|err| {
-            println!("Error: {:?}", err);
-        }));
-        let mut app_ctx = AppContext::new(device, context);
-        app_ctx.draw(&mut app);
-
-
-        let mut state = Window {
-            app_ctx,
-            app,
-        };
-        state.configure_surface();
-
-        state
+        })
     }
 
-    // pub fn get_window(&self) -> &winit::window::Window {
-    //     &self.app_ctx.context.window
-    // }
-
-    fn configure_surface(&mut self) {
-        self.app_ctx.context.surface.configure(&self.app_ctx.device.device, &self.app_ctx.device.surface_config);
+    pub fn configure_surface(&mut self) {
+        self.app_ctx.device.surface.configure(&self.app_ctx.device.device, &self.app_ctx.device.surface_config);
     }
 
 

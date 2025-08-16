@@ -105,6 +105,10 @@ impl<T: Display> SelectItem<T> {
     fn init(&mut self, ui: &mut Ui) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
         self.reset_size(&ui.context);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
         //背景
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
@@ -118,31 +122,35 @@ impl<T: Display> SelectItem<T> {
 }
 
 impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.fill_buffer.is_none() { self.init(ui); }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if self.fill_buffer.is_none() { self.init(ui); }
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
         if !selected && self.selected {
             self.selected = false;
             let data = self.fill_param.as_draw_param(false, false);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-        }else if selected&&!self.selected {
+        } else if selected && !self.selected {
             self.selected = true;
             let data = self.fill_param.as_draw_param(true, true);
             ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         }
         drop(current);
-        let resp = Response::new(&self.id, &self.fill_param.rect);
-        if ui.pass.is_none() { return resp; }
+        // let resp = Response::new(&self.id, &self.fill_param.rect);
+        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text.redraw(ui);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
-            UpdateType::None => {}
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => {
+                self.re_init(ui);
+                println!("22222222222222222222");
+            }
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
@@ -163,15 +171,15 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                     *selected = Some(self.value.to_string());
                     let data = self.fill_param.as_draw_param(true, true);
                     ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-                    ui.update_type=UpdateType::None;
+                    ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
-                    return;
+                    return Response::new(&self.id, &self.fill_param.rect);
                 }
             }
             UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(_) => {}
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return; }
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
                 let current = self.parent_selected.read().unwrap();
                 let selected = current.as_ref() == Some(&self.value.to_string());
                 self.fill_param.rect.offset(o);
@@ -179,9 +187,10 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                 ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                 self.text.rect.offset(o);
                 ui.context.window.request_redraw();
-                return;
+                return Response::new(&self.id, &self.fill_param.rect);
             }
+            _ => {}
         }
-
+        Response::new(&self.id, &self.fill_param.rect)
     }
 }

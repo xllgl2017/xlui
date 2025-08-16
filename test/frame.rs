@@ -41,18 +41,24 @@ impl XlUi {
     fn border_with(&mut self, ui: &mut Ui, v: f32) {
         self.border_width = v;
         self.frame.style_mut().border.inactive.width = v;
+        self.frame.style_mut().border.hovered.width = v;
+        self.frame.style_mut().border.clicked.width = v;
         self.frame.update(ui);
     }
 
     fn border_radius(&mut self, ui: &mut Ui, v: u8) {
         self.border_radius = v;
         self.frame.style_mut().border.inactive.radius = Radius::same(v);
+        self.frame.style_mut().border.hovered.radius = Radius::same(v);
+        self.frame.style_mut().border.clicked.radius = Radius::same(v);
         self.frame.update(ui);
     }
 
     fn border_radius_f32(&mut self, ui: &mut Ui, v: f32) {
         self.border_radius = v as u8;
         self.frame.style_mut().border.inactive.radius = Radius::same(v as u8);
+        self.frame.style_mut().border.hovered.radius = Radius::same(v as u8);
+        self.frame.style_mut().border.clicked.radius = Radius::same(v as u8);
         self.frame.update(ui);
     }
 
@@ -95,7 +101,9 @@ impl App for XlUi {
         });
     }
 
-    fn update(&mut self, ui: &mut Ui) {}
+    fn update(&mut self, ui: &mut Ui) {
+        self.frame.update(ui);
+    }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.frame.redraw(ui);

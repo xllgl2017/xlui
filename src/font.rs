@@ -16,9 +16,9 @@ impl Font {
     pub fn new() -> Font {
         let mut font_system = glyphon::FontSystem::new();
         let face = font_system.db().faces().find(|x| x.families[0].0.contains("FangSong")).unwrap(); //FangSong
-        for face in font_system.db().faces() {
-            println!("{} {}", face.families[0].0, face.families[0].1);
-        }
+        // for face in font_system.db().faces() {
+        //     println!("{} {}", face.families[0].0, face.families[0].1);
+        // }
         let family = face.families[0].0.clone();
         let font = font_system.get_font(face.id).unwrap();
         let font_data = Arc::new(font.data().to_vec());

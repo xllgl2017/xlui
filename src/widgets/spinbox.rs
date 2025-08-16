@@ -104,7 +104,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self.init = true;
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size();
-        self.edit.redraw(ui);
+        self.re_init(ui);
+    }
+
+    fn re_init(&mut self, ui: &mut Ui) {
+        self.edit.update(ui);
         let mut rect = self.rect.clone();
         rect.set_width(18.0);
         // ui.layout().alloc_rect(&rect);
@@ -204,36 +208,36 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn listen_input(&mut self, ui: &mut Ui, st: u64) {
-        let sender = ui.context.sender.clone();
         let event = ui.context.event.clone();
         let wid = ui.context.window.id();
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(st));
-            sender.send((wid, UpdateType::None)).unwrap();
-            event.send_event(()).unwrap();
+            event.send_event((wid, UpdateType::None)).unwrap();
         });
     }
 }
 
 
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if !self.init { self.init(ui); }
+    fn redraw(&mut self, ui: &mut Ui) {
+        // if !self.init { self.init(ui); }
         if ui.context.resize {
             self.update_value(ui);
         }
-        let resp = Response::new(&self.id, &self.rect);
-        if ui.pass.is_none() { return resp; }
+        // let resp = Response::new(&self.id, &self.rect);
+        // if ui.pass.is_none() { return resp; }
         self.edit.redraw(ui);
 
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.triangle.render(self.down_index.clone(), pass);
         ui.context.render.triangle.render(self.up_index.clone(), pass);
-        resp
+        // resp
     }
 
-    fn update(&mut self, ui: &mut Ui) {
+    fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MousePress => {
                 if ui.device.device_input.pressed_at(&self.down_rect) {
                     println!("press down");
@@ -259,7 +263,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                         ui.context.window.request_redraw();
                     }
                 }
-                return;
+                return Response::new(&self.id, &self.rect);
             }
             UpdateType::MouseRelease => {
                 self.press_up = false;
@@ -270,13 +274,13 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 } else if ui.device.device_input.click_at(&self.down_rect) {
                     self.click_down(ui);
                 }
-                return;
+                return Response::new(&self.id, &self.rect);
             }
             UpdateType::KeyRelease(_) => {
-                if !self.edit.focused { return; }
+                if !self.edit.focused { return Response::new(&self.id, &self.rect); }
                 self.edit.update(ui);
 
-                return;
+                return Response::new(&self.id, &self.rect);
             }
             UpdateType::None => {
                 if self.press_up && crate::time_ms() - self.press_time >= 500 {
@@ -295,5 +299,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.update_value(ui);
             ui.context.window.request_redraw();
         }
+        Response::new(&self.id, &self.rect)
     }
 }

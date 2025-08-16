@@ -64,9 +64,7 @@ impl Label {
 
 
 impl Widget for Label {
-    fn redraw(&mut self, ui: &mut Ui) -> Response {
-        if self.buffer.buffer.is_none() { self.init(ui); }
-        if ui.pass.is_none() { return Response::new(&self.id, &self.buffer.rect); }
+    fn redraw(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_str(&mut self.buffer.text);
             self.change = true;
@@ -76,18 +74,23 @@ impl Widget for Label {
             self.change = false;
         }
         self.buffer.redraw(ui);
-        Response::new(&self.id, &self.buffer.rect)
     }
 
 
-    fn update(&mut self, ui: &mut Ui) { //处理鼠标键盘时间
+    fn update(&mut self, ui: &mut Ui) -> Response { //处理鼠标键盘时间
         match &ui.update_type {
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => {
+                println!("11111111111111111");
+                self.buffer.draw(ui)
+            }
             UpdateType::Offset(o) => {
-                if !ui.can_offset { return; }
+                if !ui.can_offset { return Response::new(&self.id, &self.buffer.rect); }
                 self.buffer.rect.offset(o);
                 ui.context.window.request_redraw();
             }
             _ => {}
         }
+        Response::new(&self.id, &self.buffer.rect)
     }
 }
