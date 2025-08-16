@@ -434,8 +434,9 @@ impl Widget for TextEdit {
             }
             UpdateType::MousePress => {
                 self.mouse_press = true;
-                self.focused = ui.device.device_input.pressed_at(&self.fill_param.rect);
+
                 if ui.device.device_input.pressed_at(&self.fill_param.rect) {
+                    self.focused = true;
                     //鼠标按下
                     let x = ui.device.device_input.mouse.lastest().x;
                     if x < self.char_layout.x_min {
@@ -464,6 +465,11 @@ impl Widget for TextEdit {
                             ui.context.window.request_redraw();
                         }
                     }
+                }
+                if self.focused && !ui.device.device_input.pressed_at(&self.fill_param.rect) {
+                    self.focused = false;
+                    let data = self.fill_param.as_draw_param(false, false);
+                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                 }
                 let data = self.select_param.as_draw_param(false, false);
                 ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
