@@ -1,3 +1,17 @@
+//!```
+//! use xlui::ui::Ui;
+//! use xlui::widgets::image::Image;
+//! use xlui::widgets::Widget;
+//!
+//! # xlui::_run_test(|ui|{
+//!    let mut image=Image::new("logo.png").with_size(30.0,30.0);
+//!    ui.add(image);
+//!    //修改图片
+//!    ui.set_image_handle("logo_2.png");
+//!    image.set_image("logo_2.png");
+//! # });
+//! ```
+
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::ui::Ui;

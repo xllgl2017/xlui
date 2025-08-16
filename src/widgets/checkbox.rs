@@ -1,3 +1,15 @@
+//!```
+//! use xlui::ui::Ui;
+//! use xlui::widgets::checkbox::CheckBox;
+//! use xlui::widgets::Widget;
+//!
+//! # xlui::_run_test(|ui|{
+//!    let mut check=CheckBox::new(false,"hello button");
+//!    ui.add(check);
+//!    ui.checkbox(false,"hello button");
+//! # });
+//! ```
+
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::response::{Callback, Response};
 use crate::size::rect::Rect;

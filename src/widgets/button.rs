@@ -5,7 +5,8 @@
 //!
 //! # xlui::_run_test(|ui|{
 //!    let mut btn=Button::new("hello button");
-//!    btn.redraw(ui);
+//!    ui.add(btn);
+//!    ui.button("hello button");
 //! # });
 //! ```
 

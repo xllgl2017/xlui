@@ -1,10 +1,10 @@
-//!### ComboBox的示例用法
+//! ### ComboBox的示例用法
 //!
 //!```
 //! use xlui::widgets::combobox::ComboBox;
 //! use xlui::widgets::Widget;
 //! # xlui::_run_test(|ui|{
-//!    ComboBox::new(vec![1,2,3,4]).with_popup_height(150.0).redraw(ui);
+//!    ui.add(ComboBox::new(vec![1,2,3,4]).with_popup_height(150.0));
 //! # });
 //! ```
 

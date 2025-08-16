@@ -1,4 +1,4 @@
-//! #ListView的泛类可以是任意类型
+//! # ListView的泛类可以是任意类型
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;//!
