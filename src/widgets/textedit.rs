@@ -13,6 +13,7 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
+use std::ops::Range;
 use crate::size::radius::Radius;
 
 struct TextChar {
@@ -42,6 +43,7 @@ struct CharLayout {
     width: f32,
     x_min: f32,
     cursor: usize, //游标位置，范围[0..=chars.len()]
+    selected: Range<usize>,
 }
 
 
@@ -53,6 +55,7 @@ impl CharLayout {
             width: 0.0,
             x_min: 0.0,
             cursor: 0,
+            selected: 0..0,
         }
     }
     fn from_text(x_min: f32, txt: &str, font_size: f32, context: &Context) -> CharLayout {
@@ -72,6 +75,7 @@ impl CharLayout {
             font_size,
             width,
             x_min,
+            selected: 0..0,
         }
     }
 
@@ -100,22 +104,43 @@ impl CharLayout {
         self.chars.iter().map(|c| c.char.to_string()).collect()
     }
 
-    fn remove_last(&mut self) -> f32 {
-        //游标在最前端，无字符，不需要删除
-        if self.cursor == 0 { return self.x_min; }
-        let c = self.chars.remove(self.cursor - 1);
-        self.width -= c.width;
-        self.cursor -= 1;
-        //将删除后面的字符进行位移
-        self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x -= c.width);
+    fn remove_range(&mut self) -> f32 {
+        let c = self.chars.remove(self.selected.start);
+        let mut w = c.width;
+        self.chars[self.selected.start..].iter_mut().for_each(|cc| cc.x -= c.width);
+        for _ in self.selected.start + 1..self.selected.end {
+            let c = self.chars.remove(self.selected.start);
+            w += c.width;
+        }
+        self.width -= w;
+        self.chars[self.selected.start..].iter_mut().for_each(|cc| cc.x -= w);
         c.x.min
     }
 
+    fn remove_char_in_cursor(&mut self) -> f32 {
+        if self.selected.start == self.selected.end {
+            //游标在最前端，无字符，不需要删除
+            if self.cursor == 0 { return self.x_min; }
+            let c = self.chars.remove(self.cursor - 1);
+            self.width -= c.width;
+            self.cursor -= 1;
+            //将删除后面的字符进行位移
+            self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x -= c.width);
+            c.x.min
+        } else {
+            self.remove_range()
+        }
+    }
+
     fn remove_after(&mut self) {
-        if self.cursor == self.chars.len() { return; }
-        let c = self.chars.remove(self.cursor);
-        self.width -= c.width;
-        self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x += c.width);
+        if self.selected.start == self.selected.end {
+            if self.cursor == self.chars.len() { return; }
+            let c = self.chars.remove(self.cursor);
+            self.width -= c.width;
+            self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x += c.width);
+        } else {
+            self.remove_range();
+        }
     }
 
     fn current_char(&self) -> Option<&TextChar> {
@@ -124,6 +149,9 @@ impl CharLayout {
     }
 
     fn push_char(&mut self, c: char, context: &Context) -> f32 { //返回x最大值 ，给游标偏移
+        if self.selected.start != self.selected.end {
+            self.remove_range();
+        }
         let w = context.font.char_width(c, self.font_size);
         let cx = if let Some(c) = self.current_char() {
             c.x.max
@@ -260,8 +288,10 @@ impl TextEdit {
             let ct = &self.char_layout.chars[pos];
             if lx > ui.device.device_input.mouse.pressed_pos.x { //向右选择
                 self.select_param.rect.set_x_max(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
+                self.char_layout.selected.end = if lx >= ct.half_x() { pos + 1 } else { pos };
             } else { //向左选择
                 self.select_param.rect.set_x_min(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
+                self.char_layout.selected.start = if lx >= ct.half_x() { pos + 1 } else { pos };
             }
 
             self.char_layout.reset_cursor(if lx >= ct.half_x() { pos + 1 } else { pos });
@@ -274,11 +304,16 @@ impl TextEdit {
     }
 
     fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
+        self.select_param.rect.set_x_min(0.0);
+        self.select_param.rect.set_x_max(0.0);
+        let data = self.select_param.as_draw_param(false, false);
+        ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
         match key.unwrap() {
             winit::keyboard::Key::Named(name) => {
+                println!("{:?}", name);
                 match name {
                     winit::keyboard::NamedKey::Backspace => {
-                        let xm = self.char_layout.remove_last();
+                        let xm = self.char_layout.remove_char_in_cursor();
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
@@ -315,6 +350,7 @@ impl TextEdit {
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
         }
+        self.char_layout.selected = 0..0;
         if let Some(ref mut callback) = self.callback {
             let app = ui.app.take().unwrap();
             callback(*app, ui, self.char_layout.text());
@@ -337,13 +373,11 @@ impl TextEdit {
         self.char_layout.text()
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
-        self.reset_size(&ui.context);
-        self.re_init(ui);
-    }
-
-    fn re_init(&mut self, ui: &mut Ui) {
+    fn init(&mut self, ui: &mut Ui, init: bool) {
+        if init {
+            self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
+            self.reset_size(&ui.context);
+        }
         //背景
         let data = self.fill_param.as_draw_param(false, false);
         let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -376,22 +410,18 @@ impl TextEdit {
 
 impl Widget for TextEdit {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
-        // let resp = Response::new(&self.id, &self.fill_param.rect);
-        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
         if self.focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
         ui.context.render.rectangle.render(self.select_index, pass);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init => self.init(ui, true),
+            UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
@@ -411,12 +441,14 @@ impl Widget for TextEdit {
                     if x < self.char_layout.x_min {
                         self.select_param.rect.set_x_min(self.char_layout.x_min);
                         self.select_param.rect.set_x_max(self.char_layout.x_min);
+                        self.char_layout.selected = 0..0;
                         self.update_cursor(ui, self.char_layout.x_min);
                         self.char_layout.reset_cursor(0);
                         ui.context.window.request_redraw();
                     } else if x > self.char_layout.x_min + self.char_layout.width {
                         self.select_param.rect.set_x_min(self.char_layout.x_min + self.char_layout.width);
                         self.select_param.rect.set_x_max(self.char_layout.x_min + self.char_layout.width);
+                        self.char_layout.selected = self.char_layout.chars.len()..self.char_layout.chars.len();
                         self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width);
                         self.char_layout.reset_cursor(self.char_layout.chars.len());
                         ui.context.window.request_redraw();
@@ -424,6 +456,7 @@ impl Widget for TextEdit {
                         let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < x && x < tc.x.max);
                         if let Some(pos) = pos {
                             let ct = &self.char_layout.chars[pos];
+                            self.char_layout.selected = if x >= ct.half_x() { pos + 1..pos + 1 } else { pos..pos };
                             self.select_param.rect.set_x_min(if x >= ct.half_x() { ct.x.max } else { ct.x.min });
                             self.select_param.rect.set_x_max(if x >= ct.half_x() { ct.x.max } else { ct.x.min });
                             self.char_layout.reset_cursor(if x >= ct.half_x() { pos + 1 } else { pos });
