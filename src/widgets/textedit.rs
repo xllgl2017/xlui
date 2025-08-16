@@ -114,6 +114,7 @@ impl CharLayout {
         }
         self.width -= w;
         self.chars[self.selected.start..].iter_mut().for_each(|cc| cc.x -= w);
+        self.reset_cursor(self.selected.start);
         c.x.min
     }
 
@@ -251,7 +252,8 @@ impl TextEdit {
             SizeMode::Fix => {}
         }
         let mut rect = self.fill_param.rect.clone_add_padding(&Padding::same(3.0));
-        rect.add_min_x(5.0);
+        rect.add_min_x(2.0);
+        rect.add_max_x(-2.0);
         self.text_buffer.rect = rect;
     }
 
@@ -434,7 +436,12 @@ impl Widget for TextEdit {
             }
             UpdateType::MousePress => {
                 self.mouse_press = true;
-
+                if self.focused && !ui.device.device_input.pressed_at(&self.fill_param.rect) {
+                    self.focused = false;
+                    let data = self.fill_param.as_draw_param(false, false);
+                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    ui.context.window.request_redraw();
+                }
                 if ui.device.device_input.pressed_at(&self.fill_param.rect) {
                     self.focused = true;
                     //鼠标按下
@@ -466,11 +473,7 @@ impl Widget for TextEdit {
                         }
                     }
                 }
-                if self.focused && !ui.device.device_input.pressed_at(&self.fill_param.rect) {
-                    self.focused = false;
-                    let data = self.fill_param.as_draw_param(false, false);
-                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-                }
+
                 let data = self.select_param.as_draw_param(false, false);
                 ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
             }
