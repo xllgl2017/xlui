@@ -1,20 +1,19 @@
 use crate::render::RoundedBorderRenderer;
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
-use std::sync::mpsc::{channel, Receiver, Sender};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use winit::event_loop::EventLoopProxy;
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-use winit::event_loop::EventLoopProxy;
 use xlui::font::Font;
 use xlui::frame::context::{Context, Render, UpdateType};
+use xlui::map::Map;
 use xlui::size::Size;
 use xlui::{Device, DeviceInput};
-use xlui::map::Map;
 
 mod render;
 
@@ -25,7 +24,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: Arc<Window>, sender: Sender<(WindowId, UpdateType)>, event: EventLoopProxy<()>) -> State {
+    async fn new(window: Arc<Window>, event: EventLoopProxy<(WindowId, UpdateType)>) -> State {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await.unwrap();
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await.unwrap();
@@ -53,6 +52,7 @@ impl State {
             texture_format: cap.formats[0],
             surface_config,
             device_input: DeviceInput::new(),
+            surface,
         };
         // let text_render = TextRender::new(&device);
         let context = Context {
@@ -60,11 +60,9 @@ impl State {
             font: font.clone(),
             viewport,
             window,
-            surface,
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
-            sender,
             event,
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
@@ -82,7 +80,7 @@ impl State {
     }
 
     fn configure_surface(&mut self) {
-        self.context.surface.configure(&self.device.device, &self.device.surface_config);
+        self.device.surface.configure(&self.device.device, &self.device.surface_config);
     }
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
@@ -102,7 +100,7 @@ impl State {
 
         // Create the renderpass which will clear the screen.
 
-        let surface_texture = match self.context.surface.get_current_texture() {
+        let surface_texture = match self.device.surface.get_current_texture() {
             Ok(texture) => texture,
             Err(_) => {
                 println!("failed to acquire next swapchain texture");
@@ -143,12 +141,11 @@ impl State {
 
 struct App {
     state: Option<State>,
-    channel: (Sender<(WindowId, UpdateType)>, Receiver<(WindowId, UpdateType)>),
-    event: EventLoopProxy<()>,
+    event: EventLoopProxy<(WindowId, UpdateType)>,
 }
 
 
-impl ApplicationHandler for App {
+impl ApplicationHandler<(WindowId, UpdateType)> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         // Create window object
         let window = Arc::new(
@@ -156,9 +153,8 @@ impl ApplicationHandler for App {
                 .create_window(Window::default_attributes())
                 .unwrap(),
         );
-        let sender = self.channel.0.clone();
         let event = self.event.clone();
-        let state = pollster::block_on(State::new(window.clone(), sender, event));
+        let state = pollster::block_on(State::new(window.clone(), event));
         self.state = Some(state);
 
         window.request_redraw();
@@ -197,12 +193,11 @@ impl ApplicationHandler for App {
 }
 
 fn main() {
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = EventLoop::with_user_event().build().unwrap();
     let proxy_event = event_loop.create_proxy();
     event_loop.set_control_flow(ControlFlow::Wait);
     let mut app = App {
         state: None,
-        channel: channel(),
         event: proxy_event,
     };
 
