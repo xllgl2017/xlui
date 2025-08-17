@@ -1,6 +1,6 @@
 [package]
 name = "xlui"
-version = "0.1.0-beta.1"
+version = "0.1.0-rc.1"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/xllgl2017/xlui"
