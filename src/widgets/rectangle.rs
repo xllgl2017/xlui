@@ -1,3 +1,32 @@
+//! ### Rectangle的示例用法
+//! ```
+//! use xlui::layout::popup::Popup;
+//! use xlui::style::color::Color;
+//! use xlui::style::Shadow;
+//! use xlui::ui::Ui;
+//! use xlui::widgets::rectangle::Rectangle;
+//!
+//! fn draw(ui:&mut Ui){
+//!     //阴影
+//!     let shadow = Shadow {
+//!         offset: [5.0, 8.0],
+//!         spread: 10.0,
+//!         color: Color::rgba(0, 0, 0, 30),
+//!     };
+//!     //获取当前可用矩形
+//!     let mut rect =ui.available_rect().clone();
+//!     rect.set_size(300.0,300.0);
+//!     rect.add_min_x(10.0);
+//!     rect.add_max_x(10.0);
+//!     rect.add_min_y(10.0);
+//!     rect.add_max_y(10.0);
+//!     let rectangle=Rectangle::new(rect, Popup::popup_style())
+//!         //设置阴影
+//!         .with_shadow(shadow);
+//!     ui.add(rectangle);
+//! }
+//! ```
+
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;

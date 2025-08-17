@@ -1,3 +1,26 @@
+//! ###文本编辑器（单行）
+//! ```
+//! use xlui::frame::App;
+//! use xlui::ui::Ui;
+//! use xlui::widgets::textedit::TextEdit;
+//!
+//! fn edit_changed<A:App>(_:&mut A,_:&mut Ui,text:String){
+//!     println!("文本变动:{}",text);
+//! }
+//!
+//!
+//! fn draw(ui:&mut Ui){
+//!    let edit=TextEdit::new("".to_string())
+//!         //连接文本变动监听函数
+//!         .connect(edit_changed)
+//!         //关联文本，当文本变动时修改id为my_label的Label
+//!         .contact("my_label")
+//!         //设置Widget的ID
+//!         .width_id("");
+//!     ui.add(edit);
+//! }
+//! ```
+
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
@@ -5,6 +28,7 @@ use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::pos::Axis;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
@@ -14,7 +38,6 @@ use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::any::Any;
 use std::ops::Range;
-use crate::size::radius::Radius;
 
 struct TextChar {
     x: Axis,
@@ -44,6 +67,7 @@ struct CharLayout {
     x_min: f32,
     cursor: usize, //游标位置，范围[0..=chars.len()]
     selected: Range<usize>,
+    offset: f32,
 }
 
 
@@ -56,6 +80,7 @@ impl CharLayout {
             x_min: 0.0,
             cursor: 0,
             selected: 0..0,
+            offset: 0.0,
         }
     }
     fn from_text(x_min: f32, txt: &str, font_size: f32, context: &Context) -> CharLayout {
@@ -76,6 +101,7 @@ impl CharLayout {
             width,
             x_min,
             selected: 0..0,
+            offset: 0.0,
         }
     }
 
@@ -113,9 +139,12 @@ impl CharLayout {
             w += c.width;
         }
         self.width -= w;
+        self.offset += w;
+        if self.offset > 0.0 { self.offset = 0.0 }
         self.chars[self.selected.start..].iter_mut().for_each(|cc| cc.x -= w);
         self.reset_cursor(self.selected.start);
-        c.x.min
+        self.selected.end = self.selected.start;
+        c.x.min + self.offset
     }
 
     fn remove_char_in_cursor(&mut self) -> f32 {
@@ -125,22 +154,27 @@ impl CharLayout {
             let c = self.chars.remove(self.cursor - 1);
             self.width -= c.width;
             self.cursor -= 1;
+            self.offset += c.width;
+            if self.offset > 0.0 { self.offset = 0.0 }
             //将删除后面的字符进行位移
             self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x -= c.width);
-            c.x.min
+            c.x.min + self.offset
         } else {
             self.remove_range()
         }
     }
 
-    fn remove_after(&mut self) {
+    fn remove_after(&mut self) -> f32 {
         if self.selected.start == self.selected.end {
-            if self.cursor == self.chars.len() { return; }
+            if self.cursor == self.chars.len() { return self.x_min + self.width; }
             let c = self.chars.remove(self.cursor);
             self.width -= c.width;
-            self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x += c.width);
+            self.offset += c.width;
+            if self.offset > 0.0 { self.offset = 0.0 }
+            self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x -= c.width);
+            c.x.max + self.offset
         } else {
-            self.remove_range();
+            self.remove_range()
         }
     }
 
@@ -149,7 +183,18 @@ impl CharLayout {
         Some(&self.chars[self.cursor - 1])
     }
 
-    fn push_char(&mut self, c: char, context: &Context) -> f32 { //返回x最大值 ，给游标偏移
+    fn next_char(&self) -> Option<&TextChar> {
+        if self.cursor >= self.chars.len() { return None; }
+        Some(&self.chars[self.cursor])
+    }
+
+    fn previous_char(&self) -> Option<&TextChar> {
+        if self.cursor == 0 { return None; }
+        if self.cursor - 1 == 0 { return Some(&self.chars[0]); }
+        Some(&self.chars[self.cursor - 2])
+    }
+
+    fn push_char(&mut self, c: char, context: &Context, lx: f32) -> f32 { //返回x最大值 ，给游标偏移
         if self.selected.start != self.selected.end {
             self.remove_range();
         }
@@ -159,11 +204,14 @@ impl CharLayout {
         } else { self.x_min };
         let c = TextChar::new(c, cx, w);
         let xm = c.x.max;
+        if c.x.max + self.offset > lx {
+            self.offset -= c.width;
+        }
         self.chars.insert(self.cursor, c);
         self.cursor += 1;
         self.width += w;
         self.chars[self.cursor..].iter_mut().for_each(|cc| cc.x += w);
-        xm
+        xm + self.offset
     }
 }
 
@@ -204,7 +252,7 @@ impl TextEdit {
         fill_style.border.clicked = fill_style.border.hovered.clone();
 
         let mut select_style = ClickStyle::new();
-        select_style.fill.inactive = Color::rgba(144, 209, 255, 100);
+        select_style.fill.inactive = Color::rgba(255, 0, 0, 100); //Color::rgba(144, 209, 255, 100);
         select_style.fill.hovered = Color::rgba(144, 209, 255, 100);
         select_style.fill.clicked = Color::rgba(144, 209, 255, 100);
         select_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
@@ -285,24 +333,46 @@ impl TextEdit {
 
     fn text_select(&mut self, ui: &mut Ui) {
         let lx = ui.device.device_input.mouse.lastest().x;
-        let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < lx && lx < tc.x.max);
-        if let Some(pos) = pos {
-            let ct = &self.char_layout.chars[pos];
-            if lx > ui.device.device_input.mouse.pressed_pos.x { //向右选择
-                self.select_param.rect.set_x_max(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
-                self.char_layout.selected.end = if lx >= ct.half_x() { pos + 1 } else { pos };
-            } else { //向左选择
-                self.select_param.rect.set_x_min(if lx >= ct.half_x() { ct.x.max } else { ct.x.min });
-                self.char_layout.selected.start = if lx >= ct.half_x() { pos + 1 } else { pos };
+        if lx < self.text_buffer.rect.dx().min {
+            self.select_param.rect.set_x_min(self.text_buffer.rect.dx().min);
+            let data = self.select_param.as_draw_param(false, false);
+            ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+            let event = ui.context.event.clone();
+            let wid = ui.context.window.id();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                event.send_event((wid, UpdateType::None)).unwrap();
+            });
+        } else if lx > self.text_buffer.rect.dx().max {
+            self.select_param.rect.set_x_max(self.text_buffer.rect.dx().max);
+            let data = self.select_param.as_draw_param(false, false);
+            ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+            let event = ui.context.event.clone();
+            let wid = ui.context.window.id();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                event.send_event((wid, UpdateType::None)).unwrap();
+            });
+        } else {
+            let pos = self.char_layout.chars.iter().position(|tc| tc.x.min + self.char_layout.offset < lx && lx <= tc.x.max + self.char_layout.offset);
+            if let Some(pos) = pos {
+                let ct = &mut self.char_layout.chars[pos];
+                if lx > ui.device.device_input.mouse.pressed_pos.x { //向右选择
+                    self.select_param.rect.set_x_max(if lx >= ct.half_x() + self.char_layout.offset { ct.x.max } else { ct.x.min } + self.char_layout.offset);
+                    self.char_layout.selected.end = if lx >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos };
+                } else { //向左选择
+                    self.select_param.rect.set_x_min(if lx >= ct.half_x() + self.char_layout.offset { ct.x.max } else { ct.x.min } + self.char_layout.offset);
+                    self.char_layout.selected.start = if lx >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos };
+                }
+                let ct = &self.char_layout.chars[pos];
+                self.char_layout.reset_cursor(if lx >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos });
+                let xm = if lx > ui.device.device_input.mouse.pressed_pos.x { self.select_param.rect.dx().max } else { self.select_param.rect.dx().min };
+                self.update_cursor(ui, xm);
             }
-
-            self.char_layout.reset_cursor(if lx >= ct.half_x() { pos + 1 } else { pos });
-            let xm = if lx > ui.device.device_input.mouse.pressed_pos.x { self.select_param.rect.dx().max } else { self.select_param.rect.dx().min };
-            self.update_cursor(ui, xm);
+            let data = self.select_param.as_draw_param(false, false);
+            ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+            ui.context.window.request_redraw();
         }
-        let data = self.select_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
-        ui.context.window.request_redraw();
     }
 
     fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
@@ -317,24 +387,39 @@ impl TextEdit {
                     winit::keyboard::NamedKey::Backspace => {
                         let xm = self.char_layout.remove_char_in_cursor();
                         self.update_cursor(ui, xm);
+                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
                     }
                     winit::keyboard::NamedKey::ArrowLeft => {
                         let xm = self.char_layout.cursor_reduce();
+                        let xm = if xm + self.char_layout.offset < self.text_buffer.rect.dx().min {
+                            self.char_layout.offset = -(xm - self.text_buffer.rect.dx().min);
+                            self.text_buffer.rect.dx().min
+                        } else {
+                            xm + self.char_layout.offset
+                        };
                         self.update_cursor(ui, xm);
+                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                     }
                     winit::keyboard::NamedKey::ArrowRight => {
                         let xm = self.char_layout.cursor_add();
+                        let xm = if xm > self.text_buffer.rect.dx().max {
+                            self.char_layout.offset = -(xm - self.text_buffer.rect.dx().max);
+                            self.text_buffer.rect.dx().max
+                        } else { xm };
                         self.update_cursor(ui, xm);
+                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                     }
                     winit::keyboard::NamedKey::Delete => {
-                        self.char_layout.remove_after();
+                        let xm = self.char_layout.remove_after();
+                        self.update_cursor(ui, xm);
+                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
                     }
                     winit::keyboard::NamedKey::Space => {
-                        let xm = self.char_layout.push_char(' ', &ui.context);
+                        let xm = self.char_layout.push_char(' ', &ui.context, self.text_buffer.rect.dx().max);
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text, ui);
@@ -344,9 +429,11 @@ impl TextEdit {
             }
             winit::keyboard::Key::Character(c) => {
                 let c = c.chars().next().unwrap();
-                let xm = self.char_layout.push_char(c, &ui.context);
+                let xm = self.char_layout.push_char(c, &ui.context, self.text_buffer.rect.dx().max);
                 self.update_cursor(ui, xm);
+                self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                 let text = self.char_layout.text();
+
                 self.text_buffer.set_text(text, ui);
             }
             winit::keyboard::Key::Unidentified(_) => {}
@@ -450,25 +537,26 @@ impl Widget for TextEdit {
                         self.select_param.rect.set_x_min(self.char_layout.x_min);
                         self.select_param.rect.set_x_max(self.char_layout.x_min);
                         self.char_layout.selected = 0..0;
-                        self.update_cursor(ui, self.char_layout.x_min);
+                        self.update_cursor(ui, self.char_layout.x_min + self.char_layout.offset);
                         self.char_layout.reset_cursor(0);
                         ui.context.window.request_redraw();
                     } else if x > self.char_layout.x_min + self.char_layout.width {
                         self.select_param.rect.set_x_min(self.char_layout.x_min + self.char_layout.width);
                         self.select_param.rect.set_x_max(self.char_layout.x_min + self.char_layout.width);
                         self.char_layout.selected = self.char_layout.chars.len()..self.char_layout.chars.len();
-                        self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width);
+                        self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width + self.char_layout.offset);
                         self.char_layout.reset_cursor(self.char_layout.chars.len());
                         ui.context.window.request_redraw();
                     } else {
-                        let pos = self.char_layout.chars.iter().position(|tc| tc.x.min < x && x < tc.x.max);
+                        let pos = self.char_layout.chars.iter().position(|tc| tc.x.min + self.char_layout.offset < x && x < tc.x.max + self.char_layout.offset);
                         if let Some(pos) = pos {
                             let ct = &self.char_layout.chars[pos];
-                            self.char_layout.selected = if x >= ct.half_x() { pos + 1..pos + 1 } else { pos..pos };
-                            self.select_param.rect.set_x_min(if x >= ct.half_x() { ct.x.max } else { ct.x.min });
-                            self.select_param.rect.set_x_max(if x >= ct.half_x() { ct.x.max } else { ct.x.min });
-                            self.char_layout.reset_cursor(if x >= ct.half_x() { pos + 1 } else { pos });
-                            self.update_cursor(ui, self.select_param.rect.dx().min);
+                            println!("r {} {}", pos, ct.char);
+                            self.char_layout.selected = if x >= ct.half_x() + self.char_layout.offset { pos + 1..pos + 1 } else { pos..pos };
+                            self.select_param.rect.set_x_min(if x >= ct.half_x() + self.char_layout.offset { ct.x.max + self.char_layout.offset } else { ct.x.min + self.char_layout.offset });
+                            self.select_param.rect.set_x_max(if x >= ct.half_x() + self.char_layout.offset { ct.x.max + self.char_layout.offset } else { ct.x.min + self.char_layout.offset });
+                            self.char_layout.reset_cursor(if x >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos });
+                            self.update_cursor(ui, self.select_param.rect.dx().max);
                             ui.context.window.request_redraw();
                         }
                     }
@@ -481,6 +569,40 @@ impl Widget for TextEdit {
             UpdateType::KeyRelease(ref mut key) => {
                 if !self.focused || key.is_none() { return Response::new(&self.id, &self.fill_param.rect); }
                 self.key_input(key.take(), ui)
+            }
+            UpdateType::None => {
+                if !self.focused { return Response::new(&self.id, &self.fill_param.rect); }
+                if let Some(c) = self.char_layout.next_char() && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max
+                    && ui.device.device_input.mouse.lastest.x > ui.device.device_input.mouse.pressed_pos.x {
+                    println!("p {} {}", self.char_layout.cursor, self.char_layout.chars.len());
+                    self.select_param.rect.add_min_x(-c.width);
+                    self.char_layout.offset = -(c.x.max - self.text_buffer.rect.dx().max);
+                    self.char_layout.cursor_add();
+                    self.char_layout.selected.end = self.char_layout.chars.len();
+
+                    if self.select_param.rect.dx().min < self.text_buffer.rect.dx().min {
+                        self.select_param.rect.set_x_min(self.text_buffer.rect.dx().min);
+                    }
+                    let data = self.select_param.as_draw_param(false, false);
+                    ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+                    self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                    ui.context.window.request_redraw();
+                } else if let Some(c) = self.char_layout.previous_char() && ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min
+                    && ui.device.device_input.mouse.lastest.x < ui.device.device_input.mouse.pressed_pos.x {
+                    self.select_param.rect.add_max_x(c.width);
+                    println!("n {} {} {}", self.char_layout.cursor, self.char_layout.chars.len(), self.char_layout.offset);
+                    self.char_layout.offset += c.width;
+                    if self.char_layout.offset >= 0.0 { self.char_layout.offset = 0.0 }
+                    self.char_layout.cursor_reduce();
+                    self.char_layout.selected.start = 0;
+                    if self.select_param.rect.dx().max > self.text_buffer.rect.dx().max {
+                        self.select_param.rect.set_x_max(self.text_buffer.rect.dx().max);
+                    }
+                    let data = self.select_param.as_draw_param(false, false);
+                    ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+                    self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                    ui.context.window.request_redraw();
+                }
             }
             _ => {}
         }

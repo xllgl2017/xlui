@@ -1,13 +1,31 @@
-//!```
+//! ### CheckBox的示例用法
+//! ```
 //! use xlui::ui::Ui;
 //! use xlui::widgets::checkbox::CheckBox;
 //! use xlui::widgets::Widget;
 //!
-//! # xlui::_run_test(|ui|{
-//!    let mut check=CheckBox::new(false,"hello button");
+//! fn checked<A>(_:&mut A,_:&mut Ui,check:bool){
+//!    println!("复选框状态改变: {}",check);
+//! }
+//!
+//! fn draw(ui:&mut Ui){
+//!    //快速创建一个复选框
+//!    ui.checkbox(false,"Hello CheckBox")
+//!        //设置回调函数
+//!        .set_callback(checked);
+//!
+//!    let mut check=CheckBox::new(false,"hello button")
+//!        //连接到回调函数
+//!        .connect(checked)
+//!        //设置控件宽度
+//!        .with_width(100.0)
+//!        //与ID为my_radio的控件关联
+//!        .contact("my_radio")
+//!        //设置ID
+//!        .id("my_checked");
 //!    ui.add(check);
-//!    ui.checkbox(false,"hello button");
-//! # });
+//!
+//! }
 //! ```
 
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
@@ -69,7 +87,7 @@ impl CheckBox {
     }
 
 
-    pub fn reset_size(&mut self, context: &Context) {
+    pub(crate) fn reset_size(&mut self, context: &Context) {
         self.text.rect = self.rect.clone();
         self.text.reset_size(context);
         self.text.rect.add_min_x(15.0);

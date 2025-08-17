@@ -1,8 +1,46 @@
 //!```
+//! use xlui::frame::App;
+//! use xlui::size::padding::Padding;
+//! use xlui::style::ClickStyle;
 //! use xlui::ui::Ui;
 //! use xlui::widgets::button::Button;
 //! use xlui::widgets::Widget;
 //!
+//! fn clicked<A:App>(_:&mut A,btn:&mut Button,ui:&mut Ui){
+//!    //修改图片
+//!    btn.set_image("logo.jpg",ui);
+//!    //修改文本
+//!    btn.set_text("被点击了",ui);
+//!    println!("按钮被点击了");
+//! }
+//!
+//! fn draw(ui:&mut Ui){
+//!    //快捷创建一个按钮
+//!    ui.button("点击")
+//!        //设置点击回调函数
+//!        .set_callback(clicked);
+//!    //控件样式
+//!    let style=ClickStyle::new();
+//!    let mut btn=Button::new("hello button")
+//!        //连接到点击回调函数
+//!        .connect(clicked)
+//!        //设置控件高度
+//!        .height(30.0)
+//!        //设置控件宽度
+//!        .width(30.0)
+//!        //设置按钮样式
+//!        .with_style(style)
+//!        //设置内部padding
+//!        .padding(Padding::same(5.0));
+//!    //设置字体大小
+//!    btn.set_font_size(14.0);
+//!    //设置控件宽高
+//!    btn.set_size(30.0,30.0);
+//!    ui.add(btn);
+//!    //图片按钮
+//!    let image_btn=Button::image_and_text("logo.jpg","点击");
+//!    ui.add(image_btn);
+//! }
 //! # xlui::_run_test(|ui|{
 //!    let mut btn=Button::new("hello button");
 //!    ui.add(btn);

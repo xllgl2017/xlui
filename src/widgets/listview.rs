@@ -1,8 +1,7 @@
-//! # ListView的泛类可以是任意类型
+//! # ListView的是使用示例
 //! ```
 //! use xlui::frame::App;
-//! use xlui::ui::Ui;//!
-//!
+//! use xlui::ui::Ui;
 //! use xlui::widgets::listview::ListView;
 //!
 //! struct XlUi{
@@ -10,26 +9,49 @@
 //! }
 //!
 //! impl XlUi{
+//!     pub fn new()->XlUi{
+//!         //这里的data可以是任意类型
+//!         let data=vec![1,2,3,4];
+//!         let mut list_view=ListView::new(data)
+//!             //设置控件大小
+//!             .with_size(100.0,100.0);
+//!         //设置Item的Widget
+//!         list_view.set_item_widget(|ui,datum|{
+//!             ui.label(format!("Item-{}",datum))
+//!         });
+//!         XlUi{
+//!             list_view
+//!         }
+//!     }
+//!
+//!
 //!     fn item_changed(&mut self,ui:&mut Ui){
+//!         //获取当前已选择的Item
 //!         if let Some(datum) = self.list_view.current() {
 //!             println!("list: {}", self.list_view.current());
 //!         }
+//!         //添加一条Item
+//!         self.list_view.push(0);
+//!         //删除一条Item
+//!         self.list_view.remove(0);
+//!         //获取当前已选择Item的索引
+//!         self.list_view.current_index();
 //!     }
 //! }
 //!
 //! impl App for XlUi{
 //!     fn draw(&mut self, ui: &mut Ui) {
+//!         //设置Item改变回调函数
 //!         self.list_view.set_callback(Self::item_changed);
-//!         self.list_view.set_item_widget(|ui,_|ui.label("Item"));
 //!         self.list_view.show(ui);
 //!     }
 //!
 //!     fn update(&mut self, ui: &mut Ui) {
-//!
+//!         //这里需要调update，否则push、remove不起作用
+//!         self.list_view.update(ui);
 //!     }
 //!
 //!     fn redraw(&mut self, ui: &mut Ui) {
-//!
 //!     }
 //!
 //! }

@@ -1,3 +1,26 @@
+//! ### SelectItem的示例用法
+//! ```
+//! use xlui::size::padding::Padding;
+//! use xlui::ui::Ui;
+//! use xlui::widgets::select::SelectItem;
+//!
+//! fn draw(ui:&mut Ui){
+//!     //快速创建一个SelectItem
+//!     let contact=ui.select_value(1).need_contact();
+//!     let mut item=SelectItem::new(2)
+//!         //关联选择
+//!         .contact(contact.clone())
+//!         //设置控件内部padding
+//!         .padding(Padding::same(5.0));
+//!
+//!         //设置控件大小
+//!     item.set_size(30.0,30.0);
+//!     ui.add(item);
+//!
+//! }
+//! ```
+
+
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use crate::frame::context::{Context, UpdateType};

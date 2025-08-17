@@ -44,20 +44,20 @@ impl ItemWidget {
         self
     }
 
-    pub fn with_height(mut self, h: f32) -> Self {
-        self.fill_param.rect.set_height(h);
-        self
-    }
+    // pub fn with_height(mut self, h: f32) -> Self {
+    //     self.fill_param.rect.set_height(h);
+    //     self
+    // }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
         self.fill_param.style = style;
         self
     }
 
-    pub fn with_padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
-    }
+    // pub fn with_padding(mut self, padding: Padding) -> Self {
+    //     self.padding = padding;
+    //     self
+    // }
 
     pub fn show(mut self, ui: &mut Ui, mut context: impl FnMut(&mut Ui)) {
         self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);

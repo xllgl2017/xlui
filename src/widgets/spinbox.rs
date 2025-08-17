@@ -1,3 +1,28 @@
+//! ### Slider的示例用法
+//! ```
+//! use xlui::frame::App;
+//! use xlui::ui::Ui;
+//! use xlui::widgets::spinbox::SpinBox;
+//!
+//! fn spinbox_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){
+//!     println!("SpinBox改变了:{}",v);
+//! }
+//!
+//! fn draw(ui:&mut Ui){
+//!     //快速创建一个Slider
+//!     ui.spinbox(10.0,1.0,0.0..100.0)
+//!         //设置回调函数
+//!         .set_callback(spinbox_changed);
+//!     let spinbox=SpinBox::new(10.0,1.0,0.0..100.0)
+//!         //关联ID为my_slider的控件
+//!         .contact("my_slider")
+//!         //连接到Slider值监听函数
+//!         .connect(spinbox_changed)
+//!         //设置控件ID
+//!         .id("my_spinbox");
+//!     ui.add(spinbox);
+//! }
+//! ```
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::response::{Callback, Response};

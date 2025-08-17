@@ -1,11 +1,25 @@
 //! ### ComboBox的示例用法
-//!
 //!```
+//! use std::fmt::Display;
+//! use xlui::frame::App;
+//! use xlui::ui::Ui;
 //! use xlui::widgets::combobox::ComboBox;
 //! use xlui::widgets::Widget;
-//! # xlui::_run_test(|ui|{
-//!    ui.add(ComboBox::new(vec![1,2,3,4]).with_popup_height(150.0));
-//! # });
+//!
+//! fn combo_changed<A:App>(_:&mut A,_:&mut Ui,t:&i32){
+//!    println!("ComboBox的Item改变了：{}",t);
+//! }
+//!
+//! fn draw(ui:&mut Ui){
+//!    //这里的data可以是任意实现了Display的类型
+//!    let data=vec![1,2,3,4];
+//!    let combo=ComboBox::new(data)
+//!        //设置打开的弹窗布局的高度
+//!        .with_popup_height(150.0)
+//!        //连接到Item改变的监听函数
+//!        .connect(combo_changed);
+//!    ui.add(combo);
+//! }
 //! ```
 
 use crate::frame::context::{Context, UpdateType};

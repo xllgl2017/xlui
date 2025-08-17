@@ -7,6 +7,7 @@ use crate::ui::Ui;
 use crate::SAMPLE_COUNT;
 use glyphon::Shaping;
 use wgpu::MultisampleState;
+use crate::size::pos::Axis;
 
 pub struct TextBuffer {
     pub(crate) text: String,
@@ -17,6 +18,7 @@ pub struct TextBuffer {
     pub(crate) size_mode: SizeMode,
     pub(crate) buffer: Option<glyphon::Buffer>,
     pub(crate) render: Option<glyphon::TextRenderer>,
+    pub(crate) clip_x: Axis,
 }
 
 impl TextBuffer {
@@ -30,6 +32,7 @@ impl TextBuffer {
             size_mode: SizeMode::Auto,
             buffer: None,
             render: None,
+            clip_x: (0.0..0.0).into(),
         }
     }
 
@@ -59,14 +62,14 @@ impl TextBuffer {
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         let bounds = glyphon::TextBounds {
-            left: 0,
+            left: self.rect.dx().min as i32,
             top: 0,
             right: self.rect.dx().max as i32,
             bottom: self.rect.dy().max as i32,
         };
         let area = glyphon::TextArea {
             buffer: self.buffer.as_ref().unwrap(),
-            left: self.rect.dx().min,
+            left: self.rect.dx().min - self.clip_x.min,
             top: self.rect.dy().min,
             scale: 1.0,
             bounds,

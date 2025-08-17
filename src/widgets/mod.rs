@@ -15,7 +15,7 @@ pub mod radio;
 pub mod combobox;
 pub mod select;
 pub mod rectangle;
-pub mod item;
+pub(crate) mod item;
 pub mod listview;
 
 pub trait Widget: Any {
