@@ -67,7 +67,9 @@ pub struct Slider {
     focused: bool,
     hovered: bool,
     offset: f32,
+    changed: bool,
 }
+
 
 impl Slider {
     pub fn new(v: f32) -> Slider {
@@ -113,6 +115,7 @@ impl Slider {
             focused: false,
             hovered: false,
             offset: 0.0,
+            changed: false,
         }
     }
 
@@ -176,27 +179,25 @@ impl Slider {
         self.slider_buffer = Some(slider_buffer);
     }
 
-    fn update_slider(&mut self, ui: &mut Ui) {
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.changed { return; }
+        self.changed = false;
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
         let data = self.slided_param.as_draw_param(false, false);
         ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
         let data = self.slider_param.as_draw_param(self.hovered || self.focused, ui.device.device_input.mouse.pressed);
         ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-        ui.context.window.request_redraw();
     }
 }
 
 impl Widget for Slider {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
-        // let resp = Response::new(&self.id, &self.rect);
-        // if ui.pass.is_none() { return resp; }
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         ui.context.render.rectangle.render(self.slided_index, pass);
         ui.context.render.circle.render(self.slider_index, pass);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -209,8 +210,8 @@ impl Widget for Slider {
             let mut lx = self.fill_param.rect.dx().clone();
             lx.extend(self.slider_param.rect.width() / 2.0);
             self.offset = self.slider_param.rect.offset_x_limit(offset, &lx);
-            // self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(offset));
-            self.update_slider(ui);
+            self.changed = true;
+            ui.context.window.request_redraw();
         }
         match ui.update_type {
             UpdateType::Init => self.init(ui),
@@ -225,7 +226,7 @@ impl Widget for Slider {
                     let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.dx().min - self.fill_param.rect.dx().min) / self.fill_param.rect.width();
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = cv;
-                    self.update_slider(ui);
+                    self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(*app, ui, self.value);
@@ -233,17 +234,30 @@ impl Widget for Slider {
                     }
                     ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value));
                     ui.update_type = UpdateType::None;
+                    ui.context.window.request_redraw();
                     return Response::new(&self.id, &self.rect);
                 }
                 let hovered = ui.device.device_input.hovered_at(&self.slider_param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
-                    let data = self.slider_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-                    ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+                    self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
-            UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_param.rect),
+            UpdateType::MousePress => {
+                if ui.device.device_input.pressed_at(&self.slider_param.rect) != self.focused {
+                    self.focused = !self.focused;
+                    self.changed = true;
+                    ui.context.window.request_redraw();
+                }
+            }
+            UpdateType::MouseRelease => {
+                if self.focused {
+                    self.focused = false;
+                    self.changed = true;
+                    ui.context.window.request_redraw();
+                }
+            }
             _ => {}
         }
         Response::new(&self.id, &self.rect)

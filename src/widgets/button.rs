@@ -11,7 +11,7 @@
 //!    //修改图片
 //!    btn.set_image("logo.jpg",ui);
 //!    //修改文本
-//!    btn.set_text("被点击了",ui);
+//!    btn.set_text("被点击了");
 //!    println!("按钮被点击了");
 //! }
 //!
@@ -71,6 +71,7 @@ pub struct Button {
     image: Option<Image>,
     image_rect: Rect,
     hovered: bool,
+    changed: bool,
 }
 
 
@@ -90,6 +91,7 @@ impl Button {
             image: None,
             image_rect: Rect::new(),
             hovered: false,
+            changed: false,
         }
     }
 
@@ -194,13 +196,11 @@ impl Button {
         }
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
-        self.reset_size(&ui.context);
-        self.re_init(ui);
-    }
-
-    fn re_init(&mut self, ui: &mut Ui) {
+    fn init(&mut self, ui: &mut Ui, init: bool) {
+        if init {
+            self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
+            self.reset_size(&ui.context);
+        }
         //按钮矩形
         let data = self.fill_param.as_draw_param(false, false);
         let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -214,21 +214,21 @@ impl Button {
         //按钮文本
         self.text_buffer.draw(ui);
     }
+
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+    }
 }
 
 
 impl Widget for Button {
     fn redraw(&mut self, ui: &mut Ui) {
-        if self.fill_buffer.is_none() { self.init(ui); }
-        // let resp = Response::new(&self.id, &self.fill_param.rect);
-        // if ui.pass.is_none() { return resp; }
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
-        if let Some(ref mut image) = self.image {
-            image.redraw(ui);
-        }
+        if let Some(ref mut image) = self.image { image.redraw(ui); }
         self.text_buffer.redraw(ui);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -236,14 +236,13 @@ impl Widget for Button {
             image.update(ui);
         }
         match &mut ui.update_type {
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init => self.init(ui, true),
+            UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
                 let has_pos = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != has_pos {
                     self.hovered = has_pos;
-                    let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
@@ -263,11 +262,10 @@ impl Widget for Button {
             UpdateType::Offset(o) => {
                 if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
                 self.fill_param.rect.offset(o);
-                let data = self.fill_param.as_draw_param(false, false);
-                ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                 self.text_buffer.rect.offset(o);
+                self.changed = true;
+                ui.context.window.request_redraw();
             }
-            UpdateType::None => {}
             _ => {}
         }
         Response::new(&self.id, &self.fill_param.rect)
