@@ -261,11 +261,13 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             UpdateType::MousePress => {
                 if ui.device.device_input.pressed_at(&self.down_rect) {
                     println!("press down");
+                    self.edit.focused = false;
                     self.press_down = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
                 } else if ui.device.device_input.pressed_at(&self.up_rect) {
                     println!("press up");
+                    self.edit.focused = false;
                     self.press_up = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
