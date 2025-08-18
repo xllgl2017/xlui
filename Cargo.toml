@@ -37,6 +37,10 @@ path = "test/frame.rs"
 name = "test_hibernate"
 path = "test/hibernate.rs"
 
+[[bin]]
+name = "test_all"
+path = "test/all.rs"
+
 [dependencies]
 winit = "0.30.11"
 wgpu = "25.0.2"

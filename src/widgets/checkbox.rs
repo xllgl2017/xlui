@@ -30,20 +30,19 @@
 //! ```
 
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
-use crate::response::{Callback, Response};
-use crate::size::rect::Rect;
-use crate::text::text_buffer::TextBuffer;
-use crate::ui::Ui;
-use crate::widgets::Widget;
-use std::any::Any;
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
+use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
+use crate::size::rect::Rect;
 use crate::size::SizeMode;
-use crate::style::ClickStyle;
 use crate::style::color::Color;
+use crate::style::ClickStyle;
+use crate::text::text_buffer::TextBuffer;
+use crate::ui::Ui;
+use crate::widgets::Widget;
 
 pub struct CheckBox {
     pub(crate) id: String,
@@ -51,7 +50,7 @@ pub struct CheckBox {
     text: TextBuffer,
     check_text: TextBuffer,
     value: bool,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, bool)>>,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
     size_mode: SizeMode,
 
     check_param: RectParam,
@@ -196,7 +195,7 @@ impl Widget for CheckBox {
                     self.update_check(ui);
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
-                        callback(*app, ui, self.value);
+                        callback(app, ui, self.value);
                         ui.app.replace(app);
                     }
                     ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));

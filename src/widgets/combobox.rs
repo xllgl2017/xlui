@@ -23,12 +23,14 @@
 //! ```
 
 use crate::frame::context::{Context, UpdateType};
+use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
@@ -37,10 +39,8 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::Widget;
-use std::any::Any;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::size::radius::Radius;
 
 pub struct ComboBox<T> {
     pub(crate) id: String,
@@ -49,7 +49,7 @@ pub struct ComboBox<T> {
     text_buffer: TextBuffer,
     data: Vec<T>,
     popup_rect: Rect,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)>>,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)>>,
 
     fill_param: RectParam,
     fill_index: usize,
@@ -149,8 +149,6 @@ impl<T: Display + 'static> ComboBox<T> {
         self.fill_buffer = Some(fill_buffer);
         //文本
         self.text_buffer.draw(ui);
-
-
     }
 
     pub fn parent(&self) -> Arc<RwLock<Option<String>>> {
@@ -172,7 +170,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
                     let t = self.data.iter().find(|x| &x.to_string() == select).unwrap();
-                    callback(*app, ui, t);
+                    callback(app, ui, t);
                     ui.app.replace(app);
                     ui.context.window.request_redraw();
                 }

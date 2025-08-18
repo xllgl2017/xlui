@@ -26,30 +26,29 @@
 //!     ui.add(slider);
 //! }
 //! ```
+use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
+use crate::size::pos::Pos;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-use std::any::Any;
-use std::ops::Range;
-use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::Offset;
-use crate::size::pos::Pos;
-use crate::size::radius::Radius;
+use std::ops::Range;
 
 pub struct Slider {
     pub(crate) id: String,
     rect: Rect,
     value: f32,
     range: Range<f32>,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, f32)>>,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)>>,
     contact_ids: Vec<String>,
 
     fill_param: RectParam,
@@ -229,7 +228,7 @@ impl Widget for Slider {
                     self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
-                        callback(*app, ui, self.value);
+                        callback(app, ui, self.value);
                         ui.app.replace(app);
                     }
                     ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value));

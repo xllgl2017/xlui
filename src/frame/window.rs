@@ -10,13 +10,13 @@ use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
 use winit::event_loop::EventLoopProxy;
 
-pub(crate) struct Window<A> {
+pub(crate) struct Window {
     pub(crate) app_ctx: AppContext,
-    pub(crate) app: A,
+    pub(crate) app: Box<dyn App>,
 }
 
-impl<A: App> Window<A> {
-    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: A, event: EventLoopProxy<(winit::window::WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
+impl Window {
+    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: Box<dyn App>, event: EventLoopProxy<(winit::window::WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
         let device = Self::rebuild_device(&window, event.clone()).await?;
         let font = Arc::new(Font::new());
         let viewport = Viewport::new(&device.device, &device.cache);
@@ -97,7 +97,7 @@ impl<A: App> Window<A> {
 
 
 //设备输入
-impl<A: App> Window<A> {
+impl Window {
     pub(crate) fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.app_ctx.context.resize = true;
         self.app_ctx.context.size.width = new_size.width;

@@ -60,22 +60,21 @@
 //!
 //!
 
+use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::scroll_area::ScrollArea;
 use crate::layout::{HorizontalLayout, LayoutKind};
 use crate::map::Map;
 use crate::response::Callback;
 use crate::size::border::Border;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::item::ItemWidget;
-use std::any::Any;
 use std::mem;
 use std::sync::{Arc, RwLock};
-use crate::frame::context::UpdateType;
-use crate::size::radius::Radius;
 
 pub enum ListUpdate<T> {
     Push(T),
@@ -87,7 +86,7 @@ pub struct ListView<T> {
     data: Vec<T>,
     items: Map<T>,
     current: Arc<RwLock<Option<String>>>,
-    callback: Arc<Option<Box<dyn Fn(&mut dyn Any, &mut Ui)>>>,
+    callback: Arc<Option<Box<dyn Fn(&mut Box<dyn App>, &mut Ui)>>>,
     dyn_item_widget: Box<dyn Fn(&mut Ui, &T)>,
     rect: Rect,
     updates: Vec<ListUpdate<T>>,
@@ -140,7 +139,7 @@ impl<T: 'static> ListView<T> {
                 current.write().unwrap().replace(item_id.to_string());
                 if let Some(callback) = callback.as_ref() {
                     let app = ui.app.take().unwrap();
-                    callback(*app, ui);
+                    callback(app, ui);
                     ui.app = Some(app);
                 }
                 println!("item clicked");
@@ -189,7 +188,7 @@ impl<T: 'static> ListView<T> {
             if let LayoutKind::Vertical(layout) = ui.layout.take().unwrap() {
                 area.layout = Some(layout);
             }
-            ui.update_type=UpdateType::None;
+            ui.update_type = UpdateType::None;
             area.reset_context_height();
             self.items.insert(wid, datum);
         }

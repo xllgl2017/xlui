@@ -47,7 +47,7 @@ impl AppContext {
         }
     }
 
-    pub fn draw<A: App + Any>(&mut self, app: &mut A) {
+    pub fn draw(&mut self, app: &mut Box<dyn App>) {
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
@@ -66,7 +66,7 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
-    pub fn update<A: App + Any>(&mut self, ut: UpdateType, app: &mut A) {
+    pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
@@ -81,7 +81,7 @@ impl AppContext {
             request_update: None,
         };
         app.update(&mut ui);
-        ui.app = Some(Box::new(app));
+        ui.app = Some(app);
         self.inner_windows = ui.inner_windows.take();
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.update(&mut ui);
@@ -105,7 +105,7 @@ impl AppContext {
     }
 
 
-    pub fn redraw(&mut self, app: &mut impl App) {
+    pub fn redraw(&mut self, app: &mut Box<dyn App>) {
         if crate::time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
             let t = self.previous_time;
@@ -169,7 +169,7 @@ impl AppContext {
             request_update: None,
         };
         app.redraw(&mut ui);
-        ui.app = Some(Box::new(app));
+        ui.app = Some(app);
         self.layout.as_mut().unwrap().redraw(&mut ui);
         self.popups = ui.popups.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
@@ -187,11 +187,11 @@ impl AppContext {
         self.previous_time = crate::time_ms();
     }
 
-    pub fn key_input<A: App>(&mut self, ut: UpdateType, app: &mut A) {
+    pub fn key_input(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
-            app: Some(Box::new(app)),
+            app: Some(app),
             pass: None,
             layout: None,
             popups: self.popups.take(),
@@ -213,7 +213,7 @@ impl AppContext {
 pub struct Ui<'a> {
     pub(crate) device: &'a Device,
     pub(crate) context: &'a mut Context,
-    pub(crate) app: Option<Box<&'a mut dyn Any>>,
+    pub(crate) app: Option<&'a mut Box<dyn App>>,
     pub(crate) pass: Option<wgpu::RenderPass<'a>>,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<Popup>>,

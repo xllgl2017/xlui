@@ -34,7 +34,6 @@ use crate::vertex::Vertex;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
 use crate::NumCastExt;
-use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
 
@@ -46,7 +45,7 @@ pub struct SpinBox<T> {
     value: T,
     gap: T,
     range: Range<T>,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, T)>>,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, T)>>,
     up_rect: Rect,
     up_index: Range<usize>,
     down_rect: Rect,
@@ -179,7 +178,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     fn call(&mut self, ui: &mut Ui) {
         if let Some(ref mut callback) = self.callback {
             let app = ui.app.take().unwrap();
-            callback(*app, ui, self.value);
+            callback(app, ui, self.value);
             ui.app.replace(app);
         }
     }

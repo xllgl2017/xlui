@@ -22,6 +22,7 @@
 //! ```
 
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
+use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -36,7 +37,6 @@ use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-use std::any::Any;
 use std::ops::Range;
 
 struct TextChar {
@@ -219,7 +219,7 @@ pub struct TextEdit {
     pub(crate) id: String,
     text_buffer: TextBuffer,
     size_mode: SizeMode,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, String)>>,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, String)>>,
     char_layout: CharLayout,
 
     fill_param: RectParam,
@@ -442,7 +442,7 @@ impl TextEdit {
         self.char_layout.selected = 0..0;
         if let Some(ref mut callback) = self.callback {
             let app = ui.app.take().unwrap();
-            callback(*app, ui, self.char_layout.text());
+            callback(app, ui, self.char_layout.text());
             ui.app.replace(app);
         }
         ui.send_updates(&self.contact_ids, ContextUpdate::String(self.char_layout.text()));

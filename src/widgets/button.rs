@@ -57,14 +57,13 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::image::Image;
 use crate::widgets::Widget;
-use std::any::Any;
 
 pub struct Button {
     pub(crate) id: String,
     pub(crate) text_buffer: TextBuffer,
     padding: Padding,
     size_mode: SizeMode,
-    callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Button, &mut Ui)>>,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)>>,
     fill_index: usize,
     fill_param: RectParam,
     fill_buffer: Option<wgpu::Buffer>,
@@ -251,7 +250,7 @@ impl Widget for Button {
                     let callback = self.callback.take();
                     if let Some(mut callback) = callback {
                         let app = ui.app.take().unwrap();
-                        callback(*app, self, ui);
+                        callback(app, self, ui);
                         ui.app.replace(app);
                         ui.context.window.request_redraw();
                         self.callback.replace(callback);

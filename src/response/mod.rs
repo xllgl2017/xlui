@@ -1,5 +1,7 @@
 use crate::ui::Ui;
 use std::any::Any;
+use std::ops::DerefMut;
+use crate::frame::App;
 use crate::size::rect::Rect;
 use crate::widgets::button::Button;
 
@@ -27,9 +29,10 @@ impl Callback {
     //     self.click = Some(Self::create_click(f));
     // }
 
-    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut dyn Any, &mut Button, &mut Ui)> {
-        Box::new(move |target, btn, uim| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)> {
+        Box::new(move |box_app, btn, uim| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, btn, uim);
         })
     }
@@ -40,9 +43,10 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_slider<A: 'static>(f: fn(&mut A, &mut Ui, f32)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, f32)> {
-        Box::new(move |target, uim, value| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_slider<A: 'static>(f: fn(&mut A, &mut Ui, f32)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)> {
+        Box::new(move |box_app, uim, value| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, uim, value)
         })
     }
@@ -53,9 +57,10 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut Ui, bool)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, bool)> {
-        Box::new(move |target, uim, value| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut Ui, bool)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)> {
+        Box::new(move |box_app, uim, value| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, uim, value)
         })
     }
@@ -66,9 +71,10 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_spinbox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, T)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, T)> {
-        Box::new(move |target, uim, value| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_spinbox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, T)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, T)> {
+        Box::new(move |box_app, uim, value| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, uim, value)
         })
     }
@@ -79,9 +85,10 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_textedit<A: 'static>(f: fn(&mut A, &mut Ui, String)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, String)> {
-        Box::new(move |target, uim, value| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_textedit<A: 'static>(f: fn(&mut A, &mut Ui, String)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, String)> {
+        Box::new(move |box_app, uim, value| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, uim, value)
         })
     }
@@ -92,9 +99,10 @@ impl Callback {
     //     res
     // }
 
-    pub(crate) fn create_combobox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, &T)) -> Box<dyn FnMut(&mut dyn Any, &mut Ui, &T)> {
-        Box::new(move |target, uim, value| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_combobox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, &T)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)> {
+        Box::new(move |box_app, uim, value| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, uim, value)
         })
     }
@@ -118,9 +126,10 @@ impl Callback {
     //     })
     // }
 
-    pub(crate) fn create_list<A: 'static>(f: impl Fn(&mut A, &mut Ui) + 'static) -> Box<dyn Fn(&mut dyn Any, &mut Ui)> {
-        Box::new(move |target, uim| {
-            let t = target.downcast_mut::<A>().unwrap();
+    pub(crate) fn create_list<A: 'static>(f: impl Fn(&mut A, &mut Ui) + 'static) -> Box<dyn Fn(&mut Box<dyn App>, &mut Ui)> {
+        Box::new(move |box_app, uim| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
             f(t, uim);
         })
     }

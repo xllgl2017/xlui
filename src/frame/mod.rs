@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::frame::context::{Render, UpdateType};
 use crate::frame::window::Window;
 use crate::size::Size;
@@ -74,7 +75,7 @@ impl Default for WindowAttribute {
 
 
 struct Application<A> {
-    windows: HashMap<WindowId, Window<A>>,
+    windows: HashMap<WindowId, Window>,
     attribute: WindowAttribute,
     app: Option<A>,
     proxy_event: Option<EventLoopProxy<(WindowId, UpdateType)>>,
@@ -98,14 +99,14 @@ impl<A> Application<A> {
     }
 }
 
-impl<A: App> ApplicationHandler<(WindowId, UpdateType)> for Application<A> {
+impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for Application<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         println!("111111111111111111111111111111");
         let app = self.app.take().unwrap();
         let event = self.proxy_event.take().unwrap();
         let attr = self.attribute.as_winit_attributes();
         let winit_window = Arc::new(event_loop.create_window(attr).unwrap());
-        let window = pollster::block_on(Window::new(winit_window.clone(), app, event)).unwrap();
+        let window = pollster::block_on(Window::new(winit_window.clone(), Box::new(app), event)).unwrap();
         self.windows.insert(winit_window.id(), window);
         winit_window.request_redraw();
     }
@@ -122,7 +123,7 @@ impl<A: App> ApplicationHandler<(WindowId, UpdateType)> for Application<A> {
             println!("sleep end");
             let window = self.windows.get_mut(&wid).unwrap();
             println!("recv {:?}", window.app_ctx.context.window.inner_size());
-            window.app_ctx.device = pollster::block_on(async { Window::<A>::rebuild_device(&window.app_ctx.context.window, window.app_ctx.context.event.clone()).await }).unwrap();
+            window.app_ctx.device = pollster::block_on(async { Window::rebuild_device(&window.app_ctx.context.window, window.app_ctx.context.event.clone()).await }).unwrap();
             println!("1");
             window.app_ctx.context.viewport = Viewport::new(&window.app_ctx.device.device, &window.app_ctx.device.cache);
             println!("2");
@@ -203,16 +204,19 @@ impl<A: App> ApplicationHandler<(WindowId, UpdateType)> for Application<A> {
 }
 
 
-pub trait App: Sized + 'static {
+pub trait App: Any + 'static {
     fn draw(&mut self, ui: &mut Ui);
-    fn update(&mut self, ui: &mut Ui);
-    fn redraw(&mut self, ui: &mut Ui);
+    fn update(&mut self, _: &mut Ui) {}
+    fn redraw(&mut self, _: &mut Ui) {}
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute::default()
     }
 
-    fn run(self) {
+    fn run(self)
+    where
+        Self: Sized,
+    {
         let event_loop = EventLoop::with_user_event().build().unwrap();
         let proxy_event = event_loop.create_proxy();
         event_loop.set_control_flow(ControlFlow::Wait);

@@ -26,6 +26,7 @@
 //! }
 
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
+use crate::frame::App;
 use crate::render::circle::param::CircleParam;
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -37,15 +38,13 @@ use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-use std::any::Any;
-use crate::frame::App;
 
 pub struct RadioButton {
     pub(crate) id: String,
     pub(crate) rect: Rect,
     pub(crate) value: bool,
     pub(crate) text: TextBuffer,
-    pub(crate) callback: Option<Box<dyn FnMut(&mut dyn Any, &mut Ui, bool)>>,
+    pub(crate) callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
     size_mode: SizeMode,
 
     outer_param: CircleParam,
@@ -201,7 +200,7 @@ impl Widget for RadioButton {
                     self.update_radio(ui);
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
-                        callback(*app, ui, self.value);
+                        callback(app, ui, self.value);
                         ui.app.replace(app);
                     }
                     ui.update_type = UpdateType::None;
