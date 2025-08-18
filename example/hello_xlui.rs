@@ -1,5 +1,6 @@
 use std::fmt::Display;
 use xlui::frame::App;
+use xlui::frame::context::UpdateType;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
@@ -115,14 +116,16 @@ impl XlUiApp {
         self.label.update(ui);
     }
 
-    fn list_add(&mut self, _: &mut Button, _: &mut Ui) {
+    fn list_add(&mut self, _: &mut Button, ui: &mut Ui) {
         self.list_view.push(TD::new(self.count));
         self.count += 1;
+        ui.request_update(UpdateType::None);
     }
 
-    fn list_delete(&mut self, _: &mut Button, _: &mut Ui) {
+    fn list_delete(&mut self, _: &mut Button, ui: &mut Ui) {
         let current = self.list_view.current_index().unwrap();
         self.list_view.remove(current);
+        ui.request_update(UpdateType::None);
     }
 }
 

@@ -189,7 +189,7 @@ impl<T: 'static> ListView<T> {
             if let LayoutKind::Vertical(layout) = ui.layout.take().unwrap() {
                 area.layout = Some(layout);
             }
-            ui.update_type=UpdateType::None;
+            ui.update_type = UpdateType::None;
             area.reset_context_height();
             self.items.insert(wid, datum);
         }

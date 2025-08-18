@@ -22,6 +22,7 @@ pub struct ScrollBar {
     context_height: f32,
     focused: bool,
     offset: f32,
+    changed: bool,
 }
 
 
@@ -49,6 +50,7 @@ impl ScrollBar {
             context_height: 0.0,
             focused: false,
             offset: 0.0,
+            changed: false,
         }
     }
 
@@ -71,6 +73,7 @@ impl ScrollBar {
         };
         if slider_height < 32.0 { slider_height = 32.0; }
         self.slider_param.rect.set_height(slider_height);
+        self.changed = true;
     }
 
     pub fn context_height(mut self, context_height: f32) -> Self {
@@ -121,15 +124,11 @@ impl ScrollBar {
 
 impl Widget for ScrollBar {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
-        // let resp = Response::new(&self.id, &self.fill_param.rect);
-        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         if self.context_height > self.fill_param.rect.height() {
             ui.context.render.rectangle.render(self.slider_index, pass);
         }
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -161,7 +160,13 @@ impl Widget for ScrollBar {
                 ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
                 ui.request_update(ut);
             }
-            _ => {}
+            _ => {
+                if self.changed {
+                    self.changed = false;
+                    let data = self.slider_param.as_draw_param(false, false);
+                    ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+                }
+            }
         }
         Response::new(&self.id, &self.fill_param.rect)
     }
