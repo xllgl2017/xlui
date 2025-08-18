@@ -132,7 +132,7 @@ impl Image {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed { return; }
+        if !self.changed && !ui.context.resize { return; }
         self.changed = false;
         for (index, v) in self.vertices.iter_mut().enumerate() {
             match index {
