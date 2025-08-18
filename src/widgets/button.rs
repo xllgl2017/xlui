@@ -181,8 +181,8 @@ impl Button {
         self
     }
 
-    pub fn set_text(&mut self, text: impl ToString, ui: &mut Ui) {
-        self.text_buffer.set_text(text.to_string(), ui);
+    pub fn set_text(&mut self, text: impl ToString) {
+        self.text_buffer.set_text(text.to_string());
     }
     pub fn set_image(&mut self, source: &'static str, ui: &mut Ui) {
         match self.image {

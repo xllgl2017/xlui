@@ -29,7 +29,6 @@ use crate::widgets::Widget;
 
 pub struct Label {
     id: String,
-    change: bool,
     buffer: TextBuffer,
 }
 
@@ -38,7 +37,6 @@ impl Label {
         let buffer = TextBuffer::new(text.to_string());
         Label {
             id: crate::gen_unique_id(),
-            change: false,
             buffer,
         }
     }
@@ -49,9 +47,8 @@ impl Label {
     }
 
 
-    pub fn set_text(&mut self, text: String) {
-        self.buffer.text = text;
-        self.change = true;
+    pub fn set_text(&mut self, text: impl ToString) {
+        self.buffer.set_text(text.to_string());
     }
 
     pub fn width(mut self, w: f32) -> Self {
@@ -89,11 +86,7 @@ impl Widget for Label {
     fn redraw(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_str(&mut self.buffer.text);
-            self.change = true;
-        }
-        if self.change {
-            self.buffer.set_text(self.buffer.text.clone(), ui);
-            self.change = false;
+            self.buffer.change = true;
         }
         self.buffer.redraw(ui);
     }

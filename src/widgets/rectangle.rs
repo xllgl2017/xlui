@@ -57,12 +57,6 @@ impl Rectangle {
         }
     }
 
-    fn update_rect(&mut self, ui: &mut Ui) {
-        let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
-        ui.context.window.request_redraw();
-    }
-
     fn init(&mut self, ui: &mut Ui) {
         let data = self.fill_param.as_draw_param(false, false);
         let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
@@ -89,10 +83,18 @@ impl Rectangle {
         self.changed = true;
         self.fill_param.shadow.offset[1] = v;
     }
+
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.changed { return; }
+        self.changed = false;
+        let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+    }
 }
 
 impl Widget for Rectangle {
     fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
     }
@@ -104,21 +106,15 @@ impl Widget for Rectangle {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
-                    self.update_rect(ui);
+                    self.changed = true;
                 }
             }
             UpdateType::Offset(ref o) => {
                 if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
                 self.fill_param.rect.offset(o);
-                self.update_rect(ui);
+                self.changed = true;
             }
             _ => {}
-        }
-        if self.changed {
-            self.changed = false;
-            let data = self.fill_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(&self.fill_buffer.as_ref().unwrap(), 0, data);
-            ui.context.window.request_redraw();
         }
         Response::new(&self.id, &self.fill_param.rect)
     }

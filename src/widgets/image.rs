@@ -44,6 +44,7 @@ pub struct Image {
     vertices: Vec<ImageVertex>,
     vertex_buffer: Option<wgpu::Buffer>,
     index_buffer: Option<wgpu::Buffer>,
+    changed: bool,
 }
 
 impl Image {
@@ -56,6 +57,7 @@ impl Image {
             vertices: vec![],
             vertex_buffer: None,
             index_buffer: None,
+            changed: false,
         }
     }
 
@@ -96,19 +98,6 @@ impl Image {
         self
     }
 
-    fn update_rect(&mut self, ui: &mut Ui) {
-        for (index, v) in self.vertices.iter_mut().enumerate() {
-            match index {
-                0 => v.position = self.rect.left_top(),
-                1 => v.position = self.rect.left_bottom(),
-                2 => v.position = self.rect.right_bottom(),
-                3 => v.position = self.rect.right_top(),
-                _ => {}
-            }
-            v.screen_size = ui.context.size.as_gamma_size();
-        }
-    }
-
     pub fn set_image(&mut self, source: impl ToString) {
         self.source = source.to_string();
     }
@@ -141,16 +130,29 @@ impl Image {
         });
         self.index_buffer = Some(index_buffer);
     }
+
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.changed { return; }
+        self.changed = false;
+        for (index, v) in self.vertices.iter_mut().enumerate() {
+            match index {
+                0 => v.position = self.rect.left_top(),
+                1 => v.position = self.rect.left_bottom(),
+                2 => v.position = self.rect.right_bottom(),
+                3 => v.position = self.rect.right_top(),
+                _ => {}
+            }
+            v.screen_size = ui.context.size.as_gamma_size();
+        }
+        ui.device.queue.write_buffer(
+            self.vertex_buffer.as_ref().unwrap(), 0,
+            bytemuck::cast_slice(self.vertices.as_slice()));
+    }
 }
 
 impl Widget for Image {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.index_buffer.is_none() { self.init(ui); }
-        // if ui.pass.is_none() { return Response::new(&self.id, &self.rect); }
-        if ui.context.resize { self.update_rect(ui); }
-        ui.device.queue.write_buffer(
-            self.vertex_buffer.as_ref().unwrap(), 0,
-            bytemuck::cast_slice(self.vertices.as_slice()));
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.image.render(
             &self.source.to_string(),
@@ -167,7 +169,7 @@ impl Widget for Image {
             UpdateType::Offset(ref o) => {
                 if !ui.can_offset { return Response::new(&self.id, &self.rect); }
                 self.rect.offset(o);
-                self.update_rect(ui);
+                self.changed = true;
             }
             _ => {}
         }
