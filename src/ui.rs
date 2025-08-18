@@ -178,6 +178,9 @@ impl AppContext {
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
         }
+        if let Some(u) = ui.request_update.take() {
+            ui.context.event.send_event(u).unwrap();
+        }
     }
 }
 

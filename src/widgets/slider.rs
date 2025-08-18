@@ -166,7 +166,6 @@ impl Slider {
         //滑块
         self.slider_param.rect = self.rect.clone();
         self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
-        // self.slider_param.rect.dx.min -= self.rect.height() / 2.0;
         self.slider_param.rect.set_width(self.rect.height());
         self.offset = self.value * self.rect.width() / (self.range.end - self.range.start);
         self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
@@ -189,14 +188,10 @@ impl Slider {
 
 impl Widget for Slider {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
-        // let resp = Response::new(&self.id, &self.rect);
-        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         ui.context.render.rectangle.render(self.slided_index, pass);
         ui.context.render.circle.render(self.slider_index, pass);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -209,7 +204,6 @@ impl Widget for Slider {
             let mut lx = self.fill_param.rect.dx().clone();
             lx.extend(self.slider_param.rect.width() / 2.0);
             self.offset = self.slider_param.rect.offset_x_limit(offset, &lx);
-            // self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(offset));
             self.update_slider(ui);
         }
         match ui.update_type {

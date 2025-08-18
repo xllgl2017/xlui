@@ -192,11 +192,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             if self.value > self.range.end { self.value = self.range.end }
             self.edit.update_text(ui, format!("{:.*}", 2, self.value));
             self.call(ui);
-            // if let Some(ref mut callback) = self.callback {
-            //     let app = ui.app.take().unwrap();
-            //     callback(*app, ui, self.value);
-            //     ui.app.replace(app);
-            // }
             ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
         }
         let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
@@ -216,11 +211,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             if self.value < self.range.start { self.value = self.range.start }
             self.edit.update_text(ui, format!("{:.*}", 2, self.value));
             self.call(ui);
-            // if let Some(ref mut callback) = self.callback {
-            //     let app = ui.app.take().unwrap();
-            //     callback(*app, ui, self.value);
-            //     ui.app.replace(app);
-            // }
             ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
         }
         if is_end {
@@ -240,23 +230,28 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             event.send_event((wid, UpdateType::None)).unwrap();
         });
     }
+
+    fn update_from_edit(&mut self, ui: &mut Ui, focused: bool) {
+        if focused && self.edit.focused != focused {
+            println!("111111111");
+            let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
+            self.value = T::from_num(v);
+            self.update_value(ui);
+            ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
+            ui.request_update(UpdateType::None);
+            // ui.context.window.request_redraw();
+        }
+    }
 }
 
 
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if !self.init { self.init(ui); }
-        if ui.context.resize {
-            self.update_value(ui);
-        }
-        // let resp = Response::new(&self.id, &self.rect);
-        // if ui.pass.is_none() { return resp; }
+        if ui.context.resize { self.update_value(ui); }
         self.edit.redraw(ui);
-
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.triangle.render(self.down_index.clone(), pass);
         ui.context.render.triangle.render(self.up_index.clone(), pass);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -280,13 +275,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.press_time = 0;
                     let focused = self.edit.focused;
                     self.edit.update(ui);
-                    if focused && self.edit.focused != focused {
-                        let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
-                        self.value = T::from_num(v);
-                        self.update_value(ui);
-                        ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
-                        ui.context.window.request_redraw();
-                    }
+                    self.update_from_edit(ui, focused);
                 }
                 return Response::new(&self.id, &self.rect);
             }
@@ -301,9 +290,15 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 }
                 return Response::new(&self.id, &self.rect);
             }
-            UpdateType::KeyRelease(_) => {
+            UpdateType::KeyRelease(ref key) => {
                 if !self.edit.focused { return Response::new(&self.id, &self.rect); }
-                self.edit.update(ui);
+                if let Some(winit::keyboard::Key::Named(winit::keyboard::NamedKey::Enter)) = key.as_ref() {
+                    self.edit.focused = false;
+                    self.update_from_edit(ui, true);
+                } else {
+                    self.edit.update(ui);
+                }
+
 
                 return Response::new(&self.id, &self.rect);
             }
