@@ -130,6 +130,7 @@ impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 const SAMPLE_COUNT: u32 = 4;
 
+#[derive(Clone)]
 pub struct Offset {
     pos: Pos,
     x: f32,
@@ -147,6 +148,11 @@ impl Offset {
         }
     }
 
+    pub fn with_pos(mut self, pos: Pos) -> Offset {
+        self.pos = pos;
+        self
+    }
+
     pub fn with_y(mut self, y: f32) -> Offset {
         self.y = y;
         self
@@ -157,7 +163,7 @@ impl Offset {
         self
     }
 
-    pub fn with_delete(mut self) -> Offset {
+    pub fn delete_offset(mut self) -> Offset {
         self.delete = true;
         self
     }

@@ -40,9 +40,8 @@
     * [ ] 选择Item
     * [ ] 变动监测
     * [ ] 可改变列大小
-* [ ] `ProgressBar`
-    * [ ] 变动监测
-    * [ ] 控件联动
+* [x] `ProgressBar`
+    * [x] 控件联动
 * [ ] `ComboBox`
     * [ ] 点击关闭
 * [ ] `Image`

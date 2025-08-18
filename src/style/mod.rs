@@ -23,7 +23,6 @@
 //!
 //!
 
-
 pub mod color;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
@@ -42,11 +41,31 @@ pub struct FillStyle {
     pub clicked: Color,
 }
 
+impl FillStyle {
+    pub fn same(c: Color) -> Self {
+        FillStyle {
+            inactive: c.clone(),
+            hovered: c.clone(),
+            clicked: c,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct BorderStyle {
     pub inactive: Border,
     pub hovered: Border,
     pub clicked: Border,
+}
+
+impl BorderStyle {
+    pub fn same(c: Border) -> Self {
+        BorderStyle {
+            inactive: c.clone(),
+            hovered: c.clone(),
+            clicked: c,
+        }
+    }
 }
 
 #[derive(Clone)]
