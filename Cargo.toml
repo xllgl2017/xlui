@@ -12,9 +12,9 @@ readme = "README.md"
 [lib]
 name = "xlui"
 
-[[bin]]
-name = "hello_world"
-path = "example/hello_world.rs"
+#[[bin]]
+#name = "hello_world"
+#path = "example/hello_world.rs"
 
 
 [[bin]]
