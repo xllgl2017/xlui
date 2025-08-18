@@ -48,8 +48,19 @@ fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     let border = param.border_width;
     let r_tl = param.radius_tl;
     let r_tr = param.radius_tr;
-    let r_br = param.radius_br;
-    let r_bl = param.radius_bl;
+    var r_br = 0.0;
+    if param.radius_br <= 2.0 {
+        r_br = param.radius_br + 1.0;
+    } else {
+        r_br = param.radius_br;
+    }
+    var r_bl = 0.0;
+    if param.radius_bl <= 2.0 {
+        r_bl = param.radius_bl + 1.0;
+    } else {
+        r_bl = param.radius_bl;
+    }
+
 
     let x0 = param.pos.x;
     let y0 = param.pos.y;
@@ -78,6 +89,10 @@ fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
         corner_dist = length(vec2(x1 - r_br, y1 - r_br) - p) - r_br;
     } else if p.x < x0 + r_bl && p.y > y1 - r_bl {
         corner_dist = length(vec2(x0 + r_bl, y1 - r_bl) - p) - r_bl;
+    }else {
+        let dx = max(x0 - p.x, p.x - x1);
+        let dy = max(y0 - p.y, p.y - y1);
+        corner_dist = max(dx, dy);
     }
 
 //    let in_outer = p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && corner_dist <= 0.0;
