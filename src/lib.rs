@@ -1,7 +1,7 @@
 //!
 //! xlui是一个Rust的2D GUI库。目标是利用Rust语言原生构建GUI、体积小(最小第三方依赖)，简单易用，
 //! 在保证性能的前提下尽量减少CPU的开销。
-//! ###目前的控件工作状态如下图
+//! ### 目前的控件工作状态如下图
 //! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img.png?raw=true)
 //! ### 下面是xlui的最小运行示例
 //! ```
@@ -15,7 +15,7 @@
 //! fn main() {
 //!     let app=XlUiApp::new();
 //!     //直接调run()
-//!     app.run();
+//!     // app.run();
 //! }
 //!
 //! struct XlUiApp {
@@ -31,13 +31,13 @@
 //!             count: 0,
 //!         }
 //!     }
-//!     fn add(&mut self,ui: &mut Ui){
+//!     fn add(&mut self,_:&mut Button,ui: &mut Ui){
 //!         self.count += 1;
 //!         self.label.set_text(format!("count: {}", self.count));
 //!         self.label.update(ui);
 //!     }
 //!
-//!     fn reduce(&mut self,ui: &mut Ui){
+//!     fn reduce(&mut self,_:&mut Button,ui: &mut Ui){
 //!         self.count-=1;
 //!         self.label.set_text(format!("count: {}", self.count));
 //!         self.label.update(ui);
@@ -49,8 +49,8 @@
 //!     fn draw(&mut self, ui: &mut Ui) {
 //!         ui.add_mut(&mut self.label);
 //!         ui.horizontal(|ui| {
-//!             Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add).redraw(ui);
-//!             Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce).redraw(ui);
+//!             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
+//!             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
 //!         });
 //!      }
 //!
@@ -64,7 +64,7 @@
 //!
 //!     fn window_attributes(&self) -> WindowAttribute {
 //!         WindowAttribute{
-//!             inner_size:(800.0,600.0).into(),
+//!             inner_size:(800,600).into(),
 //!             ..Default::default()
 //!         }
 //!     }
@@ -76,8 +76,7 @@
 //! use xlui::ui::Ui;
 //! use xlui::widgets::label::Label;
 //!
-//! fn update(&mut self,ui:&mut Ui){
-//!    if !label_change { return; }
+//! fn update(ui:&mut Ui){
 //!    let label:&mut Label=ui.get_widget("my_label").unwrap();
 //!    label.set_text("这里是修改后的文本".to_string());
 //! }

@@ -1,4 +1,5 @@
-//!```
+//!### Button的示例用法
+//! ```
 //! use xlui::frame::App;
 //! use xlui::size::padding::Padding;
 //! use xlui::style::ClickStyle;
@@ -14,16 +15,16 @@
 //!    println!("按钮被点击了");
 //! }
 //!
-//! fn draw(ui:&mut Ui){
+//! fn draw<A:App>(ui:&mut Ui){
 //!    //快捷创建一个按钮
 //!    ui.button("点击")
 //!        //设置点击回调函数
-//!        .set_callback(clicked);
+//!        .set_callback(clicked::<A>);
 //!    //控件样式
 //!    let style=ClickStyle::new();
 //!    let mut btn=Button::new("hello button")
 //!        //连接到点击回调函数
-//!        .connect(clicked)
+//!        .connect(clicked::<A>)
 //!        //设置控件高度
 //!        .height(30.0)
 //!        //设置控件宽度
@@ -41,11 +42,6 @@
 //!    let image_btn=Button::image_and_text("logo.jpg","点击");
 //!    ui.add(image_btn);
 //! }
-//! # xlui::_run_test(|ui|{
-//!    let mut btn=Button::new("hello button");
-//!    ui.add(btn);
-//!    ui.button("hello button");
-//! # });
 //! ```
 
 use crate::frame::context::{Context, UpdateType};

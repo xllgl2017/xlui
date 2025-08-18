@@ -8,16 +8,16 @@
 //!     println!("SpinBox改变了:{}",v);
 //! }
 //!
-//! fn draw(ui:&mut Ui){
+//! fn draw<A:App>(ui:&mut Ui){
 //!     //快速创建一个Slider
 //!     ui.spinbox(10.0,1.0,0.0..100.0)
 //!         //设置回调函数
-//!         .set_callback(spinbox_changed);
+//!         .set_callback(spinbox_changed::<A>);
 //!     let spinbox=SpinBox::new(10.0,1.0,0.0..100.0)
 //!         //关联ID为my_slider的控件
 //!         .contact("my_slider")
 //!         //连接到Slider值监听函数
-//!         .connect(spinbox_changed)
+//!         .connect(spinbox_changed::<A>)
 //!         //设置控件ID
 //!         .id("my_spinbox");
 //!     ui.add(spinbox);

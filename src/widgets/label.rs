@@ -14,7 +14,7 @@
 //!         //设置字体大小
 //!         .size(14.0);
 //!     //获取控件ID
-//!     let id=label.get_id();
+//!     let _id=label.get_id();
 //!     ui.add(label);
 //! }
 //! ```

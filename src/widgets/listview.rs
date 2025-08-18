@@ -28,7 +28,7 @@
 //!     fn item_changed(&mut self,ui:&mut Ui){
 //!         //获取当前已选择的Item
 //!         if let Some(datum) = self.list_view.current() {
-//!             println!("list: {}", self.list_view.current());
+//!             println!("list: {:?}", self.list_view.current());
 //!         }
 //!         //添加一条Item
 //!         self.list_view.push(0);

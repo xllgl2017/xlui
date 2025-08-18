@@ -1,4 +1,4 @@
-//! ###文本编辑器（单行）
+//! ### 文本编辑器（单行）
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
@@ -9,14 +9,14 @@
 //! }
 //!
 //!
-//! fn draw(ui:&mut Ui){
+//! fn draw<A:App>(ui:&mut Ui){
 //!    let edit=TextEdit::new("".to_string())
 //!         //连接文本变动监听函数
-//!         .connect(edit_changed)
+//!         .connect(edit_changed::<A>)
 //!         //关联文本，当文本变动时修改id为my_label的Label
 //!         .contact("my_label")
 //!         //设置Widget的ID
-//!         .width_id("");
+//!         .width_id("my_edit");
 //!     ui.add(edit);
 //! }
 //! ```

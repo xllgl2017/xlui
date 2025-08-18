@@ -10,14 +10,14 @@
 //!    println!("ComboBox的Item改变了：{}",t);
 //! }
 //!
-//! fn draw(ui:&mut Ui){
+//! fn draw<A:App>(ui:&mut Ui){
 //!    //这里的data可以是任意实现了Display的类型
 //!    let data=vec![1,2,3,4];
 //!    let combo=ComboBox::new(data)
 //!        //设置打开的弹窗布局的高度
 //!        .with_popup_height(150.0)
 //!        //连接到Item改变的监听函数
-//!        .connect(combo_changed);
+//!        .connect(combo_changed::<A>);
 //!    ui.add(combo);
 //! }
 //! ```
