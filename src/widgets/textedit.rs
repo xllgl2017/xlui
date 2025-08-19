@@ -253,7 +253,7 @@ impl TextEdit {
         fill_style.border.clicked = fill_style.border.hovered.clone();
 
         let mut select_style = ClickStyle::new();
-        select_style.fill.inactive = Color::rgba(255, 0, 0, 100); //Color::rgba(144, 209, 255, 100);
+        select_style.fill.inactive = Color::rgba(144, 209, 255, 100);//Color::rgba(255, 0, 0, 100); //
         select_style.fill.hovered = Color::rgba(144, 209, 255, 100);
         select_style.fill.clicked = Color::rgba(144, 209, 255, 100);
         select_style.border.inactive = Border::new(0.0).radius(Radius::same(0));

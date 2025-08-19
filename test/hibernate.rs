@@ -21,7 +21,7 @@ impl App for XlUi {
             ui.radio(false, "2");
         });
         ui.image("logo.jpg", (50.0, 50.0));
-        ui.slider(1.0, 0.0..100.0);
+        ui.slider(0.0, 0.0..100.0);
         ui.select_value(1);
         ui.add(Button::image_and_text("logo.jpg", "btn").width(100.0).height(50.0));
         ui.add(TextEdit::new("".to_string()));

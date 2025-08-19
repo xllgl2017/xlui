@@ -211,6 +211,9 @@ impl AppContext {
             popup.update(&mut ui)
         }
         self.inner_windows = ui.inner_windows.take();
+        if let Some(u) = ui.request_update.take() {
+            ui.context.event.send_event(u).unwrap();
+        }
     }
 }
 

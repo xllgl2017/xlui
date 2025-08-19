@@ -237,6 +237,18 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
         self.edit.update_text(ui, format!("{:.*}", 2, self.value));
     }
+
+    fn update_from_edit(&mut self, ui: &mut Ui, focused: bool) {
+        if focused && self.edit.focused != focused {
+            let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
+            self.value = T::from_num(v);
+            self.changed = true;
+            // self.update_value(ui);
+            ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
+            // ui.request_update(UpdateType::None);
+            ui.context.window.request_redraw();
+        }
+    }
 }
 
 
@@ -256,11 +268,13 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             UpdateType::MousePress => {
                 if ui.device.device_input.pressed_at(&self.down_rect) {
                     println!("press down");
+                    self.edit.focused = false;
                     self.press_down = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
                 } else if ui.device.device_input.pressed_at(&self.up_rect) {
                     println!("press up");
+                    self.edit.focused = false;
                     self.press_up = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
@@ -270,14 +284,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.press_time = 0;
                     let focused = self.edit.focused;
                     self.edit.update(ui);
-                    if focused && self.edit.focused != focused {
-                        let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
-                        self.value = T::from_num(v);
-                        self.changed = true;
-                        // self.update_value(ui);
-                        ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
-                        ui.context.window.request_redraw();
-                    }
+                    self.update_from_edit(ui, focused);
                 }
                 return Response::new(&self.id, &self.rect);
             }
@@ -292,9 +299,15 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 }
                 return Response::new(&self.id, &self.rect);
             }
-            UpdateType::KeyRelease(_) => {
+            UpdateType::KeyRelease(ref key) => {
                 if !self.edit.focused { return Response::new(&self.id, &self.rect); }
-                self.edit.update(ui);
+                if let Some(winit::keyboard::Key::Named(winit::keyboard::NamedKey::Enter)) = key.as_ref() {
+                    self.edit.focused = false;
+                    self.update_from_edit(ui, true);
+                } else {
+                    self.edit.update(ui);
+                }
+
 
                 return Response::new(&self.id, &self.rect);
             }
