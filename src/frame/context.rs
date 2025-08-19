@@ -69,6 +69,7 @@ impl ContextUpdate {
     }
 }
 
+#[derive(Clone)]
 pub enum UpdateType {
     None,
     Init,

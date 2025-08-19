@@ -135,7 +135,7 @@ pub struct Offset {
     pos: Pos,
     x: f32,
     y: f32,
-    delete: bool,
+    covered: bool,
 }
 
 impl Offset {
@@ -144,7 +144,7 @@ impl Offset {
             pos,
             x: 0.0,
             y: 0.0,
-            delete: false,
+            covered: false,
         }
     }
 
@@ -164,9 +164,10 @@ impl Offset {
     }
 
     pub fn delete_offset(mut self) -> Offset {
-        self.delete = true;
+        self.covered = true;
         self
     }
+
 }
 
 

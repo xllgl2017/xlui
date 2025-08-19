@@ -51,6 +51,22 @@ impl WindowAttribute {
             .with_window_icon(Some(icon))
             .with_window_level(self.window_level)
     }
+
+    pub(crate) fn inner_width_f32(&self) -> f32 {
+        self.inner_size.width as f32
+    }
+
+    pub(crate) fn inner_height_f32(&self) -> f32 {
+        self.inner_size.height as f32
+    }
+
+    pub(crate) fn pos_x_f32(&self) -> f32 {
+        self.position[0] as f32
+    }
+
+    pub(crate) fn pos_y_f32(&self) -> f32 {
+        self.position[1] as f32
+    }
 }
 
 impl Default for WindowAttribute {

@@ -198,9 +198,13 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
-            inner_windows: self.inner_windows.take(),
+            inner_windows: None,
             request_update: None,
         };
+        for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
+            inner_window.update(&mut ui);
+        }
+        ui.inner_windows=self.inner_windows.take();
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
@@ -284,8 +288,9 @@ impl<'a> Ui<'a> {
         self.layout().add_child(crate::gen_unique_id(), current_layout);
     }
 
-    pub fn create_inner_window(&mut self, window: InnerWindow) {
-        self.inner_windows.as_mut().unwrap().insert(window.id.clone(), window);
+    pub fn create_inner_window<W: App>(&mut self, w: W) {
+        let inner_window = InnerWindow::new(w, self);
+        self.inner_windows.as_mut().unwrap().insert(inner_window.id.clone(), inner_window);
     }
 
 

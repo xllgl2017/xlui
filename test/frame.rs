@@ -11,28 +11,24 @@ use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::Widget;
 
 fn main() {
-    XlUi::new().run();
+    TestFrame::new().run();
 }
 
-struct XlUi {
+pub struct TestFrame {
     frame: Rectangle,
     border_width: f32,
     border_radius: u8,
 }
-impl XlUi {
-    fn new() -> XlUi {
+impl TestFrame {
+    pub fn new() -> TestFrame {
         let shadow = Shadow {
             offset: [5.0, 8.0],
             spread: 10.0,
             color: Color::rgba(0, 0, 0, 30),
         };
-        let mut rect = Rect::new().with_size(300.0, 200.0);
-        rect.add_min_x(10.0);
-        rect.add_max_x(10.0);
-        rect.add_min_y(10.0);
-        rect.add_max_y(10.0);
-        XlUi {
-            frame: Rectangle::new(rect, Popup::popup_style()).with_shadow(shadow),
+
+        TestFrame {
+            frame: Rectangle::new(Rect::new(), Popup::popup_style()).with_shadow(shadow),
             border_width: 1.0,
             border_radius: 5,
         }
@@ -74,9 +70,12 @@ impl XlUi {
 }
 
 
-impl App for XlUi {
+impl App for TestFrame {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
+            let rect = ui.available_rect().clone().with_size(300.0, 200.0);
+            println!("{:?}", rect);
+            self.frame.set_rect(rect);
             ui.add_mut(&mut self.frame);
             ui.add_space(20.0);
             ui.vertical(|ui| {
