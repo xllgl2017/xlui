@@ -79,7 +79,7 @@ impl App for XlUiApp {
 
 ## 控件(目前可用)
 
-![控件状态](/res/img/doc/img.png)
+![控件状态](/res/img/doc/img_1.png)
 
 ### ✅ Label
 
