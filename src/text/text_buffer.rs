@@ -19,6 +19,7 @@ pub struct TextBuffer {
     pub(crate) buffer: Option<glyphon::Buffer>,
     pub(crate) render: Option<glyphon::TextRenderer>,
     pub(crate) clip_x: Axis,
+    pub(crate) change: bool,
 }
 
 impl TextBuffer {
@@ -33,6 +34,7 @@ impl TextBuffer {
             buffer: None,
             render: None,
             clip_x: (0.0..0.0).into(),
+            change: false,
         }
     }
 
@@ -61,6 +63,7 @@ impl TextBuffer {
 
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
         let bounds = glyphon::TextBounds {
             left: self.rect.dx().min as i32,
             top: 0,
@@ -86,8 +89,14 @@ impl TextBuffer {
         self.render.as_mut().unwrap().render(&mut ui.context.render.text.atlas, &ui.context.viewport, pass).unwrap()
     }
 
-    pub fn set_text(&mut self, text: String, ui: &mut Ui) {
+    pub fn set_text(&mut self, text: String) {
         self.text = text;
+        self.change = true;
+    }
+
+    pub fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.change { return; }
+        self.change = false;
         self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, self.text.as_str(), &ui.context.font.font_attr(), Shaping::Advanced);
     }
 

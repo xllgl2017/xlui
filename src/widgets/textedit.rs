@@ -389,7 +389,7 @@ impl TextEdit {
                         self.update_cursor(ui, xm);
                         self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                         let text = self.char_layout.text();
-                        self.text_buffer.set_text(text, ui);
+                        self.text_buffer.set_text(text);
                     }
                     winit::keyboard::NamedKey::ArrowLeft => {
                         let xm = self.char_layout.cursor_reduce();
@@ -416,13 +416,13 @@ impl TextEdit {
                         self.update_cursor(ui, xm);
                         self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                         let text = self.char_layout.text();
-                        self.text_buffer.set_text(text, ui);
+                        self.text_buffer.set_text(text);
                     }
                     winit::keyboard::NamedKey::Space => {
                         let xm = self.char_layout.push_char(' ', &ui.context, self.text_buffer.rect.dx().max);
                         self.update_cursor(ui, xm);
                         let text = self.char_layout.text();
-                        self.text_buffer.set_text(text, ui);
+                        self.text_buffer.set_text(text);
                     }
                     _ => {}
                 }
@@ -434,7 +434,7 @@ impl TextEdit {
                 self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                 let text = self.char_layout.text();
 
-                self.text_buffer.set_text(text, ui);
+                self.text_buffer.set_text(text);
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
@@ -450,7 +450,7 @@ impl TextEdit {
     }
 
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
-        self.text_buffer.set_text(text, ui);
+        self.text_buffer.set_text(text);
         let wx = self.text_buffer.rect.dx().min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
         self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);

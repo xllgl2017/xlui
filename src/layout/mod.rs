@@ -1,5 +1,6 @@
 pub mod scroll_area;
 pub mod popup;
+pub mod inner;
 
 use crate::frame::context::UpdateType;
 use crate::layout::scroll_area::ScrollArea;
@@ -145,7 +146,7 @@ impl LayoutKind {
         let rect = &layout.widgets()[id].rect;
         let offset_y = rect.height() + layout.item_space();
         layout.update_size(-offset_y);
-        let offset = Offset::new(Pos::new()).with_y(-offset_y).with_delete();
+        let offset = Offset::new(Pos::new()).with_y(-offset_y).delete_offset();
         let ut = UpdateType::Offset(offset);
         ui.update_type = ut;
         ui.can_offset = true;
@@ -225,6 +226,22 @@ impl LayoutKind {
                 v.layout.as_mut().unwrap().height += reduce;
             }
         }
+    }
+
+    pub fn with_size(mut self, width: f32, height: f32, padding: Padding) -> Self {
+        match self {
+            LayoutKind::Horizontal(ref mut v) => {
+                v.max_rect.set_size(width, height);
+                v.available_rect = v.max_rect.clone_add_padding(&padding);
+            }
+            LayoutKind::Vertical(ref mut v) => {
+                v.max_rect.set_size(width, height);
+                v.available_rect = v.max_rect.clone_add_padding(&padding);
+            }
+            LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
+        }
+
+        self
     }
 }
 
@@ -330,12 +347,6 @@ impl VerticalLayout {
             height: 0.0,
             item_space: 5.0,
         }
-    }
-
-    pub(crate) fn with_size(mut self, width: f32, height: f32, padding: Padding) -> Self {
-        self.max_rect.set_size(width, height);
-        self.available_rect = self.max_rect.clone_add_padding(&padding);
-        self
     }
 
     pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {

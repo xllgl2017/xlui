@@ -6,6 +6,7 @@ use xlui::widgets::checkbox::CheckBox;
 use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::image::Image;
 use xlui::widgets::label::Label;
+use xlui::widgets::processbar::ProcessBar;
 use xlui::widgets::radio::RadioButton;
 use xlui::widgets::select::SelectItem;
 use xlui::widgets::slider::Slider;
@@ -139,7 +140,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "Slider");
             ui.add_space(43.0);
-            ui.add(Slider::new(10.0).id("s").contact("sb").with_range(0.0..100.0).connect(Self::slider));
+            ui.add(Slider::new(50.0).id("s").contact("sb").contact("pbr").with_range(0.0..100.0).connect(Self::slider));
             ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
             ui.add_space(24.0);
             ui.checkbox(true, "变动监测");
@@ -156,7 +157,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "SpinBox");
             ui.add_space(38.0);
-            ui.add(SpinBox::new(10, 1, 1..100).id("sb").contact("s").connect(Self::spinbox_i32));
+            ui.add(SpinBox::new(50, 1, 1..100).id("sb").contact("s").contact("pbr").connect(Self::spinbox_i32));
             ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
             ui.add_space(83.0);
             ui.checkbox(true, "变动监测");
@@ -214,7 +215,12 @@ impl App for XlUiApp {
             ui.add(SelectItem::new(SV::Item2).with_size(40.0, 25.0).contact(p.clone()));
             ui.add(SelectItem::new(SV::Item3).with_size(40.0, 25.0).contact(p.clone()));
             ui.add(SelectItem::new(SV::Item4).with_size(40.0, 25.0).contact(p.clone()));
-        })
+        });
+        ui.horizontal(|ui| {
+            ui.radio(false, "ProcessBar");
+            ui.add_space(11.0);
+            ui.add(ProcessBar::new(50.0).with_id("pbr"));
+        });
     }
 
     fn update(&mut self, ui: &mut Ui) {

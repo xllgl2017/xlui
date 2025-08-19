@@ -17,6 +17,7 @@ pub mod select;
 pub mod rectangle;
 pub(crate) mod item;
 pub mod listview;
+pub mod processbar;
 
 pub trait Widget: Any {
     fn redraw(&mut self, ui: &mut Ui); //绘制调用

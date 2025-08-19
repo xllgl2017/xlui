@@ -168,7 +168,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         if *select != self.previous_select {
             self.previous_select = select.clone();
             if let Some(ref select) = self.previous_select {
-                self.text_buffer.set_text(select.to_string(), ui);
+                self.text_buffer.set_text(select.to_string());
                 if let Some(ref mut callback) = self.callback {
                     let app = ui.app.take().unwrap();
                     let t = self.data.iter().find(|x| &x.to_string() == select).unwrap();

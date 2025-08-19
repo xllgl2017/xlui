@@ -21,24 +21,29 @@ use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use crate::layout::inner::InnerWindow;
 
 pub struct AppContext {
     pub(crate) device: Device,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<Popup>>,
+    pub(crate) inner_windows: Option<Map<InnerWindow>>,
     pub(crate) style: Style,
     pub(crate) context: Context,
+    previous_time: u128,
 }
 
 impl AppContext {
     pub fn new(device: Device, context: Context) -> AppContext {
-        let layout = VerticalLayout::new().with_size(context.size.width as f32, context.size.height as f32, Padding::same(5.0));
+        let layout = LayoutKind::Vertical(VerticalLayout::new()).with_size(context.size.width as f32, context.size.height as f32, Padding::same(5.0));
         AppContext {
             device,
-            layout: Some(LayoutKind::Vertical(layout)),
+            layout: Some(layout),
             popups: Some(Map::new()),
+            inner_windows: Some(Map::new()),
             style: Style::light_style(),
             context,
+            previous_time: 0,
         }
     }
 
@@ -53,11 +58,11 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: UpdateType::Init,
             can_offset: false,
+            inner_windows: None,
             request_update: None,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
-        // self.layout.as_mut().unwrap().redraw(&mut ui);
         self.popups = ui.popups.take();
     }
 
@@ -72,10 +77,16 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
+            inner_windows: self.inner_windows.take(),
             request_update: None,
         };
         app.update(&mut ui);
         ui.app = Some(Box::new(app));
+        self.inner_windows = ui.inner_windows.take();
+        for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
+            inner_window.update(&mut ui);
+        }
+        ui.inner_windows = self.inner_windows.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
         }
@@ -86,6 +97,7 @@ impl AppContext {
         if let Some(u) = ui.request_update.take() {
             ui.context.event.send_event(u).unwrap();
         }
+        self.inner_windows = ui.inner_windows.take();
     }
 
     pub fn configure_surface(&mut self) {
@@ -94,6 +106,16 @@ impl AppContext {
 
 
     pub fn redraw(&mut self, app: &mut impl App) {
+        if crate::time_ms() - self.previous_time < 10 {
+            let window = self.context.window.clone();
+            let t = self.previous_time;
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(crate::time_ms() as u64 - t as u64));
+                window.request_redraw();
+            });
+            return;
+        }
+        println!("{} frame/ms", crate::time_ms() - self.previous_time);
         let surface_texture = match self.device.surface.get_current_texture() {
             Ok(res) => res,
             Err(e) => {
@@ -143,6 +165,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: UpdateType::None,
             can_offset: false,
+            inner_windows: None,
             request_update: None,
         };
         app.redraw(&mut ui);
@@ -155,9 +178,13 @@ impl AppContext {
         if let Some(u) = ui.request_update.take() {
             ui.context.event.send_event(u).unwrap();
         }
+        for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
+            inner_window.redraw(&mut ui);
+        }
         drop(ui);
         self.device.queue.submit([encoder.finish()]);
         surface_texture.present();
+        self.previous_time = crate::time_ms();
     }
 
     pub fn key_input<A: App>(&mut self, ut: UpdateType, app: &mut A) {
@@ -171,6 +198,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
+            inner_windows: self.inner_windows.take(),
             request_update: None,
         };
         self.layout.as_mut().unwrap().update(&mut ui);
@@ -178,6 +206,7 @@ impl AppContext {
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
         }
+        self.inner_windows = ui.inner_windows.take();
         if let Some(u) = ui.request_update.take() {
             ui.context.event.send_event(u).unwrap();
         }
@@ -194,6 +223,7 @@ pub struct Ui<'a> {
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
     pub(crate) can_offset: bool,
+    pub(crate) inner_windows: Option<Map<InnerWindow>>,
     pub(crate) request_update: Option<(winit::window::WindowId, UpdateType)>,
 }
 
@@ -255,6 +285,10 @@ impl<'a> Ui<'a> {
         context(self);
         let current_layout = self.layout.replace(previous_layout).unwrap();
         self.layout().add_child(crate::gen_unique_id(), current_layout);
+    }
+
+    pub fn create_inner_window(&mut self, window: InnerWindow) {
+        self.inner_windows.as_mut().unwrap().insert(window.id.clone(), window);
     }
 
 
