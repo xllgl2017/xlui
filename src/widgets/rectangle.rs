@@ -64,6 +64,15 @@ impl Rectangle {
         self.fill_buffer = Some(buffer);
     }
 
+    pub fn with_rect(mut self, rect: Rect) -> Self {
+        self.fill_param.rect = rect;
+        self
+    }
+
+    pub fn set_rect(&mut self, rect: Rect) {
+        self.fill_param.rect = rect;
+    }
+
     pub fn with_shadow(mut self, shadow: Shadow) -> Self {
         self.fill_param = self.fill_param.with_shadow(shadow);
         self

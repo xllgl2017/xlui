@@ -239,6 +239,7 @@ pub struct TextEdit {
     mouse_press: bool,
 
     contact_ids: Vec<String>,
+    changed: bool,
 }
 
 impl TextEdit {
@@ -288,6 +289,7 @@ impl TextEdit {
             focused: false,
             mouse_press: false,
             contact_ids: vec![],
+            changed: false,
         }
     }
 
@@ -369,8 +371,7 @@ impl TextEdit {
                 let xm = if lx > ui.device.device_input.mouse.pressed_pos.x { self.select_param.rect.dx().max } else { self.select_param.rect.dx().min };
                 self.update_cursor(ui, xm);
             }
-            let data = self.select_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+            self.changed = true;
             ui.context.window.request_redraw();
         }
     }
@@ -378,8 +379,9 @@ impl TextEdit {
     fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
         self.select_param.rect.set_x_min(0.0);
         self.select_param.rect.set_x_max(0.0);
-        let data = self.select_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+        self.changed = true;
+        // let data = self.select_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
         match key.unwrap() {
             winit::keyboard::Key::Named(name) => {
                 println!("{:?}", name);
@@ -454,8 +456,7 @@ impl TextEdit {
         let wx = self.text_buffer.rect.dx().min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
         self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
-        let data = self.cursor_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
+        self.changed = true;
     }
 
     pub(crate) fn text(&self) -> String {
@@ -494,11 +495,23 @@ impl TextEdit {
         //文本
         self.text_buffer.draw(ui);
     }
+
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.changed { return; }
+        self.changed = false;
+        let data = self.cursor_param.as_draw_param(false, false);
+        ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
+        let data = self.select_param.as_draw_param(false, false);
+        ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+        let data = self.fill_param.as_draw_param(self.hovered || self.focused, false);
+        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+    }
 }
 
 
 impl Widget for TextEdit {
     fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(self.fill_index, pass);
         self.text_buffer.redraw(ui);
@@ -515,8 +528,7 @@ impl Widget for TextEdit {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
-                    let data = self.fill_param.as_draw_param(self.hovered || self.focused, false);
-                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    self.changed = true;
                     ui.context.window.request_redraw();
                 }
                 if self.focused && ui.device.device_input.mouse.pressed { self.text_select(ui); }
@@ -525,8 +537,7 @@ impl Widget for TextEdit {
                 self.mouse_press = true;
                 if self.focused && !ui.device.device_input.pressed_at(&self.fill_param.rect) {
                     self.focused = false;
-                    let data = self.fill_param.as_draw_param(false, false);
-                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    self.changed = true;
                     ui.context.window.request_redraw();
                 }
                 if ui.device.device_input.pressed_at(&self.fill_param.rect) {
@@ -561,14 +572,19 @@ impl Widget for TextEdit {
                         }
                     }
                 }
-
-                let data = self.select_param.as_draw_param(false, false);
-                ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+                self.changed = true;
             }
             UpdateType::MouseRelease => self.mouse_press = false,
             UpdateType::KeyRelease(ref mut key) => {
                 if !self.focused || key.is_none() { return Response::new(&self.id, &self.fill_param.rect); }
                 self.key_input(key.take(), ui)
+            }
+            UpdateType::Offset(ref o) => {
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
+                self.fill_param.rect.offset(o);
+                self.text_buffer.rect.offset(o);
+                self.select_param.rect.offset(o);
+                self.cursor_param.rect.offset(o);
             }
             UpdateType::None => {
                 if !self.focused { return Response::new(&self.id, &self.fill_param.rect); }
@@ -583,8 +599,7 @@ impl Widget for TextEdit {
                     if self.select_param.rect.dx().min < self.text_buffer.rect.dx().min {
                         self.select_param.rect.set_x_min(self.text_buffer.rect.dx().min);
                     }
-                    let data = self.select_param.as_draw_param(false, false);
-                    ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+                    self.changed = true;
                     self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                     ui.context.window.request_redraw();
                 } else if let Some(c) = self.char_layout.previous_char() && ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min
@@ -598,8 +613,7 @@ impl Widget for TextEdit {
                     if self.select_param.rect.dx().max > self.text_buffer.rect.dx().max {
                         self.select_param.rect.set_x_max(self.text_buffer.rect.dx().max);
                     }
-                    let data = self.select_param.as_draw_param(false, false);
-                    ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+                    self.changed = true;
                     self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                     ui.context.window.request_redraw();
                 }

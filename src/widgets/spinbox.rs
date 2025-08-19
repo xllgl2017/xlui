@@ -53,7 +53,7 @@ pub struct SpinBox<T> {
     color: Color,
     inactive_color: Color,
     init: bool,
-    change: bool,
+    changed: bool,
     contact_ids: Vec<String>,
 
     press_up: bool,
@@ -81,7 +81,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             color,
             inactive_color,
             init: false,
-            change: false,
+            changed: false,
             contact_ids: vec![],
             press_up: false,
             press_down: false,
@@ -115,7 +115,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     pub fn set_value(&mut self, value: T) {
-        self.change = true;
+        self.changed = true;
         self.value = value;
     }
 
@@ -157,7 +157,70 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         ], &ui.device);
     }
 
-    fn update_value(&mut self, ui: &mut Ui) {
+    // fn update_value(&mut self, ui: &mut Ui) {
+    //     let c = if self.value <= self.range.start {
+    //         self.value = self.range.start;
+    //         self.inactive_color.as_gamma_rgba()
+    //     } else {
+    //         self.color.as_gamma_rgba()
+    //     };
+    //     ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+    //     let c = if self.value >= self.range.end {
+    //         self.value = self.range.end;
+    //         self.inactive_color.as_gamma_rgba()
+    //     } else {
+    //         self.color.as_gamma_rgba()
+    //     };
+    //     ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
+    //     self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+    // }
+
+    fn call(&mut self, ui: &mut Ui) {
+        if let Some(ref mut callback) = self.callback {
+            let app = ui.app.take().unwrap();
+            callback(app, ui, self.value);
+            ui.app.replace(app);
+        }
+    }
+
+    fn click_up(&mut self, ui: &mut Ui) {
+        let is_end = self.value >= self.range.end;
+        if !is_end {
+            self.value += self.gap;
+            if self.value > self.range.end { self.value = self.range.end }
+            self.call(ui);
+            ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
+        }
+        self.changed = true;
+        ui.update_type = UpdateType::None;
+        ui.context.window.request_redraw();
+    }
+
+    fn click_down(&mut self, ui: &mut Ui) {
+        let is_start = self.value <= self.range.start;
+        if !is_start {
+            self.value -= self.gap;
+            if self.value < self.range.start { self.value = self.range.start }
+            self.call(ui);
+            ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
+        }
+        self.changed = true;
+        ui.update_type = UpdateType::None;
+        ui.context.window.request_redraw();
+    }
+
+    fn listen_input(&mut self, ui: &mut Ui, st: u64) {
+        let event = ui.context.event.clone();
+        let wid = ui.context.window.id();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(st));
+            event.send_event((wid, UpdateType::None)).unwrap();
+        });
+    }
+
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.changed && !ui.context.resize { return; }
+        self.changed = false;
         let c = if self.value <= self.range.start {
             self.value = self.range.start;
             self.inactive_color.as_gamma_rgba()
@@ -174,88 +237,16 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
         self.edit.update_text(ui, format!("{:.*}", 2, self.value));
     }
-
-    fn call(&mut self, ui: &mut Ui) {
-        if let Some(ref mut callback) = self.callback {
-            let app = ui.app.take().unwrap();
-            callback(app, ui, self.value);
-            ui.app.replace(app);
-        }
-    }
-
-    fn click_up(&mut self, ui: &mut Ui) {
-        let is_end = self.value >= self.range.end;
-        let is_start = self.value == self.range.start;
-        if !is_end {
-            self.value += self.gap;
-            if self.value > self.range.end { self.value = self.range.end }
-            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
-            self.call(ui);
-            // if let Some(ref mut callback) = self.callback {
-            //     let app = ui.app.take().unwrap();
-            //     callback(*app, ui, self.value);
-            //     ui.app.replace(app);
-            // }
-            ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
-        }
-        let c = if self.value == self.range.end { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-        ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-        if is_start {
-            ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
-        }
-        ui.update_type = UpdateType::None;
-        ui.context.window.request_redraw();
-    }
-
-    fn click_down(&mut self, ui: &mut Ui) {
-        let is_start = self.value <= self.range.start;
-        let is_end = self.value >= self.range.end;
-        if !is_start {
-            self.value -= self.gap;
-            if self.value < self.range.start { self.value = self.range.start }
-            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
-            self.call(ui);
-            // if let Some(ref mut callback) = self.callback {
-            //     let app = ui.app.take().unwrap();
-            //     callback(*app, ui, self.value);
-            //     ui.app.replace(app);
-            // }
-            ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
-        }
-        if is_end {
-            ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), self.color.as_gamma_rgba());
-        }
-        let c = if self.value <= self.range.start { self.inactive_color.as_gamma_rgba() } else { self.color.as_gamma_rgba() };
-        ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-        ui.update_type = UpdateType::None;
-        ui.context.window.request_redraw();
-    }
-
-    fn listen_input(&mut self, ui: &mut Ui, st: u64) {
-        let event = ui.context.event.clone();
-        let wid = ui.context.window.id();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(st));
-            event.send_event((wid, UpdateType::None)).unwrap();
-        });
-    }
 }
 
 
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if !self.init { self.init(ui); }
-        if ui.context.resize {
-            self.update_value(ui);
-        }
-        // let resp = Response::new(&self.id, &self.rect);
-        // if ui.pass.is_none() { return resp; }
+        self.update_buffer(ui);
         self.edit.redraw(ui);
-
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.triangle.render(self.down_index.clone(), pass);
         ui.context.render.triangle.render(self.up_index.clone(), pass);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -282,7 +273,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     if focused && self.edit.focused != focused {
                         let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
                         self.value = T::from_num(v);
-                        self.update_value(ui);
+                        self.changed = true;
+                        // self.update_value(ui);
                         ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
                         ui.context.window.request_redraw();
                     }
@@ -315,12 +307,22 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.listen_input(ui, 100);
                 }
             }
+            UpdateType::Offset(ref o) => {
+                if !ui.can_offset { return Response::new(&self.id, &self.rect); }
+                self.rect.offset(o);
+                self.up_rect.offset(o);
+                self.down_rect.offset(o);
+                ui.context.render.triangle.offset(self.up_index.clone(), o);
+                ui.context.render.triangle.offset(self.down_index.clone(), o);
+                self.changed = true;
+            }
             _ => {}
         }
         self.edit.update(ui);
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_t(&mut self.value);
-            self.update_value(ui);
+            self.changed = true;
+            // self.update_value(ui);
             ui.context.window.request_redraw();
         }
         Response::new(&self.id, &self.rect)

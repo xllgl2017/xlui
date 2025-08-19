@@ -181,12 +181,19 @@ impl Slider {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.changed { return; }
         self.changed = false;
+        if self.value >= self.range.end {
+            self.value = self.range.end;
+        } else if self.value <= self.range.start {
+            self.value = self.range.start;
+        }
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
         let data = self.slided_param.as_draw_param(false, false);
         ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
         let data = self.slider_param.as_draw_param(self.hovered || self.focused, ui.device.device_input.mouse.pressed);
         ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+        let data = self.fill_param.as_draw_param(false, false);
+        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
     }
 }
 
@@ -256,6 +263,14 @@ impl Widget for Slider {
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
+            }
+            UpdateType::Offset(ref o) => {
+                if !ui.can_offset { return Response::new(&self.id, &self.rect); }
+                self.rect.offset(o);
+                self.slider_param.rect.offset(o);
+                self.slided_param.rect.offset(o);
+                self.fill_param.rect.offset(o);
+                self.changed = true;
             }
             _ => {}
         }

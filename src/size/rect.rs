@@ -168,7 +168,7 @@ impl Rect {
 //位移数值为总位移
 impl Rect {
     pub fn offset_x(&mut self, o: &Offset) {
-        if o.delete {
+        if o.covered {
             self.dx += o.x;
             self.ox += o.x;
         } else {
@@ -192,7 +192,7 @@ impl Rect {
     }
 
     pub fn offset_y(&mut self, o: &Offset) {
-        if o.delete {
+        if o.covered {
             self.oy += o.y;
             self.dy += o.y;
         } else {

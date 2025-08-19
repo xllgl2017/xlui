@@ -1,5 +1,5 @@
 use crate::vertex::Vertex;
-use crate::Device;
+use crate::{Device, Offset};
 use std::ops::Range;
 use wgpu::include_wgsl;
 
@@ -52,6 +52,13 @@ impl TriangleRender {
         device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertices));
         device.queue.write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&self.indices));
         current as usize..current as usize + 3
+    }
+
+    pub fn offset(&mut self, range: Range<usize>, offset: &Offset) {
+        self.vertices[range].iter_mut().for_each(|x| {
+            x.position[0] += offset.x;
+            x.position[1] += offset.y;
+        })
     }
 
     pub fn prepare(&mut self, range: Range<usize>, device: &Device, size: [f32; 2], c: [f32; 4]) {
