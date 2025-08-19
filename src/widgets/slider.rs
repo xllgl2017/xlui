@@ -168,8 +168,6 @@ impl Slider {
         self.slided_buffer = Some(slided_buffer);
         //滑块
         self.slider_param.rect = self.rect.clone();
-        self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
-        // self.slider_param.rect.dx.min -= self.rect.height() / 2.0;
         self.slider_param.rect.set_width(self.rect.height());
         self.offset = self.value * self.rect.width() / (self.range.end - self.range.start);
         self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
