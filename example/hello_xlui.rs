@@ -1,7 +1,6 @@
 use std::fmt::Display;
-use xlui::frame::App;
 use xlui::frame::context::UpdateType;
-use xlui::layout::inner::InnerWindow;
+use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
@@ -73,11 +72,9 @@ impl XlUiApp {
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, _: &mut Button, ui: &mut Ui) {
+    pub fn click2(&mut self, _: &mut Button, _ui: &mut Ui) {
         self.count += 2;
         println!("count2: {}", self.count);
-        let window = InnerWindow::new(ui);
-        ui.create_inner_window(window);
     }
 
     pub fn add(&mut self, btn: &mut Button, ui: &mut Ui) {
