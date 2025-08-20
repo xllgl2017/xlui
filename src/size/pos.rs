@@ -1,4 +1,5 @@
 use std::ops::{Add, AddAssign, Range, SubAssign};
+use crate::layout::LayoutDirection;
 
 #[derive(Clone, PartialEq, Debug, Copy)]
 pub struct Pos {
@@ -43,8 +44,11 @@ impl Axis {
         self.max - self.min
     }
 
-    pub fn set_distance(&mut self, distance: f32) {
-        self.max = self.min + distance;
+    pub fn set_distance(&mut self, distance: f32, dir: &LayoutDirection) {
+        match dir {
+            LayoutDirection::Min => self.max = self.min + distance,
+            LayoutDirection::Max => self.min = self.max - distance
+        }
     }
 
     pub fn center(&self) -> f32 {

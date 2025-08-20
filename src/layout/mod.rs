@@ -172,9 +172,12 @@ impl LayoutKind {
     pub fn set_rect(&mut self, rect: Rect, padding: &Padding) {
         match self {
             LayoutKind::Horizontal(v) => {
-                v.max_rect = rect;
+                v.max_rect = rect.with_direction(v.max_rect.direction());
                 v.available_rect = v.max_rect.clone_add_padding(&padding);
-                v.available_rect.set_x_max(f32::INFINITY);
+                match v.max_rect.direction() {
+                    LayoutDirection::Min => v.available_rect.set_x_max(f32::INFINITY),
+                    LayoutDirection::Max => v.available_rect.set_x_min(-f32::INFINITY),
+                }
             }
             LayoutKind::Vertical(v) => {
                 v.max_rect = rect;
@@ -243,6 +246,14 @@ impl LayoutKind {
 
         self
     }
+
+    pub fn max_rect(&self)->&Rect{
+        match self {
+            LayoutKind::Horizontal(v) => &v.max_rect,
+            LayoutKind::Vertical(v) => &v.max_rect,
+            LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
+        }
+    }
 }
 
 
@@ -267,6 +278,12 @@ fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind
     }
 }
 
+#[derive(Clone, Debug, Copy)]
+pub enum LayoutDirection {
+    Min,
+    Max,
+}
+
 pub struct HorizontalLayout {
     children: Map<LayoutKind>,
     widgets: Map<WidgetKind>,
@@ -279,28 +296,44 @@ pub struct HorizontalLayout {
 }
 
 impl HorizontalLayout {
-    pub fn new() -> HorizontalLayout {
+    fn new(direction: LayoutDirection) -> HorizontalLayout {
         HorizontalLayout {
             children: Map::new(),
             widgets: Map::new(),
             display: Map::new(),
-            max_rect: Rect::new(),
-            available_rect: Rect::new(),
+            max_rect: Rect::new().with_direction(direction.clone()),
+            available_rect: Rect::new().with_direction(direction.clone()),
             width: 0.0,
             height: 0.0,
             item_space: 5.0,
         }
     }
 
+    pub fn left_to_right() -> HorizontalLayout {
+        let layout = HorizontalLayout::new(LayoutDirection::Min);
+        layout
+    }
+
+    pub fn right_to_left() -> HorizontalLayout {
+        let layout = HorizontalLayout::new(LayoutDirection::Max);
+        layout
+    }
+
     pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
-        self.max_rect = rect;
+        self.max_rect = rect.with_direction(self.max_rect.direction());
         self.available_rect = self.max_rect.clone_add_padding(&padding);
-        self.available_rect.set_x_max(f32::INFINITY);
+        match self.max_rect.direction() {
+            LayoutDirection::Min => self.available_rect.set_x_max(f32::INFINITY),
+            LayoutDirection::Max => self.available_rect.set_x_min(-f32::INFINITY),
+        }
         self
     }
 
     pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
-        self.available_rect.add_min_x(rect.width() + self.item_space);
+        match self.max_rect.direction() {
+            LayoutDirection::Min => self.available_rect.add_min_x(rect.width() + self.item_space),
+            LayoutDirection::Max => self.available_rect.add_max_x(-rect.width() - self.item_space),
+        }
         self.width += rect.width() + if self.width == 0.0 { 0.0 } else { self.item_space };
         println!("alloc rect  {} {} {:?}", self.height, rect.height(), rect);
         if self.height < rect.height() { self.height = rect.height(); }

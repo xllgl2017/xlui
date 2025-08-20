@@ -133,7 +133,7 @@ impl<T: 'static> ListView<T> {
         let rect = ui.available_rect();
         let current = self.current.clone();
         let callback = self.callback.clone();
-        let item = ItemWidget::new(LayoutKind::Horizontal(HorizontalLayout::new()))
+        let item = ItemWidget::new(LayoutKind::Horizontal(HorizontalLayout::left_to_right()))
             .with_size(rect.width(), 38.0).with_style(style).parent(self.current.clone())
             .connect(move |item_id, ui| {
                 current.write().unwrap().replace(item_id.to_string());

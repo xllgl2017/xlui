@@ -1,3 +1,4 @@
+use crate::layout::LayoutDirection;
 use crate::Offset;
 use crate::size::padding::Padding;
 use crate::size::pos::{Axis, Pos};
@@ -8,6 +9,7 @@ pub struct Rect {
     ox: Axis,
     dy: Axis,
     oy: Axis,
+    direction: LayoutDirection,
 }
 
 
@@ -18,6 +20,7 @@ impl Rect {
             ox: (0.0..0.0).into(),
             dy: (0.0..0.0).into(),
             oy: (0.0..0.0).into(),
+            direction: LayoutDirection::Min,
         }
     }
     pub fn width(&self) -> f32 {
@@ -28,13 +31,13 @@ impl Rect {
     }
 
     pub fn set_width(&mut self, width: f32) {
-        self.dx.set_distance(width);
-        self.ox.set_distance(width);
+        self.dx.set_distance(width, &self.direction);
+        self.ox.set_distance(width, &self.direction);
     }
 
     pub fn set_height(&mut self, height: f32) {
-        self.dy.set_distance(height);
-        self.oy.set_distance(height);
+        self.dy.set_distance(height, &self.direction);
+        self.oy.set_distance(height, &self.direction);
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
@@ -44,6 +47,11 @@ impl Rect {
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.set_size(width, height);
+        self
+    }
+
+    pub fn with_direction(mut self, direction: LayoutDirection) -> Self {
+        self.direction = direction;
         self
     }
 
@@ -163,6 +171,10 @@ impl Rect {
     //     self.dx.min >= rect.dx.min && self.dx.max <= rect.dx.max
     //         && self.dy.min >= rect.dy.min && self.dy.max <= rect.dy.max
     // }
+
+    pub fn direction(&self) -> LayoutDirection {
+        self.direction
+    }
 }
 
 //位移数值为总位移
