@@ -21,9 +21,6 @@ pub struct ScrollArea {
     padding: Padding,
     v_bar: ScrollBar,
     fill_render: RenderParam<RectParam>,
-    // fill_id: String,
-    // fill_param: RectParam,
-    // fill_buffer: Option<wgpu::Buffer>,
     a: f32,
 }
 
@@ -40,9 +37,6 @@ impl ScrollArea {
             padding: Padding::same(5.0),
             v_bar: ScrollBar::new(),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
-            // fill_id: "".to_string(),
-            // fill_param: RectParam::new(Rect::new(), fill_style),
-            // fill_buffer: None,
             a: 0.0,
         }
     }
@@ -101,10 +95,6 @@ impl ScrollArea {
     fn re_init(&mut self, ui: &mut Ui) {
         //滚动区域
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        // self.fill_buffer = Some(buffer);
         self.v_bar.update(ui);
     }
 
@@ -161,8 +151,6 @@ impl Layout for ScrollArea {
         }
         ui.current_rect = self.context_rect.clone();
         self.v_bar.update(ui);
-        //
-        // self.layout.as_mut().unwrap().update(ui);
         if let Some(o) = ui.update_type.is_offset() {
             if o.y == 0.0 { self.a = 0.0; }
             ui.update_type = UpdateType::None;

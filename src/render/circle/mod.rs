@@ -1,14 +1,12 @@
-use crate::Device;
-use wgpu::{include_wgsl};
-use crate::map::Map;
 use crate::render::WrcRender;
+use crate::Device;
+use wgpu::include_wgsl;
 
 pub mod param;
 
 pub struct CircleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
-    // bind_groups: Map<wgpu::BindGroup>,
 }
 
 impl CircleRender {
@@ -40,7 +38,6 @@ impl CircleRender {
         CircleRender {
             pipeline: render_pipeline,
             bind_group_layout,
-            // bind_groups: Map::new(),
         }
     }
 }
@@ -49,14 +46,6 @@ impl WrcRender for CircleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {
         &self.pipeline
     }
-
-    // fn bind_groups(&self) -> &Map<wgpu::BindGroup> {
-    //     &self.bind_groups
-    // }
-    //
-    // fn bind_groups_mut(&mut self) -> &mut Map<wgpu::BindGroup> {
-    //     &mut self.bind_groups
-    // }
 
     fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
         &self.bind_group_layout

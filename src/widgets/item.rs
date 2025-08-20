@@ -13,9 +13,6 @@ use crate::frame::context::UpdateType;
 pub struct ItemWidget {
     pub(crate) id: String,
     fill_render: RenderParam<RectParam>,
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
     hovered: bool,
     layout: Option<LayoutKind>,
     padding: Padding,
@@ -29,9 +26,6 @@ impl ItemWidget {
         ItemWidget {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
-            // fill_param: RectParam::new(Rect::new(), ClickStyle::new()),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
             hovered: false,
             layout: Some(layout),
             padding: Padding::same(2.0),
@@ -46,20 +40,10 @@ impl ItemWidget {
         self
     }
 
-    // pub fn with_height(mut self, h: f32) -> Self {
-    //     self.fill_param.rect.set_height(h);
-    //     self
-    // }
-
     pub fn with_style(mut self, style: ClickStyle) -> Self {
         self.fill_render.param.style = style;
         self
     }
-
-    // pub fn with_padding(mut self, padding: Padding) -> Self {
-    //     self.padding = padding;
-    //     self
-    // }
 
     pub fn show(mut self, ui: &mut Ui, mut context: impl FnMut(&mut Ui)) {
         self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
@@ -76,8 +60,6 @@ impl ItemWidget {
 
     fn update_rect(&mut self, ui: &mut Ui) {
         self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
-        // let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
-        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         ui.context.window.request_redraw();
     }
 
@@ -93,17 +75,11 @@ impl ItemWidget {
 
     fn init(&mut self, ui: &mut Ui) {
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        // self.fill_buffer = Some(buffer);
     }
 }
 
 impl Widget for ItemWidget {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
-        // if ui.pass.is_none() { return Response::new(&self.id, &self.fill_param.rect); }
         let current = self.current.read().unwrap();
         if current.as_ref() != Some(&self.id) && self.selected {
             drop(current);
@@ -113,7 +89,6 @@ impl Widget for ItemWidget {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().redraw(ui);
-        // Response::new(&self.id, &self.fill_param.rect)
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {

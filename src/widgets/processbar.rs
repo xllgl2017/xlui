@@ -15,14 +15,8 @@ pub struct ProcessBar {
     id: String,
     //背景
     fill_render: RenderParam<RectParam>,
-    // fill_id: String,
-    // fill_param: RectParam,
-    // fill_buffer: Option<wgpu::Buffer>,
     //当前位置
     process_render: RenderParam<RectParam>,
-    // process_id: String,
-    // process_buffer: Option<wgpu::Buffer>,
-    // process_param: RectParam,
     //
     value: f32,
     range: Range<f32>,
@@ -49,12 +43,6 @@ impl ProcessBar {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 10.0), fill_style)),
             process_render: RenderParam::new(RectParam::new(Rect::new(), process_style)),
-            // fill_id: "".to_string(),
-            // fill_param: RectParam::new(Rect::new().with_size(200.0, 10.0), fill_style),
-            // fill_buffer: None,
-            // process_id: "".to_string(),
-            // process_buffer: None,
-            // process_param: RectParam::new(Rect::new(), process_style),
             value: v,
             range: 0.0..100.0,
             change: false,
@@ -71,24 +59,14 @@ impl ProcessBar {
         self.process_render.param.rect.set_width(w);
         //
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        // self.fill_buffer = Some(buffer);
         //
         self.process_render.init_rectangle(ui, false, false);
-        // let data = self.process_param.as_draw_param(false, false);
-        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.process_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        // self.process_buffer = Some(buffer);
     }
 
     fn update_value(&mut self, ui: &mut Ui) {
         let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.process_render.param.rect.set_width(w);
         self.process_render.update(ui, false, false);
-        // let data = self.process_render.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.process_buffer.as_ref().unwrap(), 0, data);
     }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {

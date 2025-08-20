@@ -44,10 +44,6 @@ pub struct SelectItem<T> {
     size_mode: SizeMode,
     value: T,
     parent_selected: Arc<RwLock<Option<String>>>,
-
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
     fill_render: RenderParam<RectParam>,
 
     callback: Option<Box<dyn FnMut(&mut Option<T>)>>,
@@ -73,9 +69,6 @@ impl<T: Display> SelectItem<T> {
             value,
             parent_selected: Arc::new(RwLock::new(None)),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
-            // fill_param: RectParam::new(Rect::new(), fill_style),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
             callback: None,
             hovered: false,
             selected: false,
@@ -137,10 +130,6 @@ impl<T: Display> SelectItem<T> {
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
         self.fill_render.init_rectangle(ui, selected, selected);
-        // let data = self.fill_param.as_draw_param(selected, selected);
-        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        // self.fill_buffer = Some(fill_buffer);
         //文本
         self.text.draw(ui);
     }
@@ -148,27 +137,20 @@ impl<T: Display> SelectItem<T> {
 
 impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
         if !selected && self.selected {
             self.selected = false;
             self.fill_render.update(ui, false, false);
-            // let data = self.fill_param.as_draw_param(false, false);
-            // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         } else if selected && !self.selected {
             self.selected = true;
             self.fill_render.update(ui, true, true);
-            // let data = self.fill_param.as_draw_param(true, true);
-            // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         }
         drop(current);
-        // let resp = Response::new(&self.id, &self.fill_param.rect);
-        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text.redraw(ui);
-        // resp
+
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -185,8 +167,6 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                     let current = self.parent_selected.read().unwrap();
                     let selected = current.as_ref() == Some(&self.value.to_string());
                     self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
-                    // let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
-                    // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                     ui.context.window.request_redraw();
                 }
             }
@@ -198,8 +178,6 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                     let mut selected = self.parent_selected.write().unwrap();
                     *selected = Some(self.value.to_string());
                     self.fill_render.update(ui, true, true);
-                    // let data = self.fill_param.as_draw_param(true, true);
-                    // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
                     return Response::new(&self.id, &self.fill_render.param.rect);
@@ -212,8 +190,6 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                 let current = self.parent_selected.read().unwrap();
                 let selected = current.as_ref() == Some(&self.value.to_string());
                 self.fill_render.param.rect.offset(o);
-                // let data = self.fill_param.as_draw_param(selected, selected);
-                // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                 self.text.rect.offset(o);
                 ui.context.window.request_redraw();
                 self.fill_render.update(ui, selected, self.hovered);

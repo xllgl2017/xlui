@@ -52,9 +52,6 @@ pub struct ComboBox<T> {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)>>,
 
     fill_render: RenderParam<RectParam>,
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
 
     selected: Arc<RwLock<Option<String>>>,
 
@@ -75,9 +72,6 @@ impl<T: Display + 'static> ComboBox<T> {
             popup_rect: Rect::new(),
             callback: None,
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
-            // fill_param: RectParam::new(Rect::new(), fill_style),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
 
@@ -105,7 +99,7 @@ impl<T: Display + 'static> ComboBox<T> {
         self
     }
 
-    /// 设置popup的高度
+    // 设置popup的高度
     pub fn with_popup_height(mut self, height: f32) -> Self {
         self.popup_rect.set_height(height);
         self
@@ -146,10 +140,6 @@ impl<T: Display + 'static> ComboBox<T> {
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
         fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        // self.fill_buffer = Some(fill_buffer);
         //文本
         self.text_buffer.draw(ui);
     }
@@ -162,9 +152,6 @@ impl<T: Display + 'static> ComboBox<T> {
 
 impl<T: Display + 'static> Widget for ComboBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.fill_buffer.is_none() { self.init(ui); }
-        // let resp = Response::new(&self.id, &self.fill_param.rect);
-        // if ui.pass.is_none() { return resp; }
         let select = self.selected.read().unwrap();
         if *select != self.previous_select {
             self.previous_select = select.clone();
@@ -185,7 +172,6 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text_buffer.redraw(ui);
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {

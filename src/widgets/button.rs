@@ -47,7 +47,7 @@
 use crate::frame::context::{Context, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcParam, WrcRender};
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;

@@ -1,11 +1,8 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use crate::frame::context::UpdateType;
-use crate::frame::{App, WindowAttribute};
-use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
+use crate::frame::App;
 use crate::layout::popup::Popup;
+use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
 use crate::map::Map;
-use crate::Offset;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Callback;
@@ -18,15 +15,13 @@ use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle, Shadow};
 use crate::ui::Ui;
 use crate::widgets::button::Button;
+use crate::Offset;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 pub struct InnerWindow {
     pub(crate) id: String,
-    padding: Padding,
     fill_render: RenderParam<RectParam>,
-    // fill_id: String,
-    // fill_param: RectParam,
-    // fill_buffer: wgpu::Buffer,
-    attr: WindowAttribute,
     title_rect: Rect,
     offset: Offset,
     press_title: bool,
@@ -50,13 +45,10 @@ impl InnerWindow {
         let mut rect = Rect::new().with_size(attr.inner_width_f32(), attr.inner_height_f32());
         rect.add_min_x(attr.pos_x_f32());
         rect.add_min_y(attr.pos_y_f32());
-        let mut fill_param = RectParam::new(rect.clone(), Popup::popup_style())
+        let fill_param = RectParam::new(rect.clone(), Popup::popup_style())
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);
-        // let data = fill_param.as_draw_param(false, false);
-        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // let fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
         let padding = Padding::same(5.0);
         let mut layout = VerticalLayout::new();
         layout.max_rect = rect;
@@ -65,13 +57,8 @@ impl InnerWindow {
         let mut window = InnerWindow {
             id: crate::gen_unique_id(),
             fill_render,
-            // fill_id: fill_index,
-            // fill_param,
-            // fill_buffer,
             layout: Some(layout),
             popups: Some(Map::new()),
-            padding,
-            attr: Default::default(),
             title_rect: Rect::new(),
             offset: Offset::new(Pos::new()).delete_offset(),
             press_title: false,
@@ -158,8 +145,6 @@ impl InnerWindow {
         if !self.change { return; }
         self.change = false;
         self.fill_render.update(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(&self.fill_buffer, 0, data);
     }
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {

@@ -54,9 +54,6 @@ pub struct CheckBox {
     size_mode: SizeMode,
 
     check_render: RenderParam<RectParam>,
-    // check_param: RectParam,
-    // check_id: String,
-    // check_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
     contact_ids: Vec<String>,
@@ -80,9 +77,6 @@ impl CheckBox {
             callback: None,
             size_mode: SizeMode::Auto,
             check_render: RenderParam::new(RectParam::new(Rect::new(), check_style)),
-            // check_param: RectParam::new(Rect::new(), check_style),
-            // check_id: "".to_string(),
-            // check_buffer: None,
             hovered: false,
             contact_ids: vec![],
         }
@@ -146,10 +140,6 @@ impl CheckBox {
         self.check_render.param.rect.set_width(15.0);
         self.check_render.param.rect.set_height(15.0);
         self.check_render.init_rectangle(ui, false, self.value);
-        // let data = self.check_param.as_draw_param(false, self.value);
-        // let check_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.check_id = ui.context.render.rectangle.create_bind_group(&ui.device, &check_buffer);
-        // self.check_buffer = Some(check_buffer);
         //文本
         self.text.draw(ui);
         self.check_text.reset_size(&ui.context);
@@ -159,25 +149,19 @@ impl CheckBox {
 
     fn update_check(&mut self, ui: &mut Ui) {
         self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-        // let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-        // ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
     }
 }
 
 impl Widget for CheckBox {
     fn redraw(&mut self, ui: &mut Ui) {
-        // if self.check_buffer.is_none() { self.init(ui); }
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_bool(&mut self.value);
             self.update_check(ui);
         }
-        // let resp = Response::new(&self.id, &self.rect);
-        // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.check_render, pass);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
-        // resp
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {

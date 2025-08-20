@@ -25,21 +25,20 @@
 //! ```
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
+use crate::render::triangle::param::TriangleParam;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
+use crate::size::border::Border;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
+use crate::style::{BorderStyle, ClickStyle};
 use crate::ui::Ui;
-use crate::vertex::Vertex;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
-use crate::render::{RenderParam, WrcRender};
-use crate::render::triangle::param::TriangleParam;
-use crate::size::border::Border;
-use crate::style::{BorderStyle, ClickStyle};
 
 pub struct SpinBox<T> {
     pub(crate) id: String,
@@ -53,11 +52,7 @@ pub struct SpinBox<T> {
     up_render: RenderParam<TriangleParam>,
     down_render: RenderParam<TriangleParam>,
     up_rect: Rect,
-    // up_index: Range<usize>,
     down_rect: Rect,
-    // down_index: Range<usize>,
-    // color: Color,
-    // inactive_color: Color,
     init: bool,
     changed: bool,
     contact_ids: Vec<String>,
@@ -87,11 +82,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             up_render: RenderParam::new(TriangleParam::new([0.0; 2], [0.0; 2], [0.0; 2], style.clone())),
             down_render: RenderParam::new(TriangleParam::new([0.0; 2], [0.0; 2], [0.0; 2], style)),
             up_rect: Rect::new(),
-            // up_index: 0..1,
             down_rect: Rect::new(),
-            // down_index: 0..1,
-            // color,
-            // inactive_color,
             init: false,
             changed: false,
             contact_ids: vec![],
@@ -147,7 +138,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self.edit.update(ui);
         let mut rect = self.rect.clone();
         rect.set_width(18.0);
-        // ui.layout().alloc_rect(&rect);
         self.up_rect.set_x_min(self.rect.dx().max - 14.0);
         self.up_rect.set_x_max(self.rect.dx().max);
         self.up_rect.set_y_min(self.rect.dy().min + 1.0);
@@ -155,13 +145,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self.up_render.param.p0 = [self.up_rect.dx().min + self.up_rect.width() / 2.0, self.up_rect.dy().min];
         self.up_render.param.p1 = [self.up_rect.dx().min, self.up_rect.dy().max];
         self.up_render.param.p2 = [self.rect.dx().max, self.up_rect.dy().max];
-        // let vertices = vec![
-        //     Vertex::new([self.up_rect.dx().min + self.up_rect.width() / 2.0, self.up_rect.dy().min], &self.color, &ui.context.size),
-        //     Vertex::new([self.up_rect.dx().min, self.up_rect.dy().max], &self.color, &ui.context.size),
-        //     Vertex::new([self.rect.dx().max, self.up_rect.dy().max], &self.color, &ui.context.size),
-        // ];
         self.up_render.init_triangle(ui, false, false);
-        // self.up_index = ui.context.render.triangle.add_triangle(vertices, &ui.device);
         self.down_rect.set_x_min(self.rect.dx().max - 14.0);
         self.down_rect.set_x_max(self.rect.dx().max);
         self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
@@ -170,30 +154,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self.down_render.param.p1 = [self.rect.dx().max - 14.0, self.down_rect.dy().min];
         self.down_render.param.p2 = [self.rect.dx().max, self.down_rect.dy().min];
         self.down_render.init_triangle(ui, false, false);
-        // self.down_index = ui.context.render.triangle.add_triangle(vec![
-        //     Vertex::new([self.down_rect.dx().min + self.down_rect.width() / 2.0, self.down_rect.dy().max], &self.color, &ui.context.size),
-        //     Vertex::new([self.rect.dx().max - 14.0, self.down_rect.dy().min], &self.color, &ui.context.size),
-        //     Vertex::new([self.rect.dx().max, self.down_rect.dy().min], &self.color, &ui.context.size),
-        // ], &ui.device);
     }
-
-    // fn update_value(&mut self, ui: &mut Ui) {
-    //     let c = if self.value <= self.range.start {
-    //         self.value = self.range.start;
-    //         self.inactive_color.as_gamma_rgba()
-    //     } else {
-    //         self.color.as_gamma_rgba()
-    //     };
-    //     ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-    //     let c = if self.value >= self.range.end {
-    //         self.value = self.range.end;
-    //         self.inactive_color.as_gamma_rgba()
-    //     } else {
-    //         self.color.as_gamma_rgba()
-    //     };
-    //     ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-    //     self.edit.update_text(ui, format!("{:.*}", 2, self.value));
-    // }
 
     fn call(&mut self, ui: &mut Ui) {
         if let Some(ref mut callback) = self.callback {
@@ -241,22 +202,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.changed && !ui.context.resize { return; }
         self.changed = false;
-        // let c = if self.value <= self.range.start {
-        //     self.value = self.range.start;
-        //     self.inactive_color.as_gamma_rgba()
-        // } else {
-        //     self.color.as_gamma_rgba()
-        // };
         self.down_render.update(ui, self.value <= self.range.start, false);
-        // ui.context.render.triangle.prepare(self.down_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
-        // let c = if self.value >= self.range.end {
-        //     self.value = self.range.end;
-        //     self.inactive_color.as_gamma_rgba()
-        // } else {
-        //     self.color.as_gamma_rgba()
-        // };
         self.up_render.update(ui, self.value >= self.range.end, false);
-        // ui.context.render.triangle.prepare(self.up_index.clone(), &ui.device, ui.context.size.as_gamma_size(), c);
         self.edit.update_text(ui, format!("{:.*}", 2, self.value));
     }
 
@@ -265,9 +212,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
             self.value = T::from_num(v);
             self.changed = true;
-            // self.update_value(ui);
             ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
-            // ui.request_update(UpdateType::None);
             ui.context.window.request_redraw();
         }
     }
@@ -348,8 +293,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 self.up_rect.offset(o);
                 self.down_rect.offset(o);
                 self.up_render.param.offset(o);
-                // ui.context.render.triangle.offset(self.up_index.clone(), o);
-                // ui.context.render.triangle.offset(self.down_index.clone(), o);
                 self.changed = true;
             }
             UpdateType::Drop => {}
@@ -359,7 +302,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_t(&mut self.value);
             self.changed = true;
-            // self.update_value(ui);
             ui.context.window.request_redraw();
         }
         Response::new(&self.id, &self.rect)

@@ -52,19 +52,8 @@ pub struct Slider {
     contact_ids: Vec<String>,
 
     fill_render: RenderParam<RectParam>,
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
-
     slider_render: RenderParam<CircleParam>,
-    // slider_param: CircleParam,
-    // slider_id: String,
-    // slider_buffer: Option<wgpu::Buffer>,
-
     slided_render: RenderParam<RectParam>,
-    // slided_param: RectParam,
-    // slided_id: String,
-    // slided_buffer: Option<wgpu::Buffer>,
 
     focused: bool,
     hovered: bool,
@@ -108,15 +97,6 @@ impl Slider {
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
             slider_render: RenderParam::new(CircleParam::new(Rect::new(), slider_style)),
             slided_render: RenderParam::new(RectParam::new(Rect::new(), slided_style)),
-            // fill_param: RectParam::new(Rect::new(), fill_style),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
-            // slider_param: CircleParam::new(Rect::new(), slider_style),
-            // slider_id: "".to_string(),
-            // slider_buffer: None,
-            // slided_param: RectParam::new(Rect::new(), slided_style),
-            // slided_id: "".to_string(),
-            // slided_buffer: None,
             focused: false,
             hovered: false,
             offset: 0.0,
@@ -160,29 +140,17 @@ impl Slider {
         self.fill_render.param.rect = self.rect.clone();
         self.fill_render.param.rect.contract(8.0, 5.0);
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        // self.fill_buffer = Some(fill_buffer);
         //已滑动背景
         self.slided_render.param.rect = self.fill_render.param.rect.clone();
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_render.param.rect.set_width(self.slided_render.param.rect.width() * scale);
         self.slided_render.init_rectangle(ui, false, false);
-        // let data = self.slided_param.as_draw_param(false, false);
-        // let slided_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.slided_id = ui.context.render.rectangle.create_bind_group(&ui.device, &slided_buffer);
-        // self.slided_buffer = Some(slided_buffer);
         //滑块
         self.slider_render.param.rect = self.rect.clone();
         self.slider_render.param.rect.set_width(self.rect.height());
         self.offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.slider_render.param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
         self.slider_render.init_circle(ui, false, false);
-        // let data = self.slider_param.as_draw_param(false, false);
-        // let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
-        // self.slider_id = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
-        // self.slider_buffer = Some(slider_buffer);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -195,14 +163,8 @@ impl Slider {
         }
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_render.param.rect.set_width(self.fill_render.param.rect.width() * scale);
-        // let data = self.slided_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
         self.slided_render.update(ui, false, false);
-        // let data = self.slider_param.as_draw_param(self.hovered || self.focused, ui.device.device_input.mouse.pressed);
-        // ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
         self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         self.fill_render.update(ui, false, false);
     }
 }

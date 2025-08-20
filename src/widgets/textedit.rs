@@ -223,19 +223,8 @@ pub struct TextEdit {
     char_layout: CharLayout,
 
     fill_render: RenderParam<RectParam>,
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
-
     select_render: RenderParam<RectParam>,
-    // select_param: RectParam,
-    // select_id: String,
-    // select_buffer: Option<wgpu::Buffer>,
-
     cursor_render: RenderParam<RectParam>,
-    // cursor_param: RectParam,
-    // cursor_id: String,
-    // cursor_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
     pub(crate) focused: bool,
@@ -278,19 +267,9 @@ impl TextEdit {
             char_layout: CharLayout::new(),
 
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
-            // fill_param: RectParam::new(Rect::new(), fill_style),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
-
             select_render: RenderParam::new(RectParam::new(Rect::new(), select_style)),
-            // select_param: RectParam::new(Rect::new(), select_style),
-            // select_id: "".to_string(),
-            // select_buffer: None,
-
             cursor_render: RenderParam::new(RectParam::new(Rect::new(), cursor_style)),
-            // cursor_param: RectParam::new(Rect::new(), cursor_style),
-            // cursor_id: "".to_string(),
-            // cursor_buffer: None,
+
             hovered: false,
             focused: false,
             mouse_press: false,
@@ -336,17 +315,12 @@ impl TextEdit {
     fn update_cursor(&mut self, ui: &mut Ui, xm: f32) {
         self.cursor_render.param.rect.offset_x_to(xm);
         self.cursor_render.update(ui, false, false);
-        // let data = self.cursor_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
     }
 
     fn text_select(&mut self, ui: &mut Ui) {
         let lx = ui.device.device_input.mouse.lastest().x;
         if lx < self.text_buffer.rect.dx().min {
             self.select_render.param.rect.set_x_min(self.text_buffer.rect.dx().min);
-            // self.select_render.update(ui, false, false);
-            // let data = self.select_param.as_draw_param(false, false);
-            // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
             let event = ui.context.event.clone();
             let wid = ui.context.window.id();
             std::thread::spawn(move || {
@@ -355,9 +329,6 @@ impl TextEdit {
             });
         } else if lx > self.text_buffer.rect.dx().max {
             self.select_render.param.rect.set_x_max(self.text_buffer.rect.dx().max);
-            // self.select_render.update(ui, false, false);
-            // let data = self.select_param.as_draw_param(false, false);
-            // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
             let event = ui.context.event.clone();
             let wid = ui.context.window.id();
             std::thread::spawn(move || {
@@ -389,8 +360,6 @@ impl TextEdit {
         self.select_render.param.rect.set_x_min(0.0);
         self.select_render.param.rect.set_x_max(0.0);
         self.changed = true;
-        // let data = self.select_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
         match key.unwrap() {
             winit::keyboard::Key::Named(name) => {
                 println!("{:?}", name);
@@ -479,18 +448,10 @@ impl TextEdit {
         }
         //背景
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        // self.fill_buffer = Some(fill_buffer);
         //文本选择
         self.select_render.param.rect = self.text_buffer.rect.clone();
         self.select_render.param.rect.set_width(0.0);
         self.select_render.init_rectangle(ui, false, false);
-        // let data = self.select_param.as_draw_param(false, false);
-        // let select_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.select_id = ui.context.render.rectangle.create_bind_group(&ui.device, &select_buffer);
-        // self.select_buffer = Some(select_buffer);
         //字符管理
         let wx = self.text_buffer.rect.dx().min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
@@ -500,10 +461,6 @@ impl TextEdit {
         self.cursor_render.param.rect.set_x_max(self.cursor_render.param.rect.dx().min + 2.0);
         self.cursor_render.param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
         self.cursor_render.init_rectangle(ui, false, false);
-        // let data = self.cursor_param.as_draw_param(false, false);
-        // let cursor_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.cursor_id = ui.context.render.rectangle.create_bind_group(&ui.device, &cursor_buffer);
-        // self.cursor_buffer = Some(cursor_buffer);
         //文本
         self.text_buffer.draw(ui);
     }
@@ -512,14 +469,8 @@ impl TextEdit {
         if !self.changed { return; }
         self.changed = false;
         self.cursor_render.update(ui, false, false);
-        // let data = self.cursor_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
         self.select_render.update(ui, false, false);
-        // let data = self.select_param.as_draw_param(false, false);
-        // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
         self.fill_render.update(ui, false, false);
-        // let data = self.fill_param.as_draw_param(self.hovered || self.focused, false);
-        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
     }
 }
 

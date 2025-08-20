@@ -29,7 +29,7 @@
 
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcParam, WrcRender};
+use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Shadow};
@@ -38,9 +38,6 @@ use crate::widgets::Widget;
 
 pub struct Rectangle {
     id: String,
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
     fill_render: RenderParam<RectParam>,
     hovered: bool,
     changed: bool,
@@ -51,9 +48,6 @@ impl Rectangle {
         Rectangle {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(rect, style)),
-            // fill_param: RectParam::new(rect, style),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
             hovered: false,
             changed: false,
         }
@@ -61,10 +55,6 @@ impl Rectangle {
 
     fn init(&mut self, ui: &mut Ui) {
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        // self.fill_buffer = Some(buffer);
     }
 
     pub fn with_rect(mut self, rect: Rect) -> Self {
@@ -100,8 +90,6 @@ impl Rectangle {
         if !self.changed { return; }
         self.changed = false;
         self.fill_render.update(ui,self.hovered, ui.device.device_input.mouse.pressed);
-        // let data = self.fill_render.param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-        // ui.device.queue.write_buffer(self.fill_render.buffer.as_ref().unwrap(), 0, data);
     }
 }
 
