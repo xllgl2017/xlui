@@ -32,7 +32,7 @@
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -53,9 +53,10 @@ pub struct CheckBox {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
     size_mode: SizeMode,
 
-    check_param: RectParam,
-    check_index: usize,
-    check_buffer: Option<wgpu::Buffer>,
+    check_render: RenderParam<RectParam>,
+    // check_param: RectParam,
+    // check_id: String,
+    // check_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
     contact_ids: Vec<String>,
@@ -78,9 +79,10 @@ impl CheckBox {
             value: v,
             callback: None,
             size_mode: SizeMode::Auto,
-            check_param: RectParam::new(Rect::new(), check_style),
-            check_index: 0,
-            check_buffer: None,
+            check_render: RenderParam::new(RectParam::new(Rect::new(), check_style)),
+            // check_param: RectParam::new(Rect::new(), check_style),
+            // check_id: "".to_string(),
+            // check_buffer: None,
             hovered: false,
             contact_ids: vec![],
         }
@@ -140,23 +142,25 @@ impl CheckBox {
 
     fn re_init(&mut self, ui: &mut Ui) {
         //复选框
-        self.check_param.rect = self.rect.clone();
-        self.check_param.rect.set_width(15.0);
-        self.check_param.rect.set_height(15.0);
-        let data = self.check_param.as_draw_param(false, self.value);
-        let check_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.check_index = ui.context.render.rectangle.create_bind_group(&ui.device, &check_buffer);
-        self.check_buffer = Some(check_buffer);
+        self.check_render.param.rect = self.rect.clone();
+        self.check_render.param.rect.set_width(15.0);
+        self.check_render.param.rect.set_height(15.0);
+        self.check_render.init_rectangle(ui, false, self.value);
+        // let data = self.check_param.as_draw_param(false, self.value);
+        // let check_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.check_id = ui.context.render.rectangle.create_bind_group(&ui.device, &check_buffer);
+        // self.check_buffer = Some(check_buffer);
         //文本
         self.text.draw(ui);
         self.check_text.reset_size(&ui.context);
-        self.check_text.rect = self.check_param.rect.clone();
+        self.check_text.rect = self.check_render.param.rect.clone();
         self.check_text.draw(ui);
     }
 
     fn update_check(&mut self, ui: &mut Ui) {
-        let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-        ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
+        self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        // let data = self.check_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+        // ui.device.queue.write_buffer(self.check_buffer.as_ref().unwrap(), 0, data);
     }
 }
 
@@ -170,7 +174,7 @@ impl Widget for CheckBox {
         // let resp = Response::new(&self.id, &self.rect);
         // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.check_index, pass);
+        ui.context.render.rectangle.render(&self.check_render, pass);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
         // resp

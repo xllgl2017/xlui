@@ -24,7 +24,7 @@
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -222,17 +222,20 @@ pub struct TextEdit {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, String)>>,
     char_layout: CharLayout,
 
-    fill_param: RectParam,
-    fill_index: usize,
-    fill_buffer: Option<wgpu::Buffer>,
+    fill_render: RenderParam<RectParam>,
+    // fill_param: RectParam,
+    // fill_id: String,
+    // fill_buffer: Option<wgpu::Buffer>,
 
-    select_param: RectParam,
-    select_index: usize,
-    select_buffer: Option<wgpu::Buffer>,
+    select_render: RenderParam<RectParam>,
+    // select_param: RectParam,
+    // select_id: String,
+    // select_buffer: Option<wgpu::Buffer>,
 
-    cursor_param: RectParam,
-    cursor_index: usize,
-    cursor_buffer: Option<wgpu::Buffer>,
+    cursor_render: RenderParam<RectParam>,
+    // cursor_param: RectParam,
+    // cursor_id: String,
+    // cursor_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
     pub(crate) focused: bool,
@@ -253,7 +256,7 @@ impl TextEdit {
         fill_style.border.clicked = fill_style.border.hovered.clone();
 
         let mut select_style = ClickStyle::new();
-        select_style.fill.inactive = Color::rgba(144, 209, 255, 100);//Color::rgba(255, 0, 0, 100); //
+        select_style.fill.inactive = Color::rgba(144, 209, 255, 100); //Color::rgba(255, 0, 0, 100); //
         select_style.fill.hovered = Color::rgba(144, 209, 255, 100);
         select_style.fill.clicked = Color::rgba(144, 209, 255, 100);
         select_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
@@ -274,17 +277,20 @@ impl TextEdit {
             callback: None,
             char_layout: CharLayout::new(),
 
-            fill_param: RectParam::new(Rect::new(), fill_style),
-            fill_index: 0,
-            fill_buffer: None,
+            fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            // fill_param: RectParam::new(Rect::new(), fill_style),
+            // fill_id: "".to_string(),
+            // fill_buffer: None,
 
-            select_param: RectParam::new(Rect::new(), select_style),
-            select_index: 0,
-            select_buffer: None,
+            select_render: RenderParam::new(RectParam::new(Rect::new(), select_style)),
+            // select_param: RectParam::new(Rect::new(), select_style),
+            // select_id: "".to_string(),
+            // select_buffer: None,
 
-            cursor_param: RectParam::new(Rect::new(), cursor_style),
-            cursor_index: 0,
-            cursor_buffer: None,
+            cursor_render: RenderParam::new(RectParam::new(Rect::new(), cursor_style)),
+            // cursor_param: RectParam::new(Rect::new(), cursor_style),
+            // cursor_id: "".to_string(),
+            // cursor_buffer: None,
             hovered: false,
             focused: false,
             mouse_press: false,
@@ -296,19 +302,19 @@ impl TextEdit {
     pub(crate) fn reset_size(&mut self, context: &Context) {
         self.text_buffer.reset_size(context); //计算行高
         match self.size_mode {
-            SizeMode::Auto => self.fill_param.rect.set_size(200.0, 25.0),
-            SizeMode::FixWidth => self.fill_param.rect.set_height(25.0),
-            SizeMode::FixHeight => self.fill_param.rect.set_width(200.0),
+            SizeMode::Auto => self.fill_render.param.rect.set_size(200.0, 25.0),
+            SizeMode::FixWidth => self.fill_render.param.rect.set_height(25.0),
+            SizeMode::FixHeight => self.fill_render.param.rect.set_width(200.0),
             SizeMode::Fix => {}
         }
-        let mut rect = self.fill_param.rect.clone_add_padding(&Padding::same(3.0));
+        let mut rect = self.fill_render.param.rect.clone_add_padding(&Padding::same(3.0));
         rect.add_min_x(2.0);
         rect.add_max_x(-2.0);
         self.text_buffer.rect = rect;
     }
 
     pub(crate) fn set_rect(&mut self, rect: Rect) {
-        self.fill_param.rect = rect;
+        self.fill_render.param.rect = rect;
         self.size_mode = SizeMode::Fix;
     }
 
@@ -328,17 +334,19 @@ impl TextEdit {
     }
 
     fn update_cursor(&mut self, ui: &mut Ui, xm: f32) {
-        self.cursor_param.rect.offset_x_to(xm);
-        let data = self.cursor_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
+        self.cursor_render.param.rect.offset_x_to(xm);
+        self.cursor_render.update(ui, false, false);
+        // let data = self.cursor_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
     }
 
     fn text_select(&mut self, ui: &mut Ui) {
         let lx = ui.device.device_input.mouse.lastest().x;
         if lx < self.text_buffer.rect.dx().min {
-            self.select_param.rect.set_x_min(self.text_buffer.rect.dx().min);
-            let data = self.select_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+            self.select_render.param.rect.set_x_min(self.text_buffer.rect.dx().min);
+            // self.select_render.update(ui, false, false);
+            // let data = self.select_param.as_draw_param(false, false);
+            // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
             let event = ui.context.event.clone();
             let wid = ui.context.window.id();
             std::thread::spawn(move || {
@@ -346,9 +354,10 @@ impl TextEdit {
                 event.send_event((wid, UpdateType::None)).unwrap();
             });
         } else if lx > self.text_buffer.rect.dx().max {
-            self.select_param.rect.set_x_max(self.text_buffer.rect.dx().max);
-            let data = self.select_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+            self.select_render.param.rect.set_x_max(self.text_buffer.rect.dx().max);
+            // self.select_render.update(ui, false, false);
+            // let data = self.select_param.as_draw_param(false, false);
+            // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
             let event = ui.context.event.clone();
             let wid = ui.context.window.id();
             std::thread::spawn(move || {
@@ -360,15 +369,15 @@ impl TextEdit {
             if let Some(pos) = pos {
                 let ct = &mut self.char_layout.chars[pos];
                 if lx > ui.device.device_input.mouse.pressed_pos.x { //向右选择
-                    self.select_param.rect.set_x_max(if lx >= ct.half_x() + self.char_layout.offset { ct.x.max } else { ct.x.min } + self.char_layout.offset);
+                    self.select_render.param.rect.set_x_max(if lx >= ct.half_x() + self.char_layout.offset { ct.x.max } else { ct.x.min } + self.char_layout.offset);
                     self.char_layout.selected.end = if lx >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos };
                 } else { //向左选择
-                    self.select_param.rect.set_x_min(if lx >= ct.half_x() + self.char_layout.offset { ct.x.max } else { ct.x.min } + self.char_layout.offset);
+                    self.select_render.param.rect.set_x_min(if lx >= ct.half_x() + self.char_layout.offset { ct.x.max } else { ct.x.min } + self.char_layout.offset);
                     self.char_layout.selected.start = if lx >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos };
                 }
                 let ct = &self.char_layout.chars[pos];
                 self.char_layout.reset_cursor(if lx >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos });
-                let xm = if lx > ui.device.device_input.mouse.pressed_pos.x { self.select_param.rect.dx().max } else { self.select_param.rect.dx().min };
+                let xm = if lx > ui.device.device_input.mouse.pressed_pos.x { self.select_render.param.rect.dx().max } else { self.select_render.param.rect.dx().min };
                 self.update_cursor(ui, xm);
             }
             self.changed = true;
@@ -377,8 +386,8 @@ impl TextEdit {
     }
 
     fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
-        self.select_param.rect.set_x_min(0.0);
-        self.select_param.rect.set_x_max(0.0);
+        self.select_render.param.rect.set_x_min(0.0);
+        self.select_render.param.rect.set_x_max(0.0);
         self.changed = true;
         // let data = self.select_param.as_draw_param(false, false);
         // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
@@ -455,7 +464,7 @@ impl TextEdit {
         self.text_buffer.set_text(text);
         let wx = self.text_buffer.rect.dx().min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
-        self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
+        self.cursor_render.param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
         self.changed = true;
     }
 
@@ -465,33 +474,36 @@ impl TextEdit {
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
         if init {
-            self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
+            self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
             self.reset_size(&ui.context);
         }
         //背景
-        let data = self.fill_param.as_draw_param(false, false);
-        let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        self.fill_buffer = Some(fill_buffer);
+        self.fill_render.init_rectangle(ui, false, false);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
+        // self.fill_buffer = Some(fill_buffer);
         //文本选择
-        self.select_param.rect = self.text_buffer.rect.clone();
-        self.select_param.rect.set_width(0.0);
-        let data = self.select_param.as_draw_param(false, false);
-        let select_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.select_index = ui.context.render.rectangle.create_bind_group(&ui.device, &select_buffer);
-        self.select_buffer = Some(select_buffer);
+        self.select_render.param.rect = self.text_buffer.rect.clone();
+        self.select_render.param.rect.set_width(0.0);
+        self.select_render.init_rectangle(ui, false, false);
+        // let data = self.select_param.as_draw_param(false, false);
+        // let select_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.select_id = ui.context.render.rectangle.create_bind_group(&ui.device, &select_buffer);
+        // self.select_buffer = Some(select_buffer);
         //字符管理
         let wx = self.text_buffer.rect.dx().min;
         self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
         //游标
-        self.cursor_param.rect = self.fill_param.rect.clone_add_padding(&Padding::same(5.0));
-        self.cursor_param.rect.set_x_min(self.cursor_param.rect.dx().min - 2.0);
-        self.cursor_param.rect.set_x_max(self.cursor_param.rect.dx().min + 2.0);
-        self.cursor_param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
-        let data = self.cursor_param.as_draw_param(false, false);
-        let cursor_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.cursor_index = ui.context.render.rectangle.create_bind_group(&ui.device, &cursor_buffer);
-        self.cursor_buffer = Some(cursor_buffer);
+        self.cursor_render.param.rect = self.fill_render.param.rect.clone_add_padding(&Padding::same(5.0));
+        self.cursor_render.param.rect.set_x_min(self.cursor_render.param.rect.dx().min - 2.0);
+        self.cursor_render.param.rect.set_x_max(self.cursor_render.param.rect.dx().min + 2.0);
+        self.cursor_render.param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
+        self.cursor_render.init_rectangle(ui, false, false);
+        // let data = self.cursor_param.as_draw_param(false, false);
+        // let cursor_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.cursor_id = ui.context.render.rectangle.create_bind_group(&ui.device, &cursor_buffer);
+        // self.cursor_buffer = Some(cursor_buffer);
         //文本
         self.text_buffer.draw(ui);
     }
@@ -499,12 +511,15 @@ impl TextEdit {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.changed { return; }
         self.changed = false;
-        let data = self.cursor_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
-        let data = self.select_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
-        let data = self.fill_param.as_draw_param(self.hovered || self.focused, false);
-        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        self.cursor_render.update(ui, false, false);
+        // let data = self.cursor_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(self.cursor_buffer.as_ref().unwrap(), 0, data);
+        self.select_render.update(ui, false, false);
+        // let data = self.select_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(self.select_buffer.as_ref().unwrap(), 0, data);
+        self.fill_render.update(ui, false, false);
+        // let data = self.fill_param.as_draw_param(self.hovered || self.focused, false);
+        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
     }
 }
 
@@ -513,11 +528,11 @@ impl Widget for TextEdit {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text_buffer.redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
-        if self.focused { ui.context.render.rectangle.render(self.cursor_index, pass); }
-        ui.context.render.rectangle.render(self.select_index, pass);
+        if self.focused { ui.context.render.rectangle.render(&self.cursor_render, pass); }
+        ui.context.render.rectangle.render(&self.select_render, pass);
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
@@ -525,7 +540,7 @@ impl Widget for TextEdit {
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
@@ -535,25 +550,25 @@ impl Widget for TextEdit {
             }
             UpdateType::MousePress => {
                 self.mouse_press = true;
-                if self.focused && !ui.device.device_input.pressed_at(&self.fill_param.rect) {
+                if self.focused && !ui.device.device_input.pressed_at(&self.fill_render.param.rect) {
                     self.focused = false;
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
-                if ui.device.device_input.pressed_at(&self.fill_param.rect) {
+                if ui.device.device_input.pressed_at(&self.fill_render.param.rect) {
                     self.focused = true;
                     //鼠标按下
                     let x = ui.device.device_input.mouse.lastest().x;
                     if x < self.char_layout.x_min {
-                        self.select_param.rect.set_x_min(self.char_layout.x_min);
-                        self.select_param.rect.set_x_max(self.char_layout.x_min);
+                        self.select_render.param.rect.set_x_min(self.char_layout.x_min);
+                        self.select_render.param.rect.set_x_max(self.char_layout.x_min);
                         self.char_layout.selected = 0..0;
                         self.update_cursor(ui, self.char_layout.x_min + self.char_layout.offset);
                         self.char_layout.reset_cursor(0);
                         ui.context.window.request_redraw();
                     } else if x > self.char_layout.x_min + self.char_layout.width {
-                        self.select_param.rect.set_x_min(self.char_layout.x_min + self.char_layout.width);
-                        self.select_param.rect.set_x_max(self.char_layout.x_min + self.char_layout.width);
+                        self.select_render.param.rect.set_x_min(self.char_layout.x_min + self.char_layout.width);
+                        self.select_render.param.rect.set_x_max(self.char_layout.x_min + self.char_layout.width);
                         self.char_layout.selected = self.char_layout.chars.len()..self.char_layout.chars.len();
                         self.update_cursor(ui, self.char_layout.x_min + self.char_layout.width + self.char_layout.offset);
                         self.char_layout.reset_cursor(self.char_layout.chars.len());
@@ -564,10 +579,10 @@ impl Widget for TextEdit {
                             let ct = &self.char_layout.chars[pos];
                             println!("r {} {}", pos, ct.char);
                             self.char_layout.selected = if x >= ct.half_x() + self.char_layout.offset { pos + 1..pos + 1 } else { pos..pos };
-                            self.select_param.rect.set_x_min(if x >= ct.half_x() + self.char_layout.offset { ct.x.max + self.char_layout.offset } else { ct.x.min + self.char_layout.offset });
-                            self.select_param.rect.set_x_max(if x >= ct.half_x() + self.char_layout.offset { ct.x.max + self.char_layout.offset } else { ct.x.min + self.char_layout.offset });
+                            self.select_render.param.rect.set_x_min(if x >= ct.half_x() + self.char_layout.offset { ct.x.max + self.char_layout.offset } else { ct.x.min + self.char_layout.offset });
+                            self.select_render.param.rect.set_x_max(if x >= ct.half_x() + self.char_layout.offset { ct.x.max + self.char_layout.offset } else { ct.x.min + self.char_layout.offset });
                             self.char_layout.reset_cursor(if x >= ct.half_x() + self.char_layout.offset { pos + 1 } else { pos });
-                            self.update_cursor(ui, self.select_param.rect.dx().max);
+                            self.update_cursor(ui, self.select_render.param.rect.dx().max);
                             ui.context.window.request_redraw();
                         }
                     }
@@ -576,42 +591,42 @@ impl Widget for TextEdit {
             }
             UpdateType::MouseRelease => self.mouse_press = false,
             UpdateType::KeyRelease(ref mut key) => {
-                if !self.focused || key.is_none() { return Response::new(&self.id, &self.fill_param.rect); }
+                if !self.focused || key.is_none() { return Response::new(&self.id, &self.fill_render.param.rect); }
                 self.key_input(key.take(), ui)
             }
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
-                self.fill_param.rect.offset(o);
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
+                self.fill_render.param.rect.offset(o);
                 self.text_buffer.rect.offset(o);
-                self.select_param.rect.offset(o);
-                self.cursor_param.rect.offset(o);
+                self.select_render.param.rect.offset(o);
+                self.cursor_render.param.rect.offset(o);
             }
             UpdateType::None => {
-                if !self.focused { return Response::new(&self.id, &self.fill_param.rect); }
+                if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
                 if let Some(c) = self.char_layout.next_char() && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max
                     && ui.device.device_input.mouse.lastest.x > ui.device.device_input.mouse.pressed_pos.x {
                     println!("p {} {}", self.char_layout.cursor, self.char_layout.chars.len());
-                    self.select_param.rect.add_min_x(-c.width);
+                    self.select_render.param.rect.add_min_x(-c.width);
                     self.char_layout.offset = -(c.x.max - self.text_buffer.rect.dx().max);
                     self.char_layout.cursor_add();
                     self.char_layout.selected.end = self.char_layout.chars.len();
 
-                    if self.select_param.rect.dx().min < self.text_buffer.rect.dx().min {
-                        self.select_param.rect.set_x_min(self.text_buffer.rect.dx().min);
+                    if self.select_render.param.rect.dx().min < self.text_buffer.rect.dx().min {
+                        self.select_render.param.rect.set_x_min(self.text_buffer.rect.dx().min);
                     }
                     self.changed = true;
                     self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
                     ui.context.window.request_redraw();
                 } else if let Some(c) = self.char_layout.previous_char() && ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min
                     && ui.device.device_input.mouse.lastest.x < ui.device.device_input.mouse.pressed_pos.x {
-                    self.select_param.rect.add_max_x(c.width);
+                    self.select_render.param.rect.add_max_x(c.width);
                     println!("n {} {} {}", self.char_layout.cursor, self.char_layout.chars.len(), self.char_layout.offset);
                     self.char_layout.offset += c.width;
                     if self.char_layout.offset >= 0.0 { self.char_layout.offset = 0.0 }
                     self.char_layout.cursor_reduce();
                     self.char_layout.selected.start = 0;
-                    if self.select_param.rect.dx().max > self.text_buffer.rect.dx().max {
-                        self.select_param.rect.set_x_max(self.text_buffer.rect.dx().max);
+                    if self.select_render.param.rect.dx().max > self.text_buffer.rect.dx().max {
+                        self.select_render.param.rect.set_x_max(self.text_buffer.rect.dx().max);
                     }
                     self.changed = true;
                     self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
@@ -620,6 +635,6 @@ impl Widget for TextEdit {
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_param.rect)
+        Response::new(&self.id, &self.fill_render.param.rect)
     }
 }

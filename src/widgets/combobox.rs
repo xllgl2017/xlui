@@ -26,7 +26,7 @@ use crate::frame::context::{Context, UpdateType};
 use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -51,9 +51,10 @@ pub struct ComboBox<T> {
     popup_rect: Rect,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)>>,
 
-    fill_param: RectParam,
-    fill_index: usize,
-    fill_buffer: Option<wgpu::Buffer>,
+    fill_render: RenderParam<RectParam>,
+    // fill_param: RectParam,
+    // fill_id: String,
+    // fill_buffer: Option<wgpu::Buffer>,
 
     selected: Arc<RwLock<Option<String>>>,
 
@@ -73,9 +74,10 @@ impl<T: Display + 'static> ComboBox<T> {
             data,
             popup_rect: Rect::new(),
             callback: None,
-            fill_param: RectParam::new(Rect::new(), fill_style),
-            fill_index: 0,
-            fill_buffer: None,
+            fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            // fill_param: RectParam::new(Rect::new(), fill_style),
+            // fill_id: "".to_string(),
+            // fill_buffer: None,
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
 
@@ -85,20 +87,20 @@ impl<T: Display + 'static> ComboBox<T> {
     fn reset_size(&mut self, context: &Context) {
         self.text_buffer.reset_size(context);
         match self.size_mode {
-            SizeMode::Auto => self.fill_param.rect.set_size(100.0, 20.0),
-            SizeMode::FixWidth => self.fill_param.rect.set_height(20.0),
-            SizeMode::FixHeight => self.fill_param.rect.set_width(100.0),
+            SizeMode::Auto => self.fill_render.param.rect.set_size(100.0, 20.0),
+            SizeMode::FixWidth => self.fill_render.param.rect.set_height(20.0),
+            SizeMode::FixHeight => self.fill_render.param.rect.set_width(100.0),
             SizeMode::Fix => {}
         }
-        self.text_buffer.rect = self.fill_param.rect.clone_add_padding(&Padding::same(2.0));
-        self.popup_rect = self.fill_param.rect.clone_with_size(&self.popup_rect);
-        self.popup_rect.set_width(self.fill_param.rect.width());
-        self.popup_rect.add_min_y(self.fill_param.rect.height() + 5.0);
-        self.popup_rect.add_max_y(self.fill_param.rect.height() + 5.0);
+        self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&Padding::same(2.0));
+        self.popup_rect = self.fill_render.param.rect.clone_with_size(&self.popup_rect);
+        self.popup_rect.set_width(self.fill_render.param.rect.width());
+        self.popup_rect.add_min_y(self.fill_render.param.rect.height() + 5.0);
+        self.popup_rect.add_max_y(self.fill_render.param.rect.height() + 5.0);
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.fill_param.rect.set_size(width, height);
+        self.fill_render.param.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
         self
     }
@@ -129,7 +131,7 @@ impl<T: Display + 'static> ComboBox<T> {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
+        self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
         self.reset_size(&ui.context);
         //下拉框布局
         let popup = Popup::new(ui, self.popup_rect.clone());
@@ -143,10 +145,11 @@ impl<T: Display + 'static> ComboBox<T> {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
         fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
-        let data = self.fill_param.as_draw_param(false, false);
-        let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        self.fill_buffer = Some(fill_buffer);
+        self.fill_render.init_rectangle(ui, false, false);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
+        // self.fill_buffer = Some(fill_buffer);
         //文本
         self.text_buffer.draw(ui);
     }
@@ -159,7 +162,7 @@ impl<T: Display + 'static> ComboBox<T> {
 
 impl<T: Display + 'static> Widget for ComboBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
-        if self.fill_buffer.is_none() { self.init(ui); }
+        // if self.fill_buffer.is_none() { self.init(ui); }
         // let resp = Response::new(&self.id, &self.fill_param.rect);
         // if ui.pass.is_none() { return resp; }
         let select = self.selected.read().unwrap();
@@ -180,7 +183,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             popup.open = false;
         }
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text_buffer.redraw(ui);
         // resp
     }
@@ -190,7 +193,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.fill_param.rect) {
+                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
                     popup.open = !popup.open;
                     ui.update_type = UpdateType::None;
@@ -199,6 +202,6 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_param.rect)
+        Response::new(&self.id, &self.fill_render.param.rect)
     }
 }

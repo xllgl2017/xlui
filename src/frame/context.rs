@@ -80,6 +80,7 @@ pub enum UpdateType {
     MouseWheel,
     KeyRelease(Option<winit::keyboard::Key>),
     Offset(Offset),
+    Drop,
 }
 
 impl UpdateType {
@@ -103,6 +104,7 @@ impl Debug for UpdateType {
             UpdateType::MouseWheel => f.write_str("MouseWheel"),
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
             UpdateType::Offset(_) => f.write_str("Offset"),
+            UpdateType::Drop => f.write_str("Drop")
         }
     }
 }

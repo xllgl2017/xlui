@@ -29,7 +29,7 @@
 
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcParam, WrcRender};
 use crate::response::Response;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Shadow};
@@ -38,9 +38,10 @@ use crate::widgets::Widget;
 
 pub struct Rectangle {
     id: String,
-    fill_param: RectParam,
-    fill_index: usize,
-    fill_buffer: Option<wgpu::Buffer>,
+    // fill_param: RectParam,
+    // fill_id: String,
+    // fill_buffer: Option<wgpu::Buffer>,
+    fill_render: RenderParam<RectParam>,
     hovered: bool,
     changed: bool,
 }
@@ -49,55 +50,58 @@ impl Rectangle {
     pub fn new(rect: Rect, style: ClickStyle) -> Self {
         Rectangle {
             id: crate::gen_unique_id(),
-            fill_param: RectParam::new(rect, style),
-            fill_index: 0,
-            fill_buffer: None,
+            fill_render: RenderParam::new(RectParam::new(rect, style)),
+            // fill_param: RectParam::new(rect, style),
+            // fill_id: "".to_string(),
+            // fill_buffer: None,
             hovered: false,
             changed: false,
         }
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        let data = self.fill_param.as_draw_param(false, false);
-        let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        self.fill_buffer = Some(buffer);
+        self.fill_render.init_rectangle(ui, false, false);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
+        // self.fill_buffer = Some(buffer);
     }
 
     pub fn with_rect(mut self, rect: Rect) -> Self {
-        self.fill_param.rect = rect;
+        self.fill_render.param.rect = rect;
         self
     }
 
     pub fn set_rect(&mut self, rect: Rect) {
-        self.fill_param.rect = rect;
+        self.fill_render.param.rect = rect;
     }
 
     pub fn with_shadow(mut self, shadow: Shadow) -> Self {
-        self.fill_param = self.fill_param.with_shadow(shadow);
+        self.fill_render.param = self.fill_render.param.with_shadow(shadow);
         self
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
         self.changed = true;
-        &mut self.fill_param.style
+        &mut self.fill_render.param.style
     }
 
     pub fn offset_x(&mut self, v: f32) {
         self.changed = true;
-        self.fill_param.shadow.offset[0] = v;
+        self.fill_render.param.shadow.offset[0] = v;
     }
 
     pub fn offset_y(&mut self, v: f32) {
         self.changed = true;
-        self.fill_param.shadow.offset[1] = v;
+        self.fill_render.param.shadow.offset[1] = v;
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.changed { return; }
         self.changed = false;
-        let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        self.fill_render.update(ui,self.hovered, ui.device.device_input.mouse.pressed);
+        // let data = self.fill_render.param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
+        // ui.device.queue.write_buffer(self.fill_render.buffer.as_ref().unwrap(), 0, data);
     }
 }
 
@@ -105,26 +109,26 @@ impl Widget for Rectangle {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
                 }
             }
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
-                self.fill_param.rect.offset(o);
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
+                self.fill_render.param.rect.offset(o);
                 self.changed = true;
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_param.rect)
+        Response::new(&self.id, &self.fill_render.param.rect)
     }
 }

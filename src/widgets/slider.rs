@@ -30,7 +30,7 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::pos::Pos;
@@ -51,17 +51,20 @@ pub struct Slider {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)>>,
     contact_ids: Vec<String>,
 
-    fill_param: RectParam,
-    fill_index: usize,
-    fill_buffer: Option<wgpu::Buffer>,
+    fill_render: RenderParam<RectParam>,
+    // fill_param: RectParam,
+    // fill_id: String,
+    // fill_buffer: Option<wgpu::Buffer>,
 
-    slider_param: CircleParam,
-    slider_index: usize,
-    slider_buffer: Option<wgpu::Buffer>,
+    slider_render: RenderParam<CircleParam>,
+    // slider_param: CircleParam,
+    // slider_id: String,
+    // slider_buffer: Option<wgpu::Buffer>,
 
-    slided_param: RectParam,
-    slided_index: usize,
-    slided_buffer: Option<wgpu::Buffer>,
+    slided_render: RenderParam<RectParam>,
+    // slided_param: RectParam,
+    // slided_id: String,
+    // slided_buffer: Option<wgpu::Buffer>,
 
     focused: bool,
     hovered: bool,
@@ -102,15 +105,18 @@ impl Slider {
             range: 0.0..1.0,
             callback: None,
             contact_ids: vec![],
-            fill_param: RectParam::new(Rect::new(), fill_style),
-            fill_index: 0,
-            fill_buffer: None,
-            slider_param: CircleParam::new(Rect::new(), slider_style),
-            slider_index: 0,
-            slider_buffer: None,
-            slided_param: RectParam::new(Rect::new(), slided_style),
-            slided_index: 0,
-            slided_buffer: None,
+            fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            slider_render: RenderParam::new(CircleParam::new(Rect::new(), slider_style)),
+            slided_render: RenderParam::new(RectParam::new(Rect::new(), slided_style)),
+            // fill_param: RectParam::new(Rect::new(), fill_style),
+            // fill_id: "".to_string(),
+            // fill_buffer: None,
+            // slider_param: CircleParam::new(Rect::new(), slider_style),
+            // slider_id: "".to_string(),
+            // slider_buffer: None,
+            // slided_param: RectParam::new(Rect::new(), slided_style),
+            // slided_id: "".to_string(),
+            // slided_buffer: None,
             focused: false,
             hovered: false,
             offset: 0.0,
@@ -151,29 +157,32 @@ impl Slider {
 
     fn re_init(&mut self, ui: &mut Ui) {
         //背景
-        self.fill_param.rect = self.rect.clone();
-        self.fill_param.rect.contract(8.0, 5.0);
-        let data = self.fill_param.as_draw_param(false, false);
-        let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        self.fill_buffer = Some(fill_buffer);
+        self.fill_render.param.rect = self.rect.clone();
+        self.fill_render.param.rect.contract(8.0, 5.0);
+        self.fill_render.init_rectangle(ui, false, false);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
+        // self.fill_buffer = Some(fill_buffer);
         //已滑动背景
-        self.slided_param.rect = self.fill_param.rect.clone();
+        self.slided_render.param.rect = self.fill_render.param.rect.clone();
         let scale = self.value / (self.range.end - self.range.start);
-        self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
-        let data = self.slided_param.as_draw_param(false, false);
-        let slided_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.slided_index = ui.context.render.rectangle.create_bind_group(&ui.device, &slided_buffer);
-        self.slided_buffer = Some(slided_buffer);
+        self.slided_render.param.rect.set_width(self.slided_render.param.rect.width() * scale);
+        self.slided_render.init_rectangle(ui, false, false);
+        // let data = self.slided_param.as_draw_param(false, false);
+        // let slided_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.slided_id = ui.context.render.rectangle.create_bind_group(&ui.device, &slided_buffer);
+        // self.slided_buffer = Some(slided_buffer);
         //滑块
-        self.slider_param.rect = self.rect.clone();
-        self.slider_param.rect.set_width(self.rect.height());
-        self.offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-        self.slider_param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
-        let data = self.slider_param.as_draw_param(false, false);
-        let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
-        self.slider_index = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
-        self.slider_buffer = Some(slider_buffer);
+        self.slider_render.param.rect = self.rect.clone();
+        self.slider_render.param.rect.set_width(self.rect.height());
+        self.offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
+        self.slider_render.param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
+        self.slider_render.init_circle(ui, false, false);
+        // let data = self.slider_param.as_draw_param(false, false);
+        // let slider_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
+        // self.slider_id = ui.context.render.circle.create_bind_group(&ui.device, &slider_buffer);
+        // self.slider_buffer = Some(slider_buffer);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -185,13 +194,16 @@ impl Slider {
             self.value = self.range.start;
         }
         let scale = self.value / (self.range.end - self.range.start);
-        self.slided_param.rect.set_width(self.fill_param.rect.width() * scale);
-        let data = self.slided_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
-        let data = self.slider_param.as_draw_param(self.hovered || self.focused, ui.device.device_input.mouse.pressed);
-        ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
-        let data = self.fill_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        self.slided_render.param.rect.set_width(self.fill_render.param.rect.width() * scale);
+        // let data = self.slided_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(self.slided_buffer.as_ref().unwrap(), 0, data);
+        self.slided_render.update(ui, false, false);
+        // let data = self.slider_param.as_draw_param(self.hovered || self.focused, ui.device.device_input.mouse.pressed);
+        // ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
+        self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        self.fill_render.update(ui, false, false);
     }
 }
 
@@ -199,21 +211,21 @@ impl Widget for Slider {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
-        ui.context.render.rectangle.render(self.slided_index, pass);
-        ui.context.render.circle.render(self.slider_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
+        ui.context.render.rectangle.render(&self.slided_render, pass);
+        ui.context.render.circle.render(&self.slider_render, pass);
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
-            self.slider_param.rect = self.rect.clone();
-            self.slider_param.rect.add_min_x(-self.rect.height() / 2.0);
-            self.slider_param.rect.set_width(self.rect.height());
-            let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-            let mut lx = self.fill_param.rect.dx().clone();
-            lx.extend(self.slider_param.rect.width() / 2.0);
-            self.offset = self.slider_param.rect.offset_x_limit(offset, &lx);
+            self.slider_render.param.rect = self.rect.clone();
+            self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
+            self.slider_render.param.rect.set_width(self.rect.height());
+            let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
+            let mut lx = self.fill_render.param.rect.dx().clone();
+            lx.extend(self.slider_render.param.rect.width() / 2.0);
+            self.offset = self.slider_render.param.rect.offset_x_limit(offset, &lx);
             self.changed = true;
             ui.context.window.request_redraw();
         }
@@ -223,11 +235,11 @@ impl Widget for Slider {
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let ox = ui.device.device_input.mouse.offset_x();
-                    let mut lx = self.fill_param.rect.dx().clone();
-                    lx.extend(self.slider_param.rect.width() / 2.0);
-                    let rox = self.slider_param.rect.offset_x_limit(self.offset + ox, &lx);
+                    let mut lx = self.fill_render.param.rect.dx().clone();
+                    lx.extend(self.slider_render.param.rect.width() / 2.0);
+                    let rox = self.slider_render.param.rect.offset_x_limit(self.offset + ox, &lx);
                     self.offset = rox;
-                    let cl = (self.slider_param.rect.width() / 2.0 + self.slider_param.rect.dx().min - self.fill_param.rect.dx().min) / self.fill_param.rect.width();
+                    let cl = (self.slider_render.param.rect.width() / 2.0 + self.slider_render.param.rect.dx().min - self.fill_render.param.rect.dx().min) / self.fill_render.param.rect.width();
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = cv;
                     self.changed = true;
@@ -241,7 +253,7 @@ impl Widget for Slider {
                     ui.context.window.request_redraw();
                     return Response::new(&self.id, &self.rect);
                 }
-                let hovered = ui.device.device_input.hovered_at(&self.slider_param.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.slider_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
@@ -249,7 +261,7 @@ impl Widget for Slider {
                 }
             }
             UpdateType::MousePress => {
-                if ui.device.device_input.pressed_at(&self.slider_param.rect) != self.focused {
+                if ui.device.device_input.pressed_at(&self.slider_render.param.rect) != self.focused {
                     self.focused = !self.focused;
                     self.changed = true;
                     ui.context.window.request_redraw();
@@ -265,9 +277,9 @@ impl Widget for Slider {
             UpdateType::Offset(ref o) => {
                 if !ui.can_offset { return Response::new(&self.id, &self.rect); }
                 self.rect.offset(o);
-                self.slider_param.rect.offset(o);
-                self.slided_param.rect.offset(o);
-                self.fill_param.rect.offset(o);
+                self.slider_render.param.rect.offset(o);
+                self.slided_render.param.rect.offset(o);
+                self.fill_render.param.rect.offset(o);
                 self.changed = true;
             }
             _ => {}

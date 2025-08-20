@@ -20,12 +20,11 @@
 //! }
 //! ```
 
-
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use crate::frame::context::{Context, UpdateType};
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -46,9 +45,10 @@ pub struct SelectItem<T> {
     value: T,
     parent_selected: Arc<RwLock<Option<String>>>,
 
-    fill_param: RectParam,
-    fill_index: usize,
-    fill_buffer: Option<wgpu::Buffer>,
+    // fill_param: RectParam,
+    // fill_id: String,
+    // fill_buffer: Option<wgpu::Buffer>,
+    fill_render: RenderParam<RectParam>,
 
     callback: Option<Box<dyn FnMut(&mut Option<T>)>>,
     hovered: bool,
@@ -72,9 +72,10 @@ impl<T: Display> SelectItem<T> {
             size_mode: SizeMode::Auto,
             value,
             parent_selected: Arc::new(RwLock::new(None)),
-            fill_param: RectParam::new(Rect::new(), fill_style),
-            fill_index: 0,
-            fill_buffer: None,
+            fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            // fill_param: RectParam::new(Rect::new(), fill_style),
+            // fill_id: "".to_string(),
+            // fill_buffer: None,
             callback: None,
             hovered: false,
             selected: false,
@@ -87,17 +88,17 @@ impl<T: Display> SelectItem<T> {
             SizeMode::Auto => {
                 let width = self.text.rect.width() + self.padding.horizontal();
                 let height = self.text.rect.height() + self.padding.vertical();
-                self.fill_param.rect.set_size(width, height);
+                self.fill_render.param.rect.set_size(width, height);
             }
-            SizeMode::FixWidth => self.fill_param.rect.set_height(self.text.rect.height()),
-            SizeMode::FixHeight => self.fill_param.rect.set_width(self.text.rect.width()),
+            SizeMode::FixWidth => self.fill_render.param.rect.set_height(self.text.rect.height()),
+            SizeMode::FixHeight => self.fill_render.param.rect.set_width(self.text.rect.width()),
             SizeMode::Fix => {}
         }
-        self.text.rect = self.fill_param.rect.clone_add_padding(&self.padding);
+        self.text.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
-        self.fill_param.rect.set_size(width, height);
+        self.fill_render.param.rect.set_size(width, height);
         self.size_mode = SizeMode::Fix;
     }
 
@@ -126,7 +127,7 @@ impl<T: Display> SelectItem<T> {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
+        self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
         self.reset_size(&ui.context);
         self.re_init(ui);
     }
@@ -135,10 +136,11 @@ impl<T: Display> SelectItem<T> {
         //背景
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
-        let data = self.fill_param.as_draw_param(selected, selected);
-        let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        self.fill_buffer = Some(fill_buffer);
+        self.fill_render.init_rectangle(ui, selected, selected);
+        // let data = self.fill_param.as_draw_param(selected, selected);
+        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
+        // self.fill_buffer = Some(fill_buffer);
         //文本
         self.text.draw(ui);
     }
@@ -151,18 +153,20 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
         let selected = current.as_ref() == Some(&self.value.to_string());
         if !selected && self.selected {
             self.selected = false;
-            let data = self.fill_param.as_draw_param(false, false);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+            self.fill_render.update(ui, false, false);
+            // let data = self.fill_param.as_draw_param(false, false);
+            // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         } else if selected && !self.selected {
             self.selected = true;
-            let data = self.fill_param.as_draw_param(true, true);
-            ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+            self.fill_render.update(ui, true, true);
+            // let data = self.fill_param.as_draw_param(true, true);
+            // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         }
         drop(current);
         // let resp = Response::new(&self.id, &self.fill_param.rect);
         // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text.redraw(ui);
         // resp
     }
@@ -175,45 +179,48 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                 println!("22222222222222222222");
             }
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     let current = self.parent_selected.read().unwrap();
                     let selected = current.as_ref() == Some(&self.value.to_string());
-                    let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
-                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
+                    // let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
+                    // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                     ui.context.window.request_redraw();
                 }
             }
             UpdateType::MousePress => {}
             UpdateType::MouseRelease => {
-                let clicked = ui.device.device_input.click_at(&self.fill_param.rect);
+                let clicked = ui.device.device_input.click_at(&self.fill_render.param.rect);
                 if clicked {
                     self.selected = true;
                     let mut selected = self.parent_selected.write().unwrap();
                     *selected = Some(self.value.to_string());
-                    let data = self.fill_param.as_draw_param(true, true);
-                    ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                    self.fill_render.update(ui, true, true);
+                    // let data = self.fill_param.as_draw_param(true, true);
+                    // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, &self.fill_param.rect);
+                    return Response::new(&self.id, &self.fill_render.param.rect);
                 }
             }
             UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(_) => {}
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
                 let current = self.parent_selected.read().unwrap();
                 let selected = current.as_ref() == Some(&self.value.to_string());
-                self.fill_param.rect.offset(o);
-                let data = self.fill_param.as_draw_param(selected, selected);
-                ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+                self.fill_render.param.rect.offset(o);
+                // let data = self.fill_param.as_draw_param(selected, selected);
+                // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
                 self.text.rect.offset(o);
                 ui.context.window.request_redraw();
-                return Response::new(&self.id, &self.fill_param.rect);
+                self.fill_render.update(ui, selected, self.hovered);
+                return Response::new(&self.id, &self.fill_render.param.rect);
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_param.rect)
+        Response::new(&self.id, &self.fill_render.param.rect)
     }
 }

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use crate::frame::context::UpdateType;
 use crate::frame::{App, WindowAttribute};
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
@@ -5,30 +7,36 @@ use crate::layout::popup::Popup;
 use crate::map::Map;
 use crate::Offset;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
+use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::pos::Pos;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle, Shadow};
 use crate::ui::Ui;
+use crate::widgets::button::Button;
 
 pub struct InnerWindow {
     pub(crate) id: String,
     padding: Padding,
-    fill_index: usize,
-    fill_param: RectParam,
-    fill_buffer: wgpu::Buffer,
+    fill_render: RenderParam<RectParam>,
+    // fill_id: String,
+    // fill_param: RectParam,
+    // fill_buffer: wgpu::Buffer,
     attr: WindowAttribute,
     title_rect: Rect,
     offset: Offset,
     press_title: bool,
     change: bool,
+    pub(crate) on_close: Option<Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)>>,
     w: Box<dyn App>,
     layout: Option<LayoutKind>,
     popups: Option<Map<Popup>>,
     inner_windows: Option<Map<InnerWindow>>,
+    pub(crate) request_close: Arc<AtomicBool>,
 }
 
 impl InnerWindow {
@@ -44,9 +52,11 @@ impl InnerWindow {
         rect.add_min_y(attr.pos_y_f32());
         let mut fill_param = RectParam::new(rect.clone(), Popup::popup_style())
             .with_shadow(shadow);
-        let data = fill_param.as_draw_param(false, false);
-        let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        let fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
+        let mut fill_render = RenderParam::new(fill_param);
+        fill_render.init_rectangle(ui, false, false);
+        // let data = fill_param.as_draw_param(false, false);
+        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // let fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
         let padding = Padding::same(5.0);
         let mut layout = VerticalLayout::new();
         layout.max_rect = rect;
@@ -54,9 +64,10 @@ impl InnerWindow {
         let layout = LayoutKind::Vertical(layout);
         let mut window = InnerWindow {
             id: crate::gen_unique_id(),
-            fill_index,
-            fill_param,
-            fill_buffer,
+            fill_render,
+            // fill_id: fill_index,
+            // fill_param,
+            // fill_buffer,
             layout: Some(layout),
             popups: Some(Map::new()),
             padding,
@@ -65,8 +76,10 @@ impl InnerWindow {
             offset: Offset::new(Pos::new()).delete_offset(),
             press_title: false,
             change: false,
+            on_close: None,
             w: Box::new(w),
             inner_windows: Some(Map::new()),
+            request_close: Arc::new(AtomicBool::new(false)),
         };
         window.draw_title(ui);
         window.draw_context(ui);
@@ -74,8 +87,8 @@ impl InnerWindow {
     }
 
     fn draw_title(&mut self, ui: &mut Ui) {
-        let mut title_layout = HorizontalLayout::new();
-        title_layout.max_rect = self.fill_param.rect.clone();
+        let mut title_layout = HorizontalLayout::left_to_right();
+        title_layout.max_rect = self.fill_render.param.rect.clone();
         title_layout.max_rect.contract(1.0, 1.0); //向内缩小1像素
         title_layout.max_rect.set_height(22.0);
         title_layout.width = title_layout.max_rect.width();
@@ -92,9 +105,38 @@ impl InnerWindow {
         ui.paint_rect(self.title_rect.clone(), title_style);
         ui.image("logo.jpg", (16.0, 16.0));
         ui.label("InnerWindow");
-        let title_layout = ui.layout.take().unwrap(); //防止crash
+        let mut title_layout = ui.layout.take().unwrap(); //防止crash
+        let mut rect = title_layout.available_rect().clone();
+        rect.set_x_max(title_layout.max_rect().dx().max);
+        let mut title_close_layout = HorizontalLayout::right_to_left().max_rect(title_layout.available_rect().clone(), Padding::ZERO);
+        title_close_layout.item_space = 0.0;
+        ui.layout = Some(LayoutKind::Horizontal(title_close_layout));
+        let mut style = ClickStyle::new();
+        style.fill.inactive = Color::TRANSPARENT;
+        style.fill.hovered = Color::rgba(255, 0, 0, 100);
+        style.fill.clicked = Color::rgba(255, 0, 0, 150);
+        style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+        let mut btn = Button::new("×").width(20.0).height(20.0);
+        btn.set_style(style.clone());
+        let closed = self.request_close.clone();
+        btn.set_inner_callback(move || {
+            closed.store(true, Ordering::SeqCst);
+        });
+        ui.add(btn);
+        let mut btn = Button::new("□").width(20.0).height(20.0);
+        style.fill.hovered = Color::rgba(160, 160, 160, 100);
+        style.fill.clicked = Color::rgba(160, 160, 160, 150);
+        btn.set_style(style.clone());
+        ui.add(btn);
+        let mut btn = Button::new("-").width(20.0).height(20.0);
+        btn.set_style(style);
+        ui.add(btn);
+        let title_close_layout = ui.layout.take().unwrap();
+
+
         ui.update_type = UpdateType::None;
         ui.layout = previous_layout;
+        title_layout.add_child(crate::gen_unique_id(), title_close_layout);
         self.layout.as_mut().unwrap().add_child(crate::gen_unique_id(), title_layout);
     }
 
@@ -115,8 +157,9 @@ impl InnerWindow {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.change { return; }
         self.change = false;
-        let data = self.fill_param.as_draw_param(false, false);
-        ui.device.queue.write_buffer(&self.fill_buffer, 0, data);
+        self.fill_render.update(ui, false, false);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // ui.device.queue.write_buffer(&self.fill_buffer, 0, data);
     }
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {
@@ -127,7 +170,7 @@ impl InnerWindow {
                     self.offset.x = ox;
                     self.offset.y = oy;
                     self.offset.pos = ui.device.device_input.mouse.lastest;
-                    self.fill_param.rect.offset(&self.offset);
+                    self.fill_render.param.rect.offset(&self.offset);
                     self.title_rect.offset(&self.offset);
                     ui.update_type = UpdateType::Offset(self.offset.clone());
                     ui.can_offset = true;
@@ -137,28 +180,32 @@ impl InnerWindow {
             }
             UpdateType::MousePress => {
                 self.press_title = ui.device.device_input.pressed_at(&self.title_rect);
-                if self.press_title { return true; }
+                if self.press_title { return false; }
             }
             UpdateType::MouseRelease => {
                 self.press_title = false;
-                if ui.device.device_input.hovered_at(&self.title_rect) { return true; }
+                if ui.device.device_input.hovered_at(&self.title_rect) { return false; }
             }
             _ => {}
         }
         false
     }
 
+    pub fn on_close<A: App>(&mut self, f: impl FnMut(&mut A, InnerWindow, &mut Ui) + 'static) {
+        self.on_close = Some(Callback::create_inner_close(f));
+    }
+
     pub fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().redraw(ui);
         self.w.redraw(ui);
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
         if self.window_update(oui) { return; }
-        if !oui.device.device_input.hovered_at(&self.fill_param.rect) && !self.press_title { return; }
+        if !oui.device.device_input.hovered_at(&self.fill_render.param.rect) && !self.press_title { return; }
         let mut nui = Ui {
             device: oui.device,
             context: oui.context,
@@ -166,7 +213,7 @@ impl InnerWindow {
             pass: None,
             layout: self.layout.take(),
             popups: self.popups.take(),
-            current_rect: self.fill_param.rect.clone(),
+            current_rect: self.fill_render.param.rect.clone(),
             update_type: oui.update_type.clone(),
             can_offset: oui.can_offset,
             inner_windows: self.inner_windows.take(),

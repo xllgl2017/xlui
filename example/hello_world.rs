@@ -1,3 +1,5 @@
+mod tr;
+
 use crate::render::RoundedBorderRenderer;
 use glyphon::{Cache, Resolution, Viewport};
 use std::sync::Arc;
@@ -14,6 +16,7 @@ use xlui::frame::context::{Context, Render, UpdateType};
 use xlui::map::Map;
 use xlui::size::Size;
 use xlui::{Device, DeviceInput};
+use crate::tr::TriangleRender;
 
 mod render;
 
@@ -21,6 +24,7 @@ struct State {
     device: Device,
     context: Context,
     rounded_renderer: RoundedBorderRenderer,
+    triangle_render: TriangleRender,
 }
 
 impl State {
@@ -66,11 +70,12 @@ impl State {
             event,
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
-
+        let triangle_render = TriangleRender::new(&device.device, cap.formats[0]);
         let mut state = State {
             device,
             context,
             rounded_renderer,
+            triangle_render,
         };
 
         // Configure surface for the first time
@@ -129,7 +134,8 @@ impl State {
             timestamp_writes: None,
             occlusion_query_set: None,
         });
-        self.rounded_renderer.draw(&mut renderpass);
+        // self.rounded_renderer.draw(&mut renderpass);
+        self.triangle_render.render(&mut renderpass);
         drop(renderpass);
 
         // Submit the command in the queue to execute

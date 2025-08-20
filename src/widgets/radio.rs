@@ -28,7 +28,7 @@
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::rect::Rect;
@@ -47,13 +47,15 @@ pub struct RadioButton {
     pub(crate) callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
     size_mode: SizeMode,
 
-    outer_param: CircleParam,
-    outer_index: usize,
-    outer_buffer: Option<wgpu::Buffer>,
+    outer_render: RenderParam<CircleParam>,
+    // outer_param: CircleParam,
+    // outer_id: String,
+    // outer_buffer: Option<wgpu::Buffer>,
 
-    inner_param: CircleParam,
-    inner_index: usize,
-    inner_buffer: Option<wgpu::Buffer>,
+    inner_render: RenderParam<CircleParam>,
+    // inner_param: CircleParam,
+    // inner_id: String,
+    // inner_buffer: Option<wgpu::Buffer>,
 
     hovered: bool,
     contact_ids: Vec<String>,
@@ -83,12 +85,14 @@ impl RadioButton {
             text: TextBuffer::new(label.to_string()),
             callback: None,
             size_mode: SizeMode::Auto,
-            outer_param: CircleParam::new(Rect::new(), outer_style),
-            outer_index: 0,
-            outer_buffer: None,
-            inner_param: CircleParam::new(Rect::new(), inner_style),
-            inner_index: 0,
-            inner_buffer: None,
+            // outer_param: CircleParam::new(Rect::new(), outer_style),
+            // outer_id: "".to_string(),
+            // outer_buffer: None,
+            // inner_param: CircleParam::new(Rect::new(), inner_style),
+            // inner_id: "".to_string(),
+            // inner_buffer: None,
+            outer_render: RenderParam::new(CircleParam::new(Rect::new(), outer_style)),
+            inner_render: RenderParam::new(CircleParam::new(Rect::new(), inner_style)),
             hovered: false,
             contact_ids: vec![],
         }
@@ -141,31 +145,35 @@ impl RadioButton {
 
     fn re_init(&mut self, ui: &mut Ui) {
         //外圆
-        self.outer_param.rect = self.rect.clone();
-        self.outer_param.rect.set_width(self.rect.height());
-        let data = self.outer_param.as_draw_param(self.value, self.value);
-        let outer_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
-        self.outer_index = ui.context.render.circle.create_bind_group(&ui.device, &outer_buffer);
-        self.outer_buffer = Some(outer_buffer);
+        self.outer_render.param.rect = self.rect.clone();
+        self.outer_render.param.rect.set_width(self.rect.height());
+        self.outer_render.init_circle(ui, self.value, self.value);
+        // let data = self.outer_param.as_draw_param(self.value, self.value);
+        // let outer_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
+        // self.outer_id = ui.context.render.circle.create_bind_group(&ui.device, &outer_buffer);
+        // self.outer_buffer = Some(outer_buffer);
         //内圆
-        self.inner_param.rect = self.rect.clone();
+        self.inner_render.param.rect = self.rect.clone();
 
-        self.inner_param.rect.add_min_x(4.0);
-        self.inner_param.rect.contract_y(4.0);
-        self.inner_param.rect.set_width(self.inner_param.rect.height());
-        let data = self.inner_param.as_draw_param(self.value, self.value);
-        let inner_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
-        self.inner_index = ui.context.render.circle.create_bind_group(&ui.device, &inner_buffer);
-        self.inner_buffer = Some(inner_buffer);
+        self.inner_render.param.rect.add_min_x(4.0);
+        self.inner_render.param.rect.contract_y(4.0);
+        self.inner_render.param.rect.set_width(self.inner_render.param.rect.height());
+        self.inner_render.init_circle(ui, self.value, self.value);
+        // let data = self.inner_param.as_draw_param(self.value, self.value);
+        // let inner_buffer = ui.context.render.circle.create_buffer(&ui.device, data);
+        // self.inner_id = ui.context.render.circle.create_bind_group(&ui.device, &inner_buffer);
+        // self.inner_buffer = Some(inner_buffer);
         //文本
         self.text.draw(ui);
     }
 
     fn update_radio(&mut self, ui: &mut Ui) {
-        let data = self.outer_param.as_draw_param(self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-        ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
-        let data = self.inner_param.as_draw_param(self.value, ui.device.device_input.mouse.pressed || self.value);
-        ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
+        self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+        // let data = self.outer_param.as_draw_param(self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+        // ui.device.queue.write_buffer(self.outer_buffer.as_ref().unwrap(), 0, data);
+        // let data = self.inner_param.as_draw_param(self.value, ui.device.device_input.mouse.pressed || self.value);
+        // ui.device.queue.write_buffer(self.inner_buffer.as_ref().unwrap(), 0, data);
+        self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
         ui.context.window.request_redraw();
     }
 }
@@ -177,8 +185,8 @@ impl Widget for RadioButton {
         // let resp = Response::new(&self.id, &self.rect);
         // if ui.pass.is_none() { return resp; }
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.circle.render(self.outer_index, pass);
-        ui.context.render.circle.render(self.inner_index, pass);
+        ui.context.render.circle.render(&self.outer_render, pass);
+        ui.context.render.circle.render(&self.inner_render, pass);
         self.text.redraw(ui);
         // resp
     }
@@ -207,6 +215,10 @@ impl Widget for RadioButton {
                     ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
                 }
             }
+            // UpdateType::Drop => {
+            //     ui.context.render.circle.remove(&self.outer_id);
+            //     ui.context.render.circle.remove(&self.inner_id);
+            // }
             _ => {}
         }
         if let Some(v) = ui.context.updates.remove(&self.id) {

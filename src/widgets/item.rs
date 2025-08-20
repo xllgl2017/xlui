@@ -1,6 +1,6 @@
 use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
-use crate::render::WrcRender;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
@@ -12,9 +12,10 @@ use crate::frame::context::UpdateType;
 
 pub struct ItemWidget {
     pub(crate) id: String,
-    fill_param: RectParam,
-    fill_index: usize,
-    fill_buffer: Option<wgpu::Buffer>,
+    fill_render: RenderParam<RectParam>,
+    // fill_param: RectParam,
+    // fill_id: String,
+    // fill_buffer: Option<wgpu::Buffer>,
     hovered: bool,
     layout: Option<LayoutKind>,
     padding: Padding,
@@ -27,9 +28,10 @@ impl ItemWidget {
     pub fn new(layout: LayoutKind) -> Self {
         ItemWidget {
             id: crate::gen_unique_id(),
-            fill_param: RectParam::new(Rect::new(), ClickStyle::new()),
-            fill_index: 0,
-            fill_buffer: None,
+            fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
+            // fill_param: RectParam::new(Rect::new(), ClickStyle::new()),
+            // fill_id: "".to_string(),
+            // fill_buffer: None,
             hovered: false,
             layout: Some(layout),
             padding: Padding::same(2.0),
@@ -40,7 +42,7 @@ impl ItemWidget {
     }
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
-        self.fill_param.rect.set_size(w, h);
+        self.fill_render.param.rect.set_size(w, h);
         self
     }
 
@@ -50,7 +52,7 @@ impl ItemWidget {
     // }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
-        self.fill_param.style = style;
+        self.fill_render.param.style = style;
         self
     }
 
@@ -60,8 +62,8 @@ impl ItemWidget {
     // }
 
     pub fn show(mut self, ui: &mut Ui, mut context: impl FnMut(&mut Ui)) {
-        self.fill_param.rect = ui.layout().available_rect().clone_with_size(&self.fill_param.rect);
-        self.layout.as_mut().unwrap().set_rect(self.fill_param.rect.clone(), &self.padding);
+        self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
+        self.layout.as_mut().unwrap().set_rect(self.fill_render.param.rect.clone(), &self.padding);
         let previous_layout = ui.layout.replace(self.layout.take().unwrap()).unwrap();
         if let UpdateType::Init = ui.update_type {
             println!("init", );
@@ -73,8 +75,9 @@ impl ItemWidget {
     }
 
     fn update_rect(&mut self, ui: &mut Ui) {
-        let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
-        ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
+        self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+        // let data = self.fill_param.as_draw_param(self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
         ui.context.window.request_redraw();
     }
 
@@ -89,10 +92,11 @@ impl ItemWidget {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        let data = self.fill_param.as_draw_param(false, false);
-        let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        self.fill_index = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        self.fill_buffer = Some(buffer);
+        self.fill_render.init_rectangle(ui, false, false);
+        // let data = self.fill_param.as_draw_param(false, false);
+        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
+        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
+        // self.fill_buffer = Some(buffer);
     }
 }
 
@@ -107,7 +111,7 @@ impl Widget for ItemWidget {
             self.update_rect(ui);
         }
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(self.fill_index, pass);
+        ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().redraw(ui);
         // Response::new(&self.id, &self.fill_param.rect)
     }
@@ -121,7 +125,7 @@ impl Widget for ItemWidget {
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.fill_param.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.update_rect(ui);
@@ -129,24 +133,24 @@ impl Widget for ItemWidget {
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.fill_param.rect) {
+                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
                     self.selected = true;
                     if let Some(ref mut callback) = self.callback {
                         callback(&self.id, ui);
                     }
                     self.update_rect(ui);
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, &self.fill_param.rect);
+                    return Response::new(&self.id, &self.fill_render.param.rect);
                 }
             }
             UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_param.rect); }
-                self.fill_param.rect.offset(o);
+                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
+                self.fill_render.param.rect.offset(o);
                 self.update_rect(ui);
                 self.layout.as_mut().unwrap().update(ui);
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_param.rect)
+        Response::new(&self.id, &self.fill_render.param.rect)
     }
 }

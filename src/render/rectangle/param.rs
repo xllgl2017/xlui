@@ -1,10 +1,11 @@
+use crate::render::WrcParam;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Shadow};
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
 pub struct RectDrawParam {
-    pos: [f32; 2],           //⬅️ 左上角顶点位置 (NDC)
+    pos: [f32; 2],           //⬅️ 左上角顶点位置
     size: [f32; 2],          //⬅️ 矩形的宽高
     radius_tl: f32,          //⬅️ 左上圆角
     radius_tr: f32,          //⬅️ 右上圆角
@@ -64,8 +65,10 @@ impl RectParam {
         self.draw.shadow_color = self.shadow.color.as_gamma_rgba();
         self
     }
+}
 
-    pub fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
+impl WrcParam for RectParam {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);
         self.draw.pos = [self.rect.dx().min, self.rect.dy().min];

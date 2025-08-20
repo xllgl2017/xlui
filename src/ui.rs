@@ -20,6 +20,7 @@ use crate::{Device, NumCastExt, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
+use std::sync::atomic::Ordering;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use crate::layout::inner::InnerWindow;
 
@@ -81,8 +82,21 @@ impl AppContext {
             request_update: None,
         };
         app.update(&mut ui);
-        ui.app = Some(app);
+
         self.inner_windows = ui.inner_windows.take();
+        for i in 0..self.inner_windows.as_ref().unwrap().len() {
+            let inner_widget = &mut self.inner_windows.as_mut().unwrap()[i];
+            inner_widget.update(&mut ui);
+            let closed = inner_widget.request_close.load(Ordering::SeqCst);
+            if !closed { continue; }
+            let wid = inner_widget.id.clone();
+            let mut inner_window = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
+            let callback = inner_window.on_close.take();
+            if let Some(mut callback) = callback {
+                callback(app, inner_window, &mut ui);
+            }
+        }
+        ui.app = Some(app);
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.update(&mut ui);
         }
@@ -204,7 +218,7 @@ impl AppContext {
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.update(&mut ui);
         }
-        ui.inner_windows=self.inner_windows.take();
+        ui.inner_windows = self.inner_windows.take();
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
@@ -276,7 +290,7 @@ impl<'a> Ui<'a> {
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
-        let current_layout = HorizontalLayout::new().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
+        let current_layout = HorizontalLayout::left_to_right().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::Horizontal(current_layout)).unwrap();
         context(self);
         let current_layout = self.layout.replace(previous_layout).unwrap();

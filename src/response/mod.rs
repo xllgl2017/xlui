@@ -2,6 +2,7 @@ use crate::ui::Ui;
 use std::any::Any;
 use std::ops::DerefMut;
 use crate::frame::App;
+use crate::layout::inner::InnerWindow;
 use crate::size::rect::Rect;
 use crate::widgets::button::Button;
 
@@ -48,6 +49,14 @@ impl Callback {
             let app = box_app.deref_mut() as &mut dyn Any;
             let t = app.downcast_mut::<A>().unwrap();
             f(t, uim, value)
+        })
+    }
+
+    pub(crate) fn create_inner_close<A: 'static>(mut f: impl FnMut(&mut A, InnerWindow, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)> {
+        Box::new(move |box_app, window, ui| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
+            f(t, window, ui)
         })
     }
 
