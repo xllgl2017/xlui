@@ -293,6 +293,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 self.up_rect.offset(o);
                 self.down_rect.offset(o);
                 self.up_render.param.offset(o);
+                self.down_render.param.offset(o);
                 self.changed = true;
             }
             UpdateType::Drop => {}
