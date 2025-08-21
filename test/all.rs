@@ -2,6 +2,7 @@ mod frame;
 
 use std::fmt::{Display, Formatter};
 use xlui::frame::{App, WindowAttribute};
+use xlui::layout::inner::InnerWindow;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use crate::frame::TestFrame;
@@ -29,8 +30,14 @@ impl XlUi {
     pub fn new() -> XlUi {
         XlUi {}
     }
-    pub fn open_test_widget(&mut self, _: &mut Button, ui: &mut Ui) {
-        ui.create_inner_window(TestFrame::new());
+
+    fn on_inner_close(&mut self, window: InnerWindow, _: &mut Ui) {
+        let frame: TestFrame = window.to_();
+        println!("{} {}", frame.border_radius, frame.border_width);
+    }
+
+    fn open_test_widget(&mut self, _: &mut Button, ui: &mut Ui) {
+        ui.create_inner_window(TestFrame::new()).on_close(Self::on_inner_close);
     }
 }
 

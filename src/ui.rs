@@ -305,9 +305,11 @@ impl<'a> Ui<'a> {
         self.layout().add_child(crate::gen_unique_id(), current_layout);
     }
 
-    pub fn create_inner_window<W: App>(&mut self, w: W) {
+    pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {
         let inner_window = InnerWindow::new(w, self);
+        let id = inner_window.id.clone();
         self.inner_windows.as_mut().unwrap().insert(inner_window.id.clone(), inner_window);
+        self.inner_windows.as_mut().unwrap().get_mut(&id).unwrap()
     }
 
 

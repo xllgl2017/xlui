@@ -66,9 +66,6 @@ pub struct Button {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)>>,
     inner_callback: Option<Box<dyn FnMut()>>,
     fill_render: RenderParam<RectParam>,
-    // fill_id: String,
-    // fill_param: RectParam,
-    // fill_buffer: Option<wgpu::Buffer>,
     image: Option<Image>,
     image_rect: Rect,
     hovered: bool,
@@ -87,9 +84,6 @@ impl Button {
             size_mode: SizeMode::Auto,
             callback: None,
             inner_callback: None,
-            // fill_id: "".to_string(),
-            // fill_param: RectParam::new(Rect::new(), ClickStyle::new()),
-            // fill_buffer: None,
             image: None,
             image_rect: Rect::new(),
             hovered: false,
@@ -215,11 +209,6 @@ impl Button {
         }
         //按钮矩形
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_render.param.as_draw_param(false, false);
-        // let buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &buffer);
-        // self.fill_buffer = Some(buffer);
-        //
         if let Some(ref mut image) = self.image {
             image.update(ui);
             image.rect = self.image_rect.clone();
@@ -229,10 +218,9 @@ impl Button {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        println!("{} {}", self.hovered, ui.device.device_input.mouse.pressed);
+        if !self.changed { return; }
+        self.changed = false;
         self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-        // let data = self.fill_param.as_draw_param(self.hovered, ui.device.device_input.mouse.pressed);
-        // ui.device.queue.write_buffer(self.fill_buffer.as_ref().unwrap(), 0, data);
     }
 }
 

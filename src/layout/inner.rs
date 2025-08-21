@@ -1,3 +1,5 @@
+use std::any::Any;
+use std::ops::DerefMut;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
@@ -115,9 +117,9 @@ impl InnerWindow {
         style.fill.clicked = Color::rgba(160, 160, 160, 150);
         btn.set_style(style.clone());
         ui.add(btn);
-        let mut btn = Button::new("-").width(20.0).height(20.0);
-        btn.set_style(style);
-        ui.add(btn);
+        // let mut btn = Button::new("-").width(20.0).height(20.0);
+        // btn.set_style(style);
+        // ui.add(btn);
         let title_close_layout = ui.layout.take().unwrap();
 
 
@@ -174,6 +176,12 @@ impl InnerWindow {
             _ => {}
         }
         false
+    }
+
+    pub fn to_<W: 'static>(mut self) -> W {
+        let app: Box<dyn Any> = self.w;
+        let app = app.downcast().unwrap();
+        *app
     }
 
     pub fn on_close<A: App>(&mut self, f: impl FnMut(&mut A, InnerWindow, &mut Ui) + 'static) {

@@ -16,8 +16,8 @@ fn main() {
 
 pub struct TestFrame {
     frame: Rectangle,
-    border_width: f32,
-    border_radius: u8,
+    pub border_width: f32,
+    pub border_radius: u8,
 }
 impl TestFrame {
     pub fn new() -> TestFrame {
