@@ -11,7 +11,7 @@ use xlui::widgets::label::Label;
 use xlui::widgets::listview::ListView;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
-use xlui::widgets::textedit::TextEdit;
+use xlui::widgets::singleline::TextEdit;
 use xlui::widgets::Widget;
 
 struct TD {

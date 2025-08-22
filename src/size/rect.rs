@@ -246,6 +246,13 @@ impl Rect {
         self.offset_x_to(tx);
         self.offset_y_to(ty);
     }
+
+    pub fn get_ox(&self) -> f32 {
+        self.dx.min - self.ox.min
+    }
+    pub fn get_oy(&self) -> f32 {
+        self.dy.min - self.oy.min
+    }
 }
 
 impl PartialEq for Rect {

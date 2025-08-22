@@ -34,15 +34,15 @@ use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle};
 use crate::ui::Ui;
-use crate::widgets::textedit::TextEdit;
 use crate::widgets::Widget;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use crate::widgets::textedit::single::SingleEdit;
 
 pub struct SpinBox<T> {
     pub(crate) id: String,
-    edit: TextEdit,
+    edit: SingleEdit,
     rect: Rect,
     size_mode: SizeMode,
     value: T,
@@ -72,7 +72,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         style.border = BorderStyle::same(Border::new(0.0));
         SpinBox {
             id: crate::gen_unique_id(),
-            edit: TextEdit::new(format!("{:.*}", 2, v)),
+            edit: SingleEdit::new(format!("{:.*}", 2, v)),
             rect: Rect::new(),
             size_mode: SizeMode::Auto,
             value: v,

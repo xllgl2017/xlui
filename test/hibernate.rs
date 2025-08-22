@@ -3,7 +3,7 @@ use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::combobox::ComboBox;
-use xlui::widgets::textedit::TextEdit;
+use xlui::widgets::singleline::TextEdit;
 
 fn main() {
     XlUi {}.run();

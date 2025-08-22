@@ -94,6 +94,11 @@ impl<T> Map<T> {
     pub fn position(&self, key: &String) -> Option<&usize> {
         self.keys.get(key)
     }
+
+    pub fn clear(&mut self) {
+        self.keys.clear();
+        self.values.clear();
+    }
 }
 
 impl<T> Index<usize> for Map<T> {

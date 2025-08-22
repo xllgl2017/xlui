@@ -7,9 +7,10 @@ use glyphon::Viewport;
 use std::collections::HashMap;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
+use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy};
-use winit::window::{Icon, WindowId, WindowLevel};
+use winit::window::{Icon, ImePurpose, WindowId, WindowLevel};
 
 mod window;
 pub mod context;
@@ -122,6 +123,9 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for Applicatio
         let event = self.proxy_event.take().unwrap();
         let attr = self.attribute.as_winit_attributes();
         let winit_window = Arc::new(event_loop.create_window(attr).unwrap());
+        winit_window.set_ime_allowed(true);
+        winit_window.set_ime_cursor_area(PhysicalPosition::new(400, 300), PhysicalSize::new(100, 100));
+        winit_window.set_ime_purpose(ImePurpose::Normal);
         let window = pollster::block_on(Window::new(winit_window.clone(), Box::new(app), event)).unwrap();
         self.windows.insert(winit_window.id(), window);
         winit_window.request_redraw();
@@ -213,6 +217,9 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for Applicatio
                 if !event.state.is_pressed() { return; }
                 window.app_ctx.key_input(UpdateType::KeyRelease(Some(event.logical_key)), &mut window.app);
                 window.app_ctx.context.window.request_redraw();
+            }
+            WindowEvent::Ime(ime) => {
+                println!("{:?}", ime);
             }
             _ => (),
         }

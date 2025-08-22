@@ -11,6 +11,7 @@ use xlui::widgets::radio::RadioButton;
 use xlui::widgets::select::SelectItem;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
+use xlui::widgets::textedit::single::SingleEdit;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
 
@@ -174,7 +175,7 @@ impl App for XlUiApp {
         ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
-            ui.add(TextEdit::new("asdfghjklzxcvbnmqwertyuiop123456789".to_string()).contact(self.label.get_id()));
+            ui.add(SingleEdit::new("asdfghjklzxcvbnmqwertyuiop123456789".to_string()).contact(self.label.get_id()));
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");
@@ -220,6 +221,10 @@ impl App for XlUiApp {
             ui.radio(false, "ProcessBar");
             ui.add_space(11.0);
             ui.add(ProcessBar::new(50.0).with_id("pbr"));
+        });
+        ui.horizontal(|ui| {
+            let edit = TextEdit::multi("abcdefghijklmnopqrstuvwsyz1234567890");
+            ui.add(edit);
         });
     }
 

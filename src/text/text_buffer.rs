@@ -5,7 +5,7 @@ use crate::style::color::Color;
 use crate::text::{TextSize, TextWrap};
 use crate::ui::Ui;
 use crate::SAMPLE_COUNT;
-use glyphon::Shaping;
+use glyphon::{Buffer, Shaping};
 use wgpu::MultisampleState;
 use crate::size::pos::Axis;
 
@@ -38,6 +38,11 @@ impl TextBuffer {
         }
     }
 
+    pub fn with_wrap(mut self, wrap: TextWrap) -> Self {
+        self.text_wrap = wrap;
+        self
+    }
+
     pub fn reset_size(&mut self, context: &Context) {
         self.text_size = context.font.text_size(&self.text, self.text_size.font_size);
         match self.size_mode {
@@ -50,7 +55,7 @@ impl TextBuffer {
 
     pub(crate) fn draw(&mut self, ui: &mut Ui) {
         let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text_size.font_size, self.text_size.line_height));
-        buffer.set_wrap(&mut ui.context.render.text.font_system, self.text_wrap.as_gamma());
+        buffer.set_wrap(&mut ui.context.render.text.font_system, glyphon::Wrap::Glyph);
         buffer.set_text(&mut ui.context.render.text.font_system, &self.text, &ui.context.font.font_attr(), Shaping::Advanced);
         let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
             count: SAMPLE_COUNT,
@@ -94,10 +99,21 @@ impl TextBuffer {
         self.change = true;
     }
 
+    pub fn update_buffer_text(&mut self, ui: &mut Ui, text: &str) {
+        match self.buffer {
+            None => self.set_text(text.to_string()),
+            Some(ref mut buffer) => buffer.set_text(
+                &mut ui.context.render.text.font_system,
+                text, &ui.context.font.font_attr(), Shaping::Advanced)
+        }
+    }
+
     pub fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.change { return; }
         self.change = false;
-        self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, self.text.as_str(), &ui.context.font.font_attr(), Shaping::Advanced);
+        self.buffer.as_mut().unwrap().set_text(
+            &mut ui.context.render.text.font_system, self.text.as_str(),
+            &ui.context.font.font_attr(), Shaping::Advanced);
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {
