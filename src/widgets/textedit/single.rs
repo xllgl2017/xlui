@@ -2,7 +2,7 @@
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::textedit::TextEdit;
+//! use xlui::widgets::singleline::TextEdit;
 //!
 //! fn edit_changed<A:App>(_:&mut A,_:&mut Ui,text:String){
 //!     println!("文本变动:{}",text);
@@ -215,7 +215,7 @@ impl CharLayout {
     }
 }
 
-pub struct TextEdit {
+pub struct SingleEdit {
     pub(crate) id: String,
     text_buffer: TextBuffer,
     size_mode: SizeMode,
@@ -234,8 +234,8 @@ pub struct TextEdit {
     changed: bool,
 }
 
-impl TextEdit {
-    pub fn new(context: String) -> TextEdit {
+impl SingleEdit {
+    pub fn new(context: String) -> SingleEdit {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::WHITE;
         fill_style.fill.hovered = Color::WHITE;
@@ -259,7 +259,7 @@ impl TextEdit {
         cursor_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
         cursor_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
         cursor_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
-        TextEdit {
+        SingleEdit {
             id: crate::gen_unique_id(),
             text_buffer: TextBuffer::new(context),
             size_mode: SizeMode::Auto,
@@ -475,7 +475,7 @@ impl TextEdit {
 }
 
 
-impl Widget for TextEdit {
+impl Widget for SingleEdit {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
