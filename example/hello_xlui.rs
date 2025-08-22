@@ -11,7 +11,8 @@ use xlui::widgets::label::Label;
 use xlui::widgets::listview::ListView;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
-use xlui::widgets::singleline::TextEdit;
+use xlui::widgets::textedit::single::SingleEdit;
+use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
 
 struct TD {
@@ -136,7 +137,7 @@ impl App for XlUiApp {
             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
         });
-        ui.add(TextEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
+        ui.add(SingleEdit::new("sdsd".to_string()).width_id("xlui_edit").connect(Self::edit_changed));
         ui.add(SpinBox::new(1, 1, 1..10));
         ui.horizontal(|ui| {
             ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));

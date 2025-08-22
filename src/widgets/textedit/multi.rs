@@ -157,8 +157,7 @@ impl Widget for MultiEdit {
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
                 if ui.device.device_input.mouse.pressed && self.focused {
-                    let pos = ui.device.device_input.mouse.lastest;
-                    // self.select_render.move_select(ui, &mut self.cursor_render, &self.char_layout);
+                    self.select_render.move_select(ui, &mut self.cursor_render, &self.char_layout);
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
@@ -175,8 +174,8 @@ impl Widget for MultiEdit {
                 if self.focused {
                     let pos = ui.device.device_input.mouse.lastest;
                     self.cursor_render.update_by_pos(pos, &self.char_layout);
-                    let cx = self.cursor_render.offset.x + self.text_buffer.rect.dx().min;
-                    self.select_render.set_by_cursor(self.cursor_render.vert, cx);
+                    // let cx = self.cursor_render.offset.x + self.text_bufer.rect.dx().min;
+                    self.select_render.set_by_cursor(&self.cursor_render);
                     // self.select_render.reset();
                 }
                 self.changed = true;

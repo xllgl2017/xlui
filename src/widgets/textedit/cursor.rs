@@ -195,7 +195,10 @@ impl EditCursor {
             self.horiz += 1;
         }
         let char_min = self.min_pos.x + sum_width;
-        if pos.x + cchar.offset.x > char_min + char_width / 2.0 {
+        if pos.x + cchar.offset.x < char_min {
+            self.horiz = 0;
+            self.offset.x = 0.0;
+        } else if pos.x + cchar.offset.x > char_min + char_width / 2.0 {
             if self.horiz >= line.len() { self.horiz = line.chars.len() } else { self.horiz += 1; }
             self.offset.x = sum_width + char_width;
         } else {
