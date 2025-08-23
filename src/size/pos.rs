@@ -35,7 +35,7 @@ impl Pos {
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Axis {
-    pub(crate) min: f32,
+    pub min: f32,
     pub(crate) max: f32,
 }
 
