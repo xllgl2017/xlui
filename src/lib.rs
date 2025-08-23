@@ -15,7 +15,7 @@
 //! fn main() {
 //!     let app=XlUiApp::new();
 //!     //直接调run()
-//!     // app.run();
+//!     app.run();
 //! }
 //!
 //! struct XlUiApp {
@@ -27,7 +27,7 @@
 //! impl XlUiApp {
 //!     fn new()->XlUiApp{
 //!         XlUiApp{
-//!             label: Label::new("hello"),
+//!             label: Label::new("hello").width(100.0),
 //!             count: 0,
 //!         }
 //!     }
