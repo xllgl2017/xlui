@@ -21,6 +21,12 @@
 ### 示例
 
 ```rust
+use xlui::frame::{App, WindowAttribute};
+use xlui::ui::Ui;
+use xlui::widgets::button::Button;
+use xlui::widgets::label::Label;
+use xlui::widgets::Widget;
+
 fn main() {
     XlUiApp::new().run();
 }
@@ -41,13 +47,13 @@ impl XlUiApp {
     pub fn add(&mut self, ui: &mut Ui) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(uim);
+        self.label.update(ui);
     }
 
     pub fn reduce(&mut self, ui: &mut Ui) {
         self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
-        self.label.update(uim);
+        self.label.update(ui);
     }
 }
 
@@ -84,7 +90,7 @@ impl App for XlUiApp {
 ### ✅ Label
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.label("hello label");
     //或者
     ui.add(Label::new("hello label"));
@@ -94,7 +100,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ Button
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.button("hello button").set_callback(Self::clicked);
     //或者
     ui.add(Button::new("hello label").connect(Self::clicked));
@@ -104,7 +110,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ Slider
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
     //或者
     ui.add(Slider::new(10.0).with_range(0.0..100.0).connect(Self::slider));
@@ -114,7 +120,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ SpinBox
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::changed);
     //或者
     ui.add(SpinBox::new(1, 1, 1..10).connect(Self::changed));
@@ -124,7 +130,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ CheckBox
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.checkbox(true, "checkbox1").set_callback(Self::checked);
     //或者
     ui.add(CheckBox::new(false, "checkbox2").connect(Self::checked));
@@ -134,7 +140,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ Image
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.image("logo.jpg", (200.0, 200.0));
     //或者
     ui.add(Image::new("logo.jpg").with_size(200.0, 200.0));
@@ -144,7 +150,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ RadioButton
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.radio(true, "radiobutton").set_callback(Self::radio);
     //或者
     ui.add(RadioButton::new(false, "radiobutton").connect(Self::radio));
@@ -154,8 +160,7 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ ComboBox
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
-    //或者
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     let combo_data = vec!["item1", "item2", "item3", "item4"];
     ui.add(ComboBox::new(combo_data).connect(Self::combo_changed).with_popup_height(150.0));
 }
@@ -163,23 +168,17 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ### ✅ ScrollBar(垂直)
 
-```rust
-fn draw(&mut self, ui: &mut Ui) {
-    ui.add(ScrollBar::new().with_size(20.0, 100.0));
-}
-```
-
-### ✅ TextEdit
+### ✅ ~~TextEdit~~
 
 ```rust
 
 //文本变动监测
-fn edit_changed(&mut self, ui: &mut Ui, text: &str) {
+fn edit_changed<A: App>(_: &mut A, ui: &mut Ui, text: &str) {
     self.label.set_text(format!("textedit: {}", text));
     self.label.update(ui);
 }
 
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     //创建TextEdit并添加ID，以便后续获取其文本
     ui.add(TextEdit::new("sdsd".to_string()).connect(Self::edit_changed));
 }
@@ -189,28 +188,31 @@ fn draw(&mut self, ui: &mut Ui) {
 
 ```rust
 use std::fmt::Display;
+use xlui::frame::App;
+use xlui::ui::Ui;
+use xlui::widgets::listview::ListView;
 
-struct APP {
+struct XlUi {
     listview: ListView<i32>,
 }
 
-impl APP {
+impl XlUi {
     fn new() -> Self {
-        APP {
+        XlUi {
             listview: ListView::new(vec![1, 2, 3]).with_size(300.0, 400.0)
         }
     }
     fn list_changed(&mut self, ui: &mut Ui) {
-        if let Some(datum) = self.listview.current {
-            println!("list: {}", self.list_view.current())
+        if let Some(datum) = self.listview.current() {
+            println!("list: {}", self.listview.current())
         }
     }
 }
 
-impl App for APP {
+impl App for XlUi {
     fn draw(&mut self, ui: &mut Ui) {
-        self.list_view.set_callback(Self::list_changed);
-        self.list_view.show(ui, |ui, datum| {
+        self.listview.set_callback(Self::list_changed);
+        self.listview.set_item_widget(|ui, datum| {
             ui.image("logo.jpg", (30.0, 30.0));
             ui.vertical(|ui| {
                 ui.label(datum.to_string());
@@ -223,6 +225,7 @@ impl App for APP {
                 });
             });
         });
+        self.listview.show(ui);
     }
 }
 
@@ -236,7 +239,7 @@ impl App for APP {
 ### ✅ Layout(垂直、水平)
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     ui.horizontal(|ui| {
         //...
     });
@@ -249,14 +252,14 @@ fn draw(&mut self, ui: &mut Ui) {
 ### ✅ ScrollArea(垂直)
 
 ```rust
-fn draw(&mut self, ui: &mut Ui) {
+fn draw<A: App>(_: &mut A, ui: &mut Ui) {
     let area = ScrollArea::new().with_size(300.0, 400.0);
     area.show(ui, |ui| {
         ui.label("start");
         ui.vertical(|ui| {
             ui.label("sv1");
             ui.label("sv2");
-            ui.button("sv3").connect(Self::click1);
+            ui.button("sv3").set_callback(Self::click1);
         });
         ui.horizontal(|ui| {
             ui.label("sh1");
