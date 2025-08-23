@@ -9,6 +9,7 @@ use crate::{Offset, OffsetDirection};
 use crate::size::padding::Padding;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
+use crate::size::SizeMode;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetKind};
 
@@ -284,28 +285,6 @@ impl LayoutKind {
     }
 }
 
-
-// fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind>, draw_rect: Rect, ui: &mut Ui, update: bool) {
-//     match update {
-//         true => {
-//             for widget in widgets.iter_mut() {
-//                 widget.update(ui)
-//             }
-//             for child in children.iter_mut() {
-//                 child.update(ui);
-//             }
-//         }
-//         false => {
-//             for widget in widgets.iter_mut() {
-//                 widget.redraw(ui);
-//             }
-//             for child in children.iter_mut() {
-//                 child.redraw(ui);
-//             }
-//         }
-//     }
-// }
-
 #[derive(Clone, Debug, Copy)]
 pub enum LayoutDirection {
     Min,
@@ -410,7 +389,6 @@ impl Layout for HorizontalLayout {
         for di in self.display.iter() {
             self.widgets[*di].redraw(ui);
         }
-        // ui.offset = Offset::new(Pos::new());
         for child in self.children.iter_mut() {
             child.redraw(ui);
         }
@@ -429,6 +407,7 @@ pub struct VerticalLayout {
     widget_offset: Offset,
     offset_changed: bool,
     display: Map<usize>,
+    size_mode: SizeMode,
 }
 
 impl VerticalLayout {
@@ -445,6 +424,7 @@ impl VerticalLayout {
             widget_offset: Offset::new(Pos::new()),
             offset_changed: false,
             display: Map::new(),
+            size_mode: SizeMode::Auto,
         }
     }
 
@@ -477,17 +457,18 @@ impl Layout for VerticalLayout {
         }
         if let UpdateType::Offset(ref o) = ui.update_type {
             if !ui.can_offset { return; }
-            let draw_rect = self.drawn_rect();
             self.widget_offset = o.clone();
+            let mut draw_rect = self.drawn_rect();
+            if let SizeMode::Auto = self.size_mode {
+                draw_rect.offset(&self.widget_offset);
+            }
             match o.direction {
                 OffsetDirection::Down => {
                     let ds = self.display.first().cloned().unwrap_or(0);
                     self.display.clear();
                     let mut display_appear = false;
                     for wi in ds..self.widgets.len() {
-                        // println!("{:?}", draw_rect);
                         let display = self.widgets[wi].offset(&self.widget_offset, &draw_rect);
-                        // println!("{:?} {:?} {}", draw_rect, self.widgets[wi].rect, display);
                         if !display && !display_appear { continue; }
                         display_appear = true;
                         if display { self.display.insert(self.widgets[wi].id.clone(), wi); } else { break; }
