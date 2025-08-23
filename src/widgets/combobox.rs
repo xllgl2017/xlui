@@ -56,6 +56,7 @@ pub struct ComboBox<T> {
     selected: Arc<RwLock<Option<String>>>,
 
     previous_select: Option<String>,
+    changed: bool,
 }
 
 impl<T: Display + 'static> ComboBox<T> {
@@ -75,6 +76,7 @@ impl<T: Display + 'static> ComboBox<T> {
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
 
+            changed: false,
         }
     }
 
@@ -147,11 +149,8 @@ impl<T: Display + 'static> ComboBox<T> {
     pub fn parent(&self) -> Arc<RwLock<Option<String>>> {
         self.selected.clone()
     }
-}
 
-
-impl<T: Display + 'static> Widget for ComboBox<T> {
-    fn redraw(&mut self, ui: &mut Ui) {
+    fn update_buffer(&mut self, ui: &mut Ui) {
         let select = self.selected.read().unwrap();
         if *select != self.previous_select {
             self.previous_select = select.clone();
@@ -164,11 +163,21 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
                     ui.app.replace(app);
                     ui.context.window.request_redraw();
                 }
+                self.changed = true;
             }
 
             let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
             popup.open = false;
         }
+        if !self.changed && !ui.can_offset { return; }
+        self.text_buffer.update_buffer(ui);
+    }
+}
+
+
+impl<T: Display + 'static> Widget for ComboBox<T> {
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text_buffer.redraw(ui);
