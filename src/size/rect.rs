@@ -161,11 +161,11 @@ impl Rect {
             other.dy.min > self.dy.max || other.dy.max < self.dy.min
     }
 
-    //处于边界或出于边界
-    pub(crate) fn out_of_border(&self, other: &Rect) -> bool {
-        self.dx.min < other.dx.min || self.dx.max > other.dx.max ||
-            self.dy.min < other.dy.min || self.dy.max > other.dy.max
-    }
+    // //处于边界或出于边界
+    // pub(crate) fn out_of_border(&self, other: &Rect) -> bool {
+    //     self.dx.min < other.dx.min || self.dx.max > other.dx.max ||
+    //         self.dy.min < other.dy.min || self.dy.max > other.dy.max
+    // }
 
     // pub(crate) fn in_other(&self, rect: &Rect) -> bool {
     //     self.dx.min >= rect.dx.min && self.dx.max <= rect.dx.max

@@ -15,18 +15,19 @@ use xlui::widgets::textedit::single::SingleEdit;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
 
+#[allow(dead_code)]
 fn main() {
-    XlUiApp::new().run();
+    TestWidget::new().run();
 }
 
-struct XlUiApp {
+pub struct TestWidget {
     label: Label,
     count: i32,
     source: String,
 }
 
-impl XlUiApp {
-    fn new() -> Self {
+impl TestWidget {
+    pub fn new() -> Self {
         Self {
             label: Label::new("这里是Label".to_string()).width(100.0),
             count: 0,
@@ -71,10 +72,10 @@ impl XlUiApp {
         self.label.update(ui);
     }
 
-    fn edit_changed(&mut self, ui: &mut Ui, value: String) {
-        self.label.set_text(format!("edit: {}", value));
-        self.label.update(ui);
-    }
+    // fn edit_changed(&mut self, ui: &mut Ui, value: String) {
+    //     self.label.set_text(format!("edit: {}", value));
+    //     self.label.update(ui);
+    // }
 
     fn image_button_click(&mut self, btn: &mut Button, ui: &mut Ui) {
         self.label.set_text(format!("image button: {}", self.count));
@@ -113,7 +114,7 @@ impl Display for SV {
     }
 }
 
-impl App for XlUiApp {
+impl App for TestWidget {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.add_space(100.0);

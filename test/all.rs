@@ -1,4 +1,5 @@
 mod shape;
+mod widget;
 
 use std::fmt::{Display, Formatter};
 use xlui::frame::{App, WindowAttribute};
@@ -6,22 +7,24 @@ use xlui::layout::inner::InnerWindow;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use crate::shape::TestShape;
+use crate::widget::TestWidget;
 
 #[derive(PartialEq)]
 enum TestKind {
     Shape,
+    Widgets,
 }
 
 impl Display for TestKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TestKind::Shape => f.write_str("Shape"),
+            TestKind::Widgets => f.write_str("Widgets"),
         }
     }
 }
 
 fn main() {
-    // TestTriangle::new().run();
     XlUi::new().run();
 }
 
@@ -38,16 +41,20 @@ impl XlUi {
     }
 
 
-    fn open_test_rectangle(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn open_test_shape(&mut self, _: &mut Button, ui: &mut Ui) {
         ui.create_inner_window(TestShape::new()).on_close(Self::on_rect_close);
     }
 
+    fn open_test_widgets(&mut self, _: &mut Button, ui: &mut Ui) {
+        ui.create_inner_window(TestWidget::new());
+    }
 }
 
 impl App for XlUi {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            ui.button(TestKind::Shape).set_callback(Self::open_test_rectangle);
+            ui.button(TestKind::Shape).set_callback(Self::open_test_shape);
+            ui.button(TestKind::Widgets).set_callback(Self::open_test_widgets);
         });
     }
     fn window_attributes(&self) -> WindowAttribute {

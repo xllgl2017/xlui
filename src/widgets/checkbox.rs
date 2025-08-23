@@ -57,6 +57,7 @@ pub struct CheckBox {
 
     hovered: bool,
     contact_ids: Vec<String>,
+    changed: bool,
 }
 
 impl CheckBox {
@@ -79,6 +80,7 @@ impl CheckBox {
             check_render: RenderParam::new(RectParam::new(Rect::new(), check_style)),
             hovered: false,
             contact_ids: vec![],
+            changed: false,
         }
     }
 
@@ -147,17 +149,25 @@ impl CheckBox {
         self.check_text.draw(ui);
     }
 
-    fn update_check(&mut self, ui: &mut Ui) {
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_bool(&mut self.value);
+            self.changed = true;
+        }
+        if !self.changed && !ui.can_offset { return; }
+        if ui.can_offset {
+            self.check_render.param.rect.offset(&ui.offset);
+            self.text.rect.offset(&ui.offset);
+            self.check_text.rect.offset(&ui.offset);
+            self.rect.offset(&ui.offset);
+        }
         self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
 }
 
 impl Widget for CheckBox {
     fn redraw(&mut self, ui: &mut Ui) {
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_bool(&mut self.value);
-            self.update_check(ui);
-        }
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.check_render, pass);
         self.text.redraw(ui);
@@ -172,7 +182,7 @@ impl Widget for CheckBox {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
-                    self.update_check(ui);
+                    self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
@@ -180,7 +190,7 @@ impl Widget for CheckBox {
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.rect) {
                     self.value = !self.value;
-                    self.update_check(ui);
+                    self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(app, ui, self.value);

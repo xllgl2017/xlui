@@ -50,6 +50,7 @@ pub struct RadioButton {
     inner_render: RenderParam<CircleParam>,
     hovered: bool,
     contact_ids: Vec<String>,
+    changed: bool,
 }
 
 impl RadioButton {
@@ -80,6 +81,7 @@ impl RadioButton {
             inner_render: RenderParam::new(CircleParam::new(Rect::new(), inner_style)),
             hovered: false,
             contact_ids: vec![],
+            changed: false,
         }
     }
     fn reset_size(&mut self, context: &Context) {
@@ -144,16 +146,32 @@ impl RadioButton {
         self.text.draw(ui);
     }
 
-    fn update_radio(&mut self, ui: &mut Ui) {
+    // fn update_radio(&mut self, ui: &mut Ui) {
+    //
+    //     ui.context.window.request_redraw();
+    // }
+
+    fn update_buffer(&mut self, ui: &mut Ui) {
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_bool(&mut self.value);
+            self.changed = true;
+        }
+        if !self.changed && !ui.can_offset { return; }
+        if ui.can_offset {
+            self.outer_render.param.rect.offset(&ui.offset);
+            self.inner_render.param.rect.offset(&ui.offset);
+            self.text.rect.offset(&ui.offset);
+            self.rect.offset(&ui.offset);
+        }
         self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
         self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
-        ui.context.window.request_redraw();
     }
 }
 
 
 impl Widget for RadioButton {
     fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.circle.render(&self.outer_render, pass);
         ui.context.render.circle.render(&self.inner_render, pass);
@@ -168,13 +186,13 @@ impl Widget for RadioButton {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
                 if hovered != self.hovered {
                     self.hovered = hovered;
-                    self.update_radio(ui);
+                    self.changed = true;
                 }
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.rect) {
                     self.value = !self.value;
-                    self.update_radio(ui);
+                    self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(app, ui, self.value);
@@ -182,14 +200,12 @@ impl Widget for RadioButton {
                     }
                     ui.update_type = UpdateType::None;
                     ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
+                    ui.context.window.request_redraw();
                 }
             }
             _ => {}
         }
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_bool(&mut self.value);
-            self.update_radio(ui);
-        }
+
         Response::new(&self.id, &self.rect)
     }
 }
