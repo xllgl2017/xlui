@@ -50,11 +50,9 @@ impl EditLine {
 
 pub(crate) struct CharBuffer {
     pub(crate) lines: Vec<EditLine>,
-    // pub(crate) chars: Vec<EditChar>,
     selected: Range<usize>,
     draw_text: String,
     font_size: f32,
-    // pub(crate) line_index: Vec<usize>,
     line_height: f32,
     max_wrap_width: f32,
     pub(crate) offset: Offset,
@@ -68,7 +66,6 @@ impl CharBuffer {
             selected: 0..0,
             draw_text: "".to_string(),
             font_size: 0.0,
-            // line_index: vec![0],
             line_height: 0.0,
             max_wrap_width: 0.0,
             offset: Offset::new(Pos::new()),
@@ -78,8 +75,6 @@ impl CharBuffer {
     pub fn set_text(&mut self, text: &str, ui: &mut Ui) {
         self.draw_text.clear();
         self.lines.clear();
-        // self.chars.clear();
-        // self.line_index = vec![0];
         match self.edit_kind {
             EditKind::Single => {
                 let mut line = EditLine::new();
@@ -135,7 +130,6 @@ impl CharBuffer {
 
     pub fn raw_text(&self) -> String {
         self.lines.iter().map(|x| x.raw_text()).collect()
-        // self.chars.iter().map(|c| c.cchar.to_string()).collect()
     }
 
     // pub fn remove_by_range(&mut self, ui: &mut Ui, cursor: &mut EditCursor, rebuild: bool) {

@@ -87,9 +87,10 @@ impl Rectangle {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed { return; }
+        if !self.changed && !ui.can_offset { return; }
         self.changed = false;
-        self.fill_render.update(ui,self.hovered, ui.device.device_input.mouse.pressed);
+        self.fill_render.param.rect.offset(&ui.offset);
+        self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
 }
 

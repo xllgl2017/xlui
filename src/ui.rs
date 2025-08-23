@@ -16,13 +16,14 @@ use crate::widgets::select::SelectItem;
 use crate::widgets::slider::Slider;
 use crate::widgets::spinbox::SpinBox;
 use crate::widgets::{Widget, WidgetKind};
-use crate::{Device, NumCastExt, SAMPLE_COUNT};
+use crate::{Device, NumCastExt, Offset, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use std::sync::atomic::Ordering;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use crate::layout::inner::InnerWindow;
+use crate::size::pos::Pos;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -61,6 +62,8 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
+            offset: Offset::new(Pos::new()),
+
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -80,6 +83,8 @@ impl AppContext {
             can_offset: false,
             inner_windows: self.inner_windows.take(),
             request_update: None,
+            offset: Offset::new(Pos::new()),
+
         };
         app.update(&mut ui);
 
@@ -181,6 +186,8 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
+            offset: Offset::new(Pos::new()),
+
         };
         app.redraw(&mut ui);
         ui.app = Some(app);
@@ -214,6 +221,7 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
+            offset: Offset::new(Pos::new()),
         };
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.update(&mut ui);
@@ -243,6 +251,7 @@ pub struct Ui<'a> {
     pub(crate) can_offset: bool,
     pub(crate) inner_windows: Option<Map<InnerWindow>>,
     pub(crate) request_update: Option<(winit::window::WindowId, UpdateType)>,
+    pub(crate) offset: Offset,
 }
 
 
@@ -294,7 +303,7 @@ impl<'a> Ui<'a> {
         let previous_layout = self.layout.replace(LayoutKind::Horizontal(current_layout)).unwrap();
         context(self);
         let current_layout = self.layout.replace(previous_layout).unwrap();
-        self.layout().add_child(crate::gen_unique_id(), current_layout);
+        self.layout().add_child(current_layout);
     }
 
     pub fn vertical(&mut self, mut context: impl FnMut(&mut Ui)) {
@@ -302,7 +311,7 @@ impl<'a> Ui<'a> {
         let previous_layout = self.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
         context(self);
         let current_layout = self.layout.replace(previous_layout).unwrap();
-        self.layout().add_child(crate::gen_unique_id(), current_layout);
+        self.layout().add_child(current_layout);
     }
 
     pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {

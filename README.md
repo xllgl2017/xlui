@@ -185,7 +185,7 @@ fn draw(&mut self, ui: &mut Ui) {
 }
 ```
 
-### ⬜️ ListView(debug下流畅显示10w条数据)
+### ⬜️ ListView(debug下流畅显示1w条数据)
 
 ```rust
 use std::fmt::Display;
@@ -229,7 +229,7 @@ impl App for APP {
 
 ```
 
-### ⬜️ TableView(debug下流畅显示10w条数据)
+### ⬜️ TableView(debug下流畅显示1w条数据)
 
 ## 布局
 

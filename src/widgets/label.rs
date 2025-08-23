@@ -19,7 +19,6 @@
 //! }
 //! ```
 
-
 use crate::frame::context::UpdateType;
 use crate::response::Response;
 use crate::text::text_buffer::TextBuffer;
@@ -79,15 +78,22 @@ impl Label {
         self.buffer.reset_size(ui.context);
         self.buffer.draw(ui);
     }
+
+    fn update_before_draw(&mut self, ui: &mut Ui) {
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_str(&mut self.buffer.text);
+            self.buffer.change = true;
+        }
+        if !self.buffer.change && !ui.can_offset { return; }
+        self.buffer.rect.offset(&ui.offset);
+        self.buffer.update_buffer(ui);
+    }
 }
 
 
 impl Widget for Label {
     fn redraw(&mut self, ui: &mut Ui) {
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_str(&mut self.buffer.text);
-            self.buffer.change = true;
-        }
+        self.update_before_draw(ui);
         self.buffer.redraw(ui);
     }
 
@@ -99,11 +105,11 @@ impl Widget for Label {
                 println!("11111111111111111");
                 self.buffer.draw(ui)
             }
-            UpdateType::Offset(o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.buffer.rect); }
-                self.buffer.rect.offset(o);
-                ui.context.window.request_redraw();
-            }
+            // UpdateType::Offset(o) => {
+            //     if !ui.can_offset { return Response::new(&self.id, &self.buffer.rect); }
+            //     self.buffer.rect.offset(o);
+            //     ui.context.window.request_redraw();
+            // }
             _ => {}
         }
         Response::new(&self.id, &self.buffer.rect)

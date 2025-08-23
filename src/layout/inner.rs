@@ -125,8 +125,8 @@ impl InnerWindow {
 
         ui.update_type = UpdateType::None;
         ui.layout = previous_layout;
-        title_layout.add_child(crate::gen_unique_id(), title_close_layout);
-        self.layout.as_mut().unwrap().add_child(crate::gen_unique_id(), title_layout);
+        title_layout.add_child(title_close_layout);
+        self.layout.as_mut().unwrap().add_child(title_layout);
     }
 
     fn draw_context(&mut self, ui: &mut Ui) {
@@ -140,7 +140,7 @@ impl InnerWindow {
         let context_layout = ui.layout.take().unwrap();
         ui.update_type = UpdateType::None;
         ui.layout = previous_layout;
-        self.layout.as_mut().unwrap().add_child(crate::gen_unique_id(), context_layout);
+        self.layout.as_mut().unwrap().add_child( context_layout);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -211,6 +211,7 @@ impl InnerWindow {
             can_offset: oui.can_offset,
             inner_windows: self.inner_windows.take(),
             request_update: None,
+            offset: Offset::new(Pos::new()),
         };
 
         self.w.update(&mut nui);

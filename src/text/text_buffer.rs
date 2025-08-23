@@ -68,7 +68,7 @@ impl TextBuffer {
 
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
-        self.update_buffer(ui);
+        // self.update_buffer(ui);
         let bounds = glyphon::TextBounds {
             left: self.rect.dx().min as i32,
             top: 0,

@@ -5,7 +5,7 @@ pub mod inner;
 use crate::frame::context::UpdateType;
 use crate::layout::scroll_area::ScrollArea;
 use crate::map::Map;
-use crate::Offset;
+use crate::{Offset, OffsetDirection};
 use crate::size::padding::Padding;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
@@ -42,12 +42,19 @@ impl LayoutKind {
 
     pub fn add_widget(&mut self, id: String, widget: WidgetKind) {
         match self {
-            LayoutKind::Horizontal(v) => v.widgets.insert(id, widget),
-            LayoutKind::Vertical(v) => v.widgets.insert(id, widget),
+            LayoutKind::Horizontal(v) => {
+                if !widget.rect.out_of_rect(&v.max_rect) { v.display.insert(widget.id.clone(), v.widgets.len()); }
+                v.widgets.insert(id, widget)
+            }
+            LayoutKind::Vertical(v) => {
+                if !widget.rect.out_of_rect(&v.max_rect) { v.display.insert(widget.id.clone(), v.widgets.len()); }
+                v.widgets.insert(id, widget)
+            }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
     }
-    pub fn add_child(&mut self, id: String, kind: LayoutKind) {
+    pub fn add_child(&mut self, kind: LayoutKind) {
+        let id = kind.id().to_string();
         match self {
             LayoutKind::Horizontal(v) => {
                 v.alloc_rect(&kind.drawn_rect());
@@ -152,7 +159,7 @@ impl LayoutKind {
         ui.can_offset = true;
         let rect = layout.drawn_rect();
         for i in pos..layout.widgets().len() {
-            layout.widgets()[i].update(ui, &rect);
+            layout.widgets()[i].update(ui);
         }
         ui.can_offset = false;
         ui.update_type = UpdateType::None;
@@ -247,11 +254,33 @@ impl LayoutKind {
         self
     }
 
-    pub fn max_rect(&self)->&Rect{
+    pub fn max_rect(&self) -> &Rect {
         match self {
             LayoutKind::Horizontal(v) => &v.max_rect,
             LayoutKind::Vertical(v) => &v.max_rect,
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
+        }
+    }
+
+    pub fn id(&self) -> &String {
+        match self {
+            LayoutKind::Horizontal(v) => &v.id,
+            LayoutKind::Vertical(v) => &v.id,
+            LayoutKind::ScrollArea(v) => &v.id,
+        }
+    }
+
+    pub fn set_offset(&mut self, offset: Offset, can: bool) {
+        match self {
+            LayoutKind::Horizontal(v) => {
+                v.offset_changed = can;
+                v.widget_offset = offset;
+            }
+            LayoutKind::Vertical(v) => {
+                v.offset_changed = can;
+                v.widget_offset = offset;
+            }
+            LayoutKind::ScrollArea(_) => {}
         }
     }
 }
@@ -261,7 +290,7 @@ fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind
     match update {
         true => {
             for widget in widgets.iter_mut() {
-                widget.update(ui, &draw_rect)
+                widget.update(ui)
             }
             for child in children.iter_mut() {
                 child.update(ui);
@@ -285,27 +314,33 @@ pub enum LayoutDirection {
 }
 
 pub struct HorizontalLayout {
+    id: String,
     children: Map<LayoutKind>,
     widgets: Map<WidgetKind>,
-    display: Map<usize>,
     max_rect: Rect,
     available_rect: Rect,
     width: f32,
     height: f32,
     item_space: f32, //item之间的间隔
+    offset_changed: bool,
+    widget_offset: Offset,
+    display: Map<usize>,
 }
 
 impl HorizontalLayout {
     fn new(direction: LayoutDirection) -> HorizontalLayout {
         HorizontalLayout {
+            id: crate::gen_unique_id(),
             children: Map::new(),
             widgets: Map::new(),
-            display: Map::new(),
             max_rect: Rect::new().with_direction(direction.clone()),
             available_rect: Rect::new().with_direction(direction.clone()),
             width: 0.0,
             height: 0.0,
             item_space: 5.0,
+            offset_changed: false,
+            widget_offset: Offset::new(Pos::new()),
+            display: Map::new(),
         }
     }
 
@@ -349,17 +384,42 @@ impl HorizontalLayout {
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        let rect = self.drawn_rect();
-        update_or_redraw(&mut self.widgets, &mut self.children, rect, ui, true);
+        for child in self.children.iter_mut() {
+            child.update(ui);
+        }
+        if let UpdateType::Offset(ref o) = ui.update_type {
+            if !ui.can_offset { return; }
+            self.widget_offset = o.clone();
+            match o.direction {
+                OffsetDirection::Down => {}
+                OffsetDirection::Left => {}
+                OffsetDirection::Right => {}
+                OffsetDirection::Up => {}
+            }
+            self.offset_changed = true;
+        } else {
+            for di in self.display.iter() {
+                self.widgets[*di].update(ui);
+            }
+        }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        let rect = self.drawn_rect();
-        update_or_redraw(&mut self.widgets, &mut self.children, rect, ui, false);
+        ui.can_offset = self.offset_changed;
+        ui.offset = self.widget_offset.clone();
+        self.offset_changed = false;
+        for di in self.display.iter() {
+            self.widgets[*di].redraw(ui);
+        }
+        // ui.offset = Offset::new(Pos::new());
+        for child in self.children.iter_mut() {
+            child.redraw(ui);
+        }
     }
 }
 
 pub struct VerticalLayout {
+    id: String,
     children: Map<LayoutKind>,
     widgets: Map<WidgetKind>,
     max_rect: Rect,
@@ -367,11 +427,15 @@ pub struct VerticalLayout {
     width: f32,
     pub(crate) height: f32,
     item_space: f32, //item之间的间隔
+    widget_offset: Offset,
+    offset_changed: bool,
+    display: Map<usize>,
 }
 
 impl VerticalLayout {
     pub fn new() -> VerticalLayout {
         VerticalLayout {
+            id: crate::gen_unique_id(),
             children: Map::new(),
             widgets: Map::new(),
             max_rect: Rect::new(),
@@ -379,6 +443,9 @@ impl VerticalLayout {
             width: 0.0,
             height: 0.0,
             item_space: 5.0,
+            widget_offset: Offset::new(Pos::new()),
+            offset_changed: false,
+            display: Map::new(),
         }
     }
 
@@ -406,12 +473,65 @@ impl VerticalLayout {
 
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) {
-        let rect = self.drawn_rect();
-        update_or_redraw(&mut self.widgets, &mut self.children, rect, ui, true);
+        for child in self.children.iter_mut() {
+            child.update(ui);
+        }
+        if let UpdateType::Offset(ref o) = ui.update_type {
+            if !ui.can_offset { return; }
+            let mut draw_rect = self.drawn_rect();
+            self.widget_offset = o.clone();
+            match o.direction {
+                OffsetDirection::Down => {
+                    let ds = self.display.first().cloned().unwrap_or(0);
+                    self.display.clear();
+                    let mut display_appear = false;
+                    for wi in ds..self.widgets.len() {
+                        // println!("{:?}", draw_rect);
+                        let display = self.widgets[wi].offset(&self.widget_offset, &draw_rect);
+                        // println!("{:?} {:?} {}", draw_rect, self.widgets[wi].rect, display);
+                        if !display && !display_appear { continue; }
+                        display_appear = true;
+                        if display { self.display.insert(self.widgets[wi].id.clone(), wi); } else { break; }
+                    }
+                    println!("down display: {}-{}", ds, self.display.len());
+                    self.offset_changed = true;
+                }
+                OffsetDirection::Left => {}
+                OffsetDirection::Right => {}
+                OffsetDirection::Up => {
+                    let de = self.display.last().cloned().unwrap_or(self.widgets.len() - 1);
+                    self.display.clear();
+                    let mut display_appear = false;
+                    for i in 0..=de {
+                        let wi = de - i;
+                        let display = self.widgets[wi].offset(&self.widget_offset, &draw_rect);
+                        if !display && !display_appear { continue; }
+                        display_appear = true;
+                        if display { self.display.insert(self.widgets[wi].id.clone(), wi); } else { break; }
+                    }
+                    self.display.reverse();
+                    self.offset_changed = true;
+                    println!("up display: {}-{}", de, self.display.len());
+                }
+            }
+            ui.context.window.request_redraw();
+        } else {
+            for di in self.display.iter() {
+                self.widgets[*di].update(ui);
+            }
+        }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        let rect = self.drawn_rect();
-        update_or_redraw(&mut self.widgets, &mut self.children, rect, ui, false);
+        ui.can_offset = self.offset_changed;
+        ui.offset = self.widget_offset.clone();
+        self.offset_changed = false;
+        for di in self.display.iter() {
+            self.widgets[*di].redraw(ui);
+        }
+        // ui.offset = Offset::new(Pos::new());
+        for child in self.children.iter_mut() {
+            child.redraw(ui);
+        }
     }
 }

@@ -79,6 +79,10 @@ impl<T> Map<T> {
         self.values.len()
     }
 
+    pub fn first(&self) -> Option<&T> {
+        Some(&self.values.first()?.value)
+    }
+
     pub fn last(&self) -> Option<&T> {
         Some(&self.values.last()?.value)
     }
@@ -98,6 +102,12 @@ impl<T> Map<T> {
     pub fn clear(&mut self) {
         self.keys.clear();
         self.values.clear();
+    }
+
+    pub fn reverse(&mut self) {
+        self.keys.clear();
+        self.values.reverse();
+        self.values.iter().enumerate().for_each(|(i, x)| { self.keys.insert(x.key.clone(), i); });
     }
 }
 

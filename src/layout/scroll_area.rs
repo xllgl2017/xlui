@@ -101,7 +101,7 @@ impl ScrollArea {
     pub fn show(mut self, ui: &mut Ui, callback: impl FnMut(&mut Ui)) {
         self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
         self.draw(ui, callback);
-        ui.layout().add_child(self.id.clone(), LayoutKind::ScrollArea(self));
+        ui.layout().add_child(LayoutKind::ScrollArea(self));
     }
 
     pub fn reset_context_height(&mut self) {
@@ -140,9 +140,10 @@ impl Layout for ScrollArea {
                     return;
                 }
             }
-            UpdateType::Offset(ref o) => {
+            UpdateType::Offset(ref mut o) => {
                 if !self.fill_render.param.rect.has_position(o.pos) { return; }
                 ui.can_offset = true;
+                o.target_id = self.layout.as_ref().unwrap().id.to_string();
                 self.layout.as_mut().unwrap().update(ui);
                 ui.update_type = UpdateType::None;
                 ui.can_offset = false;

@@ -174,9 +174,7 @@ impl Widget for MultiEdit {
                 if self.focused {
                     let pos = ui.device.device_input.mouse.lastest;
                     self.cursor_render.update_by_pos(pos, &self.char_layout);
-                    // let cx = self.cursor_render.offset.x + self.text_bufer.rect.dx().min;
                     self.select_render.set_by_cursor(&self.cursor_render);
-                    // self.select_render.reset();
                 }
                 self.changed = true;
                 ui.context.window.request_redraw();

@@ -2,6 +2,7 @@ use crate::response::Response;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
 use std::any::Any;
+use crate::Offset;
 
 pub mod label;
 pub mod button;
@@ -28,7 +29,6 @@ pub struct WidgetKind {
     pub(crate) widget: Box<dyn Widget>,
     pub(crate) id: String,
     pub(crate) rect: Rect,
-    pub(crate) display: bool,
 }
 
 impl WidgetKind {
@@ -38,14 +38,17 @@ impl WidgetKind {
             id: resp.id.to_string(),
             rect: resp.rect.clone(),
             widget: Box::new(widget),
-            display: true,
         }
     }
-    pub fn update(&mut self, ui: &mut Ui, pr: &Rect) {
+
+    pub fn offset(&mut self, o: &Offset, pr: &Rect) -> bool {
+        self.rect.offset(o);
+        !self.rect.out_of_rect(pr)
+    }
+    pub fn update(&mut self, ui: &mut Ui) {
         let resp = self.widget.update(ui);
         if resp.rect != &self.rect {
             self.rect = resp.rect.clone();
-            self.display = !self.rect.out_of_rect(pr);
         }
     }
 

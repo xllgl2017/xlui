@@ -12,7 +12,6 @@ use xlui::widgets::listview::ListView;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::single::SingleEdit;
-use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
 
 struct TD {
@@ -44,23 +43,27 @@ struct XlUiApp {
 
 impl XlUiApp {
     pub fn new() -> Self {
-        let data = vec![
-            TD::new("1"),
-            TD::new("2"),
-            TD::new("3"),
-            TD::new("4"),
-            TD::new("5"),
-            TD::new("6"),
-            TD::new("7"),
-            TD::new("8"),
-            TD::new("9"),
-            TD::new("10"),
-            TD::new("11"),
-            TD::new("12"),
-            TD::new("13"),
-            TD::new("14"),
-            TD::new("15")
-        ];
+        // let data = vec![
+        //     TD::new("1"),
+        //     TD::new("2"),
+        //     TD::new("3"),
+        //     TD::new("4"),
+        //     TD::new("5"),
+        //     TD::new("6"),
+        //     TD::new("7"),
+        //     TD::new("8"),
+        //     TD::new("9"),
+        //     TD::new("10"),
+        //     TD::new("11"),
+        //     TD::new("12"),
+        //     TD::new("13"),
+        //     TD::new("14"),
+        //     TD::new("15")
+        // ];
+        let mut data = vec![];
+        for i in 0..10000 {
+            data.push(TD::new(i + 1));
+        }
         Self {
             label: Label::new("hello".to_string()).width(200.0),
             count: 0,

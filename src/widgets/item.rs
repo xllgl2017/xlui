@@ -19,6 +19,7 @@ pub struct ItemWidget {
     current: Arc<RwLock<Option<String>>>,
     callback: Option<Box<dyn Fn(&String, &mut Ui)>>,
     selected: bool,
+    changed: bool,
 }
 
 impl ItemWidget {
@@ -32,6 +33,7 @@ impl ItemWidget {
             current: Arc::new(RwLock::new(None)),
             callback: None,
             selected: false,
+            changed: false,
         }
     }
 
@@ -58,10 +60,10 @@ impl ItemWidget {
         ui.add(self);
     }
 
-    fn update_rect(&mut self, ui: &mut Ui) {
-        self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
-        ui.context.window.request_redraw();
-    }
+    // fn update_rect(&mut self, ui: &mut Ui) {
+    //     self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+    //     ui.context.window.request_redraw();
+    // }
 
     pub fn connect(mut self, f: impl Fn(&String, &mut Ui) + 'static) -> Self {
         self.callback = Some(Box::new(f));
@@ -76,16 +78,28 @@ impl ItemWidget {
     fn init(&mut self, ui: &mut Ui) {
         self.fill_render.init_rectangle(ui, false, false);
     }
-}
 
-impl Widget for ItemWidget {
-    fn redraw(&mut self, ui: &mut Ui) {
+    fn update_buffer(&mut self, ui: &mut Ui) {
         let current = self.current.read().unwrap();
         if current.as_ref() != Some(&self.id) && self.selected {
             drop(current);
             self.selected = false;
-            self.update_rect(ui);
+            self.changed = true;
         }
+        if !self.changed && !ui.can_offset { return; }
+        // println!("{} {:?}", ui.can_offset, ui.offset);
+        let layout = self.layout.as_mut().unwrap();
+        ui.update_type = UpdateType::Offset(ui.offset.clone());
+        layout.update(ui);
+        ui.update_type = UpdateType::None;
+        self.fill_render.param.rect.offset(&ui.offset);
+        self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+    }
+}
+
+impl Widget for ItemWidget {
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().redraw(ui);
@@ -103,7 +117,8 @@ impl Widget for ItemWidget {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
-                    self.update_rect(ui);
+                    self.changed = true;
+                    ui.context.window.request_redraw();
                 }
                 self.layout.as_mut().unwrap().update(ui);
             }
@@ -113,15 +128,15 @@ impl Widget for ItemWidget {
                     if let Some(ref mut callback) = self.callback {
                         callback(&self.id, ui);
                     }
-                    self.update_rect(ui);
+                    self.changed = true;
                     ui.context.window.request_redraw();
                     return Response::new(&self.id, &self.fill_render.param.rect);
                 }
             }
             UpdateType::Offset(ref o) => {
                 if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
-                self.fill_render.param.rect.offset(o);
-                self.update_rect(ui);
+                self.changed = true;
+                ui.context.window.request_redraw();
                 self.layout.as_mut().unwrap().update(ui);
             }
             _ => {}

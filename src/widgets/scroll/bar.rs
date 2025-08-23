@@ -7,7 +7,7 @@ use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::Widget;
-use crate::Offset;
+use crate::{Offset, OffsetDirection};
 use crate::response::Response;
 use crate::size::radius::Radius;
 
@@ -144,10 +144,16 @@ impl Widget for ScrollBar {
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let oy = ui.device.device_input.mouse.offset_y();
                     let roy = self.slider_render.param.rect.offset_y_limit(self.offset + oy, self.fill_render.param.rect.dy());
+                    let mut offset = Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(self.context_offset_y(-roy));
+                    if self.offset < roy {
+                        offset.direction = OffsetDirection::Down
+                    } else {
+                        offset.direction = OffsetDirection::Up;
+                    }
                     self.offset = roy;
-                    let ut = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(self.context_offset_y(-roy)));
-
-                    ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y(self.context_offset_y(-roy)));
+                    let ut = UpdateType::Offset(offset);
+                    ui.update_type = UpdateType::None;
+                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y(self.context_offset_y(-roy)));
                     self.slider_render.update(ui, true, true);
                     // let data = self.slider_param.as_draw_param(true, true);
                     // ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
@@ -159,9 +165,15 @@ impl Widget for ScrollBar {
             UpdateType::Offset(ref o) => {
                 let oy = self.slider_offset_y(o.y);
                 let roy = self.slider_render.param.rect.offset_y_limit(self.offset + oy, self.fill_render.param.rect.dy());
+                let mut offset =Offset::new(o.pos).with_y(self.context_offset_y(-roy));
+                if self.offset < roy {
+                    offset.direction = OffsetDirection::Down
+                } else {
+                    offset.direction = OffsetDirection::Up;
+                }
                 self.offset = roy;
 
-                let ut = UpdateType::Offset(Offset::new(o.pos).with_y(self.context_offset_y(-roy)));
+                let ut = UpdateType::Offset(offset);
                 ui.update_type = UpdateType::None;
                 self.slider_render.update(ui, true, true);
                 // let data = self.slider_param.as_draw_param(true, true);

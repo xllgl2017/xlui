@@ -130,12 +130,22 @@ impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 const SAMPLE_COUNT: u32 = 4;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+enum OffsetDirection {
+    Down,
+    Left,
+    Right,
+    Up,
+}
+
+#[derive(Clone, Debug)]
 pub struct Offset {
     pos: Pos,
     x: f32,
     y: f32,
     covered: bool,
+    direction: OffsetDirection,
+    target_id: String,
 }
 
 impl Offset {
@@ -145,6 +155,8 @@ impl Offset {
             x: 0.0,
             y: 0.0,
             covered: false,
+            direction: OffsetDirection::Down,
+            target_id: "".to_string(),
         }
     }
 
@@ -167,7 +179,6 @@ impl Offset {
         self.covered = true;
         self
     }
-
 }
 
 

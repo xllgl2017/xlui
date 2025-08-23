@@ -132,8 +132,9 @@ impl Image {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.context.resize { return; }
+        if !self.changed && !ui.context.resize && !ui.can_offset { return; }
         self.changed = false;
+        self.rect.offset(&ui.offset);
         for (index, v) in self.vertices.iter_mut().enumerate() {
             match index {
                 0 => v.position = self.rect.left_top(),
