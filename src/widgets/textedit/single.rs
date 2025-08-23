@@ -2,7 +2,7 @@
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::singleline::TextEdit;
+//! use xlui::widgets::textedit::single::SingleEdit;
 //!
 //! fn edit_changed<A:App>(_:&mut A,_:&mut Ui,text:String){
 //!     println!("文本变动:{}",text);
@@ -10,7 +10,7 @@
 //!
 //!
 //! fn draw<A:App>(ui:&mut Ui){
-//!    let edit=TextEdit::new("".to_string())
+//!    let edit=SingleEdit::new("".to_string())
 //!         //连接文本变动监听函数
 //!         .connect(edit_changed::<A>)
 //!         //关联文本，当文本变动时修改id为my_label的Label
