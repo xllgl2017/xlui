@@ -158,16 +158,6 @@ impl<T: Display> SelectItem<T> {
 
 impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn redraw(&mut self, ui: &mut Ui) {
-        // let current = self.parent_selected.read().unwrap();
-        // let selected = current.as_ref() == Some(&self.value.to_string());
-        // if !selected && self.selected {
-        //     self.selected = false;
-        //     self.fill_render.update(ui, false, false);
-        // } else if selected && !self.selected {
-        //     self.selected = true;
-        //     self.fill_render.update(ui, true, true);
-        // }
-        // drop(current);
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
@@ -177,18 +167,12 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
             UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => {
-                self.re_init(ui);
-                println!("22222222222222222222");
-            }
+            UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
-                    // let current = self.parent_selected.read().unwrap();
-                    // let selected = current.as_ref() == Some(&self.value.to_string());
-                    // self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || selected);
                     ui.context.window.request_redraw();
                 }
             }
@@ -200,24 +184,12 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                     self.changed = true;
                     let mut selected = self.parent_selected.write().unwrap();
                     *selected = Some(self.value.to_string());
-                    // self.fill_render.update(ui, true, true);
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
-                    // return Response::new(&self.id, &self.fill_render.param.rect);
                 }
             }
             UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(_) => {}
-            // UpdateType::Offset(ref o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
-            //     let current = self.parent_selected.read().unwrap();
-            //     let selected = current.as_ref() == Some(&self.value.to_string());
-            //     self.fill_render.param.rect.offset(o);
-            //     self.text.rect.offset(o);
-            //     ui.context.window.request_redraw();
-            //     self.fill_render.update(ui, selected, self.hovered);
-            //     return Response::new(&self.id, &self.fill_render.param.rect);
-            // }
             _ => {}
         }
         Response::new(&self.id, &self.fill_render.param.rect)
