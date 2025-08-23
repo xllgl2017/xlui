@@ -133,7 +133,7 @@ impl Widget for ItemWidget {
                     return Response::new(&self.id, &self.fill_render.param.rect);
                 }
             }
-            UpdateType::Offset(ref o) => {
+            UpdateType::Offset(_) => {
                 if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
                 self.changed = true;
                 ui.context.window.request_redraw();

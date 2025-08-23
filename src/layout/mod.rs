@@ -157,7 +157,6 @@ impl LayoutKind {
         let ut = UpdateType::Offset(offset);
         ui.update_type = ut;
         ui.can_offset = true;
-        let rect = layout.drawn_rect();
         for i in pos..layout.widgets().len() {
             layout.widgets()[i].update(ui);
         }
@@ -286,26 +285,26 @@ impl LayoutKind {
 }
 
 
-fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind>, draw_rect: Rect, ui: &mut Ui, update: bool) {
-    match update {
-        true => {
-            for widget in widgets.iter_mut() {
-                widget.update(ui)
-            }
-            for child in children.iter_mut() {
-                child.update(ui);
-            }
-        }
-        false => {
-            for widget in widgets.iter_mut() {
-                widget.redraw(ui);
-            }
-            for child in children.iter_mut() {
-                child.redraw(ui);
-            }
-        }
-    }
-}
+// fn update_or_redraw(widgets: &mut Map<WidgetKind>, children: &mut Map<LayoutKind>, draw_rect: Rect, ui: &mut Ui, update: bool) {
+//     match update {
+//         true => {
+//             for widget in widgets.iter_mut() {
+//                 widget.update(ui)
+//             }
+//             for child in children.iter_mut() {
+//                 child.update(ui);
+//             }
+//         }
+//         false => {
+//             for widget in widgets.iter_mut() {
+//                 widget.redraw(ui);
+//             }
+//             for child in children.iter_mut() {
+//                 child.redraw(ui);
+//             }
+//         }
+//     }
+// }
 
 #[derive(Clone, Debug, Copy)]
 pub enum LayoutDirection {
@@ -478,7 +477,7 @@ impl Layout for VerticalLayout {
         }
         if let UpdateType::Offset(ref o) = ui.update_type {
             if !ui.can_offset { return; }
-            let mut draw_rect = self.drawn_rect();
+            let draw_rect = self.drawn_rect();
             self.widget_offset = o.clone();
             match o.direction {
                 OffsetDirection::Down => {

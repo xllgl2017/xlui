@@ -10,24 +10,20 @@ use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::Widget;
 
-fn main() {
-    TestFrame::new().run();
-}
-
-pub struct TestFrame {
+pub struct TestRectangle {
     frame: Rectangle,
     pub border_width: f32,
     pub border_radius: u8,
 }
-impl TestFrame {
-    pub fn new() -> TestFrame {
+impl TestRectangle {
+    pub fn new() -> TestRectangle {
         let shadow = Shadow {
             offset: [5.0, 8.0],
             spread: 10.0,
             color: Color::rgba(0, 0, 0, 30),
         };
 
-        TestFrame {
+        TestRectangle {
             frame: Rectangle::new(Rect::new(), Popup::popup_style()).with_shadow(shadow),
             border_width: 1.0,
             border_radius: 5,
@@ -70,7 +66,7 @@ impl TestFrame {
 }
 
 
-impl App for TestFrame {
+impl App for TestRectangle {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             let rect = ui.available_rect().clone().with_size(300.0, 200.0);

@@ -1,11 +1,12 @@
-mod frame;
+mod rectangle;
+mod triangle;
 
 use std::fmt::{Display, Formatter};
 use xlui::frame::{App, WindowAttribute};
 use xlui::layout::inner::InnerWindow;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
-use crate::frame::TestFrame;
+use crate::rectangle::TestRectangle;
 
 #[derive(PartialEq)]
 enum TestKind {
@@ -32,12 +33,12 @@ impl XlUi {
     }
 
     fn on_inner_close(&mut self, window: InnerWindow, _: &mut Ui) {
-        let frame: TestFrame = window.to_();
+        let frame: TestRectangle = window.to_();
         println!("{} {}", frame.border_radius, frame.border_width);
     }
 
     fn open_test_widget(&mut self, _: &mut Button, ui: &mut Ui) {
-        ui.create_inner_window(TestFrame::new()).on_close(Self::on_inner_close);
+        ui.create_inner_window(TestRectangle::new()).on_close(Self::on_inner_close);
     }
 }
 

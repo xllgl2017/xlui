@@ -1,5 +1,3 @@
-use std::any::Any;
-use std::ops::DerefMut;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
@@ -18,6 +16,7 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle, Shadow};
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::Offset;
+use std::any::Any;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -178,7 +177,7 @@ impl InnerWindow {
         false
     }
 
-    pub fn to_<W: 'static>(mut self) -> W {
+    pub fn to_<W: 'static>(self) -> W {
         let app: Box<dyn Any> = self.w;
         let app = app.downcast().unwrap();
         *app

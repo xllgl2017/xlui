@@ -38,6 +38,7 @@ use crate::widgets::Widget;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use crate::size::pos::Pos;
 use crate::widgets::textedit::single::SingleEdit;
 
 pub struct SpinBox<T> {
@@ -79,8 +80,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             gap: g,
             range: r,
             callback: None,
-            up_render: RenderParam::new(TriangleParam::new([0.0; 2], [0.0; 2], [0.0; 2], style.clone())),
-            down_render: RenderParam::new(TriangleParam::new([0.0; 2], [0.0; 2], [0.0; 2], style)),
+            up_render: RenderParam::new(TriangleParam::new(Pos::new(),Pos::new(),Pos::new(), style.clone())),
+            down_render: RenderParam::new(TriangleParam::new(Pos::new(),Pos::new(),Pos::new(), style)),
             up_rect: Rect::new(),
             down_rect: Rect::new(),
             init: false,
@@ -142,17 +143,35 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self.up_rect.set_x_max(self.rect.dx().max);
         self.up_rect.set_y_min(self.rect.dy().min + 1.0);
         self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
-        self.up_render.param.p0 = [self.up_rect.dx().min + self.up_rect.width() / 2.0, self.up_rect.dy().min];
-        self.up_render.param.p1 = [self.up_rect.dx().min, self.up_rect.dy().max];
-        self.up_render.param.p2 = [self.rect.dx().max, self.up_rect.dy().max];
+        let mut p0 = Pos::new();
+        p0.x = self.up_rect.dx().min + self.up_rect.width() / 2.0;
+        p0.y = self.up_rect.dy().min;
+        self.up_render.param.p0 = p0;
+        let mut p1 = Pos::new();
+        p1.x = self.up_rect.dx().min;
+        p1.y = self.up_rect.dy().max;
+        self.up_render.param.p1 = p1;
+        let mut p2 = Pos::new();
+        p2.x = self.rect.dx().max;
+        p2.y = self.up_rect.dy().max;
+        self.up_render.param.p2 = p2;
         self.up_render.init_triangle(ui, false, false);
         self.down_rect.set_x_min(self.rect.dx().max - 14.0);
         self.down_rect.set_x_max(self.rect.dx().max);
         self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
         self.down_rect.set_y_max(self.rect.dy().max - 2.0);
-        self.down_render.param.p0 = [self.down_rect.dx().min + self.down_rect.width() / 2.0, self.down_rect.dy().max];
-        self.down_render.param.p1 = [self.rect.dx().max - 14.0, self.down_rect.dy().min];
-        self.down_render.param.p2 = [self.rect.dx().max, self.down_rect.dy().min];
+        let mut p0 = Pos::new();
+        p0.x = self.down_rect.dx().min + self.down_rect.width() / 2.0;
+        p0.y = self.down_rect.dy().max;
+        self.down_render.param.p0 = p0;
+        let mut p1 = Pos::new();
+        p1.x = self.rect.dx().max - 14.0;
+        p1.y = self.down_rect.dy().min;
+        self.down_render.param.p1 = p1;
+        let mut p2 = Pos::new();
+        p2.x = self.rect.dx().max;
+        p2.y = self.down_rect.dy().min;
+        self.down_render.param.p2 = p2;
         self.down_render.init_triangle(ui, false, false);
     }
 

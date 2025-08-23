@@ -471,6 +471,7 @@ impl SingleEdit {
         self.cursor_render.update(ui, false, false);
         self.select_render.update(ui, false, false);
         self.fill_render.update(ui, false, false);
+        self.text_buffer.update_buffer(ui);
     }
 }
 

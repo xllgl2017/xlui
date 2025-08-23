@@ -1,13 +1,13 @@
 use crate::frame::context::Context;
+use crate::size::pos::Axis;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::text::{TextSize, TextWrap};
 use crate::ui::Ui;
 use crate::SAMPLE_COUNT;
-use glyphon::{Buffer, Shaping};
+use glyphon::Shaping;
 use wgpu::MultisampleState;
-use crate::size::pos::Axis;
 
 pub struct TextBuffer {
     pub(crate) text: String,
