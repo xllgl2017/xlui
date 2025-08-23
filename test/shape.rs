@@ -1,4 +1,4 @@
-use xlui::frame::App;
+use xlui::frame::{App, WindowAttribute};
 use xlui::layout::popup::Popup;
 use xlui::size::border::Border;
 use xlui::size::pos::Pos;
@@ -169,5 +169,12 @@ impl App for TestShape {
         self.rectangle.redraw(ui);
         self.triangle.redraw(ui);
         self.circle.redraw(ui);
+    }
+
+    fn window_attributes(&self) -> WindowAttribute {
+        WindowAttribute {
+            title: "TestShape".to_string(),
+            ..Default::default()
+        }
     }
 }

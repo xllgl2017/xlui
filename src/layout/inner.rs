@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::frame::App;
+use crate::frame::{App, WindowAttribute};
 use crate::layout::popup::Popup;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
 use crate::map::Map;
@@ -23,6 +23,7 @@ use std::sync::Arc;
 pub struct InnerWindow {
     pub(crate) id: String,
     fill_render: RenderParam<RectParam>,
+    attr: WindowAttribute,
     title_rect: Rect,
     offset: Offset,
     press_title: bool,
@@ -68,6 +69,7 @@ impl InnerWindow {
             w: Box::new(w),
             inner_windows: Some(Map::new()),
             request_close: Arc::new(AtomicBool::new(false)),
+            attr,
         };
         window.draw_title(ui);
         window.draw_context(ui);
@@ -92,7 +94,7 @@ impl InnerWindow {
         };
         ui.paint_rect(self.title_rect.clone(), title_style);
         ui.image("logo.jpg", (16.0, 16.0));
-        ui.label("InnerWindow");
+        ui.label(self.attr.title.as_str());
         let mut title_layout = ui.layout.take().unwrap(); //防止crash
         let mut rect = title_layout.available_rect().clone();
         rect.set_x_max(title_layout.max_rect().dx().max);
@@ -211,7 +213,6 @@ impl InnerWindow {
             request_update: None,
             offset: Offset::new(Pos::new()),
         };
-        // if let UpdateType::Offset(_) = oui.update_type {} else { self.w.update(&mut nui) }
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);
         self.inner_windows = nui.inner_windows.take();
