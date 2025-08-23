@@ -80,8 +80,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             gap: g,
             range: r,
             callback: None,
-            up_render: RenderParam::new(TriangleParam::new(Pos::new(),Pos::new(),Pos::new(), style.clone())),
-            down_render: RenderParam::new(TriangleParam::new(Pos::new(),Pos::new(),Pos::new(), style)),
+            up_render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style.clone())),
+            down_render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style)),
             up_rect: Rect::new(),
             down_rect: Rect::new(),
             init: false,
@@ -219,8 +219,14 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.context.resize { return; }
+        if !self.changed && !ui.context.resize && !ui.can_offset { return; }
         self.changed = false;
+        if ui.can_offset {
+            self.down_rect.offset(&ui.offset);
+            self.up_rect.offset(&ui.offset);
+            self.down_render.param.offset(&ui.offset);
+            self.up_render.param.offset(&ui.offset);
+        }
         self.down_render.update(ui, self.value <= self.range.start, false);
         self.up_render.update(ui, self.value >= self.range.end, false);
         self.edit.update_text(ui, format!("{:.*}", 2, self.value));
@@ -306,15 +312,15 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.listen_input(ui, 100);
                 }
             }
-            UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.rect); }
-                self.rect.offset(o);
-                self.up_rect.offset(o);
-                self.down_rect.offset(o);
-                self.up_render.param.offset(o);
-                self.down_render.param.offset(o);
-                self.changed = true;
-            }
+            // UpdateType::Offset(ref o) => {
+            //     if !ui.can_offset { return Response::new(&self.id, &self.rect); }
+            //     self.rect.offset(o);
+            //     self.up_rect.offset(o);
+            //     self.down_rect.offset(o);
+            //     self.up_render.param.offset(o);
+            //     self.down_render.param.offset(o);
+            //     self.changed = true;
+            // }
             UpdateType::Drop => {}
             _ => {}
         }

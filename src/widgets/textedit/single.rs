@@ -466,8 +466,14 @@ impl SingleEdit {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed { return; }
+        if !self.changed && !ui.can_offset { return; }
         self.changed = false;
+        if ui.can_offset {
+            self.fill_render.param.rect.offset(&ui.offset);
+            self.text_buffer.rect.offset(&ui.offset);
+            self.select_render.param.rect.offset(&ui.offset);
+            self.cursor_render.param.rect.offset(&ui.offset);
+        }
         self.cursor_render.update(ui, false, false);
         self.select_render.update(ui, false, false);
         self.fill_render.update(ui, false, false);
@@ -546,13 +552,13 @@ impl Widget for SingleEdit {
                 if !self.focused || key.is_none() { return Response::new(&self.id, &self.fill_render.param.rect); }
                 self.key_input(key.take(), ui)
             }
-            UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
-                self.fill_render.param.rect.offset(o);
-                self.text_buffer.rect.offset(o);
-                self.select_render.param.rect.offset(o);
-                self.cursor_render.param.rect.offset(o);
-            }
+            // UpdateType::Offset(ref o) => {
+            //     if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
+            //     self.fill_render.param.rect.offset(o);
+            //     self.text_buffer.rect.offset(o);
+            //     self.select_render.param.rect.offset(o);
+            //     self.cursor_render.param.rect.offset(o);
+            // }
             UpdateType::None => {
                 if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
                 if let Some(c) = self.char_layout.next_char() && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max

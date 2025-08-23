@@ -154,8 +154,14 @@ impl Slider {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed { return; }
+        if !self.changed && !ui.can_offset { return; }
         self.changed = false;
+        if ui.can_offset {
+            self.rect.offset(&ui.offset);
+            self.slider_render.param.rect.offset(&ui.offset);
+            self.slided_render.param.rect.offset(&ui.offset);
+            self.fill_render.param.rect.offset(&ui.offset);
+        }
         if self.value >= self.range.end {
             self.value = self.range.end;
         } else if self.value <= self.range.start {
@@ -236,14 +242,14 @@ impl Widget for Slider {
                     ui.context.window.request_redraw();
                 }
             }
-            UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.rect); }
-                self.rect.offset(o);
-                self.slider_render.param.rect.offset(o);
-                self.slided_render.param.rect.offset(o);
-                self.fill_render.param.rect.offset(o);
-                self.changed = true;
-            }
+            // UpdateType::Offset(ref o) => {
+            //     if !ui.can_offset { return Response::new(&self.id, &self.rect); }
+            //     self.rect.offset(o);
+            //     self.slider_render.param.rect.offset(o);
+            //     self.slided_render.param.rect.offset(o);
+            //     self.fill_render.param.rect.offset(o);
+            //     self.changed = true;
+            // }
             _ => {}
         }
         Response::new(&self.id, &self.rect)

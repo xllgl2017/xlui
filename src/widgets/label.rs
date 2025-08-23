@@ -85,7 +85,7 @@ impl Label {
             self.buffer.change = true;
         }
         if !self.buffer.change && !ui.can_offset { return; }
-        self.buffer.rect.offset(&ui.offset);
+        if ui.can_offset { self.buffer.rect.offset(&ui.offset); }
         self.buffer.update_buffer(ui);
     }
 }

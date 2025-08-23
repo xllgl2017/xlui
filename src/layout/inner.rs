@@ -26,7 +26,7 @@ pub struct InnerWindow {
     title_rect: Rect,
     offset: Offset,
     press_title: bool,
-    change: bool,
+    changed: bool,
     pub(crate) on_close: Option<Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)>>,
     w: Box<dyn App>,
     layout: Option<LayoutKind>,
@@ -63,7 +63,7 @@ impl InnerWindow {
             title_rect: Rect::new(),
             offset: Offset::new(Pos::new()).delete_offset(),
             press_title: false,
-            change: false,
+            changed: false,
             on_close: None,
             w: Box::new(w),
             inner_windows: Some(Map::new()),
@@ -116,9 +116,6 @@ impl InnerWindow {
         style.fill.clicked = Color::rgba(160, 160, 160, 150);
         btn.set_style(style.clone());
         ui.add(btn);
-        // let mut btn = Button::new("-").width(20.0).height(20.0);
-        // btn.set_style(style);
-        // ui.add(btn);
         let title_close_layout = ui.layout.take().unwrap();
 
 
@@ -139,12 +136,14 @@ impl InnerWindow {
         let context_layout = ui.layout.take().unwrap();
         ui.update_type = UpdateType::None;
         ui.layout = previous_layout;
-        self.layout.as_mut().unwrap().add_child( context_layout);
+        self.layout.as_mut().unwrap().add_child(context_layout);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.change { return; }
-        self.change = false;
+        if !self.changed { return; }
+        self.changed = false;
+        self.title_rect.offset(&self.offset);
+        self.fill_render.param.rect.offset(&self.offset);
         self.fill_render.update(ui, false, false);
     }
 
@@ -153,14 +152,12 @@ impl InnerWindow {
             UpdateType::MouseMove => {
                 if self.press_title {
                     let (ox, oy) = ui.device.device_input.mouse.offset();
-                    self.offset.x = ox;
-                    self.offset.y = oy;
+                    self.offset.x += ox;
+                    self.offset.y += oy;
                     self.offset.pos = ui.device.device_input.mouse.lastest;
-                    self.fill_render.param.rect.offset(&self.offset);
-                    self.title_rect.offset(&self.offset);
                     ui.update_type = UpdateType::Offset(self.offset.clone());
                     ui.can_offset = true;
-                    self.change = true;
+                    self.changed = true;
                     return false;
                 }
             }
@@ -193,6 +190,8 @@ impl InnerWindow {
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().redraw(ui);
         self.w.redraw(ui);
+        self.offset.x = 0.0;
+        self.offset.y = 0.0;
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
@@ -212,7 +211,7 @@ impl InnerWindow {
             request_update: None,
             offset: Offset::new(Pos::new()),
         };
-
+        // if let UpdateType::Offset(_) = oui.update_type {} else { self.w.update(&mut nui) }
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);
         self.inner_windows = nui.inner_windows.take();

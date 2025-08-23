@@ -61,7 +61,7 @@ impl XlUiApp {
         //     TD::new("15")
         // ];
         let mut data = vec![];
-        for i in 0..10000 {
+        for i in 0..1000 {
             data.push(TD::new(i + 1));
         }
         Self {

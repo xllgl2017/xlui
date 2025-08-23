@@ -89,7 +89,7 @@ impl Rectangle {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if !self.changed && !ui.can_offset { return; }
         self.changed = false;
-        self.fill_render.param.rect.offset(&ui.offset);
+        if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
         self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
 }
@@ -111,11 +111,11 @@ impl Widget for Rectangle {
                     self.changed = true;
                 }
             }
-            UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
-                self.fill_render.param.rect.offset(o);
-                self.changed = true;
-            }
+            // UpdateType::Offset(ref o) => {
+            //     if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
+            //     self.fill_render.param.rect.offset(o);
+            //     self.changed = true;
+            // }
             _ => {}
         }
         Response::new(&self.id, &self.fill_render.param.rect)
