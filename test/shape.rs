@@ -7,29 +7,32 @@ use xlui::size::rect::Rect;
 use xlui::style::color::Color;
 use xlui::style::{BorderStyle, ClickStyle, Shadow};
 use xlui::ui::Ui;
+use xlui::widgets::circle::Circle;
 use xlui::widgets::rectangle::Rectangle;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::triangle::Triangle;
 use xlui::widgets::Widget;
 
-pub struct TestRectangle {
+pub struct TestShape {
     rectangle: Rectangle,
     triangle: Triangle,
+    circle: Circle,
     pub border_width: f32,
     pub border_radius: u8,
 }
-impl TestRectangle {
-    pub fn new() -> TestRectangle {
+impl TestShape {
+    pub fn new() -> TestShape {
         let shadow = Shadow {
             offset: [5.0, 8.0],
             spread: 10.0,
             color: Color::rgba(0, 0, 0, 30),
         };
 
-        TestRectangle {
+        TestShape {
             rectangle: Rectangle::new(Rect::new(), Popup::popup_style()).with_shadow(shadow),
             triangle: Triangle::new(),
+            circle: Circle::new(50.0),
             border_width: 1.0,
             border_radius: 5,
         }
@@ -42,6 +45,7 @@ impl TestRectangle {
         self.rectangle.style_mut().border.clicked.width = v;
         self.rectangle.update(ui);
         self.triangle.style_mut().border.inactive.width = v;
+        self.circle.style_mut().border.inactive.width = v;
     }
 
     fn border_radius(&mut self, ui: &mut Ui, v: u8) {
@@ -72,7 +76,7 @@ impl TestRectangle {
 }
 
 
-impl App for TestRectangle {
+impl App for TestShape {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             let rect = ui.available_rect().clone().with_size(200.0, 150.0);
@@ -134,15 +138,36 @@ impl App for TestRectangle {
                 });
             });
         });
+        ui.horizontal(|ui| {
+            let mut style = ClickStyle::new();
+            style.fill.inactive = Color::BLUE;
+            style.border = BorderStyle::same(Border::new(1.0).color(Color::RED));
+            self.circle.set_style(style);
+            ui.add_mut(&mut self.circle);
+            ui.add_space(120.0);
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("边框:");
+                    ui.add(SpinBox::new(1.0, 1.0, 0.0..20.0).id("csbw")
+                        .contact("csb").contact("tsb").contact("sb").contact("sbw")
+                        .connect(Self::border_with));
+                    ui.add(Slider::new(1.0).with_range(0.0..20.0).id("csb")
+                        .contact("csbw").contact("tsb").contact("sb").contact("sbw")
+                        .connect(Self::border_with));
+                });
+            });
+        });
     }
 
     fn update(&mut self, ui: &mut Ui) {
         self.rectangle.update(ui);
         self.triangle.update(ui);
+        self.circle.update(ui);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.rectangle.redraw(ui);
         self.triangle.redraw(ui);
+        self.circle.redraw(ui);
     }
 }

@@ -1,9 +1,9 @@
 struct CircleParams {
-    center: vec2<f32>,
-    radius: f32,
-    border_thickness: f32,
-    fill_color: vec4<f32>,
-    border_color: vec4<f32>,
+    center: vec2<f32>,         // ⬅️ 圆心坐标（像素坐标）
+    radius: f32,               // ⬅️ 圆半径
+    border_thickness: f32,     // ⬅️ 边框宽度
+    fill_color: vec4<f32>,     // ⬅️ 填充颜色
+    border_color: vec4<f32>,   // ⬅️ 边框颜色
 //    resolution: vec2<f32>,
 };
 

@@ -5,16 +5,16 @@ use crate::style::ClickStyle;
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CircleDrawParam {
-    center: [f32; 2],
-    radius: f32,
-    border_thickness: f32,
-    fill_color: [f32; 4],
-    border_color: [f32; 4],
+    center: [f32; 2],          // ⬅️ 圆心坐标（像素坐标）
+    radius: f32,               // ⬅️ 圆半径
+    border_thickness: f32,     // ⬅️ 边框宽度
+    fill_color: [f32; 4],      // ⬅️ 填充颜色
+    border_color: [f32; 4],    // ⬅️ 边框颜色
 }
 
 pub struct CircleParam {
     pub(crate) rect: Rect,
-    style: ClickStyle,
+    pub(crate) style: ClickStyle,
     draw: CircleDrawParam,
 }
 

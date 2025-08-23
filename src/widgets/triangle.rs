@@ -29,8 +29,8 @@ impl Triangle {
     pub fn set_pos(&mut self, p0: Pos, p1: Pos, p2: Pos) {
         let mut x_min = p0.x;
         let mut x_max = p0.x;
-        let mut y_min = p1.x;
-        let mut y_max = p1.x;
+        let mut y_min = p0.y;
+        let mut y_max = p0.y;
         if p1.x < x_min { x_min = p1.x; }
         if p2.x < x_min { x_min = p2.x; }
         if p1.x > x_max { x_max = p1.x; }
@@ -44,6 +44,7 @@ impl Triangle {
         rect.set_x_max(x_max);
         rect.set_y_min(y_min);
         rect.set_y_max(y_max);
+        println!("triangle  {:?}", rect);
         self.render.param.p0 = p0;
         self.render.param.p1 = p1;
         self.render.param.p2 = p2;
@@ -87,16 +88,9 @@ impl Widget for Triangle {
 
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
-            UpdateType::None => {}
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
-            UpdateType::MouseMove => {}
-            UpdateType::MousePress => {}
-            UpdateType::MouseRelease => {}
-            UpdateType::MouseWheel => {}
-            UpdateType::KeyRelease(_) => {}
-            UpdateType::Offset(_) => {}
-            UpdateType::Drop => {}
+            _ => {}
         }
         Response::new(&self.id, &self.rect)
     }

@@ -20,6 +20,7 @@ pub(crate) mod item;
 pub mod listview;
 pub mod processbar;
 pub mod triangle;
+pub mod circle;
 
 pub trait Widget: Any {
     fn redraw(&mut self, ui: &mut Ui); //绘制调用
