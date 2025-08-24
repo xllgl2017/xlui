@@ -7,15 +7,16 @@ use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::Offset;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
+use crate::Offset;
 
 pub struct EditSelection {
     renders: Vec<RenderParam<RectParam>>,
     changed: bool,
-    start_vert: usize,
-    start_horiz: usize,
+    pub(crate) has_selected: bool,
+    pub(crate) start_vert: usize,
+    pub(crate) start_horiz: usize,
 }
 
 impl EditSelection {
@@ -23,6 +24,7 @@ impl EditSelection {
         EditSelection {
             renders: vec![],
             changed: false,
+            has_selected: false,
             start_vert: 0,
             start_horiz: 0,
         }
@@ -85,16 +87,18 @@ impl EditSelection {
             render.param.rect.set_x_max(render.param.rect.dx().min);
         }
         self.changed = true;
+        self.has_selected = false;
     }
 
     pub fn move_select(&mut self, ui: &mut Ui, cursor: &mut EditCursor, cchar: &CharBuffer) {
         let pos = ui.device.device_input.mouse.lastest;
         cursor.update_by_pos(pos, cchar);
         println!("move_select-{:?}-{}-{}", pos, cursor.horiz, cursor.vert);
-        if cursor.vert > self.start_vert {
+        if cursor.vert > self.start_vert { //向下选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index == self.start_vert {
                     let line = &cchar.lines[index];
+                    render.param.rect.set_x_min(line.get_width_in_char(self.start_horiz) + cursor.min_pos.x);
                     render.param.rect.set_x_max(line.width + cursor.min_pos.x);
                 } else if index == cursor.vert {
                     render.param.rect.set_x_min(cursor.min_pos.x);
@@ -119,7 +123,7 @@ impl EditSelection {
                     let line = &cchar.lines[index];
                     render.param.rect.set_x_min(cursor.min_pos.x);
                     render.param.rect.set_x_max(cursor.min_pos.x + line.width);
-                }else {
+                } else {
                     render.param.rect.set_x_max(render.param.rect.dx().min);
                 }
             }
@@ -143,6 +147,9 @@ impl EditSelection {
                 }
             }
         }
+        self.has_selected = true;
+        println!("{} {} {} {}", self.start_horiz, cursor.horiz, self.start_vert, cursor.vert);
+        if self.start_horiz == cursor.horiz && self.start_vert == cursor.vert { self.has_selected = false; }
         self.changed = true;
     }
 }

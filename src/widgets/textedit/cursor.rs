@@ -18,7 +18,7 @@ pub struct EditCursor {
     render: RenderParam<RectParam>,
     pub(crate) offset: Offset,
     line_height: f32,
-    changed: bool,
+    pub(crate) changed: bool,
 }
 
 impl EditCursor {
@@ -93,7 +93,7 @@ impl EditCursor {
         if self.horiz == 0 {
             self.vert -= 1;
             let line = &mut cchar.lines[self.vert];
-            self.horiz = line.chars.len() - 1;
+            self.horiz = if line.auto_wrap { line.chars.len() - 1 } else { line.chars.len() };
             let c = if line.auto_wrap { line.chars.remove(self.horiz) } else { EditChar::new('\n', 0.0) };
             line.auto_wrap = true;
             self.offset.x = line.width - c.width;
@@ -111,7 +111,7 @@ impl EditCursor {
     pub fn delete_after(&mut self, cchar: &mut CharBuffer) -> EditChar {
         let len = cchar.lines.len();
         let line = &mut cchar.lines[self.vert];
-        let c = if self.horiz == line.len() && self.vert < len {
+        let c = if self.horiz == line.len() && self.vert < len && self.horiz == 0 {
             let wrap = line.auto_wrap;
             line.auto_wrap = true;
             if wrap { cchar.lines[self.vert + 1].chars.remove(0) } else { EditChar::new('\n', 0.0) }
@@ -214,5 +214,13 @@ impl EditCursor {
 
     pub fn cursor_min(&self) -> f32 {
         self.min_pos.x + self.offset.x
+    }
+
+    pub fn set_cursor(&mut self, horiz: usize, vert: usize, cchar: &CharBuffer) {
+        self.horiz = horiz;
+        self.vert = vert;
+        self.offset.x = cchar.lines[vert].get_width_in_char(horiz);
+        self.offset.y = vert as f32 * self.line_height;
+        self.changed = true;
     }
 }

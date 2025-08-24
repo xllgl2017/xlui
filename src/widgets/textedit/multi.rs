@@ -87,7 +87,7 @@ impl MultiEdit {
             self.reset_size(&ui.context);
             self.char_layout.set_font_size(self.text_buffer.text_size.font_size);
             self.char_layout.set_line_height(self.text_buffer.text_size.line_height);
-            println!("111111111111111-{}-{}",self.text_buffer.rect.width(),self.fill_render.param.rect.width());
+            println!("111111111111111-{}-{}", self.text_buffer.rect.width(), self.fill_render.param.rect.width());
             self.char_layout.set_max_wrap_width(self.text_buffer.rect.width());
             self.char_layout.set_text(&self.text_buffer.text, ui);
             self.text_buffer.update_buffer_text(ui, self.char_layout.draw_text());
@@ -104,7 +104,6 @@ impl MultiEdit {
 
 
     fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
-        self.select_render.reset();
         self.changed = true;
         match key.unwrap() {
             winit::keyboard::Key::Named(name) => {
@@ -116,20 +115,21 @@ impl MultiEdit {
                     winit::keyboard::NamedKey::ArrowUp => self.cursor_render.move_up(&self.char_layout),
                     winit::keyboard::NamedKey::ArrowDown => self.cursor_render.move_down(&self.char_layout),
                     //更新游标+文本
-                    winit::keyboard::NamedKey::Backspace => self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render),
-                    winit::keyboard::NamedKey::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render),
-                    winit::keyboard::NamedKey::Space => self.char_layout.inset_char(' ', ui, &mut self.cursor_render),
+                    winit::keyboard::NamedKey::Backspace => self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render),
+                    winit::keyboard::NamedKey::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
+                    winit::keyboard::NamedKey::Space => self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render),
                     _ => {}
                 }
             }
             //更新游标+文本
             winit::keyboard::Key::Character(c) => {
                 let c = c.chars().next().unwrap();
-                self.char_layout.inset_char(c, ui, &mut self.cursor_render);
+                self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
         }
+        self.select_render.reset();
         // if let Some(ref mut callback) = self.callback {
         //     let app = ui.app.take().unwrap();
         //     callback(app, ui, self.char_layout.text());
