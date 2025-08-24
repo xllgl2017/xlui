@@ -119,6 +119,8 @@ impl MultiEdit {
                     winit::keyboard::NamedKey::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
                     winit::keyboard::NamedKey::Space => self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render),
                     winit::keyboard::NamedKey::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &self.select_render),
+                    winit::keyboard::NamedKey::Home => self.cursor_render.set_cursor(0, self.cursor_render.vert, &self.char_layout),
+                    winit::keyboard::NamedKey::End => self.cursor_render.set_cursor(self.char_layout.lines[self.cursor_render.vert].len(), self.cursor_render.vert, &self.char_layout),
                     _ => {}
                 }
             }
