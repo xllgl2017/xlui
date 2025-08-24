@@ -51,6 +51,7 @@ impl WindowAttribute {
             .with_decorations(self.decorations)
             .with_window_icon(Some(icon))
             .with_window_level(self.window_level)
+
     }
 
     pub(crate) fn inner_width_f32(&self) -> f32 {
@@ -240,6 +241,7 @@ pub trait App: Any + 'static {
     where
         Self: Sized,
     {
+        //wasm-pack build --target web
         let event_loop = EventLoop::with_user_event().build().unwrap();
         let proxy_event = event_loop.create_proxy();
         event_loop.set_control_flow(ControlFlow::Wait);

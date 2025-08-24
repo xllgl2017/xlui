@@ -245,7 +245,7 @@ impl App for TestWidget {
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
-            inner_size: (800, 600).into(),
+            inner_size: (1000, 800).into(),
             ..Default::default()
         }
     }

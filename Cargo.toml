@@ -11,6 +11,7 @@ readme = "README.md"
 
 [lib]
 name = "xlui"
+crate-type = ['cdylib','rlib']
 
 [[bin]]
 name = "hello_world"
@@ -36,6 +37,11 @@ path = "test/hibernate.rs"
 [[bin]]
 name = "test_all"
 path = "test/all.rs"
+
+#[lib]
+#name = "xlui-web"
+#path = "test/web.rs"
+#crate-type = []
 
 [dependencies]
 winit = "0.30.11"
