@@ -61,7 +61,7 @@ impl MultiEdit {
 
     pub(crate) fn reset_size(&mut self, context: &Context) {
         self.text_buffer.reset_size(context); //计算行高
-        let height = self.text_buffer.text_size.line_height * self.desire_lines as f32;
+        let height = self.text_buffer.text_size.line_height * self.desire_lines as f32 + 6.0;
         match self.size_mode {
             SizeMode::Auto => self.fill_render.param.rect.set_size(200.0, height),
             SizeMode::FixWidth => self.fill_render.param.rect.set_height(height),
