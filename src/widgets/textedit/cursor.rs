@@ -155,7 +155,7 @@ impl EditCursor {
         if self.offset.x == 0.0 {
             self.horiz -= 1;
         }
-        if self.horiz >= line.len() && self.vert == cchar.lines.len() - 1 {
+        if self.horiz >= line.len() {
             self.offset.x = line.width;
         }
     }
