@@ -179,7 +179,7 @@ impl CharBuffer {
                     cursor.horiz -= 1;
                 }
                 cursor.changed = true;
-            } else {//右到左删除
+            } else { //右到左删除
                 for _ in cursor.horiz..selection.start_horiz {
                     line.chars.remove(cursor.horiz);
                 }
@@ -242,7 +242,7 @@ impl CharBuffer {
         let raw_text = self.raw_text();
         self.set_text(&raw_text, ui);
         cursor.move_right(self);
-        if cursor.offset.x == 0.0 {
+        if cursor.offset.x == 0.0 && c != '\n' {
             cursor.move_right(self)
         }
         println!("insert char-{}-{}", cursor.vert, cursor.horiz);
