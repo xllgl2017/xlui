@@ -20,7 +20,7 @@ impl EditChar {
 #[derive(Default)]
 pub struct EditLine {
     pub(crate) chars: Vec<EditChar>,
-    auto_wrap: bool,
+    pub(crate) auto_wrap: bool,
     pub(crate) width: f32,
 }
 

@@ -94,7 +94,8 @@ impl EditCursor {
             self.vert -= 1;
             let line = &mut cchar.lines[self.vert];
             self.horiz = line.chars.len() - 1;
-            let c = line.chars.remove(self.horiz);
+            let c = if line.auto_wrap { line.chars.remove(self.horiz) } else { EditChar::new('\n', 0.0) };
+            line.auto_wrap = true;
             self.offset.x = line.width - c.width;
             self.offset.y -= self.line_height;
             c
@@ -111,7 +112,9 @@ impl EditCursor {
         let len = cchar.lines.len();
         let line = &mut cchar.lines[self.vert];
         let c = if self.horiz == line.len() && self.vert < len {
-            cchar.lines[self.vert + 1].chars.remove(0)
+            let wrap = line.auto_wrap;
+            line.auto_wrap = true;
+            if wrap { cchar.lines[self.vert + 1].chars.remove(0) } else { EditChar::new('\n', 0.0) }
         } else if self.horiz < line.len() {
             line.chars.remove(self.horiz)
         } else { EditChar::new(' ', 0.0) };
