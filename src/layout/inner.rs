@@ -151,6 +151,7 @@ impl InnerWindow {
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {
         match ui.update_type {
+            UpdateType::ReInit => self.fill_render.init_rectangle(ui, false, false),
             UpdateType::MouseMove => {
                 if self.press_title {
                     let (ox, oy) = ui.device.device_input.mouse.offset();
