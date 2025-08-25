@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use winit::window::{Icon, WindowLevel};
-use crate::font::Font;
+use crate::Font;
 use crate::size::Size;
 
 pub struct WindowAttribute {

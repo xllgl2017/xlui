@@ -1,8 +1,7 @@
 use std::fmt::Debug;
-use crate::font::Font;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
-use crate::{Device, NumCastExt, Offset};
+use crate::{Device, Font, NumCastExt, Offset};
 use glyphon::Viewport;
 use std::sync::Arc;
 use winit::event_loop::EventLoopProxy;

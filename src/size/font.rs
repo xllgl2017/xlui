@@ -1,12 +1,12 @@
+use crate::text::rich::RichText;
 use ab_glyph::{Font as AbFont, PxScale, ScaleFont};
+use glyphon::cosmic_text::rustybuzz;
+use glyphon::cosmic_text::rustybuzz::Face;
 use glyphon::fontdb::Source;
+use rustybuzz::UnicodeBuffer;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
-use glyphon::cosmic_text::rustybuzz;
-use glyphon::cosmic_text::rustybuzz::Face;
-use rustybuzz::UnicodeBuffer;
-use crate::text::TextSize;
 
 pub struct Font {
     family: String,
@@ -60,26 +60,24 @@ impl Font {
         self
     }
 
-    pub(crate) fn text_size(&self, txt: &str, font_size: f32) -> TextSize {
-        let mut size = TextSize::new();
-        let scale = PxScale::from(font_size);
+    pub(crate) fn text_size(&self, text: &mut RichText) {
+        if text.size.is_none() { text.size = Some(self.size); }
+        let scale = PxScale::from(text.font_size());
         let scale_font = self.glyph_font.as_scaled(scale);
         let ascent = scale_font.ascent();
         let descent = scale_font.descent();
         let line_gap = scale_font.line_gap();
-        size.line_height = ascent - descent + line_gap;
-        size.font_size = font_size;
+        text.height = ascent - descent + line_gap;
         let face = Face::from_slice(&self.data, 0).expect("invalid font data");
         let mut buf = UnicodeBuffer::new();
-        buf.push_str(txt);
+        buf.push_str(&text.text);
         let glyph_buffer = rustybuzz::shape(&face, &[], buf);
         let positions = glyph_buffer.glyph_positions();
         let upem = face.units_per_em() as f32;
-        let scale = font_size / upem;
+        let scale = text.font_size() / upem;
         for pos in positions {
-            size.line_width += pos.x_advance as f32 * scale;
+            text.width += pos.x_advance as f32 * scale;
         }
-        size
     }
 
     pub(crate) fn char_width(&self, char: char, font_size: f32) -> f32 {

@@ -46,11 +46,11 @@ impl EditCursor {
         if init {
             self.min_pos.x = text.rect.dx().min;
             self.min_pos.y = text.rect.dy().min;
-            self.line_height = text.text_size.line_height;
+            self.line_height = text.text.height;
             self.vert = cchar.lines.len();
             let last_line = cchar.lines.last().unwrap();
             self.horiz = cchar.lines.last().unwrap().len();
-            let oy = self.horiz as f32 * text.text_size.line_height;
+            let oy = self.horiz as f32 * text.text.height;
             self.offset.x = last_line.width;
             self.offset.y = oy;
         }

@@ -1,7 +1,7 @@
 //!### Button的示例用法
-//! ```
+//!```
 //! use xlui::frame::App;
-//! use xlui::size::padding::Padding;
+//! use xlui::Padding;
 //! use xlui::style::ClickStyle;
 //! use xlui::ui::Ui;
 //! use xlui::widgets::button::Button;
@@ -34,7 +34,7 @@
 //!        //设置内部padding
 //!        .padding(Padding::same(5.0));
 //!    //设置字体大小
-//!    btn.set_font_size(14.0);
+//!    //btn.set_font_size(14.0);
 //!    //设置控件宽高
 //!    btn.set_size(30.0,30.0);
 //!    ui.add(btn);
@@ -54,6 +54,7 @@ use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::ClickStyle;
+use crate::text::rich::RichText;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::image::Image;
@@ -76,9 +77,9 @@ pub struct Button {
 
 
 impl Button {
-    pub fn new(text: impl ToString) -> Self {
+    pub fn new(text: impl Into<RichText>) -> Self {
         let padding = Padding::same(2.0);
-        let text_buffer = TextBuffer::new(text.to_string());
+        let text_buffer = TextBuffer::new(text);
         Button {
             id: crate::gen_unique_id(),
             text_buffer,
@@ -95,7 +96,7 @@ impl Button {
         }
     }
 
-    pub fn image_and_text(source: &'static str, text: impl ToString) -> Self {
+    pub fn image_and_text(source: &'static str, text: impl Into<RichText>) -> Self {
         let mut res = Button::new(text);
         res.image = Some(Image::new(source));
         res
@@ -150,9 +151,9 @@ impl Button {
         self.size_mode = SizeMode::Fix;
     }
 
-    pub fn set_font_size(&mut self, font_size: f32) {
-        self.text_buffer.text_size.font_size = font_size;
-    }
+    // pub fn set_font_size(&mut self, font_size: f32) {
+    //     self.text_buffer.text.size = font_size;
+    // }
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.set_width(w);

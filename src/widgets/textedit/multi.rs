@@ -61,7 +61,7 @@ impl MultiEdit {
 
     pub(crate) fn reset_size(&mut self, context: &Context) {
         self.text_buffer.reset_size(context); //计算行高
-        let height = self.text_buffer.text_size.line_height * self.desire_lines as f32 + 6.0;
+        let height = self.text_buffer.text.height * self.desire_lines as f32 + 6.0;
         match self.size_mode {
             SizeMode::Auto => self.fill_render.param.rect.set_size(200.0, height),
             SizeMode::FixWidth => self.fill_render.param.rect.set_height(height),
@@ -85,20 +85,20 @@ impl MultiEdit {
         if init {
             self.fill_render.param.rect = ui.available_rect().clone();
             self.reset_size(&ui.context);
-            self.char_layout.set_font_size(self.text_buffer.text_size.font_size);
-            self.char_layout.set_line_height(self.text_buffer.text_size.line_height);
+            self.char_layout.set_font_size(self.text_buffer.text.font_size());
+            self.char_layout.set_line_height(self.text_buffer.text.height);
             println!("111111111111111-{}-{}", self.text_buffer.rect.width(), self.fill_render.param.rect.width());
             self.char_layout.set_max_wrap_width(self.text_buffer.rect.width());
-            self.char_layout.set_text(&self.text_buffer.text, ui);
+            self.char_layout.set_text(&self.text_buffer.text.text, ui);
             self.text_buffer.update_buffer_text(ui, self.char_layout.draw_text());
             let mut cursor_rect = self.text_buffer.rect.clone();
             cursor_rect.set_width(2.0);
-            cursor_rect.set_height(self.text_buffer.text_size.line_height);
+            cursor_rect.set_height(self.text_buffer.text.height);
             self.cursor_render.set_rect(cursor_rect);
         }
         self.fill_render.init_rectangle(ui, false, false);
         self.cursor_render.init(&self.text_buffer, &self.char_layout, ui, init);
-        self.select_render.init(self.desire_lines, &self.text_buffer.rect, self.text_buffer.text_size.line_height, ui, init);
+        self.select_render.init(self.desire_lines, &self.text_buffer.rect, self.text_buffer.text.height, ui, init);
         self.text_buffer.draw(ui);
     }
 

@@ -2,19 +2,16 @@ use crate::align::Align;
 use crate::frame::context::Context;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
-use crate::style::color::Color;
-use crate::text::{TextSize, TextWrap};
+use crate::text::rich::RichText;
+use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::SAMPLE_COUNT;
 use glyphon::Shaping;
 use wgpu::MultisampleState;
 
 pub struct TextBuffer {
-    pub(crate) text: String,
+    pub(crate) text: RichText,
     pub(crate) rect: Rect,
-    pub(crate) color: Color,
-    pub(crate) text_wrap: TextWrap,
-    pub(crate) text_size: TextSize,
     pub(crate) size_mode: SizeMode,
     pub(crate) buffer: Option<glyphon::Buffer>,
     pub(crate) render: Option<glyphon::TextRenderer>,
@@ -25,13 +22,10 @@ pub struct TextBuffer {
 }
 
 impl TextBuffer {
-    pub fn new(text: String) -> TextBuffer {
+    pub fn new(text: impl Into<RichText>) -> TextBuffer {
         TextBuffer {
-            text,
+            text: text.into(),
             rect: Rect::new(),
-            color: Color::BLACK,
-            text_wrap: TextWrap::NoWrap,
-            text_size: TextSize::new(),
             size_mode: SizeMode::Auto,
             buffer: None,
             render: None,
@@ -43,21 +37,21 @@ impl TextBuffer {
     }
 
     pub fn with_wrap(mut self, wrap: TextWrap) -> Self {
-        self.text_wrap = wrap;
+        self.text = self.text.wrap(wrap);
         self
     }
 
     pub fn reset_size(&mut self, context: &Context) {
-        self.text_size = context.font.text_size(&self.text, self.text_size.font_size);
+        self.text.init_size(&context.font);
         match self.size_mode {
-            SizeMode::Auto => self.rect.set_size(self.text_size.line_width, self.text_size.line_height),
-            SizeMode::FixWidth => self.rect.set_height(self.text_size.line_height),
-            SizeMode::FixHeight => self.rect.set_width(self.text_size.line_width),
+            SizeMode::Auto => self.rect.set_size(self.text.width, self.text.height),
+            SizeMode::FixWidth => self.rect.set_height(self.text.height),
+            SizeMode::FixHeight => self.rect.set_width(self.text.width),
             _ => {}
         }
         if let SizeMode::Auto = self.size_mode { return; }
-        let ox = self.rect.width() - self.text_size.line_width;
-        let oy = self.rect.height() - self.text_size.line_height;
+        let ox = self.rect.width() - self.text.width;
+        let oy = self.rect.height() - self.text.height;
         match self.align {
             //固定宽度
             Align::LeftCenter => {
@@ -102,9 +96,9 @@ impl TextBuffer {
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui) {
-        let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text_size.font_size, self.text_size.line_height));
+        let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
         buffer.set_wrap(&mut ui.context.render.text.font_system, glyphon::Wrap::Glyph);
-        buffer.set_text(&mut ui.context.render.text.font_system, &self.text, &ui.context.font.font_attr(), Shaping::Advanced);
+        buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &ui.context.font.font_attr(), Shaping::Advanced);
         let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
             count: SAMPLE_COUNT,
             mask: !0,
@@ -129,7 +123,7 @@ impl TextBuffer {
             top: self.rect.dy().min + self.clip_y,
             scale: 1.0,
             bounds,
-            default_color: self.color.as_glyphon_color(),
+            default_color: self.text.color.as_glyphon_color(),
             custom_glyphs: &[],
         };
         self.render.as_mut().unwrap().prepare(
@@ -143,7 +137,7 @@ impl TextBuffer {
     }
 
     pub fn set_text(&mut self, text: String) {
-        self.text = text;
+        self.text.text = text;
         self.change = true;
     }
 
@@ -160,12 +154,12 @@ impl TextBuffer {
         if !self.change { return; }
         self.change = false;
         self.buffer.as_mut().unwrap().set_text(
-            &mut ui.context.render.text.font_system, self.text.as_str(),
+            &mut ui.context.render.text.font_system, self.text.text.as_str(),
             &ui.context.font.font_attr(), Shaping::Advanced);
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {
-        self.text_wrap = wrap;
+        self.text.wrap = wrap;
     }
 
     pub fn set_width(&mut self, width: f32) {

@@ -432,7 +432,7 @@ impl SingleEdit {
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
         self.text_buffer.set_text(text);
         let wx = self.text_buffer.rect.dx().min;
-        self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
+        self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text.text, self.text_buffer.text.font_size(), &ui.context);
         self.cursor_render.param.rect.offset_x_to(self.char_layout.x_min + self.char_layout.width);
         self.changed = true;
     }
@@ -454,7 +454,7 @@ impl SingleEdit {
         self.select_render.init_rectangle(ui, false, false);
         //字符管理
         let wx = self.text_buffer.rect.dx().min;
-        self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text, self.text_buffer.text_size.font_size, &ui.context);
+        self.char_layout = CharLayout::from_text(wx, &self.text_buffer.text.text, self.text_buffer.text.font_size(), &ui.context);
         //游标
         self.cursor_render.param.rect = self.fill_render.param.rect.clone_add_padding(&Padding::same(5.0));
         self.cursor_render.param.rect.set_x_min(self.cursor_render.param.rect.dx().min - 2.0);

@@ -1,12 +1,11 @@
 use std::sync::Arc;
-use xlui::font::Font;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::textedit::single::SingleEdit;
-use xlui::WindowAttribute;
+use xlui::{Font, WindowAttribute};
 
 fn main() {
     XlUi {}.run();
@@ -57,8 +56,8 @@ impl App for XlUi {
         ui.add(ComboBox::new(vec![1, 2, 3, 4, 5, 6, 7, 8]).with_popup_height(150.0));
     }
     fn window_attributes(&self) -> WindowAttribute {
-        WindowAttribute{
-            font:Arc::new(Font::from_file("../xrs/target/res/font/微软雅黑.ttf")),
+        WindowAttribute {
+            font: Arc::new(Font::from_file("../xrs/target/res/font/微软雅黑.ttf").with_size(24.0)),
             ..Default::default()
         }
     }
