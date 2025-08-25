@@ -103,7 +103,7 @@ pub mod map;
 mod window;
 
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
-pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos};
+pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

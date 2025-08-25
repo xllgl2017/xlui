@@ -9,11 +9,9 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-use xlui::font::Font;
 use xlui::frame::context::{Context, Render, UpdateType};
 use xlui::map::Map;
-use xlui::size::Size;
-use xlui::{Device, DeviceInput};
+use xlui::{Device, DeviceInput, Font};
 
 mod render;
 
@@ -56,7 +54,7 @@ impl State {
         };
         // let text_render = TextRender::new(&device);
         let context = Context {
-            size: Size { width: window.inner_size().width, height: window.inner_size().height },
+            size: xlui::Size { width: window.inner_size().width, height: window.inner_size().height },
             font: font.clone(),
             viewport,
             window,
