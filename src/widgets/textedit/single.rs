@@ -367,7 +367,7 @@ impl SingleEdit {
                     winit::keyboard::NamedKey::Backspace => {
                         let xm = self.char_layout.remove_char_in_cursor();
                         self.update_cursor(ui, xm);
-                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                        self.text_buffer.clip_x = self.char_layout.offset;
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text);
                     }
@@ -380,7 +380,7 @@ impl SingleEdit {
                             xm + self.char_layout.offset
                         };
                         self.update_cursor(ui, xm);
-                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                        self.text_buffer.clip_x = self.char_layout.offset;
                     }
                     winit::keyboard::NamedKey::ArrowRight => {
                         let xm = self.char_layout.cursor_add();
@@ -389,12 +389,12 @@ impl SingleEdit {
                             self.text_buffer.rect.dx().max
                         } else { xm };
                         self.update_cursor(ui, xm);
-                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                        self.text_buffer.clip_x = self.char_layout.offset;
                     }
                     winit::keyboard::NamedKey::Delete => {
                         let xm = self.char_layout.remove_after();
                         self.update_cursor(ui, xm);
-                        self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                        self.text_buffer.clip_x = self.char_layout.offset;
                         let text = self.char_layout.text();
                         self.text_buffer.set_text(text);
                     }
@@ -411,7 +411,7 @@ impl SingleEdit {
                 let c = c.chars().next().unwrap();
                 let xm = self.char_layout.push_char(c, &ui.context, self.text_buffer.rect.dx().max);
                 self.update_cursor(ui, xm);
-                self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                self.text_buffer.clip_x = self.char_layout.offset;
                 let text = self.char_layout.text();
 
                 self.text_buffer.set_text(text);
@@ -573,7 +573,7 @@ impl Widget for SingleEdit {
                         self.select_render.param.rect.set_x_min(self.text_buffer.rect.dx().min);
                     }
                     self.changed = true;
-                    self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                    self.text_buffer.clip_x = self.char_layout.offset;
                     ui.context.window.request_redraw();
                 } else if let Some(c) = self.char_layout.previous_char() && ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min
                     && ui.device.device_input.mouse.lastest.x < ui.device.device_input.mouse.pressed_pos.x {
@@ -587,7 +587,7 @@ impl Widget for SingleEdit {
                         self.select_render.param.rect.set_x_max(self.text_buffer.rect.dx().max);
                     }
                     self.changed = true;
-                    self.text_buffer.clip_x = (-self.char_layout.offset..-self.char_layout.offset).into();
+                    self.text_buffer.clip_x = self.char_layout.offset;
                     ui.context.window.request_redraw();
                 }
             }
