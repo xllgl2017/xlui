@@ -22,8 +22,8 @@ use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use std::sync::atomic::Ordering;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
-use crate::layout::inner::InnerWindow;
 use crate::size::pos::Pos;
+use crate::window::inner::InnerWindow;
 
 pub struct AppContext {
     pub(crate) device: Device,

@@ -42,7 +42,7 @@ impl State {
             desired_maximum_frame_latency: 2,
             present_mode: wgpu::PresentMode::AutoVsync,
         };
-        let font = Arc::new(Font::new_from_file("/home/xl/RustroverProjects/xrs/target/res/font/simfang.ttf"));
+        let font = Arc::new(Font::from_file("/home/xl/RustroverProjects/xrs/target/res/font/simfang.ttf"));
         let viewport = Viewport::new(&device, &cache);
 
         let device = Device {

@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use xlui::frame::{App, WindowAttribute};
+use xlui::frame::App;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
@@ -14,6 +14,7 @@ use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::single::SingleEdit;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
+use xlui::WindowAttribute;
 
 #[allow(dead_code)]
 fn main() {

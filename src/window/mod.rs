@@ -1,12 +1,15 @@
-use std::error::Error;
-use crate::font::Font;
+pub mod attribute;
+pub mod inner;
+
 use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
 use crate::map::Map;
 use crate::size::Size;
 use crate::ui::AppContext;
+use crate::window::attribute::WindowAttribute;
 use crate::{Device, DeviceInput};
 use glyphon::{Cache, Resolution, Viewport};
+use std::error::Error;
 use std::sync::Arc;
 use winit::event_loop::EventLoopProxy;
 
@@ -16,16 +19,15 @@ pub(crate) struct Window {
 }
 
 impl Window {
-    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: Box<dyn App>, event: EventLoopProxy<(winit::window::WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
+    pub(crate) async fn new(window: Arc<winit::window::Window>, mut app: Box<dyn App>, attr: WindowAttribute, event: EventLoopProxy<(winit::window::WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
         let device = Self::rebuild_device(&window, event.clone()).await?;
-        let font = Arc::new(Font::new());
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
             size: Size {
                 width: window.inner_size().width,
                 height: window.inner_size().height,
             },
-            font: font.clone(),
+            font: attr.font.clone(),
             viewport,
             window,
             resize: false,

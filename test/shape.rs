@@ -1,4 +1,4 @@
-use xlui::frame::{App, WindowAttribute};
+use xlui::frame::App;
 use xlui::layout::popup::Popup;
 use xlui::size::border::Border;
 use xlui::size::pos::Pos;
@@ -13,6 +13,7 @@ use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::triangle::Triangle;
 use xlui::widgets::Widget;
+use xlui::WindowAttribute;
 
 pub struct TestShape {
     rectangle: Rectangle,

@@ -1,9 +1,12 @@
+use std::sync::Arc;
+use xlui::font::Font;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::combobox::ComboBox;
 use xlui::widgets::textedit::single::SingleEdit;
+use xlui::WindowAttribute;
 
 fn main() {
     XlUi {}.run();
@@ -14,7 +17,7 @@ struct XlUi {}
 impl App for XlUi {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            ui.label("dsfdsf");
+            ui.label("sc");
             ui.button("btn");
             ui.checkbox(false, "1");
             ui.spinbox(1, 1, 0..100);
@@ -53,8 +56,10 @@ impl App for XlUi {
         });
         ui.add(ComboBox::new(vec![1, 2, 3, 4, 5, 6, 7, 8]).with_popup_height(150.0));
     }
-
-    fn update(&mut self, ui: &mut Ui) {}
-
-    fn redraw(&mut self, ui: &mut Ui) {}
+    fn window_attributes(&self) -> WindowAttribute {
+        WindowAttribute{
+            font:Arc::new(Font::from_file("../xrs/target/res/font/微软雅黑.ttf")),
+            ..Default::default()
+        }
+    }
 }

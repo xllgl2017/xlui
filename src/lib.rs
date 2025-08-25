@@ -5,7 +5,8 @@
 //! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img.png?raw=true)
 //! ### 下面是xlui的最小运行示例
 //! ```
-//! use xlui::frame::{WindowAttribute,App};
+//! use xlui::frame::App;
+//! use xlui::WindowAttribute;
 //! use xlui::widgets::Widget;
 //! use xlui::widgets::label::Label;
 //! use xlui::widgets::button::Button;
@@ -102,6 +103,9 @@ pub mod style;
 mod render;
 pub mod response;
 pub mod map;
+mod window;
+
+pub use window::{attribute::WindowAttribute, inner::InnerWindow};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

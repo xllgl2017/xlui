@@ -2,9 +2,9 @@ use crate::ui::Ui;
 use std::any::Any;
 use std::ops::DerefMut;
 use crate::frame::App;
-use crate::layout::inner::InnerWindow;
 use crate::size::rect::Rect;
 use crate::widgets::button::Button;
+use crate::window::inner::InnerWindow;
 
 pub struct Callback {
     // click: Option<Box<dyn FnMut(&mut dyn Any, &mut Context)>>,

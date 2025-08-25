@@ -1,5 +1,5 @@
+use crate::align::Align;
 use crate::frame::context::Context;
-use crate::size::pos::Axis;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
@@ -8,7 +8,6 @@ use crate::ui::Ui;
 use crate::SAMPLE_COUNT;
 use glyphon::Shaping;
 use wgpu::MultisampleState;
-use crate::align::Align;
 
 pub struct TextBuffer {
     pub(crate) text: String,
