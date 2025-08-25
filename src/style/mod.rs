@@ -1,8 +1,7 @@
 //!
 //! ### 控件样式
 //! ```
-//!  use xlui::size::border::Border;
-//! use xlui::size::radius::Radius;
+//! use xlui::{Size,Border,Radius};
 //! use xlui::style::ClickStyle;
 //! use xlui::style::color::Color;
 //! use xlui::ui::Ui;

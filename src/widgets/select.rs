@@ -1,6 +1,6 @@
 //! ### SelectItem的示例用法
 //! ```
-//! use xlui::size::padding::Padding;
+//! use xlui::Padding;
 //! use xlui::ui::Ui;
 //! use xlui::widgets::select::SelectItem;
 //!
