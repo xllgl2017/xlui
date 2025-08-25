@@ -3,8 +3,8 @@ mod widget;
 mod align;
 
 use std::fmt::{Display, Formatter};
-use xlui::frame::{App, WindowAttribute};
-use xlui::layout::inner::InnerWindow;
+use xlui::frame::App;
+use xlui::{InnerWindow, WindowAttribute};
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use crate::align::TestAlign;

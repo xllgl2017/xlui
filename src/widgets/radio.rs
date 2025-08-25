@@ -35,6 +35,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
+use crate::text::rich::RichText;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
@@ -54,7 +55,7 @@ pub struct RadioButton {
 }
 
 impl RadioButton {
-    pub fn new(v: bool, label: impl ToString) -> RadioButton {
+    pub fn new(v: bool, label: impl Into<RichText>) -> RadioButton {
         let mut outer_style = ClickStyle::new();
         outer_style.fill.inactive = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
         outer_style.fill.hovered = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
@@ -74,7 +75,7 @@ impl RadioButton {
             id: crate::gen_unique_id(),
             rect: Rect::new(),
             value: v,
-            text: TextBuffer::new(label.to_string()),
+            text: TextBuffer::new(label),
             callback: None,
             size_mode: SizeMode::Auto,
             outer_render: RenderParam::new(CircleParam::new(Rect::new(), outer_style)),

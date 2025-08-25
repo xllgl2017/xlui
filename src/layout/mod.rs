@@ -1,6 +1,5 @@
 pub mod scroll_area;
 pub mod popup;
-pub mod inner;
 
 use crate::frame::context::UpdateType;
 use crate::layout::scroll_area::ScrollArea;
@@ -295,11 +294,11 @@ pub struct HorizontalLayout {
     id: String,
     children: Map<LayoutKind>,
     widgets: Map<WidgetKind>,
-    max_rect: Rect,
-    available_rect: Rect,
-    width: f32,
-    height: f32,
-    item_space: f32, //item之间的间隔
+    pub(crate) max_rect: Rect,
+    pub(crate) available_rect: Rect,
+    pub(crate) width: f32,
+    pub(crate) height: f32,
+    pub(crate) item_space: f32, //item之间的间隔
     offset_changed: bool,
     widget_offset: Offset,
     display: Map<usize>,
@@ -399,8 +398,8 @@ pub struct VerticalLayout {
     id: String,
     children: Map<LayoutKind>,
     widgets: Map<WidgetKind>,
-    max_rect: Rect,
-    available_rect: Rect,
+    pub(crate) max_rect: Rect,
+    pub(crate) available_rect: Rect,
     width: f32,
     pub(crate) height: f32,
     item_space: f32, //item之间的间隔

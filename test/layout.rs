@@ -1,6 +1,6 @@
+use xlui::Border;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
-use xlui::size::border::Border;
 use xlui::style::ClickStyle;
 use xlui::style::color::Color;
 use xlui::ui::Ui;
@@ -192,10 +192,6 @@ impl App for Frame {
         ui.label("h1");
         ui.label("h2");
     }
-
-    fn update(&mut self, ui: &mut Ui) {}
-
-    fn redraw(&mut self, ui: &mut Ui) {}
 }
 
 

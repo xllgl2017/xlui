@@ -22,8 +22,9 @@ use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use std::sync::atomic::Ordering;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
-use crate::layout::inner::InnerWindow;
 use crate::size::pos::Pos;
+use crate::text::rich::RichText;
+use crate::window::inner::InnerWindow;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -332,22 +333,22 @@ impl<'a> Ui<'a> {
         self.layout().add_widget(widget.id.clone(), widget);
     }
 
-    pub fn label(&mut self, text: impl ToString) {
+    pub fn label(&mut self, text: impl Into<RichText>) {
         let label = Label::new(text);
         self.add(label);
     }
 
-    pub fn button(&mut self, text: impl ToString) -> &mut Button {
+    pub fn button(&mut self, text: impl Into<RichText>) -> &mut Button {
         let btn = Button::new(text);
         self.add(btn)
     }
 
-    pub fn radio(&mut self, v: bool, l: impl ToString) -> &mut RadioButton {
+    pub fn radio(&mut self, v: bool, l: impl Into<RichText>) -> &mut RadioButton {
         let radio = RadioButton::new(v, l);
         self.add(radio)
     }
 
-    pub fn checkbox(&mut self, v: bool, l: impl ToString) -> &mut CheckBox {
+    pub fn checkbox(&mut self, v: bool, l: impl Into<RichText>) -> &mut CheckBox {
         let checkbox = CheckBox::new(v, l);
         self.add(checkbox)
     }

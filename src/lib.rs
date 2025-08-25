@@ -5,7 +5,8 @@
 //! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img.png?raw=true)
 //! ### 下面是xlui的最小运行示例
 //! ```
-//! use xlui::frame::{WindowAttribute,App};
+//! use xlui::frame::App;
+//! use xlui::WindowAttribute;
 //! use xlui::widgets::Widget;
 //! use xlui::widgets::label::Label;
 //! use xlui::widgets::button::Button;
@@ -84,8 +85,6 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
-use crate::size::pos::Pos;
-use crate::size::rect::Rect;
 use crate::ui::Ui;
 
 pub mod widgets;
@@ -93,8 +92,7 @@ pub mod align;
 pub mod vertex;
 pub mod layout;
 pub mod text;
-pub mod font;
-pub mod size;
+mod size;
 pub mod frame;
 pub mod ui;
 
@@ -102,6 +100,10 @@ pub mod style;
 mod render;
 pub mod response;
 pub mod map;
+mod window;
+
+pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

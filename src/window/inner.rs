@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::frame::{App, WindowAttribute};
+use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
 use crate::map::Map;
@@ -19,6 +19,7 @@ use crate::Offset;
 use std::any::Any;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use crate::window::attribute::WindowAttribute;
 
 pub struct InnerWindow {
     pub(crate) id: String,

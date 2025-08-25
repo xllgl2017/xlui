@@ -40,6 +40,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
+use crate::text::rich::RichText;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
@@ -61,7 +62,7 @@ pub struct CheckBox {
 }
 
 impl CheckBox {
-    pub fn new(v: bool, label: impl ToString) -> CheckBox {
+    pub fn new(v: bool, label: impl Into<RichText>) -> CheckBox {
         let mut check_style = ClickStyle::new();
         check_style.fill.inactive = Color::rgb(210, 210, 210);
         check_style.fill.hovered = Color::rgb(210, 210, 210);
@@ -72,8 +73,8 @@ impl CheckBox {
         CheckBox {
             id: crate::gen_unique_id(),
             rect: Rect::new(),
-            text: TextBuffer::new(label.to_string()),
-            check_text: TextBuffer::new("√".to_string()),
+            text: TextBuffer::new(label),
+            check_text: TextBuffer::new(RichText::new("√").size(14.0)),
             value: v,
             callback: None,
             size_mode: SizeMode::Auto,

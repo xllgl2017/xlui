@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
-use xlui::frame::{App, WindowAttribute};
+use xlui::frame::App;
+use xlui::text::rich::RichText;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::checkbox::CheckBox;
@@ -14,6 +15,7 @@ use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::single::SingleEdit;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
+use xlui::WindowAttribute;
 
 #[allow(dead_code)]
 fn main() {
@@ -118,7 +120,7 @@ impl App for TestWidget {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.add_space(100.0);
-            ui.add(Label::new("当前控件的工作状态").size(24.0));
+            ui.add(Label::new(RichText::new("当前控件的工作状态").size(24.0)));
         });
         ui.horizontal(|ui| {
             ui.radio(true, "Label");

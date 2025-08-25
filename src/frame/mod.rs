@@ -1,100 +1,21 @@
-use std::any::Any;
 use crate::frame::context::{Render, UpdateType};
-use crate::frame::window::Window;
-use crate::size::Size;
 use crate::ui::Ui;
+use crate::window::attribute::WindowAttribute;
+use crate::window::Window;
 use glyphon::Viewport;
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy};
-use winit::window::{Icon, ImePurpose, WindowId, WindowLevel};
+use winit::window::{ImePurpose, WindowId};
 
-mod window;
 pub mod context;
-
-pub struct WindowAttribute {
-    pub inner_size: Size,
-    pub min_inner_size: Size,
-    pub max_inner_size: Size,
-    pub position: [i32; 2],
-    pub resizable: bool,
-    pub title: String,
-    pub maximized: bool,
-    pub visible: bool,
-    pub transparent: bool,
-    pub blur: bool,
-    pub decorations: bool,
-    pub window_icon: Arc<Vec<u8>>,
-    pub window_level: WindowLevel,
-}
-
-
-impl WindowAttribute {
-    fn as_winit_attributes(&self) -> winit::window::WindowAttributes {
-        let attr = winit::window::WindowAttributes::default();
-        let img = image::load_from_memory(self.window_icon.as_ref()).unwrap();
-        let rgb8 = img.to_rgba8();
-        let icon = Icon::from_rgba(rgb8.to_vec(), img.width(), img.height()).unwrap();
-        attr.with_inner_size(self.inner_size.as_physical_size())
-            .with_min_inner_size(self.min_inner_size.as_physical_size())
-            .with_max_inner_size(self.max_inner_size.as_physical_size())
-            .with_position(winit::dpi::Position::Physical(winit::dpi::PhysicalPosition::new(self.position[0], self.position[1])))
-            .with_resizable(self.resizable)
-            .with_title(self.title.as_str())
-            .with_maximized(self.maximized)
-            .with_visible(self.visible)
-            .with_transparent(self.transparent)
-            .with_blur(self.blur)
-            .with_decorations(self.decorations)
-            .with_window_icon(Some(icon))
-            .with_window_level(self.window_level)
-
-    }
-
-    pub(crate) fn inner_width_f32(&self) -> f32 {
-        self.inner_size.width as f32
-    }
-
-    pub(crate) fn inner_height_f32(&self) -> f32 {
-        self.inner_size.height as f32
-    }
-
-    pub(crate) fn pos_x_f32(&self) -> f32 {
-        self.position[0] as f32
-    }
-
-    pub(crate) fn pos_y_f32(&self) -> f32 {
-        self.position[1] as f32
-    }
-}
-
-impl Default for WindowAttribute {
-    fn default() -> WindowAttribute {
-        WindowAttribute {
-            inner_size: Size { width: 800, height: 600 },
-            min_inner_size: Size { width: 0, height: 0 },
-            max_inner_size: Size { width: 2560, height: 1440 },
-            position: [100, 100],
-            resizable: true,
-            title: "xlui".to_string(),
-            maximized: false,
-            visible: true, //是否隐藏窗口
-            transparent: false, //窗口透明，配合LoadOp::Clear
-            blur: true, //未知
-            decorations: true, //标题栏
-            window_icon: Arc::new(include_bytes!("../../logo.jpg").to_vec()),
-            window_level: WindowLevel::Normal,
-        }
-    }
-}
-
 
 struct Application<A> {
     windows: HashMap<WindowId, Window>,
-    attribute: WindowAttribute,
     app: Option<A>,
     proxy_event: Option<EventLoopProxy<(WindowId, UpdateType)>>,
     rebuilding: bool,
@@ -104,16 +25,10 @@ impl<A> Application<A> {
     fn new() -> Self {
         Application {
             windows: HashMap::new(),
-            attribute: WindowAttribute::default(),
             app: None,
             proxy_event: None,
             rebuilding: false,
         }
-    }
-
-    fn with_attrs(mut self, attrs: WindowAttribute) -> Self {
-        self.attribute = attrs;
-        self
     }
 }
 
@@ -122,12 +37,12 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for Applicatio
         println!("111111111111111111111111111111");
         let app = self.app.take().unwrap();
         let event = self.proxy_event.take().unwrap();
-        let attr = self.attribute.as_winit_attributes();
-        let winit_window = Arc::new(event_loop.create_window(attr).unwrap());
+        let attr = app.window_attributes();
+        let winit_window = Arc::new(event_loop.create_window(attr.as_winit_attributes()).unwrap());
         winit_window.set_ime_allowed(true);
         winit_window.set_ime_cursor_area(PhysicalPosition::new(400, 300), PhysicalSize::new(100, 100));
         winit_window.set_ime_purpose(ImePurpose::Normal);
-        let window = pollster::block_on(Window::new(winit_window.clone(), Box::new(app), event)).unwrap();
+        let window = pollster::block_on(Window::new(winit_window.clone(), Box::new(app), attr, event)).unwrap();
         self.windows.insert(winit_window.id(), window);
         winit_window.request_redraw();
     }
@@ -245,7 +160,7 @@ pub trait App: Any + 'static {
         let event_loop = EventLoop::with_user_event().build().unwrap();
         let proxy_event = event_loop.create_proxy();
         event_loop.set_control_flow(ControlFlow::Wait);
-        let mut application = Application::new().with_attrs(self.window_attributes());
+        let mut application = Application::new();
         application.app = Some(self);
         application.proxy_event = Some(proxy_event);
         event_loop.run_app(&mut application).unwrap()
