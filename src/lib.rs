@@ -85,7 +85,6 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
-use crate::size::pos::Pos;
 use crate::ui::Ui;
 
 pub mod widgets;
@@ -104,7 +103,7 @@ pub mod map;
 mod window;
 
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
-pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect};
+pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

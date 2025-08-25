@@ -1,9 +1,5 @@
 use xlui::frame::App;
 use xlui::layout::popup::Popup;
-use xlui::size::border::Border;
-use xlui::size::pos::Pos;
-use xlui::size::radius::Radius;
-use xlui::size::rect::Rect;
 use xlui::style::color::Color;
 use xlui::style::{BorderStyle, ClickStyle, Shadow};
 use xlui::ui::Ui;
@@ -13,7 +9,7 @@ use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::triangle::Triangle;
 use xlui::widgets::Widget;
-use xlui::WindowAttribute;
+use xlui::{Border, Pos, Radius, Rect, WindowAttribute};
 
 pub struct TestShape {
     rectangle: Rectangle,
