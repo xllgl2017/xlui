@@ -56,6 +56,50 @@ impl TextBuffer {
             SizeMode::FixHeight => self.rect.set_width(self.text_size.line_width),
             _ => {}
         }
+        if let SizeMode::Auto = self.size_mode { return; }
+        let ox = self.rect.width() - self.text_size.line_width;
+        let oy = self.rect.height() - self.text_size.line_height;
+        match self.align {
+            //固定宽度
+            Align::LeftCenter => {
+                self.clip_x = 0.0;
+                self.clip_y = oy / 2.0;
+            }
+            Align::Center => {
+                self.clip_x = ox / 2.0;
+                self.clip_y = oy / 2.0;
+            }
+            Align::RightCenter => {
+                self.clip_x = ox;
+                self.clip_y = oy / 2.0;
+            }
+            //固定高度
+            Align::CenterTop => {
+                self.clip_x = ox / 2.0;
+                self.clip_y = 0.0;
+            }
+            Align::CenterBottom => {
+                self.clip_x = ox / 2.0;
+                self.clip_y = oy
+            }
+            //宽高固定
+            Align::LeftTop => {
+                self.clip_x = 0.0;
+                self.clip_y = 0.0;
+            }
+            Align::LeftBottom => {
+                self.clip_x = 0.0;
+                self.clip_y = oy;
+            }
+            Align::RightTop => {
+                self.clip_x = ox;
+                self.clip_y = 0.0;
+            }
+            Align::RightBottom => {
+                self.clip_x = ox;
+                self.clip_y = oy;
+            }
+        }
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui) {
@@ -83,7 +127,7 @@ impl TextBuffer {
         let area = glyphon::TextArea {
             buffer: self.buffer.as_ref().unwrap(),
             left: self.rect.dx().min + self.clip_x,
-            top: self.rect.dy().min,
+            top: self.rect.dy().min + self.clip_y,
             scale: 1.0,
             bounds,
             default_color: self.color.as_glyphon_color(),

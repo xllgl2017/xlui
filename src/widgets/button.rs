@@ -44,6 +44,7 @@
 //! }
 //! ```
 
+use crate::align::Align;
 use crate::frame::context::{Context, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
@@ -70,6 +71,7 @@ pub struct Button {
     image_rect: Rect,
     hovered: bool,
     changed: bool,
+    align: Align,
 }
 
 
@@ -89,6 +91,7 @@ impl Button {
             hovered: false,
             changed: false,
             fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
+            align: Align::LeftTop,
         }
     }
 
@@ -99,6 +102,7 @@ impl Button {
     }
 
     pub(crate) fn reset_size(&mut self, context: &Context) {
+        self.text_buffer.size_mode = self.size_mode;
         self.text_buffer.reset_size(&context);
         match self.size_mode {
             SizeMode::Auto => {
@@ -113,9 +117,9 @@ impl Button {
                 println!("text {:?}", self.text_buffer.rect);
             }
         }
+        self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
         if self.image.is_some() {
             self.fill_render.param.rect.set_width(self.fill_render.param.rect.width() + self.fill_render.param.rect.height());
-            self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
             self.text_buffer.rect.add_min_x(self.fill_render.param.rect.height());
             self.text_buffer.rect.add_max_x(self.fill_render.param.rect.height());
             self.image_rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
@@ -125,9 +129,8 @@ impl Button {
             self.image_rect.add_max_y(self.padding.top);
             self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
             self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
-        } else {
-            self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
         }
+        self.text_buffer.reset_size(&context);
     }
 
 
@@ -150,17 +153,24 @@ impl Button {
     pub fn set_font_size(&mut self, font_size: f32) {
         self.text_buffer.text_size.font_size = font_size;
     }
-
+    ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.set_width(w);
         self
     }
 
+    ///仅作用于draw
+    pub fn align(mut self, align: Align) -> Self {
+        self.align = align;
+        self.text_buffer.align = align;
+        self
+    }
+    ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
         self.set_height(h);
         self
     }
-
+    ///仅作用于draw
     pub fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self

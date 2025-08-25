@@ -89,7 +89,7 @@ use crate::size::rect::Rect;
 use crate::ui::Ui;
 
 pub mod widgets;
-mod align;
+pub mod align;
 pub mod vertex;
 pub mod layout;
 pub mod text;

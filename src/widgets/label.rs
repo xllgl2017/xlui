@@ -19,6 +19,7 @@
 //! }
 //! ```
 
+use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::response::Response;
 use crate::text::text_buffer::TextBuffer;
@@ -39,9 +40,14 @@ impl Label {
             buffer,
         }
     }
-
+    ///仅作用于draw
     pub fn wrap(mut self, wrap: TextWrap) -> Self {
         self.buffer.set_wrap(wrap);
+        self
+    }
+    ///仅作用于draw
+    pub fn align(mut self, align: Align) -> Self {
+        self.buffer.align = align;
         self
     }
 
@@ -49,17 +55,17 @@ impl Label {
     pub fn set_text(&mut self, text: impl ToString) {
         self.buffer.set_text(text.to_string());
     }
-
+    ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.buffer.set_width(w);
         self
     }
-
+    ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
         self.buffer.set_height(h);
         self
     }
-
+    ///仅作用于draw
     pub fn size(mut self, s: f32) -> Self {
         self.buffer.text_size.font_size = s;
         self

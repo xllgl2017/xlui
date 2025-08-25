@@ -4,6 +4,7 @@ pub mod border;
 pub mod pos;
 pub mod radius;
 
+#[derive(Clone, Copy)]
 pub enum SizeMode {
     Auto,
     FixWidth,

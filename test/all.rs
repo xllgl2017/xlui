@@ -1,11 +1,13 @@
 mod shape;
 mod widget;
+mod align;
 
 use std::fmt::{Display, Formatter};
 use xlui::frame::{App, WindowAttribute};
 use xlui::layout::inner::InnerWindow;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
+use crate::align::TestAlign;
 use crate::shape::TestShape;
 use crate::widget::TestWidget;
 
@@ -13,6 +15,7 @@ use crate::widget::TestWidget;
 enum TestKind {
     Shape,
     Widgets,
+    Align,
 }
 
 impl Display for TestKind {
@@ -20,6 +23,7 @@ impl Display for TestKind {
         match self {
             TestKind::Shape => f.write_str("Shape"),
             TestKind::Widgets => f.write_str("Widgets"),
+            TestKind::Align => f.write_str("Align"),
         }
     }
 }
@@ -48,6 +52,10 @@ impl XlUi {
     fn open_test_widgets(&mut self, _: &mut Button, ui: &mut Ui) {
         ui.create_inner_window(TestWidget::new());
     }
+
+    fn open_test_align(&mut self, _: &mut Button, ui: &mut Ui) {
+        ui.create_inner_window(TestAlign::new());
+    }
 }
 
 impl App for XlUi {
@@ -55,6 +63,7 @@ impl App for XlUi {
         ui.horizontal(|ui| {
             ui.button(TestKind::Shape).set_callback(Self::open_test_shape);
             ui.button(TestKind::Widgets).set_callback(Self::open_test_widgets);
+            ui.button(TestKind::Align).set_callback(Self::open_test_align);
         });
     }
     fn window_attributes(&self) -> WindowAttribute {
