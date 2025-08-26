@@ -63,12 +63,6 @@ impl ProcessBar {
         self.process_render.init_rectangle(ui, false, false);
     }
 
-    fn update_value(&mut self, ui: &mut Ui) {
-        let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
-        self.process_render.param.rect.set_width(w);
-        self.process_render.update(ui, false, false);
-    }
-
     pub fn with_id(mut self, id: impl ToString) -> Self {
         self.id = id.to_string();
         self
@@ -83,15 +77,25 @@ impl ProcessBar {
         self.value = value;
         self.change = true;
     }
+
+    pub fn update_buffer(&mut self, ui: &mut Ui) {
+        if !self.change && !ui.can_offset { return; }
+        self.change = false;
+        if ui.can_offset {
+            self.fill_render.param.rect.offset(&ui.offset);
+            self.process_render.param.rect.offset(&ui.offset);
+        }
+        let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
+        self.process_render.param.rect.set_width(w);
+        self.process_render.update(ui, false, false);
+        self.fill_render.update(ui, false, false);
+    }
 }
 
 
 impl Widget for ProcessBar {
     fn redraw(&mut self, ui: &mut Ui) {
-        if self.change {
-            self.change = false;
-            self.update_value(ui);
-        }
+        self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         ui.context.render.rectangle.render(&self.process_render, pass);

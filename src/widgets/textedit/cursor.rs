@@ -50,9 +50,10 @@ impl EditCursor {
             self.vert = cchar.lines.len();
             let last_line = cchar.lines.last().unwrap();
             self.horiz = cchar.lines.last().unwrap().len();
-            let oy = self.horiz as f32 * text.text.height;
+            let oy = (self.vert - 1) as f32 * text.text.height;
             self.offset.x = last_line.width;
             self.offset.y = oy;
+            self.render.param.rect.offset(&self.offset);
         }
         self.render.init_rectangle(ui, false, false);
     }
@@ -62,6 +63,13 @@ impl EditCursor {
         self.changed = false;
         self.render.param.rect.offset(&self.offset);
         self.render.update(ui, false, false);
+    }
+
+    pub fn offset(&mut self, offset: &Offset) {
+        self.min_pos.x += offset.x;
+        self.min_pos.y += offset.y;
+        self.render.param.rect.offset(offset);
+        self.changed = true;
     }
 
     pub fn render(&mut self, ui: &mut Ui) {
