@@ -225,6 +225,7 @@ impl EditCursor {
     }
 
     pub fn set_cursor(&mut self, horiz: usize, vert: usize, cchar: &CharBuffer) {
+        println!("remove-cursor-{}-{}", horiz, vert);
         self.horiz = horiz;
         self.vert = vert;
         self.offset.x = cchar.lines[vert].get_width_in_char(horiz);

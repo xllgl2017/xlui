@@ -226,7 +226,7 @@ impl App for TestWidget {
             ui.add(ProcessBar::new(50.0).with_id("pbr"));
         });
         ui.horizontal(|ui| {
-            let edit = TextEdit::multi("abcdefghijk\nlmnopqrstuvwsyz12\n34567890\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf");
+            let edit = TextEdit::multi("abcdefghijk\nlmnopqrstuvwsyz12\n34567890");//\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
             ui.add(edit);
         });
     }

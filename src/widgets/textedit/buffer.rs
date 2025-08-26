@@ -46,6 +46,7 @@ impl EditLine {
 
     pub fn get_width_in_char(&self, index: usize) -> f32 {
         let mut width = 0.0;
+        let index = if index >= self.chars.len() { return self.width } else { index };
         self.chars[..index].iter().for_each(|x| width += x.width);
         width
     }
@@ -136,7 +137,7 @@ impl CharBuffer {
         self.lines.iter().map(|x| x.raw_text()).collect()
     }
 
-    pub fn remove_by_range(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection, rebuild: bool) {
+    pub fn remove_by_range(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) {
         if cursor.vert > selection.start_vert { //向下删除
             let start_line = &mut self.lines[selection.start_vert];
             while start_line.chars.len() > selection.start_horiz {
@@ -153,6 +154,7 @@ impl CharBuffer {
             for i in selection.start_vert + 1..cursor.vert {
                 self.lines.remove(cursor.vert - i);
             }
+            self.rebuild_text(ui);
             cursor.set_cursor(selection.start_horiz, selection.start_vert, self);
         } else if selection.start_vert > cursor.vert { //向上删除
             let start_line = &mut self.lines[selection.start_vert];
@@ -170,6 +172,7 @@ impl CharBuffer {
             for i in cursor.vert + 1..selection.start_vert {
                 self.lines.remove(selection.start_vert - i);
             }
+            self.rebuild_text(ui);
         } else { //同行删除
             let line = &mut self.lines[cursor.vert];
             if selection.start_horiz < cursor.horiz { //左到右删除
@@ -184,15 +187,21 @@ impl CharBuffer {
                     line.chars.remove(cursor.horiz);
                 }
             }
+            self.rebuild_text(ui);
         }
-        if rebuild {
-            let raw_text = self.raw_text();
-            self.set_text(&raw_text, ui);
-        }
+        // if rebuild {
+        //     let raw_text = self.raw_text();
+        //     self.set_text(&raw_text, ui);
+        // }
+    }
+
+    fn rebuild_text(&mut self, ui: &mut Ui) {
+        let raw_text = self.raw_text();
+        self.set_text(&raw_text, ui);
     }
 
     pub fn remove_chars_before_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) {
-        if cursor.horiz == 0 && cursor.vert == 0 && self.lines[0].chars.len() == 0 { return; }
+        if cursor.horiz == 0 && cursor.vert == 0 { return; }
         println!("{}", selection.has_selected);
         if !selection.has_selected {
             let cchar = cursor.delete_before(self);
@@ -201,13 +210,10 @@ impl CharBuffer {
                     self.offset.x -= cchar.width;
                     if self.offset.x < 0.0 { self.offset.x = 0.0; }
                 }
-                EditKind::Multi => {
-                    let raw_text = self.raw_text();
-                    self.set_text(&raw_text, ui);
-                }
+                EditKind::Multi => self.rebuild_text(ui),
             }
         } else {
-            self.remove_by_range(ui, cursor, selection, true)
+            self.remove_by_range(ui, cursor, selection)
         }
     }
 
@@ -227,13 +233,13 @@ impl CharBuffer {
                 }
             }
         } else {
-            self.remove_by_range(ui, cursor, selection, true);
+            self.remove_by_range(ui, cursor, selection);
         }
     }
 
     pub fn inset_char(&mut self, c: char, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) { //返回x最大值 ，给游标偏移
         if selection.has_selected {
-            self.remove_by_range(ui, cursor, selection, true);
+            self.remove_by_range(ui, cursor, selection);
         }
         let width = ui.context.font.char_width(c, self.font_size);
         let cchar = EditChar::new(c, width);
