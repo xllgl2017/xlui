@@ -6,6 +6,7 @@ use crate::widgets::textedit::EditKind;
 use crate::Offset;
 use std::mem;
 
+#[derive(Debug)]
 pub(crate) struct EditChar {
     cchar: char,
     pub(crate) width: f32,
@@ -62,7 +63,7 @@ pub(crate) struct CharBuffer {
     line_height: f32,
     max_wrap_width: f32,
     pub(crate) offset: Offset,
-    edit_kind: EditKind,
+    pub(crate) edit_kind: EditKind,
 }
 
 impl CharBuffer {
@@ -178,14 +179,21 @@ impl CharBuffer {
             if selection.start_horiz < cursor.horiz { //左到右删除
                 for _ in selection.start_horiz..cursor.horiz {
                     let c = line.chars.remove(selection.start_horiz);
-                    cursor.offset.x -= c.width;
+                    self.offset.x += c.width;
+                    if self.offset.x >= 0.0 { self.offset.x = 0.0; }
+                    // cursor.offset.x -= c.width;
                     cursor.horiz -= 1;
                 }
+                cursor.set_cursor(cursor.horiz, cursor.vert, self);
                 cursor.changed = true;
             } else { //右到左删除
                 for _ in cursor.horiz..selection.start_horiz {
-                    line.chars.remove(cursor.horiz);
+                    let c = line.chars.remove(cursor.horiz);
+                    self.offset.x += c.width;
+                    if self.offset.x >= 0.0 { self.offset.x = 0.0; }
                 }
+                cursor.set_cursor(cursor.horiz, cursor.vert, self);
+                cursor.changed = true;
             }
             self.rebuild_text(ui);
         }
@@ -227,10 +235,7 @@ impl CharBuffer {
                     self.offset.x -= cchar.width;
                     if self.offset.x < 0.0 { self.offset.x = 0.0; }
                 }
-                EditKind::Multi => {
-                    let raw_text = self.raw_text();
-                    self.set_text(&raw_text, ui);
-                }
+                EditKind::Multi => self.rebuild_text(ui),
             }
         } else {
             self.remove_by_range(ui, cursor, selection);
@@ -245,12 +250,22 @@ impl CharBuffer {
         let cchar = EditChar::new(c, width);
         let line = &mut self.lines[cursor.vert];
         line.chars.insert(cursor.horiz, cchar);
-        let raw_text = self.raw_text();
-        self.set_text(&raw_text, ui);
+        self.rebuild_text(ui);
         cursor.move_right(self);
         if cursor.offset.x == 0.0 && c != '\n' {
             cursor.move_right(self)
         }
         println!("insert char-{}-{}", cursor.vert, cursor.horiz);
+    }
+
+    pub fn next_char(&self, cursor: &EditCursor) -> Option<&EditChar> {
+        if cursor.horiz >= self.lines[cursor.vert].len() { return None; }
+        self.lines.get(cursor.vert)?.chars.get(cursor.horiz)
+    }
+
+    pub fn previous_char(&self, cursor: &EditCursor) -> Option<&EditChar> {
+        if cursor.horiz == 0 { return None; }
+        if cursor.horiz - 1 == 0 { return self.lines.get(cursor.vert)?.chars.get(0); }
+        self.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)
     }
 }

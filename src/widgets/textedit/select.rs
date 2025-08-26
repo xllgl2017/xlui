@@ -1,3 +1,4 @@
+use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::size::border::Border;
@@ -116,7 +117,7 @@ impl EditSelection {
                     render.param.rect.set_x_max(render.param.rect.dx().min);
                 }
             }
-        } else if cursor.vert < self.start_vert {
+        } else if cursor.vert < self.start_vert { //向上选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index == self.start_vert {
                     render.param.rect.set_x_min(cursor.min_pos.x);
@@ -132,7 +133,7 @@ impl EditSelection {
                     render.param.rect.set_x_max(render.param.rect.dx().min);
                 }
             }
-        } else {
+        } else { //同行选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index != cursor.vert {
                     render.param.rect.set_x_max(render.param.rect.dx().min);
@@ -140,15 +141,30 @@ impl EditSelection {
                 }
                 let line = &cchar.lines[self.start_vert];
                 if cursor.horiz > self.start_horiz { //向右选择
-                    let mut ox = 0.0;
-                    line.chars[..self.start_horiz].iter().for_each(|x| ox += x.width);
-                    render.param.rect.set_x_min(cursor.min_pos.x + ox);
+                    let ox = line.get_width_in_char(self.start_horiz) + cchar.offset.x;
+                    let ox = if cursor.min_pos.x + ox < cursor.min_pos.x { cursor.min_pos.x } else { cursor.min_pos.x + ox };
+                    render.param.rect.set_x_min(ox);
                     render.param.rect.set_x_max(cursor.cursor_min());
                 } else if cursor.horiz < self.start_horiz { //向左选择
-                    let mut ox = 0.0;
-                    line.chars[..self.start_horiz].iter().for_each(|x| ox += x.width);
                     render.param.rect.set_x_min(cursor.cursor_min());
-                    render.param.rect.set_x_max(cursor.min_pos.x + ox);
+                    let ox = line.get_width_in_char(self.start_horiz) + cchar.offset.x;
+                    let ox = if cursor.min_pos.x + ox > cursor.max_pos.x { cursor.max_pos.x } else { cursor.min_pos.x + ox };
+                    render.param.rect.set_x_max(ox);
+                }
+                if pos.x > cursor.max_pos.x {
+                    let event = ui.context.event.clone();
+                    let wid = ui.context.window.id();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        event.send_event((wid, UpdateType::None)).unwrap();
+                    });
+                } else if pos.x < cursor.min_pos.x {
+                    let event = ui.context.event.clone();
+                    let wid = ui.context.window.id();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        event.send_event((wid, UpdateType::None)).unwrap();
+                    });
                 }
             }
         }

@@ -14,6 +14,7 @@ use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
+use crate::widgets::textedit::EditKind;
 use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::Widget;
 
@@ -57,6 +58,12 @@ impl MultiEdit {
             desire_lines: 8,
             focused: false,
         }
+    }
+
+    pub fn with_rows(mut self, row: usize) -> MultiEdit {
+        self.desire_lines = row;
+        if row == 1 { self.char_layout.edit_kind = EditKind::Single; }
+        self
     }
 
     pub(crate) fn reset_size(&mut self, context: &Context) {
@@ -121,7 +128,10 @@ impl MultiEdit {
                     winit::keyboard::NamedKey::ArrowUp => self.cursor_render.move_up(&self.char_layout),
                     winit::keyboard::NamedKey::ArrowDown => self.cursor_render.move_down(&self.char_layout),
                     //更新游标+文本
-                    winit::keyboard::NamedKey::Backspace => self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render),
+                    winit::keyboard::NamedKey::Backspace => {
+                        self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render);
+                        self.text_buffer.clip_x = self.char_layout.offset.x;
+                    }
                     winit::keyboard::NamedKey::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
                     winit::keyboard::NamedKey::Space => self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render),
                     winit::keyboard::NamedKey::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &self.select_render),
@@ -155,13 +165,12 @@ impl Widget for MultiEdit {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.select_render.render(ui, self.char_layout.lines.len());
-        self.cursor_render.render(ui);
+        if self.focused { self.cursor_render.render(ui); }
         self.text_buffer.redraw(ui);
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
-            UpdateType::None => {}
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
@@ -195,6 +204,30 @@ impl Widget for MultiEdit {
             }
             UpdateType::Offset(_) => {}
             UpdateType::Drop => {}
+            UpdateType::None => {
+                if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
+                let next_char = self.char_layout.next_char(&self.cursor_render);
+                if let Some(cchar) = next_char && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max
+                    && ui.device.device_input.mouse.lastest.x > ui.device.device_input.mouse.pressed_pos.x {
+                    self.text_buffer.clip_x -= cchar.width;
+                    self.cursor_render.horiz += 1;
+                    self.char_layout.offset.x -= cchar.width;
+                    return Response::new(&self.id, &self.fill_render.param.rect);
+                }
+                let previous_char = self.char_layout.previous_char(&self.cursor_render);
+                println!("{:?}", previous_char);
+                if let Some(cchar) = previous_char && ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min
+                    && ui.device.device_input.mouse.lastest.x < ui.device.device_input.mouse.pressed_pos.x {
+                    println!("222222222222222222222222");
+                    self.text_buffer.clip_x += cchar.width;
+                    self.cursor_render.horiz -= 1;
+                    self.char_layout.offset.x += cchar.width;
+                    if self.char_layout.offset.x >= 0.0 {
+                        self.text_buffer.clip_x = 0.0;
+                        self.char_layout.offset.x = 0.0
+                    }
+                }
+            }
         }
         Response::new(&self.id, &self.fill_render.param.rect)
     }

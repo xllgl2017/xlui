@@ -12,6 +12,7 @@ use xlui::widgets::radio::RadioButton;
 use xlui::widgets::select::SelectItem;
 use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
+use xlui::widgets::textedit::multi::MultiEdit;
 use xlui::widgets::textedit::single::SingleEdit;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
@@ -226,9 +227,13 @@ impl App for TestWidget {
             ui.add(ProcessBar::new(50.0).with_id("pbr"));
         });
         ui.horizontal(|ui| {
-            let edit = TextEdit::multi("abcdefghijk\nlmnopqrstuvwsyz12\n34567890");//\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
+            let edit = TextEdit::multi("abcdefghijk\nlmnopqrstuvwsyz12\n34567890"); //\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
             ui.add(edit);
         });
+        ui.horizontal(|ui| {
+            let edit = MultiEdit::new("abcdefghijklmnopqrstuvwsyz1234567890".to_string()).with_rows(1); //\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
+            ui.add(edit);
+        })
     }
 
     fn update(&mut self, ui: &mut Ui) {

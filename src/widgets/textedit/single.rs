@@ -38,7 +38,7 @@ use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::ops::Range;
-
+#[deprecated]
 struct TextChar {
     x: Axis,
     width: f32,
@@ -60,6 +60,7 @@ impl TextChar {
 }
 
 
+#[deprecated]
 struct CharLayout {
     chars: Vec<TextChar>,
     font_size: f32,
@@ -215,6 +216,7 @@ impl CharLayout {
     }
 }
 
+#[deprecated = "use MultiEdit::new("".to_string()).with_rows(1)"]
 pub struct SingleEdit {
     pub(crate) id: String,
     text_buffer: TextBuffer,

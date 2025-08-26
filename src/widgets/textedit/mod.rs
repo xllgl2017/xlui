@@ -3,7 +3,7 @@ use crate::ui::Ui;
 use crate::widgets::textedit::multi::MultiEdit;
 use crate::widgets::textedit::single::SingleEdit;
 use crate::widgets::Widget;
-
+#[deprecated]
 pub mod single;
 pub mod multi;
 pub(crate) mod buffer;
