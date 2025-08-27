@@ -12,7 +12,7 @@ use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
-use crate::widgets::textedit::buffer::CharBuffer;
+use crate::widgets::textedit::buffer::{CharBuffer, EditChar};
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::EditKind;
 use crate::widgets::textedit::select::EditSelection;
@@ -123,8 +123,22 @@ impl MultiEdit {
                 println!("{:?}", name);
                 match name {
                     //更新游标
-                    winit::keyboard::NamedKey::ArrowLeft => self.cursor_render.move_left(&self.char_layout),
-                    winit::keyboard::NamedKey::ArrowRight => self.cursor_render.move_right(&self.char_layout),
+                    winit::keyboard::NamedKey::ArrowLeft => {
+                        if self.cursor_render.cursor_min() <= self.cursor_render.min_pos.x && let Some(cchar) = self.char_layout.previous_char(&self.cursor_render) {
+                            self.text_buffer.clip_x += cchar.width;
+                            if self.text_buffer.clip_x > 0.0 { self.text_buffer.clip_x = 0.0; }
+                            self.char_layout.offset.x = self.text_buffer.clip_x;
+                        }
+                        self.cursor_render.move_left(&self.char_layout);
+                    }
+                    winit::keyboard::NamedKey::ArrowRight => {
+                        let cx = self.char_layout.lines[self.cursor_render.vert].get_width_in_char(self.cursor_render.horiz + 1);
+                        if self.cursor_render.cursor_min() + 2.0 >= self.cursor_render.max_pos.x && let Some(cchar) = self.char_layout.next_char(&self.cursor_render) {
+                            self.text_buffer.clip_x -= cchar.width;
+                            self.char_layout.offset.x -= cchar.width;
+                        }
+                        self.cursor_render.move_right(&self.char_layout)
+                    }
                     winit::keyboard::NamedKey::ArrowUp => self.cursor_render.move_up(&self.char_layout),
                     winit::keyboard::NamedKey::ArrowDown => self.cursor_render.move_down(&self.char_layout),
                     //更新游标+文本
@@ -133,10 +147,24 @@ impl MultiEdit {
                         self.text_buffer.clip_x = self.char_layout.offset.x;
                     }
                     winit::keyboard::NamedKey::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
-                    winit::keyboard::NamedKey::Space => self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render),
+                    winit::keyboard::NamedKey::Space => {
+                        self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render);
+                        self.text_buffer.clip_x = self.char_layout.offset.x;
+                    }
                     winit::keyboard::NamedKey::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &self.select_render),
-                    winit::keyboard::NamedKey::Home => self.cursor_render.set_cursor(0, self.cursor_render.vert, &self.char_layout),
-                    winit::keyboard::NamedKey::End => self.cursor_render.set_cursor(self.char_layout.lines[self.cursor_render.vert].len(), self.cursor_render.vert, &self.char_layout),
+                    winit::keyboard::NamedKey::Home => {
+                        self.text_buffer.clip_x = 0.0;
+                        self.char_layout.offset.x = 0.0;
+                        self.cursor_render.set_cursor(0, self.cursor_render.vert, &self.char_layout)
+                    }
+                    winit::keyboard::NamedKey::End => {
+                        let line = &self.char_layout.lines[self.cursor_render.vert];
+                        if line.width + self.cursor_render.min_pos.x > self.cursor_render.max_pos.x {
+                            self.text_buffer.clip_x = self.cursor_render.max_pos.x - line.width - self.cursor_render.min_pos.x;
+                            self.char_layout.offset.x = self.text_buffer.clip_x;
+                        }
+                        self.cursor_render.set_cursor(line.len(), self.cursor_render.vert, &self.char_layout)
+                    }
                     _ => {}
                 }
             }
@@ -144,6 +172,7 @@ impl MultiEdit {
             winit::keyboard::Key::Character(c) => {
                 let c = c.chars().next().unwrap();
                 self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
+                self.text_buffer.clip_x = self.char_layout.offset.x;
             }
             winit::keyboard::Key::Unidentified(_) => {}
             winit::keyboard::Key::Dead(_) => {}
@@ -175,8 +204,9 @@ impl Widget for MultiEdit {
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
                 if ui.device.device_input.mouse.pressed && self.focused {
-                    self.select_render.move_select(ui, &mut self.cursor_render, &self.char_layout);
+                    self.select_render.move_select(ui, &mut self.cursor_render, &mut self.char_layout);
                     self.changed = true;
+                    self.text_buffer.clip_x = self.char_layout.offset.x;
                     ui.context.window.request_redraw();
                 }
 
@@ -191,7 +221,7 @@ impl Widget for MultiEdit {
                 self.focused = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
                 if self.focused {
                     let pos = ui.device.device_input.mouse.lastest;
-                    self.cursor_render.update_by_pos(pos, &self.char_layout);
+                    self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);
                 }
                 self.changed = true;
@@ -205,28 +235,36 @@ impl Widget for MultiEdit {
             UpdateType::Offset(_) => {}
             UpdateType::Drop => {}
             UpdateType::None => {
-                if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
-                let next_char = self.char_layout.next_char(&self.cursor_render);
-                if let Some(cchar) = next_char && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max
-                    && ui.device.device_input.mouse.lastest.x > ui.device.device_input.mouse.pressed_pos.x {
-                    self.text_buffer.clip_x -= cchar.width;
-                    self.cursor_render.horiz += 1;
-                    self.char_layout.offset.x -= cchar.width;
-                    return Response::new(&self.id, &self.fill_render.param.rect);
-                }
-                let previous_char = self.char_layout.previous_char(&self.cursor_render);
-                println!("{:?}", previous_char);
-                if let Some(cchar) = previous_char && ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min
-                    && ui.device.device_input.mouse.lastest.x < ui.device.device_input.mouse.pressed_pos.x {
-                    println!("222222222222222222222222");
-                    self.text_buffer.clip_x += cchar.width;
-                    self.cursor_render.horiz -= 1;
-                    self.char_layout.offset.x += cchar.width;
-                    if self.char_layout.offset.x >= 0.0 {
-                        self.text_buffer.clip_x = 0.0;
-                        self.char_layout.offset.x = 0.0
-                    }
-                }
+                // if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
+                // let next_char = self.char_layout.next_char(&self.cursor_render);
+                // if let Some(cchar) = next_char && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max
+                //     && ui.device.device_input.mouse.lastest.x > ui.device.device_input.mouse.pressed_pos.x {
+                //     self.text_buffer.clip_x -= cchar.width;
+                //
+                //     self.cursor_render.horiz += 1;
+                //     self.char_layout.offset.x -= cchar.width;
+                //     return Response::new(&self.id, &self.fill_render.param.rect);
+                // }
+                // let previous_char = self.char_layout.previous_char(&self.cursor_render);
+                // println!("{:?}", previous_char);
+                // if ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min && self.focused {
+                //     match previous_char {
+                //         None => {
+                //             self.text_buffer.clip_x = 0.0;
+                //             self.cursor_render.horiz = 0;
+                //             self.char_layout.offset.x = 0.0;
+                //         }
+                //         Some(cchar) => {
+                //             self.text_buffer.clip_x += cchar.width;
+                //             // self.cursor_render.horiz -= 1;
+                //             self.char_layout.offset.x += cchar.width;
+                //             if self.char_layout.offset.x >= 0.0 {
+                //                 self.text_buffer.clip_x = 0.0;
+                //                 self.char_layout.offset.x = 0.0
+                //             }
+                //         }
+                //     }
+                // }
             }
         }
         Response::new(&self.id, &self.fill_render.param.rect)

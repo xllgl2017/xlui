@@ -216,7 +216,7 @@ impl CharLayout {
     }
 }
 
-#[deprecated = "use MultiEdit::new("".to_string()).with_rows(1)"]
+#[deprecated = "use MultiEdit::new(\"\".to_string()).with_rows(1)"]
 pub struct SingleEdit {
     pub(crate) id: String,
     text_buffer: TextBuffer,

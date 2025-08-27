@@ -179,7 +179,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
-            ui.add(SingleEdit::new("asdfghjklzxcvbnmqwertyuiop123456789".to_string()).contact(self.label.get_id()));
+            ui.add(MultiEdit::new("abcdefghijklmnopqrstuvwsyz1234567890".to_string()).with_rows(1));
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");
@@ -230,10 +230,6 @@ impl App for TestWidget {
             let edit = TextEdit::multi("abcdefghijk\nlmnopqrstuvwsyz12\n34567890"); //\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
             ui.add(edit);
         });
-        ui.horizontal(|ui| {
-            let edit = MultiEdit::new("abcdefghijklmnopqrstuvwsyz1234567890".to_string()).with_rows(1); //\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
-            ui.add(edit);
-        })
     }
 
     fn update(&mut self, ui: &mut Ui) {

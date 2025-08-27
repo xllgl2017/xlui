@@ -212,14 +212,8 @@ impl CharBuffer {
         if cursor.horiz == 0 && cursor.vert == 0 { return; }
         println!("{}", selection.has_selected);
         if !selection.has_selected {
-            let cchar = cursor.delete_before(self);
-            match self.edit_kind {
-                EditKind::Single => {
-                    self.offset.x -= cchar.width;
-                    if self.offset.x < 0.0 { self.offset.x = 0.0; }
-                }
-                EditKind::Multi => self.rebuild_text(ui),
-            }
+            cursor.delete_before(self);
+            self.rebuild_text(ui)
         } else {
             self.remove_by_range(ui, cursor, selection)
         }
@@ -230,13 +224,14 @@ impl CharBuffer {
         if cursor.vert == self.lines.len() - 1 && cursor.horiz == self.lines.last().unwrap().len() && cursor.horiz == 0 { return; }
         if !selection.has_selected {
             let cchar = cursor.delete_after(self);
-            match self.edit_kind {
-                EditKind::Single => {
-                    self.offset.x -= cchar.width;
-                    if self.offset.x < 0.0 { self.offset.x = 0.0; }
-                }
-                EditKind::Multi => self.rebuild_text(ui),
-            }
+            // match self.edit_kind {
+            //     EditKind::Single => {
+            //         self.offset.x -= cchar.width;
+            //         if self.offset.x < 0.0 { self.offset.x = 0.0; }
+            //     }
+            //     EditKind::Multi => self.rebuild_text(ui),
+            // }
+            self.rebuild_text(ui);
         } else {
             self.remove_by_range(ui, cursor, selection);
         }
@@ -251,10 +246,15 @@ impl CharBuffer {
         let line = &mut self.lines[cursor.vert];
         line.chars.insert(cursor.horiz, cchar);
         self.rebuild_text(ui);
+        let line = &mut self.lines[cursor.vert];
+        if cursor.min_pos.x + line.get_width_in_char(cursor.horiz + 1) > cursor.max_pos.x {
+            self.offset.x -= width;
+        }
         cursor.move_right(self);
         if cursor.offset.x == 0.0 && c != '\n' {
             cursor.move_right(self)
         }
+
         println!("insert char-{}-{}", cursor.vert, cursor.horiz);
     }
 

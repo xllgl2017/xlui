@@ -92,10 +92,12 @@ impl EditCursor {
             self.vert -= 1;
             self.horiz = cchar.lines[self.vert].len();
             self.offset.y -= self.line_height;
-            self.offset.x = cchar.lines[self.vert].width;
+            self.offset.x = cchar.lines[self.vert].width + cchar.offset.x;
         } else {
-            self.offset.x -= cchar.lines[self.vert].chars[self.horiz - 1].width;
             self.horiz -= 1;
+            self.offset.x = cchar.lines[self.vert].get_width_in_char(self.horiz) + cchar.offset.x;
+            // self.offset.x -= cchar.lines[self.vert].chars[self.horiz - 1].width + cchar.offset.x;
+
         }
         self.changed = true;
     }
@@ -115,7 +117,9 @@ impl EditCursor {
             self.horiz -= 1;
             let line = &mut cchar.lines[self.vert];
             let c = line.chars.remove(self.horiz);
-            self.offset.x -= c.width;
+            cchar.offset.x += c.width;
+            if cchar.offset.x >= 0.0 { cchar.offset.x = 0.0; }
+            self.offset.x = line.get_width_in_char(self.horiz) + cchar.offset.x - c.width;
             c
         }
     }
@@ -128,7 +132,10 @@ impl EditCursor {
             line.auto_wrap = true;
             if wrap { cchar.lines[self.vert + 1].chars.remove(0) } else { EditChar::new('\n', 0.0) }
         } else if self.horiz < line.len() {
-            line.chars.remove(self.horiz)
+            let c = line.chars.remove(self.horiz);
+            cchar.offset.x += c.width;
+            if cchar.offset.x >= 0.0 { cchar.offset.x = 0.0; }
+            c
         } else { EditChar::new(' ', 0.0) };
         self.changed = true;
         c
@@ -145,7 +152,7 @@ impl EditCursor {
             self.offset.y += self.line_height;
         } else {
             self.horiz += 1;
-            self.offset.x += line.chars[self.horiz - 1].width;
+            self.offset.x = line.get_width_in_char(self.horiz) + cchar.offset.x;
         }
         self.changed = true;
     }
@@ -190,19 +197,45 @@ impl EditCursor {
         self.changed = true;
     }
 
-    pub fn update_by_pos(&mut self, pos: Pos, cchar: &CharBuffer) {
+    pub fn update_by_pos(&mut self, pos: Pos, cchar: &mut CharBuffer) {
         let clip_height = pos.y + cchar.offset.y - self.min_pos.y;
         let mut line_index = (clip_height / self.line_height) as usize;
         if line_index >= cchar.lines.len() { line_index = cchar.lines.len() - 1; }
         self.vert = line_index;
         let line = &cchar.lines[self.vert];
+
+
+        if pos.x > self.max_pos.x && self.min_pos.x + line.width > self.max_pos.x {
+            if self.horiz < line.len() {
+                self.horiz += 1;
+                let char = &line.chars[self.horiz - 1];
+                cchar.offset.x -= char.width;
+                self.offset.x = line.get_width_in_char(self.horiz) + cchar.offset.x;
+            } else {
+                self.horiz = line.len();
+                let mo = self.min_pos.x + line.width - self.max_pos.x;
+                cchar.offset.x = -mo;
+                self.offset.x = line.width + cchar.offset.x;
+            }
+            return;
+        } else if pos.x < self.min_pos.x && self.min_pos.x + line.width > self.max_pos.x {
+            if self.horiz > 0 { self.horiz -= 1; }
+            let char = &line.chars[self.horiz];
+            self.offset.x -= char.width;
+            if self.offset.x <= 0.0 { self.offset.x = 0.0; }
+            cchar.offset.x += char.width;
+            if cchar.offset.x >= 0.0 { cchar.offset.x = 0.0; }
+            return;
+        }
+
+
         let mut sum_width = 0.0;
         let mut horiz = 0;
         let mut char_width = 0.0;
         for cc in line.chars.iter() {
             let char_min = self.min_pos.x + sum_width + cchar.offset.x;
             let char_max = self.min_pos.x + sum_width + cchar.offset.x + cc.width;
-            println!("{} {} {} {} {} {}", pos.x, char_min, pos.x, char_max, cchar.offset.x, horiz);
+            // println!("{} {} {} {} {} {}", pos.x, char_min, pos.x, char_max, cchar.offset.x, horiz);
             if pos.x > char_min && pos.x < char_max {
                 char_width = cc.width;
                 break;
@@ -213,7 +246,7 @@ impl EditCursor {
         let char_min = self.min_pos.x + sum_width + cchar.offset.x;
         let char_max = self.min_pos.x + sum_width + cchar.offset.x + char_width;
         println!("{} {} {} {} {}", self.max_pos.x, char_max, pos.x, char_min, char_width);
-        if char_max > self.max_pos.x || char_min < self.min_pos.x {} else if pos.x < self.min_pos.x {
+        if pos.x < self.min_pos.x {
             self.horiz = 0;
             self.offset.x = 0.0;
         } else if pos.x > char_min + char_width / 2.0 {

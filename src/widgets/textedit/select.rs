@@ -96,7 +96,7 @@ impl EditSelection {
         self.has_selected = false;
     }
 
-    pub fn move_select(&mut self, ui: &mut Ui, cursor: &mut EditCursor, cchar: &CharBuffer) {
+    pub fn move_select(&mut self, ui: &mut Ui, cursor: &mut EditCursor, cchar: &mut CharBuffer) {
         let pos = ui.device.device_input.mouse.lastest;
         cursor.update_by_pos(pos, cchar);
         // println!("move_select-{:?}-{}-{}-{}-{}", pos, cursor.horiz, cursor.vert, self.start_horiz, self.start_vert);
