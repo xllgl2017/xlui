@@ -181,7 +181,6 @@ impl CharBuffer {
                     let c = line.chars.remove(selection.start_horiz);
                     self.offset.x += c.width;
                     if self.offset.x >= 0.0 { self.offset.x = 0.0; }
-                    // cursor.offset.x -= c.width;
                     cursor.horiz -= 1;
                 }
                 cursor.set_cursor(cursor.horiz, cursor.vert, self);
@@ -197,10 +196,6 @@ impl CharBuffer {
             }
             self.rebuild_text(ui);
         }
-        // if rebuild {
-        //     let raw_text = self.raw_text();
-        //     self.set_text(&raw_text, ui);
-        // }
     }
 
     fn rebuild_text(&mut self, ui: &mut Ui) {
@@ -210,7 +205,7 @@ impl CharBuffer {
 
     pub fn remove_chars_before_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) {
         if cursor.horiz == 0 && cursor.vert == 0 { return; }
-        println!("{}", selection.has_selected);
+        println!("delete-before-{}-{}", selection.has_selected, cursor.horiz);
         if !selection.has_selected {
             cursor.delete_before(self);
             self.rebuild_text(ui)

@@ -114,12 +114,12 @@ impl EditCursor {
             self.offset.y -= self.line_height;
             c
         } else {
-            self.horiz -= 1;
             let line = &mut cchar.lines[self.vert];
-            let c = line.chars.remove(self.horiz);
+            let c = line.chars.remove(self.horiz - 1);
             cchar.offset.x += c.width;
             if cchar.offset.x >= 0.0 { cchar.offset.x = 0.0; }
-            self.offset.x = line.get_width_in_char(self.horiz) + cchar.offset.x - c.width;
+            self.horiz -= 1;
+            self.offset.x = line.get_width_in_char(self.horiz) + cchar.offset.x;
             c
         }
     }
