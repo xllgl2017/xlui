@@ -39,11 +39,11 @@ use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
 use crate::size::pos::Pos;
-use crate::widgets::textedit::single::SingleEdit;
+use crate::widgets::textedit::TextEdit;
 
 pub struct SpinBox<T> {
     pub(crate) id: String,
-    edit: SingleEdit,
+    edit: TextEdit,
     rect: Rect,
     size_mode: SizeMode,
     value: T,
@@ -73,7 +73,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         style.border = BorderStyle::same(Border::new(0.0));
         SpinBox {
             id: crate::gen_unique_id(),
-            edit: SingleEdit::new(format!("{:.*}", 2, v)),
+            edit: TextEdit::single_edit(format!("{:.*}", 2, v)),
             rect: Rect::new(),
             size_mode: SizeMode::Auto,
             value: v,
