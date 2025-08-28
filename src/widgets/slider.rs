@@ -154,6 +154,17 @@ impl Slider {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_f32(&mut self.value);
+            self.slider_render.param.rect = self.rect.clone();
+            self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
+            self.slider_render.param.rect.set_width(self.rect.height());
+            let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
+            let mut lx = self.fill_render.param.rect.dx().clone();
+            lx.extend(self.slider_render.param.rect.width() / 2.0);
+            self.offset = self.slider_render.param.rect.offset_x_limit(offset, &lx);
+            self.changed = true;
+        }
         if !self.changed && !ui.can_offset { return; }
         self.changed = false;
         if ui.can_offset {
@@ -185,18 +196,6 @@ impl Widget for Slider {
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response {
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_f32(&mut self.value);
-            self.slider_render.param.rect = self.rect.clone();
-            self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
-            self.slider_render.param.rect.set_width(self.rect.height());
-            let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
-            let mut lx = self.fill_render.param.rect.dx().clone();
-            lx.extend(self.slider_render.param.rect.width() / 2.0);
-            self.offset = self.slider_render.param.rect.offset_x_limit(offset, &lx);
-            self.changed = true;
-            ui.context.window.request_redraw();
-        }
         match ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
