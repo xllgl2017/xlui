@@ -156,13 +156,13 @@ impl Slider {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
-            self.slider_render.param.rect = self.rect.clone();
-            self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
-            self.slider_render.param.rect.set_width(self.rect.height());
-            let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
-            let mut lx = self.fill_render.param.rect.dx().clone();
-            lx.extend(self.slider_render.param.rect.width() / 2.0);
-            self.offset = self.slider_render.param.rect.offset_x_limit(offset, &lx);
+            // self.slider_render.param.rect = self.rect.clone();
+            // self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
+            // self.slider_render.param.rect.set_width(self.rect.height());
+            // let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
+            // let mut lx = self.fill_render.param.rect.dx().clone();
+            // lx.extend(self.slider_render.param.rect.width() / 2.0);
+            // self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.rect.dx());
             self.changed = true;
         }
         if !self.changed && !ui.can_offset { return; }
@@ -181,6 +181,11 @@ impl Slider {
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_render.param.rect.set_width(self.fill_render.param.rect.width() * scale);
         self.slided_render.update(ui, false, false);
+        self.slider_render.param.rect = self.rect.clone();
+        // self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
+        self.slider_render.param.rect.set_width(self.rect.height());
+        let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
+        self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.rect.dx());
         self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
         self.fill_render.update(ui, false, false);
     }
@@ -202,13 +207,10 @@ impl Widget for Slider {
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
                     let ox = ui.device.device_input.mouse.offset_x();
-                    let mut lx = self.fill_render.param.rect.dx().clone();
-                    lx.extend(self.slider_render.param.rect.width() / 2.0);
-                    let rox = self.slider_render.param.rect.offset_x_limit(self.offset + ox, &lx);
-                    self.offset = rox;
+                    self.offset = self.slider_render.param.rect.offset_x_limit(self.offset + ox, self.rect.dx());
                     let cl = (self.slider_render.param.rect.width() / 2.0 + self.slider_render.param.rect.dx().min - self.fill_render.param.rect.dx().min) / self.fill_render.param.rect.width();
                     let cv = (self.range.end - self.range.start) * cl;
-                    self.value = cv;
+                    self.value = self.range.start + cv;
                     self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();

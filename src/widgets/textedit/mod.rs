@@ -71,6 +71,7 @@ impl TextEdit {
 
     pub fn single_edit(txt: impl ToString) -> TextEdit {
         let mut res = Self::new(txt.to_string());
+        res.desire_lines = 1;
         res.char_layout.edit_kind = EditKind::Single;
         res
     }
@@ -91,7 +92,7 @@ impl TextEdit {
     }
 
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
-        self.char_layout.set_text(&text,ui);
+        self.char_layout.set_text(&text, ui);
         self.text_buffer.set_text(text);
         self.select_render.reset();
         self.changed = true;

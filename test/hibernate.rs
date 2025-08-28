@@ -4,8 +4,8 @@ use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
 use xlui::widgets::button::Button;
 use xlui::widgets::combobox::ComboBox;
-use xlui::widgets::textedit::single::SingleEdit;
 use xlui::{Font, WindowAttribute};
+use xlui::widgets::textedit::TextEdit;
 
 fn main() {
     XlUi {}.run();
@@ -26,7 +26,7 @@ impl App for XlUi {
         ui.slider(0.0, 0.0..100.0);
         ui.select_value(1);
         ui.add(Button::image_and_text("logo.jpg", "btn").width(100.0).height(50.0));
-        ui.add(SingleEdit::new("".to_string()));
+        ui.add(TextEdit::single_edit("".to_string()));
         ui.horizontal(|ui| {
             ui.button("btn");
         });
