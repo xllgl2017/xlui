@@ -63,7 +63,7 @@ pub(crate) struct CharBuffer {
     line_height: f32,
     max_wrap_width: f32,
     pub(crate) offset: Offset,
-    pub(crate) edit_kind: EditKind,
+    pub(super) edit_kind: EditKind,
 }
 
 impl CharBuffer {
@@ -223,14 +223,7 @@ impl CharBuffer {
         println!("{} {} {} {}", cursor.vert, self.lines.len() - 1, cursor.horiz, self.lines.last().unwrap().len());
         if cursor.vert == self.lines.len() - 1 && cursor.horiz == self.lines.last().unwrap().len() && cursor.horiz == 0 { return; }
         if !selection.has_selected {
-            let cchar = cursor.delete_after(self);
-            // match self.edit_kind {
-            //     EditKind::Single => {
-            //         self.offset.x -= cchar.width;
-            //         if self.offset.x < 0.0 { self.offset.x = 0.0; }
-            //     }
-            //     EditKind::Multi => self.rebuild_text(ui),
-            // }
+            cursor.delete_after(self);
             self.rebuild_text(ui);
         } else {
             self.remove_by_range(ui, cursor, selection);

@@ -168,7 +168,7 @@ impl TextEdit {
                         self.cursor_render.move_left(&self.char_layout);
                     }
                     winit::keyboard::NamedKey::ArrowRight => {
-                        let cx = self.char_layout.lines[self.cursor_render.vert].get_width_in_char(self.cursor_render.horiz + 1);
+                        // let cx = self.char_layout.lines[self.cursor_render.vert].get_width_in_char(self.cursor_render.horiz + 1);
                         if self.cursor_render.cursor_min() + 2.0 >= self.cursor_render.max_pos.x && let Some(cchar) = self.char_layout.next_char(&self.cursor_render) {
                             self.text_buffer.clip_x -= cchar.width;
                             self.char_layout.offset.x -= cchar.width;
