@@ -38,19 +38,27 @@ path = "test/hibernate.rs"
 name = "test_all"
 path = "test/all.rs"
 
+[[bin]]
+name = "test_x11_window"
+path = "test/x11_window.rs"
+
 #[lib]
 #name = "xlui-web"
 #path = "test/web.rs"
 #crate-type = []
 
 [dependencies]
-winit = "0.30.11"
+winit = { version = "0.30.11", optional = true }
 wgpu = "25.0.2"
 pollster = "0.4.0"
 glyphon = "0.9.0"
 bytemuck = "1.23.1"
 ab_glyph = "0.2.31"
 image = "0.25.6"
+x11 = "2.21.0"
+raw-window-handle = "0.6.2"
+
+
 
 [profile.release]
 opt-level = 3

@@ -151,7 +151,7 @@ impl TextEdit {
         self.text_buffer.draw(ui);
     }
 
-
+    #[cfg(feature = "winit")]
     fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
         self.changed = true;
         match key.unwrap() {
@@ -265,6 +265,7 @@ impl Widget for TextEdit {
             }
             UpdateType::MouseRelease => {}
             UpdateType::MouseWheel => {}
+            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(ref mut key) => {
                 if self.focused { self.key_input(key.take(), ui); }
             }

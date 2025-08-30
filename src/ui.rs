@@ -21,10 +21,12 @@ use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use std::sync::atomic::Ordering;
-use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use std::thread::{spawn, JoinHandle};
+use wgpu::{LoadOp, Operations, RenderPassDescriptor, SurfaceError};
 use crate::size::pos::Pos;
 use crate::text::rich::RichText;
 use crate::window::inner::InnerWindow;
+use crate::window::WindowId;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -34,6 +36,7 @@ pub struct AppContext {
     pub(crate) style: Style,
     pub(crate) context: Context,
     previous_time: u128,
+    redraw_thread: JoinHandle<()>,
 }
 
 impl AppContext {
@@ -47,6 +50,7 @@ impl AppContext {
             style: Style::light_style(),
             context,
             previous_time: 0,
+            redraw_thread: spawn(|| {}),
         }
     }
 
@@ -115,40 +119,63 @@ impl AppContext {
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
         if let Some(u) = ui.request_update.take() {
+            #[cfg(feature = "winit")]
             ui.context.event.send_event(u).unwrap();
         }
         self.inner_windows = ui.inner_windows.take();
     }
 
-    pub fn configure_surface(&mut self) {
-        self.device.surface.configure(&self.device.device, &self.device.surface_config);
-    }
-
-
     pub fn redraw(&mut self, app: &mut Box<dyn App>) {
+        if !self.redraw_thread.is_finished() { return; }
         if crate::time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
             let t = self.previous_time;
-            std::thread::spawn(move || {
+            self.redraw_thread = spawn(move || {
                 std::thread::sleep(std::time::Duration::from_millis(crate::time_ms() as u64 - t as u64));
                 window.request_redraw();
             });
             return;
         }
         println!("{} frame/ms", crate::time_ms() - self.previous_time);
-        let surface_texture = match self.device.surface.get_current_texture() {
-            Ok(res) => res,
-            Err(e) => {
-                println!("{:?}", e);
-                return;
-            }
-        };
+        // if self.context.window.x11().resized() {
+        //     let size = self.context.window.size();
+        //     println!("11111111111111111111111111-{:?}", size);
+        //     self.context.size = size;
+        //     self.device.surface_config.width = size.width;
+        //     self.device.surface_config.height = size.height;
+        //     // self.device.device.poll(wgpu::PollType::wait()).unwrap();
+        //     self.device.surface.configure(&self.device.device, &self.device.surface_config);
+        //     println!("22222222222222222222222222");
+        // }
+        let surface_texture = //self.device.surface.get_current_texture().unwrap();
+            match self.device.surface.get_current_texture() {
+                Ok(res) => res,
+                Err(SurfaceError::Outdated) => {
+                    // let size = self.context.window.size();
+                    // println!("11111111111111111111111111-{:?}", size);
+                    // self.context.size = size;
+                    // self.device.surface_config.width = size.width;
+                    // self.device.surface_config.height = size.height;
+                    // // self.device.device.poll(wgpu::PollType::wait()).unwrap();
+                    // self.device.surface.configure(&self.device.device, &self.device.surface_config);
+                    // println!("22222222222222222222222222");
+                    // std::thread::sleep(std::time::Duration::from_millis(crate::time_ms() as u64 - self.previous_time as u64 + 2));
+                    // self.context.window.request_redraw();
+                    // self.device.surface.get_current_texture().unwrap()
+                    return;
+                }
+                Err(e) => {
+                    println!("{}", e.to_string());
+                    return;
+                }
+            };
+        println!("5555555555555555555555555-{:?}", surface_texture.texture.size());
         let view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let msaa_texture = self.device.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
-                width: self.context.size.width,
-                height: self.context.size.height,
+                width: self.device.surface_config.width,
+                height: self.device.surface_config.height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -159,6 +186,8 @@ impl AppContext {
             view_formats: &[],
         });
         let msaa_view = msaa_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+
         let mut encoder = self.device.device.create_command_encoder(&Default::default());
         let render_pass_desc = RenderPassDescriptor {
             label: None,
@@ -198,6 +227,7 @@ impl AppContext {
             popup.redraw(&mut ui);
         }
         if let Some(u) = ui.request_update.take() {
+            #[cfg(feature = "winit")]
             ui.context.event.send_event(u).unwrap();
         }
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
@@ -235,6 +265,7 @@ impl AppContext {
         }
         self.inner_windows = ui.inner_windows.take();
         if let Some(u) = ui.request_update.take() {
+            #[cfg(feature = "winit")]
             ui.context.event.send_event(u).unwrap();
         }
     }
@@ -251,7 +282,7 @@ pub struct Ui<'a> {
     pub(crate) update_type: UpdateType,
     pub(crate) can_offset: bool,
     pub(crate) inner_windows: Option<Map<InnerWindow>>,
-    pub(crate) request_update: Option<(winit::window::WindowId, UpdateType)>,
+    pub(crate) request_update: Option<(WindowId, UpdateType)>,
     pub(crate) offset: Offset,
 }
 

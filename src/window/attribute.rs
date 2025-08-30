@@ -1,4 +1,5 @@
 use std::sync::Arc;
+#[cfg(feature = "winit")]
 use winit::window::{Icon, WindowLevel};
 use crate::Font;
 use crate::size::Size;
@@ -16,11 +17,13 @@ pub struct WindowAttribute {
     pub blur: bool,
     pub decorations: bool,
     pub window_icon: Arc<Vec<u8>>,
+    #[cfg(feature = "winit")]
     pub window_level: WindowLevel,
     pub font: Arc<Font>,
 }
 
 impl WindowAttribute {
+    #[cfg(feature = "winit")]
     pub fn as_winit_attributes(&self) -> winit::window::WindowAttributes {
         let attr = winit::window::WindowAttributes::default();
         let img = image::load_from_memory(self.window_icon.as_ref()).unwrap();
@@ -73,6 +76,7 @@ impl Default for WindowAttribute {
             blur: true, //未知
             decorations: true, //标题栏
             window_icon: Arc::new(include_bytes!("../../logo.jpg").to_vec()),
+            #[cfg(feature = "winit")]
             window_level: WindowLevel::Normal,
             font: Arc::new(Font::default()),
         }

@@ -228,10 +228,9 @@ impl MouseInput {
         self.lastest.y
     }
 
-    pub fn update(&mut self, pos: winit::dpi::PhysicalPosition<f64>) {
+    pub fn update(&mut self, pos: Pos) {
         self.previous = self.lastest.clone();
-        self.lastest.x = pos.x as f32;
-        self.lastest.y = pos.y as f32;
+        self.lastest = pos;
     }
 
     pub fn lastest(&self) -> &Pos {
@@ -305,6 +304,12 @@ pub(crate) fn time_ms() -> u128 {
     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
 }
 
+
+pub fn unique_id_u32() -> u32 {
+    let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+    println!("{}", t.to_string()[10..].to_string());
+    t.to_string()[10..].to_string().parse::<u32>().unwrap()
+}
 
 pub fn gen_unique_id() -> String {
     let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
