@@ -189,6 +189,7 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                 }
             }
             UpdateType::MouseWheel => {}
+            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(_) => {}
             _ => {}
         }

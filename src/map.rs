@@ -140,6 +140,12 @@ impl<T> IndexMut<&String> for Map<T> {
     }
 }
 
+impl<T> Default for Map<T> {
+    fn default() -> Self {
+        Map::new()
+    }
+}
+
 pub struct MapIter<'a, T> {
     inner: Iter<'a, MapNode<T>>,
 }
