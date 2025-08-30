@@ -3,6 +3,7 @@ use crate::{Pos, Size};
 
 #[derive(Debug)]
 pub enum WindowEvent {
+    None,
     KeyPress,
     KeyRelease,
     MouseMove(Pos),

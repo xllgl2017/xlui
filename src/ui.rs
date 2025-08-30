@@ -137,27 +137,45 @@ impl AppContext {
             return;
         }
         println!("{} frame/ms", crate::time_ms() - self.previous_time);
+        // if self.context.window.x11().resized() {
+        //     let size = self.context.window.size();
+        //     println!("11111111111111111111111111-{:?}", size);
+        //     self.context.size = size;
+        //     self.device.surface_config.width = size.width;
+        //     self.device.surface_config.height = size.height;
+        //     // self.device.device.poll(wgpu::PollType::wait()).unwrap();
+        //     self.device.surface.configure(&self.device.device, &self.device.surface_config);
+        //     println!("22222222222222222222222222");
+        // }
         let surface_texture = //self.device.surface.get_current_texture().unwrap();
             match self.device.surface.get_current_texture() {
                 Ok(res) => res,
                 Err(SurfaceError::Outdated) => {
-                    println!("11111111111111111111111111");
-                    self.device.surface.configure(&self.device.device, &self.device.surface_config);
-                    println!("22222222222222222222222222");
-
-                    self.device.surface.get_current_texture().unwrap()
+                    // let size = self.context.window.size();
+                    // println!("11111111111111111111111111-{:?}", size);
+                    // self.context.size = size;
+                    // self.device.surface_config.width = size.width;
+                    // self.device.surface_config.height = size.height;
+                    // // self.device.device.poll(wgpu::PollType::wait()).unwrap();
+                    // self.device.surface.configure(&self.device.device, &self.device.surface_config);
+                    // println!("22222222222222222222222222");
+                    // std::thread::sleep(std::time::Duration::from_millis(crate::time_ms() as u64 - self.previous_time as u64 + 2));
+                    // self.context.window.request_redraw();
+                    // self.device.surface.get_current_texture().unwrap()
+                    return;
                 }
                 Err(e) => {
                     println!("{}", e.to_string());
                     return;
                 }
             };
+        println!("5555555555555555555555555-{:?}", surface_texture.texture.size());
         let view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let msaa_texture = self.device.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
-                width: self.context.size.width,
-                height: self.context.size.height,
+                width: self.device.surface_config.width,
+                height: self.device.surface_config.height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,

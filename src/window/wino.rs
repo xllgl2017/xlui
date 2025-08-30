@@ -1,6 +1,9 @@
 use std::error::Error;
+use std::process::exit;
 use std::sync::Arc;
 use std::sync::mpsc::SyncSender;
+use std::thread::{sleep, spawn, JoinHandle};
+use std::time::Duration;
 use glyphon::{Cache, Resolution, Viewport};
 use crate::window::event::WindowEvent;
 use crate::window::x11::X11Window;
@@ -12,6 +15,7 @@ use crate::frame::context::{Context, Render, UpdateType};
 use crate::map::Map;
 use crate::ui::AppContext;
 use crate::window::{Window, WindowId};
+use crate::window::x11_app::X11Application;
 
 pub enum WindowKind {
     #[cfg(feature = "winit")]
@@ -83,7 +87,7 @@ pub trait EventLoopHandle {
 }
 
 pub struct LoopWindow {
-    app_ctx: AppContext,
+    pub(crate) app_ctx: AppContext,
     pub(crate) app: Box<dyn App>,
 }
 
@@ -117,84 +121,10 @@ impl LoopWindow {
 
     pub fn run(&mut self) {
         let window = self.app_ctx.context.window.clone();
-        let x11_window = window.x11();
-        unsafe {
-            let mut event: xlib::XEvent = std::mem::zeroed();
-            loop {
-                xlib::XNextEvent(x11_window.display, &mut event);
-                let typ = event.get_type();
-                match typ {
-                    xlib::Expose => {
-                        println!("11");
-                        self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
-                            width: self.app_ctx.context.size.width,
-                            height: self.app_ctx.context.size.height,
-                        });
-                        self.app_ctx.redraw(&mut self.app);
-                    }
-                    xlib::ConfigureNotify => {
-                        println!("resize");
-                        let xcfg: xlib::XConfigureEvent = event.configure;
-                        let new_w = xcfg.width as u32;
-                        let new_h = xcfg.height as u32;
-                        if new_w == 0 || new_h == 0 {
-                            // ignore weird zero sizes
-                        } else if new_w != self.app_ctx.device.surface_config.width || new_h != self.app_ctx.device.surface_config.height {
-                            self.app_ctx.device.surface_config.width = new_w;
-                            self.app_ctx.device.surface_config.height = new_h;
-                            let surface = &self.app_ctx.device.surface;
-                            let config = &self.app_ctx.device.surface_config;
-                            surface.configure(&self.app_ctx.device.device, config);
-                            x11_window.request_redraw();
-                        }
-                    }
-
-                    xlib::ClientMessage => {
-                        // Check for WM_DELETE_WINDOW
-                        let xclient: xlib::XClientMessageEvent = event.client_message;
-                        if xclient.data.get_long(0) as xlib::Atom == x11_window.wm_delete_atom {
-                            // self.sender.send((self.id, WindowEvent::ReqClose)).unwrap();
-                            break;
-                        }
-                    }
-                    xlib::KeyPress => {
-                        // Map key to keysym
-                        let xkey: xlib::XKeyEvent = event.key;
-                        let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
-                        // XK_Escape constant from x11 crate keysym
-                        // if ks == x11::keysym::XK_Escape {
-                        //     running = false;
-                        // } else {
-                        //     // print pressed key code/keysym for debug
-                        //     eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
-                        // }
-                    }
-                    xlib::ButtonRelease => {
-                        // let xb: xlib::XButtonEvent = event.button;
-                        self.app_ctx.device.device_input.mouse.mouse_release();
-                        self.app_ctx.update(UpdateType::MouseRelease, &mut self.app);
-                        self.app_ctx.device.device_input.mouse.a = 0.0;
-                        // self.sender.send((self.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 }))).unwrap();
-                        // eprintln!("Mouse Release {} at ({}, {})", xb.button, xb.x, xb.y);
-                    }
-                    xlib::ButtonPress => {
-                        // let xb: xlib::XButtonEvent = event.button;
-                        self.app_ctx.device.device_input.mouse.mouse_press();
-                        self.app_ctx.update(UpdateType::MousePress, &mut self.app);
-                        // self.sender.send((self.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 }))).unwrap();
-                        // eprintln!("Mouse Press {} at ({}, {})", xb.button, xb.x, xb.y);
-                    }
-                    xlib::MotionNotify => {
-                        let xm: xlib::XMotionEvent = event.motion;
-                        let pos = Pos { x: xm.x as f32, y: xm.y as f32 };
-                        self.app_ctx.device.device_input.mouse.update(pos);
-                        self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
-                        // self.sender.send((self.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))).unwrap();
-                        // eprintln!("Mouse move: ({}, {})", xm.x, xm.y);
-                    }
-                    _ => {}
-                }
-            }
+        self.event(self.app_ctx.context.window.id(), WindowEvent::Redraw);
+        loop {
+            let event = window.x11().run();
+            self.event(self.app_ctx.context.window.id(), event);
         }
     }
 
@@ -220,6 +150,7 @@ impl LoopWindow {
         device.on_uncaptured_error(Box::new(move |err| {
             sender.send((wid, WindowEvent::Reinit)).unwrap();
             println!("Error: {:#?}", err);
+            println!("{}", err.to_string());
         }));
         Ok(Device {
             device,
@@ -233,4 +164,54 @@ impl LoopWindow {
     }
 }
 
-
+impl EventLoopHandle for LoopWindow {
+    fn event(&mut self, id: WindowId, event: WindowEvent) {
+        if self.app_ctx.context.window.id() != id { return; }
+        println!("{:?}", event);
+        match event {
+            WindowEvent::None => {}
+            WindowEvent::KeyPress => {}
+            WindowEvent::KeyRelease => {}
+            WindowEvent::MouseMove(pos) => {
+                self.app_ctx.device.device_input.mouse.update(pos);
+                self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
+            }
+            WindowEvent::MouseWheel => {}
+            WindowEvent::MousePress(_) => {
+                self.app_ctx.device.device_input.mouse.mouse_press();
+                self.app_ctx.update(UpdateType::MousePress, &mut self.app);
+            }
+            WindowEvent::MouseRelease(_) => {
+                self.app_ctx.device.device_input.mouse.mouse_release();
+                self.app_ctx.update(UpdateType::MouseRelease, &mut self.app);
+                self.app_ctx.device.device_input.mouse.a = 0.0;
+            }
+            WindowEvent::Redraw => {
+                self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
+                    width: self.app_ctx.device.surface_config.width,
+                    height: self.app_ctx.device.surface_config.height,
+                });
+                self.app_ctx.redraw(&mut self.app)
+            }
+            WindowEvent::Reinit => {}
+            WindowEvent::Resize(size) => {
+                self.app_ctx.context.size = size;
+                self.app_ctx.device.surface_config.width = size.width;
+                self.app_ctx.device.surface_config.height = size.height;
+                let device = &self.app_ctx.device.device;
+                let config = &self.app_ctx.device.surface_config;
+                println!("3333333333333333");
+                // window.app_ctx.device.device.poll(wgpu::PollType::Wait).unwrap();
+                println!("3434564545454545");
+                self.app_ctx.device.surface.configure(device, config);
+                println!("444444444444444");
+                // // window.resize(size);
+                // window.render();
+                // window.app_ctx.redraw(&mut window.app)
+                // window.app_ctx.context.window.request_redraw();
+            }
+            WindowEvent::ReqClose => self.app_ctx.context.event.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
+            WindowEvent::Update(_) => {}
+        }
+    }
+}

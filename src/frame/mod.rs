@@ -11,7 +11,7 @@ use crate::WindowAttribute;
 pub mod context;
 
 
-pub trait App: Any + 'static {
+pub trait App: Any + Sync + Send + 'static {
     fn draw(&mut self, ui: &mut Ui);
     fn update(&mut self, _: &mut Ui) {}
     fn redraw(&mut self, _: &mut Ui) {}
@@ -38,7 +38,8 @@ pub trait App: Any + 'static {
         #[cfg(not(feature = "winit"))]
         {
             let mut app = X11Application::new();
-            app.run(self);
+            app.create_window(self);
+            app.run();
         }
     }
 }

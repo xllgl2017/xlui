@@ -1,14 +1,17 @@
 use std::ffi::c_void;
-use std::{mem, ptr};
 use std::ptr::NonNull;
-use std::sync::mpsc::{Sender, SyncSender};
+use std::sync::mpsc::SyncSender;
 use std::sync::RwLock;
-
+use std::{mem, ptr};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread::sleep;
+use std::time::Duration;
 use crate::window::event::WindowEvent;
 use crate::window::WindowId;
 use crate::{Pos, Size};
 use raw_window_handle::*;
 use x11::xlib;
+use x11::xlib::XInitThreads;
 
 #[link(name = "X11")]
 unsafe extern {}
@@ -21,11 +24,15 @@ pub struct X11Window {
     sender: SyncSender<(WindowId, WindowEvent)>,
     size: RwLock<Size>,
     id: WindowId,
+    resized: AtomicBool,
 }
 
 impl X11Window {
     pub fn new(size: Size, title: &str, sender: SyncSender<(WindowId, WindowEvent)>) -> Result<Self, String> {
         unsafe {
+            if XInitThreads() == 0 {
+                panic!("XInitThreads failed");
+            }
             let display = xlib::XOpenDisplay(ptr::null());
             if display.is_null() {
                 return Err("Cannot open X display".into());
@@ -70,11 +77,9 @@ impl X11Window {
             let mut attrs: xlib::XSetWindowAttributes = mem::zeroed();
             attrs.background_pixel = 0;
             xlib::XChangeWindowAttributes(display, window, xlib::CWBackPixmap, &mut attrs);
-
+            xlib::XSetWindowBackgroundPixmap(display, window, 0); // 0 == None
             xlib::XMapWindow(display, window);
             xlib::XFlush(display);
-
-
 
 
             Ok(Self {
@@ -85,6 +90,7 @@ impl X11Window {
                 sender,
                 size: RwLock::new(size),
                 id: WindowId(crate::unique_id_u32()),
+                resized: AtomicBool::new(false),
             })
         }
     }
@@ -96,92 +102,85 @@ impl X11Window {
         }
     }
 
-    // pub fn run(&self) {
-    //     unsafe {
-    //         let mut event: xlib::XEvent = std::mem::zeroed();
-    //         loop {
-    //             println!("11");
-    //             xlib::XNextEvent(self.display, &mut event);
-    //             let typ = event.get_type();
-    //             match typ {
-    //                 xlib::Expose => {
-    //                     // let _ = self.sender.try_send((self.id, WindowEvent::Redraw));
-    //                 }
-    //                 xlib::ConfigureNotify => {
-    //                     println!("resize");
-    //                     let xcfg: xlib::XConfigureEvent = event.configure;
-    //                     let new_w = xcfg.width as u32;
-    //                     let new_h = xcfg.height as u32;
-    //                     let mut size = self.size.write().unwrap();
-    //                     if new_w == 0 || new_h == 0 {
-    //                         // ignore weird zero sizes
-    //                     } else if new_w != size.width || new_h != size.height {
-    //                         size.width = new_w;
-    //                         size.height = new_h;
-    //                         // width = new_w;
-    //                         // height = new_h;
-    //                         // reconfigure surface to new size
-    //                         // surface.configure(&device, &config);
-    //                         // xwin.request_redraw();
-    //                         // redraw(&surface, &device, &queue)?;
-    //                         let _ = self.sender.try_send((self.id, WindowEvent::Resize(size.clone())));
-    //                     }
-    //                 }
-    //
-    //
-    //                 //     {
-    //                 //     let cfg: xlib::XConfigureEvent = event.configure;
-    //                 //     let size = Size {
-    //                 //         width: cfg.width as u32,
-    //                 //         height: cfg.height as u32,
-    //                 //     };
-    //                 //     let old_size = self.size.read().unwrap();
-    //                 //     if old_size.width == size.width && old_size.height == size.height { continue; }
-    //                 //     drop(old_size);
-    //                 //     *self.size.write().unwrap() = size;
-    //                 //     println!("resize");
-    //                 //     self.sender.send((self.id, WindowEvent::Resize(size))).unwrap()
-    //                 // }
-    //                 xlib::ClientMessage => {
-    //                     // Check for WM_DELETE_WINDOW
-    //                     let xclient: xlib::XClientMessageEvent = event.client_message;
-    //                     if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
-    //                         // self.sender.send((self.id, WindowEvent::ReqClose)).unwrap();
-    //                         break;
-    //                     }
-    //                 }
-    //                 xlib::KeyPress => {
-    //                     // Map key to keysym
-    //                     let xkey: xlib::XKeyEvent = event.key;
-    //                     let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
-    //                     // XK_Escape constant from x11 crate keysym
-    //                     // if ks == x11::keysym::XK_Escape {
-    //                     //     running = false;
-    //                     // } else {
-    //                     //     // print pressed key code/keysym for debug
-    //                     //     eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
-    //                     // }
-    //                 }
-    //                 xlib::ButtonRelease => {
-    //                     let xb: xlib::XButtonEvent = event.button;
-    //                     // self.sender.send((self.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 }))).unwrap();
-    //                     // eprintln!("Mouse Release {} at ({}, {})", xb.button, xb.x, xb.y);
-    //                 }
-    //                 xlib::ButtonPress => {
-    //                     let xb: xlib::XButtonEvent = event.button;
-    //                     // self.sender.send((self.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 }))).unwrap();
-    //                     // eprintln!("Mouse Press {} at ({}, {})", xb.button, xb.x, xb.y);
-    //                 }
-    //                 xlib::MotionNotify => {
-    //                     let xm: xlib::XMotionEvent = event.motion;
-    //                     // self.sender.send((self.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))).unwrap();
-    //                     // eprintln!("Mouse move: ({}, {})", xm.x, xm.y);
-    //                 }
-    //                 _ => {}
-    //             }
-    //         }
-    //     }
-    // }
+    pub fn resized(&self) -> bool {
+        let b = self.resized.load(Ordering::SeqCst);
+        self.resized.store(false, Ordering::SeqCst);
+        b
+    }
+
+    pub fn run(&self) -> WindowEvent {
+        unsafe {
+            // if xlib::XPending(self.display) <= 0 { return false; }
+            let mut event: xlib::XEvent = std::mem::zeroed();
+            xlib::XNextEvent(self.display, &mut event);
+            let typ = event.get_type();
+            match typ {
+                xlib::Expose => return WindowEvent::Redraw,
+                xlib::ConfigureNotify => {
+                    let xcfg: xlib::XConfigureEvent = event.configure;
+
+                    let new_w = xcfg.width as u32;
+                    let new_h = xcfg.height as u32;
+                    let mut attrs: xlib::XWindowAttributes = std::mem::zeroed();
+                    xlib::XGetWindowAttributes(self.display, self.window, &mut attrs);
+                    let new_w = attrs.width as u32;
+                    let new_h = attrs.height as u32;
+
+                    let mut size = self.size.write().unwrap();
+                    if new_w == 0 || new_h == 0 {
+                        // ignore weird zero sizes
+                    } else if new_w != size.width || new_h != size.height {
+                        size.width = new_w;
+                        size.height = new_h;
+                        println!("resize {}-{}-{}-{}", xcfg.width, xcfg.height, new_w, new_h);
+                        return WindowEvent::Resize(size.clone());
+                        // self.resized.store(true, Ordering::SeqCst);
+                        // let _ = self.sender.try_send((self.id, WindowEvent::Resize(size.clone())));
+                    }
+                }
+                xlib::ClientMessage => {
+                    // Check for WM_DELETE_WINDOW
+                    let xclient: xlib::XClientMessageEvent = event.client_message;
+                    if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
+                        return WindowEvent::ReqClose;
+                        // self.sender.send((self.id, WindowEvent::ReqClose)).unwrap();
+                    }
+                }
+                xlib::KeyPress => {
+                    // Map key to keysym
+                    let xkey: xlib::XKeyEvent = event.key;
+                    let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
+                    // XK_Escape constant from x11 crate keysym
+                    // if ks == x11::keysym::XK_Escape {
+                    //     running = false;
+                    // } else {
+                    //     // print pressed key code/keysym for debug
+                    //     eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
+                    // }
+                }
+                xlib::ButtonRelease => {
+                    let xb: xlib::XButtonEvent = event.button;
+                    return WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 });
+                    // self.sender.send((self.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }))).unwrap();
+                    // eprintln!("Mouse Release {} at ({}, {})", xb.button, xb.x, xb.y);
+                }
+                xlib::ButtonPress => {
+                    let xb: xlib::XButtonEvent = event.button;
+                    return WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 });
+                    // self.sender.try_send((self.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 })));
+                    // eprintln!("Mouse Press {} at ({}, {})", xb.button, xb.x, xb.y);
+                }
+                xlib::MotionNotify => {
+                    let xm: xlib::XMotionEvent = event.motion;
+                    return WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 });
+                    // self.sender.send((self.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))).unwrap();
+                    // eprintln!("Mouse move: ({}, {})", xm.x, xm.y);
+                }
+                _ => {}
+            }
+        }
+        WindowEvent::None
+    }
 
     pub fn size(&self) -> Size {
         *self.size.read().unwrap()
@@ -213,24 +212,6 @@ impl Drop for X11Window {
         }
     }
 }
-
-// impl HasWindowHandle for X11Window {
-//     fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
-//         let xlib_window_handle = XlibWindowHandle::new(self.window);
-//         let raw_window_handle = RawWindowHandle::Xlib(xlib_window_handle);
-//         unsafe { Ok(WindowHandle::borrow_raw(raw_window_handle)) }
-//     }
-// }
-
-// impl HasDisplayHandle for X11Window {
-//     fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
-//         let display = NonNull::new(self.display as *mut c_void);
-//         let x11_display_handle = XlibDisplayHandle::new(display, self.screen);
-//         let raw_display_handle = RawDisplayHandle::Xlib(x11_display_handle);
-//         unsafe { Ok(DisplayHandle::borrow_raw(raw_display_handle)) }
-//     }
-// }
-
 
 unsafe impl Send for X11Window {}
 unsafe impl Sync for X11Window {}
