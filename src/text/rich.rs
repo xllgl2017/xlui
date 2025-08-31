@@ -16,8 +16,6 @@ pub struct RichText {
     pub(crate) wrap: TextWrap,
 }
 
-impl RichText {}
-
 impl RichText {
     pub fn new(text: impl ToString) -> RichText {
         RichText {
@@ -40,6 +38,11 @@ impl RichText {
         self
     }
 
+    pub fn color(mut self, color: Color) -> RichText {
+        self.color = color;
+        self
+    }
+
     pub(crate) fn init_size(&mut self, font: &Arc<Font>) {
         font.text_size(self);
     }
@@ -52,5 +55,21 @@ impl RichText {
 impl<T: Display> From<T> for RichText {
     fn from(value: T) -> Self {
         RichText::new(value)
+    }
+}
+
+pub trait RichTextExt {
+    fn color(self, color: Color) -> RichText;
+    fn size(self, size: f32) -> RichText;
+}
+
+
+impl<T: Display> RichTextExt for T {
+    fn color(self, color: Color) -> RichText {
+        RichText::new(self.to_string()).color(color)
+    }
+
+    fn size(self, size: f32) -> RichText {
+        RichText::new(self.to_string()).size(size)
     }
 }
