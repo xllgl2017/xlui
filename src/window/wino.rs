@@ -2,8 +2,6 @@ use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
-#[cfg(target_os = "linux")]
-use crate::window::application::Application;
 use crate::window::event::WindowEvent;
 #[cfg(target_os = "windows")]
 use crate::window::win32::Win32Window;
@@ -33,6 +31,7 @@ impl WindowKind {
     pub fn x11(&self) -> &X11Window {
         match self {
             WindowKind::Xlib(v) => v,
+            #[cfg(feature = "winit")]
             _ => panic!("only not winit"),
         }
     }
@@ -68,6 +67,12 @@ impl WindowKind {
             WindowKind::Xlib(v) => v.request_redraw(),
             #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.request_redraw(),
+        }
+    }
+
+    pub fn send_update(&self) {
+        match self {
+            WindowKind::Xlib(v) => v.send_update()
         }
     }
 
@@ -116,14 +121,14 @@ pub trait EventLoopHandle {
 pub struct LoopWindow {
     pub(crate) app_ctx: AppContext,
     pub(crate) app: Box<dyn App>,
+    sender:SyncSender<(WindowId, WindowEvent)>,
 }
 
 impl LoopWindow {
-    // #[cfg(all(not(feature = "winit"), target_os = "linux"))]
-    pub async fn create_window<A: App>(mut app: A, sender: SyncSender<(WindowId, WindowEvent)>) -> LoopWindow {
-        let mut attr = app.window_attributes();
+    pub async fn create_window<A: App>(app: A, sender: SyncSender<(WindowId, WindowEvent)>) -> LoopWindow {
+        let attr = app.window_attributes();
         #[cfg(target_os = "linux")]
-        let x11_window = X11Window::new(attr.inner_size, &attr.title, sender.clone()).unwrap();
+        let x11_window = X11Window::new(attr.inner_size, &attr.title).unwrap();
         #[cfg(target_os = "linux")]
         let platform_window = Arc::new(WindowKind::Xlib(x11_window));
         #[cfg(target_os = "windows")]
@@ -143,7 +148,7 @@ impl LoopWindow {
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
-            event: sender,
+            user_update: (WindowId(crate::unique_id_u32()), UpdateType::None),
         };
         let mut app_ctx = AppContext::new(device, context);
         let mut app: Box<dyn App> = Box::new(app);
@@ -151,6 +156,7 @@ impl LoopWindow {
         LoopWindow {
             app_ctx,
             app,
+            sender,
         }
     }
 
@@ -248,8 +254,8 @@ impl EventLoopHandle for LoopWindow {
                 // window.app_ctx.redraw(&mut window.app)
                 // window.app_ctx.context.window.request_redraw();
             }
-            WindowEvent::ReqClose => self.app_ctx.context.event.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
-            WindowEvent::Update(_) => {}
+            WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
+            WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(),&mut self.app)
         }
     }
 }

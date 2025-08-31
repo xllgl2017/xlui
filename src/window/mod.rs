@@ -13,22 +13,17 @@ mod win32;
 pub mod tray;
 // mod tray;
 
-use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
-use crate::map::Map;
 use crate::size::Size;
 use crate::ui::AppContext;
-use crate::window::attribute::WindowAttribute;
+use crate::window::wino::WindowKind;
 use crate::{Device, DeviceInput};
-use glyphon::{Cache, Resolution, Viewport};
+use glyphon::{Cache, Resolution};
 use std::error::Error;
-use std::fmt::{Display, Formatter, Write};
+use std::fmt::{Display, Formatter};
 use std::sync::Arc;
-use std::sync::mpsc::{Sender, SyncSender};
 #[cfg(feature = "winit")]
 use winit::event_loop::EventLoopProxy;
-use crate::window::event::WindowEvent;
-use crate::window::wino::{LoopWindow, WindowKind};
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -87,40 +82,6 @@ impl Window {
 
         Ok(state)
     }
-
-    // #[cfg(not(feature = "winit"))]
-    // pub(crate) async fn new_x11(window: Arc<LoopWindow>, mut app: Box<dyn App>, attr: WindowAttribute, event: SyncSender<(WindowId, WindowEvent)>) -> Result<Self, Box<dyn Error>> {
-    //     let e = event.clone();
-    //     let wid = window.id();
-    //     let device = Self::rebuild_device(&window, |device| {
-    //         device.on_uncaptured_error(Box::new(move |err| {
-    //             e.send((wid, WindowEvent::Reinit)).unwrap();
-    //             println!("Error: {:?}", err);
-    //         }));
-    //     }).await?;
-    //     let viewport = Viewport::new(&device.device, &device.cache);
-    //     let context = Context {
-    //         size: Size {
-    //             width: window.size().width,
-    //             height: window.size().height,
-    //         },
-    //         font: attr.font.clone(),
-    //         viewport,
-    //         window,
-    //         resize: false,
-    //         render: Render::new(&device),
-    //         updates: Map::new(),
-    //         event,
-    //     };
-    //     let mut app_ctx = AppContext::new(device, context);
-    //     app_ctx.draw(&mut app);
-    //     let mut state = Window {
-    //         app_ctx,
-    //         app,
-    //     };
-    //     state.configure_surface();
-    //     Ok(state)
-    // }
 
     pub(crate) async fn rebuild_device(window: &Arc<WindowKind>, listen: impl FnOnce(&wgpu::Device)) -> Result<Device, Box<dyn Error>> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());

@@ -120,7 +120,9 @@ impl AppContext {
         self.popups = ui.popups.take();
         if let Some(u) = ui.request_update.take() {
             #[cfg(feature = "winit")]
-            ui.context.event.send_event(u).unwrap();
+            { ui.context.event.send_event(u).unwrap() }
+            #[cfg(not(feature = "winit"))]
+            { ui.context.user_update = u; }
         }
         self.inner_windows = ui.inner_windows.take();
     }
@@ -228,7 +230,9 @@ impl AppContext {
         }
         if let Some(u) = ui.request_update.take() {
             #[cfg(feature = "winit")]
-            ui.context.event.send_event(u).unwrap();
+            { ui.context.event.send_event(u).unwrap(); }
+            #[cfg(not(feature = "winit"))]
+            { ui.context.user_update = u; }
         }
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.redraw(&mut ui);
@@ -266,7 +270,9 @@ impl AppContext {
         self.inner_windows = ui.inner_windows.take();
         if let Some(u) = ui.request_update.take() {
             #[cfg(feature = "winit")]
-            ui.context.event.send_event(u).unwrap();
+            { ui.context.event.send_event(u).unwrap(); }
+            #[cfg(not(feature = "winit"))]
+            { ui.context.user_update = u; }
         }
     }
 }
@@ -328,6 +334,8 @@ impl<'a> Ui<'a> {
     pub fn request_update(&mut self, ut: UpdateType) {
         let wid = self.context.window.id();
         self.request_update = Some((wid, ut));
+        #[cfg(not(feature = "winit"))]
+        self.context.window.send_update();
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {

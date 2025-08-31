@@ -5,25 +5,24 @@ use raw_window_handle::*;
 use std::ffi::c_void;
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::SyncSender;
 use std::sync::RwLock;
 use std::{mem, ptr};
 use x11::xlib;
-use x11::xlib::XInitThreads;
+use x11::xlib::{Atom, XInitThreads};
 
 pub struct X11Window {
     pub(crate) display: *mut xlib::Display,
     window: xlib::Window,
     screen: i32,
-    pub(crate) wm_delete_atom: xlib::Atom,
-    sender: SyncSender<(WindowId, WindowEvent)>,
+    pub(crate) wm_delete_atom: Atom,
     size: RwLock<Size>,
     id: WindowId,
     resized: AtomicBool,
+    update_atom: Atom,
 }
 
 impl X11Window {
-    pub fn new(size: Size, title: &str, sender: SyncSender<(WindowId, WindowEvent)>) -> Result<Self, String> {
+    pub fn new(size: Size, title: &str) -> Result<Self, String> {
         unsafe {
             if XInitThreads() == 0 {
                 panic!("XInitThreads failed");
@@ -65,7 +64,7 @@ impl X11Window {
             xlib::XSelectInput(display, window, events as i64);
 
             // WM_DELETE_WINDOW
-            let wm_protocols = xlib::XInternAtom(display, b"WM_PROTOCOLS\0".as_ptr() as *const i8, 0);
+            // let wm_protocols = xlib::XInternAtom(display, b"WM_PROTOCOLS\0".as_ptr() as *const i8, 0);
             let wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
             xlib::XSetWMProtocols(display, window, &wm_delete as *const xlib::Atom as *mut xlib::Atom, 1);
 
@@ -75,17 +74,17 @@ impl X11Window {
             xlib::XSetWindowBackgroundPixmap(display, window, 0); // 0 == None
             xlib::XMapWindow(display, window);
             xlib::XFlush(display);
-
+            let update_atom = xlib::XInternAtom(display, b"MY_CUSTOM_MESSAGE\0".as_ptr() as *const i8, 0);
 
             Ok(Self {
                 display,
                 window,
                 screen,
                 wm_delete_atom: wm_delete,
-                sender,
                 size: RwLock::new(size),
                 id: WindowId(crate::unique_id_u32()),
                 resized: AtomicBool::new(false),
+                update_atom,
             })
         }
     }
@@ -95,6 +94,19 @@ impl X11Window {
             xlib::XClearArea(self.display, self.window, 0, 0, 0, 0, xlib::True);
             xlib::XFlush(self.display);
         }
+    }
+
+    pub fn send_update(&self) {
+        let mut event: xlib::XClientMessageEvent = unsafe { mem::zeroed() };
+        event.type_ = xlib::ClientMessage;
+        event.display = self.display;
+        event.window = self.window;
+        event.message_type = self.update_atom;
+        event.format = 32;
+        // event.data.set_long(0, data as i64);
+        let mask = xlib::NoEventMask;
+        unsafe { xlib::XSendEvent(self.display, self.window, 0, mask, &mut event as *mut _ as *mut _); }
+        unsafe { xlib::XFlush(self.display); }
     }
 
     pub fn resized(&self) -> bool {
@@ -113,13 +125,12 @@ impl X11Window {
                 xlib::Expose => return WindowEvent::Redraw,
                 xlib::ConfigureNotify => {
                     let xcfg: xlib::XConfigureEvent = event.configure;
-
                     let new_w = xcfg.width as u32;
                     let new_h = xcfg.height as u32;
-                    let mut attrs: xlib::XWindowAttributes = std::mem::zeroed();
-                    xlib::XGetWindowAttributes(self.display, self.window, &mut attrs);
-                    let new_w = attrs.width as u32;
-                    let new_h = attrs.height as u32;
+                    // let mut attrs: xlib::XWindowAttributes = std::mem::zeroed();
+                    // xlib::XGetWindowAttributes(self.display, self.window, &mut attrs);
+                    // let new_w = attrs.width as u32;
+                    // let new_h = attrs.height as u32;
 
                     let mut size = self.size.write().unwrap();
                     if new_w == 0 || new_h == 0 {
@@ -136,10 +147,8 @@ impl X11Window {
                 xlib::ClientMessage => {
                     // Check for WM_DELETE_WINDOW
                     let xclient: xlib::XClientMessageEvent = event.client_message;
-                    if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
-                        return WindowEvent::ReqClose;
-                        // self.sender.send((self.id, WindowEvent::ReqClose)).unwrap();
-                    }
+                    if xclient.message_type == self.update_atom { return WindowEvent::ReqUpdate; }
+                    if xclient.data.get_long(0) as Atom == self.wm_delete_atom { return WindowEvent::ReqClose; }
                 }
                 xlib::KeyPress => {
                     // Map key to keysym

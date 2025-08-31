@@ -5,13 +5,11 @@ use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
-use crate::window::event::WindowEvent;
 use crate::window::wino::WindowKind;
 use crate::window::WindowId;
 use crate::{Device, Font, NumCastExt, Offset};
 use glyphon::Viewport;
 use std::fmt::Debug;
-use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
 #[cfg(feature = "winit")]
 use winit::event_loop::EventLoopProxy;
@@ -126,7 +124,7 @@ pub struct Context {
     #[cfg(feature = "winit")]
     pub event: EventLoopProxy<(WindowId, UpdateType)>,
     #[cfg(not(feature = "winit"))]
-    pub event: SyncSender<(WindowId, WindowEvent)>,
+    pub user_update: (WindowId, UpdateType),
 }
 
 impl Context {

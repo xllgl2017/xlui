@@ -1,4 +1,3 @@
-use crate::frame::context::UpdateType;
 use crate::{Pos, Size};
 
 #[derive(Debug)]
@@ -14,5 +13,5 @@ pub enum WindowEvent {
     Reinit,
     Resize(Size),
     ReqClose,
-    Update(UpdateType),
+    ReqUpdate,
 }

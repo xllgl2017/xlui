@@ -210,13 +210,24 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn listen_input(&mut self, ui: &mut Ui, st: u64) {
-        let event = ui.context.event.clone();
         let wid = ui.context.window.id();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(st));
-            #[cfg(feature = "winit")]
-            event.send_event((wid, UpdateType::None)).unwrap();
-        });
+        #[cfg(feature = "winit")]
+        {
+            let event = ui.context.event.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(st));
+                event.send_event((wid, UpdateType::None)).unwrap();
+            });
+        }
+        #[cfg(not(feature = "winit"))]
+        {
+            ui.context.user_update = (wid, UpdateType::None);
+            let window=ui.context.window.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(st));
+                window.send_update();
+            });
+        }
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {

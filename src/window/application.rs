@@ -1,6 +1,6 @@
 use crate::frame::App;
 use crate::window::event::WindowEvent;
-use crate::window::wino::{EventLoopHandle, LoopWindow};
+use crate::window::wino::LoopWindow;
 use crate::window::WindowId;
 use std::process::exit;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
