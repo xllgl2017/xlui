@@ -214,6 +214,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         let wid = ui.context.window.id();
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(st));
+            #[cfg(feature = "winit")]
             event.send_event((wid, UpdateType::None)).unwrap();
         });
     }
@@ -291,6 +292,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 }
                 return Response::new(&self.id, &self.rect);
             }
+            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(ref key) => {
                 if !self.edit.focused { return Response::new(&self.id, &self.rect); }
                 if let Some(winit::keyboard::Key::Named(winit::keyboard::NamedKey::Enter)) = key.as_ref() {

@@ -103,6 +103,8 @@ pub mod map;
 mod window;
 
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+#[cfg(target_os = "windows")]
+pub use window::tray::Tray;
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 
 pub trait NumCastExt: Sized {
@@ -125,6 +127,8 @@ macro_rules! impl_num_cast_ext {
         )*
     }
 }
+
+
 
 // 支持的类型
 impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
@@ -228,10 +232,9 @@ impl MouseInput {
         self.lastest.y
     }
 
-    pub fn update(&mut self, pos: winit::dpi::PhysicalPosition<f64>) {
+    pub fn update(&mut self, pos: Pos) {
         self.previous = self.lastest.clone();
-        self.lastest.x = pos.x as f32;
-        self.lastest.y = pos.y as f32;
+        self.lastest = pos;
     }
 
     pub fn lastest(&self) -> &Pos {
@@ -305,6 +308,12 @@ pub(crate) fn time_ms() -> u128 {
     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
 }
 
+
+pub fn unique_id_u32() -> u32 {
+    let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+    println!("{}", t.to_string()[10..].to_string());
+    t.to_string()[10..].to_string().parse::<u32>().unwrap()
+}
 
 pub fn gen_unique_id() -> String {
     let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();

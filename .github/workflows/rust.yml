@@ -26,9 +26,9 @@ jobs:
           ./target
         prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
     - name: Install mold
-      run: sudo apt-get install mold -y
+      run: sudo apt-get install mold libx11-dev -y
     - name: Build
-      run: cargo build
+      run: cargo check
     - name: Doc tests
       run: cargo test --doc --all
 

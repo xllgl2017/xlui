@@ -31,7 +31,7 @@ impl SizeMode {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy, PartialEq)]
 pub struct Size {
     pub width: u32,
     pub height: u32,
@@ -42,6 +42,7 @@ impl Size {
         [self.width as f32, self.height as f32]
     }
 
+    #[cfg(feature = "winit")]
     pub fn as_physical_size(&self) -> winit::dpi::PhysicalSize<u32> {
         winit::dpi::PhysicalSize::new(self.width, self.height)
     }

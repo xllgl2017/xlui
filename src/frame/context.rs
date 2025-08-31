@@ -1,15 +1,20 @@
-use std::fmt::Debug;
-use crate::size::Size;
-use crate::text::text_render::TextRender;
-use crate::{Device, Font, NumCastExt, Offset};
-use glyphon::Viewport;
-use std::sync::Arc;
-use winit::event_loop::EventLoopProxy;
 use crate::map::Map;
 use crate::render::circle::CircleRender;
 use crate::render::image::ImageRender;
 use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
+use crate::size::Size;
+use crate::text::text_render::TextRender;
+use crate::window::event::WindowEvent;
+use crate::window::wino::WindowKind;
+use crate::window::WindowId;
+use crate::{Device, Font, NumCastExt, Offset};
+use glyphon::Viewport;
+use std::fmt::Debug;
+use std::sync::mpsc::SyncSender;
+use std::sync::Arc;
+#[cfg(feature = "winit")]
+use winit::event_loop::EventLoopProxy;
 
 #[derive(Clone)]
 pub enum ContextUpdate {
@@ -77,6 +82,7 @@ pub enum UpdateType {
     MousePress,
     MouseRelease,
     MouseWheel,
+    #[cfg(feature = "winit")]
     KeyRelease(Option<winit::keyboard::Key>),
     Offset(Offset),
     Drop,
@@ -101,6 +107,7 @@ impl Debug for UpdateType {
             UpdateType::MousePress => f.write_str("MousePress"),
             UpdateType::MouseRelease => f.write_str("MouseRelease"),
             UpdateType::MouseWheel => f.write_str("MouseWheel"),
+            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
             UpdateType::Offset(_) => f.write_str("Offset"),
             UpdateType::Drop => f.write_str("Drop")
@@ -111,12 +118,15 @@ impl Debug for UpdateType {
 pub struct Context {
     pub size: Size,
     pub viewport: Viewport,
-    pub window: Arc<winit::window::Window>,
+    pub window: Arc<WindowKind>,
     pub font: Arc<Font>,
     pub resize: bool,
     pub render: Render,
     pub updates: Map<ContextUpdate>,
-    pub event: EventLoopProxy<(winit::window::WindowId, UpdateType)>,
+    #[cfg(feature = "winit")]
+    pub event: EventLoopProxy<(WindowId, UpdateType)>,
+    #[cfg(not(feature = "winit"))]
+    pub event: SyncSender<(WindowId, WindowEvent)>,
 }
 
 impl Context {

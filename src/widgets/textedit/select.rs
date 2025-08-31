@@ -156,6 +156,7 @@ impl EditSelection {
                     let wid = ui.context.window.id();
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
+                        #[cfg(feature = "winit")]
                         event.send_event((wid, UpdateType::None)).unwrap();
                     });
                 } else if pos.x < cursor.min_pos.x {
@@ -163,6 +164,7 @@ impl EditSelection {
                     let wid = ui.context.window.id();
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
+                        #[cfg(feature = "winit")]
                         event.send_event((wid, UpdateType::None)).unwrap();
                     });
                 }
