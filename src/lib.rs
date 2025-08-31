@@ -102,7 +102,7 @@ pub mod response;
 pub mod map;
 mod window;
 
-pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+pub use window::{attribute::WindowAttribute, inner::InnerWindow, tray::Tray};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 
 pub trait NumCastExt: Sized {
@@ -125,6 +125,8 @@ macro_rules! impl_num_cast_ext {
         )*
     }
 }
+
+
 
 // 支持的类型
 impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);

@@ -8,6 +8,8 @@ pub mod event;
 pub mod winit_app;
 pub mod application;
 mod win32;
+#[cfg(target_os = "windows")]
+pub mod tray;
 // mod tray;
 
 use crate::frame::context::{Context, Render, UpdateType};
