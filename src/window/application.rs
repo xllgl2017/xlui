@@ -6,14 +6,14 @@ use std::process::exit;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread::spawn;
 
-pub struct X11Application {
+pub struct Application {
     windows: i32,
     channel: (SyncSender<(WindowId, WindowEvent)>, Receiver<(WindowId, WindowEvent)>),
 }
 
-impl X11Application {
+impl Application {
     pub fn new() -> Self {
-        X11Application {
+        Application {
             windows: 0,
             channel: sync_channel(1),
         }

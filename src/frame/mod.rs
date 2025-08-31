@@ -4,8 +4,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 #[cfg(feature = "winit")]
 use crate::window::winit_app::WInitApplication;
 use crate::ui::Ui;
-#[cfg(not(feature = "winit"))]
-use crate::window::x11_app::X11Application;
+use crate::window::application::Application;
 use crate::WindowAttribute;
 
 pub mod context;
@@ -37,7 +36,7 @@ pub trait App: Any + Sync + Send + 'static {
         }
         #[cfg(not(feature = "winit"))]
         {
-            let mut app = X11Application::new();
+            let mut app = Application::new();
             app.create_window(self);
             app.run();
         }

@@ -1,12 +1,14 @@
 pub mod attribute;
 pub mod inner;
+#[cfg(target_os = "linux")]
 mod x11;
 pub mod wino;
 pub mod event;
 #[cfg(feature = "winit")]
 pub mod winit_app;
-#[cfg(not(feature = "winit"))]
-pub mod x11_app;
+pub mod application;
+mod win32;
+// mod tray;
 
 use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
