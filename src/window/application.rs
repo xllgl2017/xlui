@@ -19,11 +19,11 @@ impl Application {
         }
     }
 
-    pub fn create_window<A: App + Sync + Send>(&mut self, app: A) {
+    pub fn create_window<A: App>(&mut self, app: A) {
         self.windows += 1;
         let sender = self.channel.0.clone();
+        let mut window = pollster::block_on(async { LoopWindow::create_window(app, sender).await });
         spawn(move || {
-            let mut window = pollster::block_on(async { LoopWindow::create_window(app, sender).await });
             window.run();
         });
     }

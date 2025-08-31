@@ -16,11 +16,8 @@ use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowH
 use std::error::Error;
 use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
-use std::thread::spawn;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
-#[cfg(target_os = "linux")]
-use x11::xlib;
 
 pub enum WindowKind {
     #[cfg(feature = "winit")]
@@ -256,3 +253,6 @@ impl EventLoopHandle for LoopWindow {
         }
     }
 }
+
+unsafe impl Send for LoopWindow {}
+unsafe impl Sync for LoopWindow {}
