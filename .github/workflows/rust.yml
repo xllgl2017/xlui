@@ -28,7 +28,7 @@ jobs:
     - name: Install mold
       run: sudo apt-get install mold libX11 -y
     - name: Build
-      run: cargo build
+      run: cargo check
     - name: Doc tests
       run: cargo test --doc --all
 
