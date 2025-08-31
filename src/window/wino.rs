@@ -1,34 +1,46 @@
-use std::error::Error;
-use std::process::exit;
-use std::sync::Arc;
-use std::sync::mpsc::SyncSender;
-use std::thread::{sleep, spawn, JoinHandle};
-use std::time::Duration;
-use glyphon::{Cache, Resolution, Viewport};
-use crate::window::event::WindowEvent;
-use crate::window::x11::X11Window;
-use crate::{Device, DeviceInput, Pos, Size};
-use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
-use x11::xlib;
-use crate::frame::App;
 use crate::frame::context::{Context, Render, UpdateType};
+use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
-use crate::window::{Window, WindowId};
-use crate::window::x11_app::X11Application;
+#[cfg(target_os = "linux")]
+use crate::window::application::Application;
+use crate::window::event::WindowEvent;
+use crate::window::win32::Win32Window;
+#[cfg(target_os = "linux")]
+use crate::window::x11::X11Window;
+use crate::window::WindowId;
+use crate::{Device, DeviceInput, Size};
+use glyphon::{Cache, Resolution, Viewport};
+use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
+use std::error::Error;
+use std::sync::mpsc::SyncSender;
+use std::sync::Arc;
+use std::thread::spawn;
+use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
+#[cfg(target_os = "linux")]
+use x11::xlib;
 
 pub enum WindowKind {
     #[cfg(feature = "winit")]
     WInit(winit::window::Window),
+    #[cfg(target_os = "linux")]
     Xlib(X11Window),
+    Win32(Win32Window),
 }
 
 impl WindowKind {
+    #[cfg(target_os = "linux")]
     pub fn x11(&self) -> &X11Window {
         match self {
-            #[cfg(feature = "winit")]
-            WindowKind::WInit(_) => panic!("only not winit"),
-            WindowKind::Xlib(v) => v
+            WindowKind::Xlib(v) => v,
+            _ => panic!("only not winit"),
+        }
+    }
+
+    pub fn win32(&self) -> &Win32Window {
+        match self {
+            WindowKind::Win32(v) => v,
+            _ => panic!("only not winit"),
         }
     }
 
@@ -42,14 +54,18 @@ impl WindowKind {
                     height: inner_size.height,
                 }
             }
-            WindowKind::Xlib(v) => v.size()
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => v.size(),
+            WindowKind::Win32(v) => v.size()
         }
     }
     pub fn request_redraw(&self) {
         match self {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => v.request_redraw(),
-            WindowKind::Xlib(v) => v.request_redraw()
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => v.request_redraw(),
+            WindowKind::Win32(v) => v.request_redraw(),
         }
     }
 
@@ -57,7 +73,9 @@ impl WindowKind {
         match self {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => WindowId::from_winit_id(v.id()),
+            #[cfg(target_os = "linux")]
             WindowKind::Xlib(v) => v.id(),
+            WindowKind::Win32(v) => v.id()
         }
     }
 }
@@ -67,7 +85,9 @@ impl HasWindowHandle for WindowKind {
         match self {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => v.window_handle(),
-            WindowKind::Xlib(v) => Ok(v.window_handle())
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => Ok(v.window_handle()),
+            WindowKind::Win32(v) => Ok(v.window_handle())
         }
     }
 }
@@ -77,7 +97,9 @@ impl HasDisplayHandle for WindowKind {
         match self {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => v.display_handle(),
-            WindowKind::Xlib(v) => Ok(v.display_handle())
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => Ok(v.display_handle()),
+            WindowKind::Win32(v) => Ok(v.display_handle())
         }
     }
 }
@@ -92,11 +114,19 @@ pub struct LoopWindow {
 }
 
 impl LoopWindow {
-    #[cfg(not(feature = "winit"))]
+    // #[cfg(all(not(feature = "winit"), target_os = "linux"))]
     pub async fn create_window<A: App>(mut app: A, sender: SyncSender<(WindowId, WindowEvent)>) -> LoopWindow {
-        let attr = app.window_attributes();
+        let mut attr = app.window_attributes();
+        #[cfg(target_os = "linux")]
         let x11_window = X11Window::new(attr.inner_size, &attr.title, sender.clone()).unwrap();
+        #[cfg(target_os = "linux")]
         let platform_window = Arc::new(WindowKind::Xlib(x11_window));
+        #[cfg(target_os = "windows")]
+        let win32_window = Win32Window::new(&mut attr);
+        #[cfg(target_os = "windows")]
+        let platform_window = Arc::new(WindowKind::Win32(win32_window));
+        #[cfg(target_os = "windows")]
+        unsafe { SetWindowLongPtrW(platform_window.win32().hwnd, GWLP_USERDATA, platform_window.win32() as *const _ as isize); }
         let device = Self::rebuild_device(&platform_window, sender.clone()).await.unwrap();
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
@@ -123,7 +153,9 @@ impl LoopWindow {
         let window = self.app_ctx.context.window.clone();
         self.event(self.app_ctx.context.window.id(), WindowEvent::Redraw);
         loop {
+            #[cfg(target_os = "linux")]
             let event = window.x11().run();
+            let event = window.win32().run();
             self.event(self.app_ctx.context.window.id(), event);
         }
     }

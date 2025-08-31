@@ -42,6 +42,14 @@ path = "test/all.rs"
 name = "test_x11_window"
 path = "test/x11_window.rs"
 
+[[bin]]
+name = "test_tray"
+path = "test/tray_win.rs"
+
+[[bin]]
+name = "test_win"
+path = "test/test_win.rs"
+
 #[lib]
 #name = "xlui-web"
 #path = "test/web.rs"
@@ -55,10 +63,21 @@ glyphon = "0.9.0"
 bytemuck = "1.23.1"
 ab_glyph = "0.2.31"
 image = "0.25.6"
-x11 = "2.21.0"
 raw-window-handle = "0.6.2"
 
+[target.'cfg(target_os="linux")'.dependencies]
+x11 = "2.21.0"
 
+[target.'cfg(target_os="windows")'.dependencies.windows]
+version = "0.61.3"
+features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Shell",
+    "Win32_Graphics_Gdi",
+    #    "Win32_System",
+    "Win32_System_LibraryLoader"
+]
 
 [profile.release]
 opt-level = 3
