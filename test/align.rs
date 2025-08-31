@@ -4,9 +4,7 @@ use xlui::style::color::Color;
 use xlui::style::{ClickStyle, FillStyle};
 use xlui::text::rich::RichTextExt;
 use xlui::ui::Ui;
-use xlui::widgets::button::Button;
-use xlui::widgets::label::Label;
-use xlui::WindowAttribute;
+use xlui::{Button, Label, WindowAttribute};
 
 pub struct TestAlign {}
 

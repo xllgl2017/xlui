@@ -87,7 +87,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
 use crate::ui::Ui;
 
-pub mod widgets;
+mod widgets;
 pub mod align;
 pub mod vertex;
 pub mod layout;
@@ -106,6 +106,10 @@ pub use window::{attribute::WindowAttribute, inner::InnerWindow};
 #[cfg(target_os = "windows")]
 pub use window::tray::Tray;
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
+pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
+                  checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
+                  circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,
+                  Widget, triangle::Triangle};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

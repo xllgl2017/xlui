@@ -2,21 +2,9 @@ use std::fmt::{Display, Formatter};
 use xlui::frame::App;
 use xlui::text::rich::RichText;
 use xlui::ui::Ui;
-use xlui::widgets::button::Button;
-use xlui::widgets::checkbox::CheckBox;
-use xlui::widgets::combobox::ComboBox;
-use xlui::widgets::image::Image;
-use xlui::widgets::label::Label;
-use xlui::widgets::processbar::ProcessBar;
-use xlui::widgets::radio::RadioButton;
-use xlui::widgets::select::SelectItem;
-use xlui::widgets::slider::Slider;
-use xlui::widgets::spinbox::SpinBox;
-use xlui::widgets::textedit::TextEdit;
-use xlui::widgets::Widget;
 #[cfg(target_os = "windows")]
 use xlui::Tray;
-use xlui::WindowAttribute;
+use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
 
 #[allow(dead_code)]
 fn main() {

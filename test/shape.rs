@@ -3,13 +3,7 @@ use xlui::layout::popup::Popup;
 use xlui::style::color::Color;
 use xlui::style::{BorderStyle, ClickStyle, Shadow};
 use xlui::ui::Ui;
-use xlui::widgets::circle::Circle;
-use xlui::widgets::rectangle::Rectangle;
-use xlui::widgets::slider::Slider;
-use xlui::widgets::spinbox::SpinBox;
-use xlui::widgets::triangle::Triangle;
-use xlui::widgets::Widget;
-use xlui::{Border, Pos, Radius, Rect, WindowAttribute};
+use xlui::{Border, Circle, Pos, Radius, Rect, Rectangle, Slider, SpinBox, Triangle, Widget, WindowAttribute};
 
 pub struct TestShape {
     rectangle: Rectangle,

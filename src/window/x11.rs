@@ -159,7 +159,7 @@ impl X11Window {
                     //     running = false;
                     // } else {
                     //     // print pressed key code/keysym for debug
-                    //     eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
+                        eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
                     // }
                 }
                 xlib::ButtonRelease => {
