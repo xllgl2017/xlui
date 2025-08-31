@@ -1,10 +1,11 @@
 use crate::{Pos, Size};
+use crate::key::Key;
 
 #[derive(Debug)]
 pub enum WindowEvent {
     None,
-    KeyPress,
-    KeyRelease,
+    KeyPress(Key),
+    KeyRelease(Key),
     MouseMove(Pos),
     MouseWheel,
     MousePress(Pos),

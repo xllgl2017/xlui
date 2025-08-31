@@ -9,6 +9,7 @@ use std::sync::RwLock;
 use std::{mem, ptr};
 use x11::xlib;
 use x11::xlib::{Atom, XInitThreads};
+use crate::key::Key;
 
 pub struct X11Window {
     pub(crate) display: *mut xlib::Display,
@@ -154,13 +155,25 @@ impl X11Window {
                     // Map key to keysym
                     let xkey: xlib::XKeyEvent = event.key;
                     let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
+                    let key = Key::from_c_ulong(ks);
+                    return WindowEvent::KeyPress(key);
                     // XK_Escape constant from x11 crate keysym
+                    // let c = char::from(ks as u8);
+                    // println!("{}", c);
                     // if ks == x11::keysym::XK_Escape {
                     //     running = false;
-                    // } else {
-                    //     // print pressed key code/keysym for debug
-                        eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
                     // }
+                    // else {
+                    //     // print pressed key code/keysym for debug
+                    eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
+                    // }
+                }
+                xlib::KeyRelease => {
+                    let xkey: xlib::XKeyEvent = event.key;
+                    let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
+                    println!("key-{}", ks);
+                    let key = Key::from_c_ulong(ks);
+                    return WindowEvent::KeyRelease(key);
                 }
                 xlib::ButtonRelease => {
                     let xb: xlib::XButtonEvent = event.button;

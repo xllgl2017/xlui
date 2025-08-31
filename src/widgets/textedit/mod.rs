@@ -1,4 +1,5 @@
 use crate::frame::context::{Context, UpdateType};
+use crate::key::Key;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
@@ -151,67 +152,81 @@ impl TextEdit {
         self.text_buffer.draw(ui);
     }
 
-    #[cfg(feature = "winit")]
-    fn key_input(&mut self, key: Option<winit::keyboard::Key>, ui: &mut Ui) {
+    fn key_input(&mut self, key: Option<Key>, ui: &mut Ui) {
+        if key.is_none() { return; }
         self.changed = true;
+        // winit::keyboard::Key::Named(name) => {
+        //     println!("{:?}", name);
+        //     match name {
+        //         //更新游标
+        //         Key::LeftArrow => {
+        //
+        //         }
+        //         winit::keyboard::NamedKey::ArrowRight => {
+        //             // let cx = self.char_layout.lines[self.cursor_render.vert].get_width_in_char(self.cursor_render.horiz + 1);
+        //
+        //         }
+        //         winit::keyboard::NamedKey::ArrowUp => ,
+        //         winit::keyboard::NamedKey::ArrowDown => ,
+        //         //更新游标+文本
+        //         winit::keyboard::NamedKey::Backspace =>
+        //         winit::keyboard::NamedKey::Delete =>
+        //         winit::keyboard::NamedKey::Space =>
+        //         winit::keyboard::NamedKey::Enter =>
+        //         winit::keyboard::NamedKey::Home =>
+        //         winit::keyboard::NamedKey::End =>
+        //         _ => {}
+        //     }
+        // }
+        // //更新游标+文本
+        // winit::keyboard::Key::Character(c) =>
+        // winit::keyboard::Key::Unidentified(_) => {}
+        // winit::keyboard::Key::Dead(_) => {}
         match key.unwrap() {
-            winit::keyboard::Key::Named(name) => {
-                println!("{:?}", name);
-                match name {
-                    //更新游标
-                    winit::keyboard::NamedKey::ArrowLeft => {
-                        if self.cursor_render.cursor_min() <= self.cursor_render.min_pos.x && let Some(cchar) = self.char_layout.previous_char(&self.cursor_render) {
-                            self.text_buffer.clip_x += cchar.width;
-                            if self.text_buffer.clip_x > 0.0 { self.text_buffer.clip_x = 0.0; }
-                            self.char_layout.offset.x = self.text_buffer.clip_x;
-                        }
-                        self.cursor_render.move_left(&self.char_layout);
-                    }
-                    winit::keyboard::NamedKey::ArrowRight => {
-                        // let cx = self.char_layout.lines[self.cursor_render.vert].get_width_in_char(self.cursor_render.horiz + 1);
-                        if self.cursor_render.cursor_min() + 2.0 >= self.cursor_render.max_pos.x && let Some(cchar) = self.char_layout.next_char(&self.cursor_render) {
-                            self.text_buffer.clip_x -= cchar.width;
-                            self.char_layout.offset.x -= cchar.width;
-                        }
-                        self.cursor_render.move_right(&self.char_layout)
-                    }
-                    winit::keyboard::NamedKey::ArrowUp => self.cursor_render.move_up(&self.char_layout),
-                    winit::keyboard::NamedKey::ArrowDown => self.cursor_render.move_down(&self.char_layout),
-                    //更新游标+文本
-                    winit::keyboard::NamedKey::Backspace => {
-                        self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render);
-                        self.text_buffer.clip_x = self.char_layout.offset.x;
-                    }
-                    winit::keyboard::NamedKey::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
-                    winit::keyboard::NamedKey::Space => {
-                        self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render);
-                        self.text_buffer.clip_x = self.char_layout.offset.x;
-                    }
-                    winit::keyboard::NamedKey::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &self.select_render),
-                    winit::keyboard::NamedKey::Home => {
-                        self.text_buffer.clip_x = 0.0;
-                        self.char_layout.offset.x = 0.0;
-                        self.cursor_render.set_cursor(0, self.cursor_render.vert, &self.char_layout)
-                    }
-                    winit::keyboard::NamedKey::End => {
-                        let line = &self.char_layout.lines[self.cursor_render.vert];
-                        if line.width + self.cursor_render.min_pos.x > self.cursor_render.max_pos.x {
-                            self.text_buffer.clip_x = self.cursor_render.max_pos.x - line.width - self.cursor_render.min_pos.x;
-                            self.char_layout.offset.x = self.text_buffer.clip_x;
-                        }
-                        self.cursor_render.set_cursor(line.len(), self.cursor_render.vert, &self.char_layout)
-                    }
-                    _ => {}
-                }
+            Key::Backspace => {
+                self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render);
+                self.text_buffer.clip_x = self.char_layout.offset.x;
             }
-            //更新游标+文本
-            winit::keyboard::Key::Character(c) => {
-                let c = c.chars().next().unwrap();
+            Key::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &self.select_render),
+            Key::Space => {
+                self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render);
+                self.text_buffer.clip_x = self.char_layout.offset.x;
+            }
+            Key::Home => {
+                self.text_buffer.clip_x = 0.0;
+                self.char_layout.offset.x = 0.0;
+                self.cursor_render.set_cursor(0, self.cursor_render.vert, &self.char_layout)
+            }
+            Key::End => {
+                let line = &self.char_layout.lines[self.cursor_render.vert];
+                if line.width + self.cursor_render.min_pos.x > self.cursor_render.max_pos.x {
+                    self.text_buffer.clip_x = self.cursor_render.max_pos.x - line.width - self.cursor_render.min_pos.x;
+                    self.char_layout.offset.x = self.text_buffer.clip_x;
+                }
+                self.cursor_render.set_cursor(line.len(), self.cursor_render.vert, &self.char_layout)
+            }
+            Key::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
+            Key::Char(c) => {
                 self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
                 self.text_buffer.clip_x = self.char_layout.offset.x;
             }
-            winit::keyboard::Key::Unidentified(_) => {}
-            winit::keyboard::Key::Dead(_) => {}
+            Key::LeftArrow => {
+                if self.cursor_render.cursor_min() <= self.cursor_render.min_pos.x && let Some(cchar) = self.char_layout.previous_char(&self.cursor_render) {
+                    self.text_buffer.clip_x += cchar.width;
+                    if self.text_buffer.clip_x > 0.0 { self.text_buffer.clip_x = 0.0; }
+                    self.char_layout.offset.x = self.text_buffer.clip_x;
+                }
+                self.cursor_render.move_left(&self.char_layout);
+            }
+            Key::RightArrow => {
+                if self.cursor_render.cursor_min() + 2.0 >= self.cursor_render.max_pos.x && let Some(cchar) = self.char_layout.next_char(&self.cursor_render) {
+                    self.text_buffer.clip_x -= cchar.width;
+                    self.char_layout.offset.x -= cchar.width;
+                }
+                self.cursor_render.move_right(&self.char_layout)
+            }
+            Key::UpArrow => self.cursor_render.move_up(&self.char_layout),
+            Key::DownArrow => self.cursor_render.move_down(&self.char_layout)
         }
         self.select_render.reset();
         // if let Some(ref mut callback) = self.callback {
@@ -265,7 +280,6 @@ impl Widget for TextEdit {
             }
             UpdateType::MouseRelease => {}
             UpdateType::MouseWheel => {}
-            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(ref mut key) => {
                 if self.focused { self.key_input(key.take(), ui); }
             }

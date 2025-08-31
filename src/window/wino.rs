@@ -121,7 +121,7 @@ pub trait EventLoopHandle {
 pub struct LoopWindow {
     pub(crate) app_ctx: AppContext,
     pub(crate) app: Box<dyn App>,
-    sender:SyncSender<(WindowId, WindowEvent)>,
+    sender: SyncSender<(WindowId, WindowEvent)>,
 }
 
 impl LoopWindow {
@@ -214,8 +214,10 @@ impl EventLoopHandle for LoopWindow {
         println!("{:?}", event);
         match event {
             WindowEvent::None => {}
-            WindowEvent::KeyPress => {}
-            WindowEvent::KeyRelease => {}
+            WindowEvent::KeyPress(_) => {}
+            WindowEvent::KeyRelease(key) => {
+                self.app_ctx.key_input(UpdateType::KeyRelease(Some(key)), &mut self.app);
+            }
             WindowEvent::MouseMove(pos) => {
                 self.app_ctx.device.device_input.mouse.update(pos);
                 self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
@@ -255,7 +257,7 @@ impl EventLoopHandle for LoopWindow {
                 // window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
-            WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(),&mut self.app)
+            WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app)
         }
     }
 }

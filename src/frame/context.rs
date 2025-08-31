@@ -13,6 +13,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 #[cfg(feature = "winit")]
 use winit::event_loop::EventLoopProxy;
+use crate::key::Key;
 
 #[derive(Clone)]
 pub enum ContextUpdate {
@@ -80,8 +81,7 @@ pub enum UpdateType {
     MousePress,
     MouseRelease,
     MouseWheel,
-    #[cfg(feature = "winit")]
-    KeyRelease(Option<winit::keyboard::Key>),
+    KeyRelease(Option<Key>),
     Offset(Offset),
     Drop,
 }
@@ -105,7 +105,6 @@ impl Debug for UpdateType {
             UpdateType::MousePress => f.write_str("MousePress"),
             UpdateType::MouseRelease => f.write_str("MouseRelease"),
             UpdateType::MouseWheel => f.write_str("MouseWheel"),
-            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
             UpdateType::Offset(_) => f.write_str("Offset"),
             UpdateType::Drop => f.write_str("Drop")
