@@ -1,7 +1,7 @@
 use std::ffi::c_ulong;
 
 #[derive(Clone, Debug)]
-pub(crate) enum Key {
+pub enum Key {
     Backspace,
     Enter,
     Space,

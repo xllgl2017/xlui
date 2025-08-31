@@ -2,28 +2,20 @@ pub mod attribute;
 pub mod inner;
 #[cfg(target_os = "linux")]
 mod x11;
+#[cfg(not(feature = "winit"))]
 pub mod wino;
 pub mod event;
 #[cfg(feature = "winit")]
 pub mod winit_app;
+#[cfg(not(feature = "winit"))]
 pub mod application;
-#[cfg(target_os = "windows")]
-mod win32;
-#[cfg(target_os = "windows")]
-pub mod tray;
-// mod tray;
-
-use crate::frame::App;
-use crate::size::Size;
-use crate::ui::AppContext;
-use crate::window::wino::WindowKind;
-use crate::{Device, DeviceInput};
-use glyphon::{Cache, Resolution};
-use std::error::Error;
-use std::fmt::{Display, Formatter};
-use std::sync::Arc;
 #[cfg(feature = "winit")]
-use winit::event_loop::EventLoopProxy;
+mod winit_window;
+
+use std::fmt::{Display, Formatter};
+use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
+use crate::Size;
+use crate::window::x11::X11Window;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -42,107 +34,101 @@ impl Display for WindowId {
     }
 }
 
-pub(crate) struct Window {
-    pub(crate) app_ctx: AppContext,
-    pub(crate) app: Box<dyn App>,
+pub enum WindowKind {
+    #[cfg(feature = "winit")]
+    WInit(winit::window::Window),
+    #[cfg(target_os = "linux")]
+    Xlib(X11Window),
+    #[cfg(target_os = "windows")]
+    Win32(Win32Window),
 }
 
-impl Window {
-    #[cfg(feature = "winit")]
-    pub(crate) async fn new_winit(window: Arc<WindowKind>, mut app: Box<dyn App>, attr: WindowAttribute, event: EventLoopProxy<(WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
-        let e = event.clone();
-        let wid = window.id();
-        let device = Self::rebuild_device(&window, |device| {
-            device.on_uncaptured_error(Box::new(move |err| {
-                e.send_event((wid, UpdateType::ReInit)).unwrap();
-                println!("Error: {:?}", err);
-            }));
-        }).await?;
-        let viewport = Viewport::new(&device.device, &device.cache);
-        let context = Context {
-            size: Size {
-                width: window.size().width,
-                height: window.size().height,
-            },
-            font: attr.font.clone(),
-            viewport,
-            window,
-            resize: false,
-            render: Render::new(&device),
-            updates: Map::new(),
-            event,
-        };
-        let mut app_ctx = AppContext::new(device, context);
-        app_ctx.draw(&mut app);
-        let mut state = Window {
-            app_ctx,
-            app,
-        };
-        state.configure_surface();
-
-        Ok(state)
+impl WindowKind {
+    #[cfg(target_os = "linux")]
+    pub fn x11(&self) -> &X11Window {
+        match self {
+            WindowKind::Xlib(v) => v,
+            #[cfg(feature = "winit")]
+            _ => panic!("only not winit"),
+        }
+    }
+    #[cfg(target_os = "windows")]
+    pub fn win32(&self) -> &Win32Window {
+        match self {
+            WindowKind::Win32(v) => v,
+            _ => panic!("only not winit"),
+        }
     }
 
-    pub(crate) async fn rebuild_device(window: &Arc<WindowKind>, listen: impl FnOnce(&wgpu::Device)) -> Result<Device, Box<dyn Error>> {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
-        let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
-        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
-        let cache = Cache::new(&device);
-        // let target = window.surface_window().into();
-        let surface = instance.create_surface(window.clone())?;
-        let cap = surface.get_capabilities(&adapter);
-        // let size = window.inner_size();
-        let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: cap.formats[0],
-            // Request compatibility with the sRGB-format texture view we‘re going to create later.
-            view_formats: vec![cap.formats[0].add_srgb_suffix()],
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
-            width: window.size().width,
-            height: window.size().height,
-            desired_maximum_frame_latency: 2,
-            present_mode: wgpu::PresentMode::AutoVsync,
-        };
-        listen(&device);
-        // let wid = window.id();
-        // let e = event.clone();
-        // device.on_uncaptured_error(Box::new(move |err| {
-        //     e.send_event((wid, UpdateType::ReInit)).unwrap();
-        //     println!("Error: {:?}", err);
-        // }));
-        Ok(Device {
-            device,
-            queue,
-            cache,
-            surface,
-            texture_format: cap.formats[0],
-            surface_config,
-            device_input: DeviceInput::new(),
-        })
+    pub fn size(&self) -> Size {
+        match self {
+            #[cfg(feature = "winit")]
+            WindowKind::WInit(v) => {
+                let inner_size = v.inner_size();
+                Size {
+                    width: inner_size.width,
+                    height: inner_size.height,
+                }
+            }
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => v.size(),
+            #[cfg(target_os = "windows")]
+            WindowKind::Win32(v) => v.size()
+        }
+    }
+    pub fn request_redraw(&self) {
+        match self {
+            #[cfg(feature = "winit")]
+            WindowKind::WInit(v) => v.request_redraw(),
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => v.request_redraw(),
+            #[cfg(target_os = "windows")]
+            WindowKind::Win32(v) => v.request_redraw(),
+        }
     }
 
-    pub fn configure_surface(&mut self) {
-        self.app_ctx.device.surface.configure(&self.app_ctx.device.device, &self.app_ctx.device.surface_config);
+    pub fn send_update(&self) {
+        match self {
+            WindowKind::Xlib(v) => v.send_update(),
+            #[cfg(feature = "winit")]
+            _ => panic!("only not winit"),
+        }
     }
 
-
-    pub(crate) fn render(&mut self) {
-        // Create texture view
-        self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
-            width: self.app_ctx.context.size.width,
-            height: self.app_ctx.context.size.height,
-        });
-        println!("44444444444444444444");
-        self.app_ctx.redraw(&mut self.app);
-        println!("44444444444444444444");
+    pub fn id(&self) -> WindowId {
+        match self {
+            #[cfg(feature = "winit")]
+            WindowKind::WInit(v) => WindowId::from_winit_id(v.id()),
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => v.id(),
+            #[cfg(target_os = "windows")]
+            WindowKind::Win32(v) => v.id()
+        }
     }
+}
 
-    pub(crate) fn resize(&mut self, new_size: Size) {
-        self.app_ctx.context.resize = true;
-        self.app_ctx.context.size.width = new_size.width;
-        self.app_ctx.context.size.height = new_size.height;
-        self.app_ctx.device.surface_config.width = new_size.width;
-        self.app_ctx.device.surface_config.height = new_size.height;
-        // self.configure_surface();
+impl HasWindowHandle for WindowKind {
+    fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
+        match self {
+            #[cfg(feature = "winit")]
+            WindowKind::WInit(v) => v.window_handle(),
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => Ok(v.window_handle()),
+            #[cfg(target_os = "windows")]
+            WindowKind::Win32(v) => Ok(v.window_handle())
+        }
+    }
+}
+
+impl HasDisplayHandle for WindowKind {
+    fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
+        match self {
+            #[cfg(feature = "winit")]
+            WindowKind::WInit(v) => v.display_handle(),
+            #[cfg(target_os = "linux")]
+            WindowKind::Xlib(v) => Ok(v.display_handle()),
+            #[cfg(target_os = "windows")]
+            WindowKind::Win32(v) => Ok(v.display_handle())
+        }
     }
 }

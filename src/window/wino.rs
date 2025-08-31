@@ -7,112 +7,15 @@ use crate::window::event::WindowEvent;
 use crate::window::win32::Win32Window;
 #[cfg(target_os = "linux")]
 use crate::window::x11::X11Window;
-use crate::window::WindowId;
-use crate::{Device, DeviceInput, Size};
+use crate::window::{WindowId, WindowKind};
+use crate::{Device, DeviceInput};
 use glyphon::{Cache, Resolution, Viewport};
-use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::error::Error;
 use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 
-pub enum WindowKind {
-    #[cfg(feature = "winit")]
-    WInit(winit::window::Window),
-    #[cfg(target_os = "linux")]
-    Xlib(X11Window),
-    #[cfg(target_os = "windows")]
-    Win32(Win32Window),
-}
-
-impl WindowKind {
-    #[cfg(target_os = "linux")]
-    pub fn x11(&self) -> &X11Window {
-        match self {
-            WindowKind::Xlib(v) => v,
-            #[cfg(feature = "winit")]
-            _ => panic!("only not winit"),
-        }
-    }
-    #[cfg(target_os = "windows")]
-    pub fn win32(&self) -> &Win32Window {
-        match self {
-            WindowKind::Win32(v) => v,
-            _ => panic!("only not winit"),
-        }
-    }
-
-    pub fn size(&self) -> Size {
-        match self {
-            #[cfg(feature = "winit")]
-            WindowKind::WInit(v) => {
-                let inner_size = v.inner_size();
-                Size {
-                    width: inner_size.width,
-                    height: inner_size.height,
-                }
-            }
-            #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => v.size(),
-            #[cfg(target_os = "windows")]
-            WindowKind::Win32(v) => v.size()
-        }
-    }
-    pub fn request_redraw(&self) {
-        match self {
-            #[cfg(feature = "winit")]
-            WindowKind::WInit(v) => v.request_redraw(),
-            #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => v.request_redraw(),
-            #[cfg(target_os = "windows")]
-            WindowKind::Win32(v) => v.request_redraw(),
-        }
-    }
-
-    pub fn send_update(&self) {
-        match self {
-            WindowKind::Xlib(v) => v.send_update()
-        }
-    }
-
-    pub fn id(&self) -> WindowId {
-        match self {
-            #[cfg(feature = "winit")]
-            WindowKind::WInit(v) => WindowId::from_winit_id(v.id()),
-            #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => v.id(),
-            #[cfg(target_os = "windows")]
-            WindowKind::Win32(v) => v.id()
-        }
-    }
-}
-
-impl HasWindowHandle for WindowKind {
-    fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
-        match self {
-            #[cfg(feature = "winit")]
-            WindowKind::WInit(v) => v.window_handle(),
-            #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => Ok(v.window_handle()),
-            #[cfg(target_os = "windows")]
-            WindowKind::Win32(v) => Ok(v.window_handle())
-        }
-    }
-}
-
-impl HasDisplayHandle for WindowKind {
-    fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
-        match self {
-            #[cfg(feature = "winit")]
-            WindowKind::WInit(v) => v.display_handle(),
-            #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => Ok(v.display_handle()),
-            #[cfg(target_os = "windows")]
-            WindowKind::Win32(v) => Ok(v.display_handle())
-        }
-    }
-}
 
 pub trait EventLoopHandle {
     fn event(&mut self, id: WindowId, event: WindowEvent);

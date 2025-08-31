@@ -1,8 +1,6 @@
 use crate::frame::context::{Render, UpdateType};
 use crate::frame::App;
 use crate::{Pos, Size};
-use crate::window::wino::{LoopWindow, WindowKind};
-use crate::window::{Window, WindowId};
 use glyphon::Viewport;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -10,12 +8,15 @@ use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
-use winit::window::ImePurpose;
+use winit::keyboard::{Key, NamedKey};
+use winit::window::{ImePurpose, WindowId};
+use crate::window::WindowKind;
+use crate::window::winit_window::Window;
 
 pub struct WInitApplication<A> {
-    windows: HashMap<WindowId, Window>,
+    windows: HashMap<super::WindowId, Window>,
     app: Option<A>,
-    proxy_event: Option<EventLoopProxy<(WindowId, UpdateType)>>,
+    proxy_event: Option<EventLoopProxy<(super::WindowId, UpdateType)>>,
     rebuilding: bool,
 }
 
@@ -33,12 +34,12 @@ impl<A> WInitApplication<A> {
         self.app = app;
     }
 
-    pub fn set_proxy_event(&mut self, proxy_event: Option<EventLoopProxy<(WindowId, UpdateType)>>) {
+    pub fn set_proxy_event(&mut self, proxy_event: Option<EventLoopProxy<(super::WindowId, UpdateType)>>) {
         self.proxy_event = proxy_event;
     }
 }
 
-impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for WInitApplication<A> {
+impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WInitApplication<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         println!("111111111111111111111111111111");
         let app = self.app.take().unwrap();
@@ -55,7 +56,7 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for WInitAppli
         loop_window.request_redraw();
     }
 
-    fn user_event(&mut self, _: &ActiveEventLoop, (wid, t): (WindowId, UpdateType)) {
+    fn user_event(&mut self, _: &ActiveEventLoop, (wid, t): (super::WindowId, UpdateType)) {
         if self.rebuilding {
             println!("Rebuilding");
             return;
@@ -72,7 +73,7 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for WInitAppli
                 Window::rebuild_device(&window.app_ctx.context.window, |device| {
                     device.on_uncaptured_error(Box::new(move |err| {
                         println!("Error: {:#?}", err);
-                        event.send_event((wid, UpdateType::ReInit));
+                        let _ = event.send_event((wid, UpdateType::ReInit));
                     }))
                 }).await
             }).unwrap();
@@ -94,8 +95,8 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for WInitAppli
         }
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: winit::window::WindowId, event: WindowEvent) {
-        let wid = WindowId::from_winit_id(id);
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+        let wid = super::WindowId::from_winit_id(id);
         let window = self.windows.get_mut(&wid);
         if window.is_none() { return; }
         let window = window.unwrap();
@@ -148,7 +149,27 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for WInitAppli
             }
             WindowEvent::KeyboardInput { device_id: _device_id, event, .. } => {
                 if !event.state.is_pressed() { return; }
-                window.app_ctx.key_input(UpdateType::KeyRelease(Some(event.logical_key)), &mut window.app);
+                let key = match event.logical_key {
+                    Key::Named(name) => {
+                        match name {
+                            NamedKey::Enter => crate::key::Key::Enter,
+                            NamedKey::Space => crate::key::Key::Space,
+                            NamedKey::ArrowDown => crate::key::Key::DownArrow,
+                            NamedKey::ArrowLeft => crate::key::Key::LeftArrow,
+                            NamedKey::ArrowRight => crate::key::Key::RightArrow,
+                            NamedKey::ArrowUp => crate::key::Key::UpArrow,
+                            NamedKey::End => crate::key::Key::End,
+                            NamedKey::Home => crate::key::Key::Home,
+                            NamedKey::Backspace => crate::key::Key::Backspace,
+                            NamedKey::Delete => crate::key::Key::Delete,
+                            _ => return,
+                        }
+                    }
+                    Key::Character(c) => crate::key::Key::Char(c.as_str().chars().next().unwrap()),
+                    Key::Unidentified(_) => return,
+                    Key::Dead(_) => return,
+                };
+                window.app_ctx.key_input(UpdateType::KeyRelease(Some(key)), &mut window.app);
                 window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::Ime(ime) => {
@@ -158,11 +179,3 @@ impl<A: App + 'static> ApplicationHandler<(WindowId, UpdateType)> for WInitAppli
         }
     }
 }
-
-pub struct WInitWindow {
-    event: EventLoopProxy<(WindowId, UpdateType)>,
-    window: winit::window::Window,
-}
-
-
-impl WInitWindow {}

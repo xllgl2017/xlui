@@ -152,21 +152,10 @@ impl X11Window {
                     if xclient.data.get_long(0) as Atom == self.wm_delete_atom { return WindowEvent::ReqClose; }
                 }
                 xlib::KeyPress => {
-                    // Map key to keysym
                     let xkey: xlib::XKeyEvent = event.key;
                     let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
                     let key = Key::from_c_ulong(ks);
                     return WindowEvent::KeyPress(key);
-                    // XK_Escape constant from x11 crate keysym
-                    // let c = char::from(ks as u8);
-                    // println!("{}", c);
-                    // if ks == x11::keysym::XK_Escape {
-                    //     running = false;
-                    // }
-                    // else {
-                    //     // print pressed key code/keysym for debug
-                    eprintln!("KeyPress: keycode={} keysym={}", xkey.keycode, ks);
-                    // }
                 }
                 xlib::KeyRelease => {
                     let xkey: xlib::XKeyEvent = event.key;

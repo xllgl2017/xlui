@@ -38,6 +38,7 @@ use crate::widgets::Widget;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use crate::key::Key;
 use crate::size::pos::Pos;
 use crate::widgets::textedit::TextEdit;
 
@@ -222,7 +223,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         #[cfg(not(feature = "winit"))]
         {
             ui.context.user_update = (wid, UpdateType::None);
-            let window=ui.context.window.clone();
+            let window = ui.context.window.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_millis(st));
                 window.send_update();
@@ -303,10 +304,9 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 }
                 return Response::new(&self.id, &self.rect);
             }
-            #[cfg(feature = "winit")]
             UpdateType::KeyRelease(ref key) => {
                 if !self.edit.focused { return Response::new(&self.id, &self.rect); }
-                if let Some(winit::keyboard::Key::Named(winit::keyboard::NamedKey::Enter)) = key.as_ref() {
+                if let Some(&Key::Enter) = key.as_ref() {
                     self.edit.focused = false;
                     self.update_from_edit(ui, true);
                 } else {

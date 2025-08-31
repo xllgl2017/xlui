@@ -4,6 +4,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 #[cfg(feature = "winit")]
 use crate::window::winit_app::WInitApplication;
 use crate::ui::Ui;
+#[cfg(not(feature = "winit"))]
 use crate::window::application::Application;
 use crate::WindowAttribute;
 
