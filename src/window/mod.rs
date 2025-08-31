@@ -7,6 +7,7 @@ pub mod event;
 #[cfg(feature = "winit")]
 pub mod winit_app;
 pub mod application;
+#[cfg(target_os = "windows")]
 mod win32;
 #[cfg(target_os = "windows")]
 pub mod tray;

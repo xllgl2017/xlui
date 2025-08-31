@@ -3,6 +3,7 @@ use std::sync::Arc;
 use winit::window::{Icon, WindowLevel};
 use crate::Font;
 use crate::size::Size;
+#[cfg(target_os = "windows")]
 use crate::window::tray::Tray;
 
 pub struct WindowAttribute {

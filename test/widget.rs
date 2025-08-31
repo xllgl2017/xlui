@@ -14,7 +14,9 @@ use xlui::widgets::slider::Slider;
 use xlui::widgets::spinbox::SpinBox;
 use xlui::widgets::textedit::TextEdit;
 use xlui::widgets::Widget;
-use xlui::{Tray, WindowAttribute};
+#[cfg(target_os = "windows")]
+use xlui::Tray;
+use xlui::WindowAttribute;
 
 #[allow(dead_code)]
 fn main() {
@@ -245,11 +247,15 @@ impl App for TestWidget {
     }
 
     fn window_attributes(&self) -> WindowAttribute {
+        #[cfg(target_os = "windows")]
         let mut tray = Tray::new().hovered_text("Rust Icon");
+        #[cfg(target_os = "windows")]
         tray.add_menu("退出", None);
+        #[cfg(target_os = "windows")]
         tray.add_menu("其他", None);
         WindowAttribute {
             inner_size: (1000, 800).into(),
+            #[cfg(target_os = "windows")]
             tray: Some(tray),
             ..Default::default()
         }

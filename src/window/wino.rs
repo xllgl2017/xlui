@@ -5,6 +5,7 @@ use crate::ui::AppContext;
 #[cfg(target_os = "linux")]
 use crate::window::application::Application;
 use crate::window::event::WindowEvent;
+#[cfg(target_os = "windows")]
 use crate::window::win32::Win32Window;
 #[cfg(target_os = "linux")]
 use crate::window::x11::X11Window;
@@ -16,6 +17,7 @@ use std::error::Error;
 use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
 use std::thread::spawn;
+#[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 #[cfg(target_os = "linux")]
 use x11::xlib;
@@ -25,6 +27,7 @@ pub enum WindowKind {
     WInit(winit::window::Window),
     #[cfg(target_os = "linux")]
     Xlib(X11Window),
+    #[cfg(target_os = "windows")]
     Win32(Win32Window),
 }
 
@@ -36,7 +39,7 @@ impl WindowKind {
             _ => panic!("only not winit"),
         }
     }
-
+    #[cfg(target_os = "windows")]
     pub fn win32(&self) -> &Win32Window {
         match self {
             WindowKind::Win32(v) => v,
@@ -56,6 +59,7 @@ impl WindowKind {
             }
             #[cfg(target_os = "linux")]
             WindowKind::Xlib(v) => v.size(),
+            #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.size()
         }
     }
@@ -65,6 +69,7 @@ impl WindowKind {
             WindowKind::WInit(v) => v.request_redraw(),
             #[cfg(target_os = "linux")]
             WindowKind::Xlib(v) => v.request_redraw(),
+            #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.request_redraw(),
         }
     }
@@ -75,6 +80,7 @@ impl WindowKind {
             WindowKind::WInit(v) => WindowId::from_winit_id(v.id()),
             #[cfg(target_os = "linux")]
             WindowKind::Xlib(v) => v.id(),
+            #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.id()
         }
     }
@@ -87,6 +93,7 @@ impl HasWindowHandle for WindowKind {
             WindowKind::WInit(v) => v.window_handle(),
             #[cfg(target_os = "linux")]
             WindowKind::Xlib(v) => Ok(v.window_handle()),
+            #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => Ok(v.window_handle())
         }
     }
@@ -99,6 +106,7 @@ impl HasDisplayHandle for WindowKind {
             WindowKind::WInit(v) => v.display_handle(),
             #[cfg(target_os = "linux")]
             WindowKind::Xlib(v) => Ok(v.display_handle()),
+            #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => Ok(v.display_handle())
         }
     }
@@ -155,6 +163,7 @@ impl LoopWindow {
         loop {
             #[cfg(target_os = "linux")]
             let event = window.x11().run();
+            #[cfg(target_os = "windows")]
             let event = window.win32().run();
             self.event(self.app_ctx.context.window.id(), event);
         }

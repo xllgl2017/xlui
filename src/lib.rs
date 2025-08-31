@@ -102,7 +102,9 @@ pub mod response;
 pub mod map;
 mod window;
 
-pub use window::{attribute::WindowAttribute, inner::InnerWindow, tray::Tray};
+pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+#[cfg(target_os = "windows")]
+pub use window::tray::Tray;
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 
 pub trait NumCastExt: Sized {

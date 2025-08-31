@@ -1,20 +1,15 @@
-use std::ffi::c_void;
-use std::ptr::NonNull;
-use std::sync::mpsc::SyncSender;
-use std::sync::RwLock;
-use std::{mem, ptr};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread::sleep;
-use std::time::Duration;
 use crate::window::event::WindowEvent;
 use crate::window::WindowId;
 use crate::{Pos, Size};
 use raw_window_handle::*;
+use std::ffi::c_void;
+use std::ptr::NonNull;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::SyncSender;
+use std::sync::RwLock;
+use std::{mem, ptr};
 use x11::xlib;
 use x11::xlib::XInitThreads;
-
-#[link(name = "X11")]
-unsafe extern {}
 
 pub struct X11Window {
     pub(crate) display: *mut xlib::Display,
