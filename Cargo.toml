@@ -13,9 +13,9 @@ readme = "README.md"
 name = "xlui"
 crate-type = ['cdylib', 'rlib']
 
-[[bin]]
-name = "hello_world"
-path = "example/hello_world.rs"
+#[[bin]]
+#name = "hello_world"
+#path = "example/hello_world.rs"
 
 
 [[bin]]
@@ -41,14 +41,6 @@ path = "test/all.rs"
 [[bin]]
 name = "test_x11_window"
 path = "test/x11_window.rs"
-
-[[bin]]
-name = "test_tray"
-path = "test/tray_win.rs"
-
-[[bin]]
-name = "test_win"
-path = "test/test_win.rs"
 
 #[lib]
 #name = "xlui-web"
