@@ -3,8 +3,7 @@
 //! use std::fmt::Display;
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::combobox::ComboBox;
-//! use xlui::widgets::Widget;
+//! use xlui::*;
 //!
 //! fn combo_changed<A:App>(_:&mut A,_:&mut Ui,t:&i32){
 //!    println!("ComboBox的Item改变了：{}",t);

@@ -1,8 +1,7 @@
 //! ### Image的示例用法
 //!```
 //! use xlui::ui::Ui;
-//! use xlui::widgets::image::Image;
-//! use xlui::widgets::Widget;
+//! use xlui::*;
 //!
 //! fn draw(ui:&mut Ui){
 //!    let mut image=Image::new("logo.png")

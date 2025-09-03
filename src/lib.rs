@@ -6,10 +6,7 @@
 //! ### 下面是xlui的最小运行示例
 //! ```
 //! use xlui::frame::App;
-//! use xlui::WindowAttribute;
-//! use xlui::widgets::Widget;
-//! use xlui::widgets::label::Label;
-//! use xlui::widgets::button::Button;
+//! use xlui::*;
 //! use xlui::ui::Ui;
 //! use xlui::frame::context::Context;
 //!
@@ -75,7 +72,7 @@
 //! * update函数是后台接收到系统事件时才会调用，这里不应该直接修改，应根据条件修改。
 //!```
 //! use xlui::ui::Ui;
-//! use xlui::widgets::label::Label;
+//! use xlui::*;
 //!
 //! fn update(ui:&mut Ui){
 //!    let label:&mut Label=ui.get_widget("my_label").unwrap();

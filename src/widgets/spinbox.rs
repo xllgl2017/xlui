@@ -2,7 +2,7 @@
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::spinbox::SpinBox;
+//! use xlui::*;
 //!
 //! fn spinbox_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){
 //!     println!("SpinBox改变了:{}",v);

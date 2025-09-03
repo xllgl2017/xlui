@@ -4,8 +4,7 @@
 //! use xlui::Padding;
 //! use xlui::style::ClickStyle;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::button::Button;
-//! use xlui::widgets::Widget;
+//! use xlui::*;
 //!
 //! fn clicked<A:App>(_:&mut A,btn:&mut Button,ui:&mut Ui){
 //!    //修改图片

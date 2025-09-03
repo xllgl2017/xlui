@@ -1,7 +1,7 @@
 //! ### Label的示例用法
 //! ```
 //! use xlui::ui::Ui;
-//! use xlui::widgets::label::Label;
+//! use xlui::*;
 //!
 //! fn draw(ui:&mut Ui){
 //!     //快速创建一个Label

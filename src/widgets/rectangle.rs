@@ -4,7 +4,7 @@
 //! use xlui::style::color::Color;
 //! use xlui::style::Shadow;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::rectangle::Rectangle;
+//! use xlui::*;
 //!
 //! fn draw(ui:&mut Ui){
 //!     //阴影

@@ -3,7 +3,7 @@
 //!
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::slider::Slider;
+//! use xlui::*;
 //!
 //! fn slider_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){
 //!     println!("Slider改变了:{}",v);

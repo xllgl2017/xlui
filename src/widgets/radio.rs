@@ -2,8 +2,7 @@
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::radio::RadioButton;
-//! use xlui::widgets::Widget;
+//! use xlui::*;
 //!
 //! fn checked<A:App>(_:&mut A,_:&mut Ui,checked:bool){
 //!     println!("单选框的状态改变: {}",checked);

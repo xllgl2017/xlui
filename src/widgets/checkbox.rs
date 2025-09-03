@@ -2,8 +2,7 @@
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::checkbox::CheckBox;
-//! use xlui::widgets::Widget;
+//! use xlui::*;
 //!
 //! fn checked<A:App>(_:&mut A,_:&mut Ui,check:bool){
 //!    println!("复选框状态改变: {}",check);

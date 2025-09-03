@@ -2,7 +2,7 @@
 //! ```
 //! use xlui::Padding;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::select::SelectItem;
+//! use xlui::*;
 //!
 //! fn draw(ui:&mut Ui){
 //!     //快速创建一个SelectItem

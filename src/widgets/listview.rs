@@ -2,7 +2,7 @@
 //! ```
 //! use xlui::frame::App;
 //! use xlui::ui::Ui;
-//! use xlui::widgets::listview::ListView;
+//! use xlui::*;
 //!
 //! struct XlUi{
 //!     list_view: ListView<i32>
