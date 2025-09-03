@@ -138,7 +138,7 @@ impl X11Window {
                     println!("focus in window");
                 }
                 xlib::FocusOut => {
-                    // self.ime.focus_out();
+                    self.ime.focus_out();
                     println!("focus out");
                 }
                 xlib::ConfigureNotify => {

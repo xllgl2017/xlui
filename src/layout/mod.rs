@@ -351,12 +351,12 @@ impl HorizontalLayout {
         if self.height < rect.height() { self.height = rect.height(); }
     }
 
-    pub(crate) fn drawn_rect(&self) -> Rect {
-        let mut rect = self.max_rect.clone();
-        rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
-        rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
-        rect
-    }
+    // pub(crate) fn drawn_rect(&self) -> Rect {
+    //     let mut rect = self.max_rect.clone();
+    //     rect.set_width(if self.width > self.max_rect.width() { self.max_rect.width() } else { self.width });
+    //     rect.set_height(if self.height > self.max_rect.height() { self.max_rect.height() } else { self.height });
+    //     rect
+    // }
 }
 
 impl Layout for HorizontalLayout {

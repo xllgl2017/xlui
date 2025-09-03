@@ -6,18 +6,18 @@ use crate::window::x11::ime::Text;
 #[derive(Debug)]
 pub struct UpdatePreeditText {
     pub text: Text<'static>,
-    pub cursor_pos: u32,
-    pub visible: bool,
+    // pub cursor_pos: u32,
+    // pub visible: bool,
 }
 impl ReadAll for UpdatePreeditText {
     fn read(i: &mut dbus::arg::Iter) -> Result<Self, TypeMismatchError> {
         let text: Text = i.read()?;
-        let cursor_pos = i.read()?;
-        let visible = i.read()?;
+        // let cursor_pos = i.read()?;
+        // let visible = i.read()?;
         Ok(UpdatePreeditText {
             text,
-            cursor_pos,
-            visible,
+            // cursor_pos,
+            // visible,
         })
     }
 }

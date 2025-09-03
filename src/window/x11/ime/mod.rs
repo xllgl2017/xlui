@@ -29,7 +29,7 @@ impl<'a> Arg for Text<'a> {
 impl<'a> Get<'a> for Text<'static> {
     fn get(i: &mut Iter<'a>) -> Option<Self> {
         let mut text_var: Variant<Iter<'a>> = i.get()?;
-        let mut text_struct: (&'a str, PropMap, &'a str, Variant<Iter<'a>>) = text_var.0.get()?;
+        let text_struct: (&'a str, PropMap, &'a str, Variant<Iter<'a>>) = text_var.0.get()?;
         Some(Text {
             string: Cow::Owned(text_struct.2.to_owned()),
         })

@@ -38,7 +38,7 @@ impl Bus {
     fn get_machine_id() -> UiResult<String> {
         let mid = "/etc/machine-id";
         let mid2 = "/var/lib/dbus/machine-id";
-        let machine_id = fs::read_to_string(mid).or_else(|x| fs::read_to_string(mid2))?;
+        let machine_id = fs::read_to_string(mid).or_else(|_| fs::read_to_string(mid2))?;
         Ok(machine_id.trim().to_string())
     }
 

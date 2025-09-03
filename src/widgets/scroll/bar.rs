@@ -80,10 +80,10 @@ impl ScrollBar {
         self.changed = true;
     }
 
-    pub fn context_height(mut self, context_height: f32) -> Self {
-        self.set_context_height(context_height);
-        self
-    }
+    // pub fn context_height(mut self, context_height: f32) -> Self {
+    //     self.set_context_height(context_height);
+    //     self
+    // }
 
     pub fn set_height(&mut self, height: f32) {
         self.fill_render.param.rect.set_height(height);
