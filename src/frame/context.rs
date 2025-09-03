@@ -83,6 +83,7 @@ pub enum UpdateType {
     KeyRelease(Option<Key>),
     Offset(Offset),
     Drop,
+    IME(Vec<char>),
 }
 
 impl UpdateType {
@@ -106,7 +107,8 @@ impl Debug for UpdateType {
             UpdateType::MouseWheel => f.write_str("MouseWheel"),
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
             UpdateType::Offset(_) => f.write_str("Offset"),
-            UpdateType::Drop => f.write_str("Drop")
+            UpdateType::Drop => f.write_str("Drop"),
+            UpdateType::IME(_)=>f.write_str("IME"),
         }
     }
 }

@@ -15,7 +15,7 @@ use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
-
+use crate::window::ime::IME;
 
 pub trait EventLoopHandle {
     fn event(&mut self, id: WindowId, event: WindowEvent);
@@ -28,12 +28,12 @@ pub struct LoopWindow {
 }
 
 impl LoopWindow {
-    pub async fn create_window<A: App>(app: A, sender: SyncSender<(WindowId, WindowEvent)>) -> LoopWindow {
+    pub async fn create_window<A: App>(app: A, sender: SyncSender<(WindowId, WindowEvent)>, ime: Arc<IME>) -> LoopWindow {
         let attr = app.window_attributes();
         #[cfg(target_os = "linux")]
-        let x11_window = X11Window::new(attr.inner_size, &attr.title).unwrap();
+        let x11_window = X11Window::new(attr.inner_size, &attr.title, ime).unwrap();
         #[cfg(target_os = "linux")]
-        let platform_window = Arc::new(WindowKind::Xlib(x11_window));
+        let platform_window = Arc::new(WindowKind::X11(x11_window));
         #[cfg(target_os = "windows")]
         let win32_window = Win32Window::new(&mut attr);
         #[cfg(target_os = "windows")]
@@ -94,7 +94,7 @@ impl LoopWindow {
         };
         let wid = window.id();
 
-        device.on_uncaptured_error(Box::new(move |err| {
+        device.on_uncaptured_error(Box::new(move |err: wgpu::Error| {
             sender.send((wid, WindowEvent::Reinit)).unwrap();
             println!("Error: {:#?}", err);
             println!("{}", err.to_string());
@@ -160,7 +160,8 @@ impl EventLoopHandle for LoopWindow {
                 // window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
-            WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app)
+            WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
+            WindowEvent::IME(chars) => self.app_ctx.update(UpdateType::IME(chars), &mut self.app),
         }
     }
 }
