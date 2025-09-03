@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
 use x11::xlib;
-use x11::xlib::{Atom, XFilterEvent, XInitThreads};
+use x11::xlib::{Atom, XInitThreads};
 
 pub mod ime;
 
@@ -62,6 +62,7 @@ impl X11Window {
 
             // Select events: expose, key, mouse, structure notify (resize), pointer motion
             let events = xlib::ExposureMask
+                | xlib::FocusChangeMask
                 | xlib::KeyPressMask
                 | xlib::KeyReleaseMask
                 | xlib::ButtonPressMask
@@ -126,16 +127,20 @@ impl X11Window {
     pub fn run(&self) -> WindowEvent {
         self.ime.update();
         unsafe {
-            xlib::XSetInputFocus(self.display, self.window, xlib::RevertToParent, xlib::CurrentTime);
             // if xlib::XPending(self.display) <= 0 { return false; }
             let mut event: xlib::XEvent = mem::zeroed();
             xlib::XNextEvent(self.display, &mut event);
-            if XFilterEvent(&mut event, self.window) != 0 {
-                return WindowEvent::None; // 被 IME 处理了
-            }
             let typ = event.get_type();
             match typ {
                 xlib::Expose => return WindowEvent::Redraw,
+                xlib::FocusIn => {
+                    self.ime.focus_in();
+                    println!("focus in window");
+                }
+                xlib::FocusOut => {
+                    self.ime.focus_out();
+                    println!("focus out");
+                }
                 xlib::ConfigureNotify => {
                     let xcfg: xlib::XConfigureEvent = event.configure;
                     let new_w = xcfg.width as u32;
@@ -158,7 +163,6 @@ impl X11Window {
                 }
                 xlib::KeyPress => {
                     println!("key-press");
-                    self.ime.focus_in();
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     match self.ime.is_available() {
                         true => self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty),
@@ -214,6 +218,21 @@ impl X11Window {
     }
 
     pub fn ime(&self) -> &Arc<IME> { &self.ime }
+
+    pub fn set_ime_position(&mut self, x: f32, y: f32) {
+        let root = unsafe { xlib::XRootWindow(self.display, self.screen) };
+        let mut child_return: xlib::Window = 0;
+        let mut ax:i32 = 0;
+        let mut ay:i32 = 0;
+        let status = unsafe {
+            xlib::XTranslateCoordinates(
+                self.display, self.window, root, 0, 0, &mut ax, &mut ay,
+                &mut child_return,
+            )
+        };
+        if status == 0 { return; }
+        self.ime.set_cursor_position(ax + x as i32, ay + y as i32);
+    }
 }
 
 impl Drop for X11Window {

@@ -100,7 +100,7 @@ pub mod style;
 mod render;
 pub mod response;
 pub mod map;
-mod window;
+pub mod window;
 mod key;
 mod error;
 

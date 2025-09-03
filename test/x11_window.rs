@@ -1,8 +1,9 @@
-use std::ffi::{c_char, c_void, CString};
 use std::mem;
 use std::ptr::null_mut;
 use x11::xlib;
-use x11::xlib::{XBlackPixel, XCreateSimpleWindow, XDefaultScreen, XLookupKeysym, XMapWindow, XOpenDisplay, XRootWindow, XSelectInput, XWhitePixel};
+use x11::xlib::{FocusChangeMask, XBlackPixel, XCreateSimpleWindow, XDefaultScreen, XLookupKeysym, XMapWindow, XOpenDisplay, XRootWindow, XSelectInput, XWhitePixel};
+// use xlui::window::x11::ime::bus::Bus;
+// use xlui::window::x11::ime::flag::{Capabilities, Modifiers};
 
 mod x11_ime;
 
@@ -22,6 +23,7 @@ fn main() {
             display, root, 100, 100, 500, 300, 1,
             XBlackPixel(display, screen), XWhitePixel(display, screen));
         let events = xlib::ExposureMask
+            |FocusChangeMask
             | xlib::KeyPressMask
             | xlib::KeyReleaseMask
             | xlib::ButtonPressMask
@@ -52,6 +54,14 @@ fn main() {
             bus.process(std::time::Duration::from_secs(0)).unwrap();
             match event.get_type() {
                 xlib::Expose => {}
+                xlib::FocusIn => {
+                    // self.ime.focus_in();
+                    println!("focus in window");
+                }
+                xlib::FocusOut => {
+                    // self.ime.focus_out();
+                    println!("focus out");
+                }
                 xlib::ButtonPress => {
                     println!("press");
                     x += 50.0;

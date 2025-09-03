@@ -85,21 +85,27 @@ impl IME {
         }
     }
 
-    pub(crate) fn focus_in(&self){
+    pub(crate) fn focus_in(&self) {
         match self.kind {
             IMEKind::X11(ref bus) => { bus.ctx().focus_in().unwrap(); }
         }
     }
 
-    pub(crate) fn focus_out(&self){
+    pub(crate) fn focus_out(&self) {
         match self.kind {
             IMEKind::X11(ref bus) => { bus.ctx().focus_out().unwrap(); }
         }
     }
 
-    pub(crate) fn set_capabilities(&self,capabilities:u32){
+    pub(crate) fn set_capabilities(&self, capabilities: u32) {
         match self.kind {
             IMEKind::X11(ref bus) => { bus.ctx().set_capabilities(capabilities).unwrap(); }
+        }
+    }
+
+    pub(crate) fn set_cursor_position(&self, x: i32, y: i32) {
+        match self.kind {
+            IMEKind::X11(ref bus) => { bus.ctx().set_cursor_location(x, y, 1, 1).unwrap(); }
         }
     }
 }
