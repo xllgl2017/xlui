@@ -1,15 +1,20 @@
+use crate::key::Key;
 use crate::window::event::WindowEvent;
+use crate::window::ime::IME;
+use crate::window::x11::ime::flag::Modifiers;
 use crate::window::WindowId;
 use crate::{Pos, Size};
 use raw_window_handle::*;
 use std::ffi::c_void;
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
 use x11::xlib;
-use x11::xlib::{Atom, XInitThreads};
-use crate::key::Key;
+use x11::xlib::{Atom, XFilterEvent, XInitThreads};
+
+pub mod ime;
+
 
 pub struct X11Window {
     pub(crate) display: *mut xlib::Display,
@@ -20,10 +25,11 @@ pub struct X11Window {
     id: WindowId,
     resized: AtomicBool,
     update_atom: Atom,
+    ime: Arc<IME>,
 }
 
 impl X11Window {
-    pub fn new(size: Size, title: &str) -> Result<Self, String> {
+    pub fn new(size: Size, title: &str, ime: Arc<IME>) -> Result<Self, String> {
         unsafe {
             if XInitThreads() == 0 {
                 panic!("XInitThreads failed");
@@ -86,6 +92,7 @@ impl X11Window {
                 id: WindowId(crate::unique_id_u32()),
                 resized: AtomicBool::new(false),
                 update_atom,
+                ime,
             })
         }
     }
@@ -117,10 +124,15 @@ impl X11Window {
     }
 
     pub fn run(&self) -> WindowEvent {
+        self.ime.update();
         unsafe {
+            xlib::XSetInputFocus(self.display, self.window, xlib::RevertToParent, xlib::CurrentTime);
             // if xlib::XPending(self.display) <= 0 { return false; }
-            let mut event: xlib::XEvent = std::mem::zeroed();
+            let mut event: xlib::XEvent = mem::zeroed();
             xlib::XNextEvent(self.display, &mut event);
+            if XFilterEvent(&mut event, self.window) != 0 {
+                return WindowEvent::None; // 被 IME 处理了
+            }
             let typ = event.get_type();
             match typ {
                 xlib::Expose => return WindowEvent::Redraw,
@@ -128,11 +140,6 @@ impl X11Window {
                     let xcfg: xlib::XConfigureEvent = event.configure;
                     let new_w = xcfg.width as u32;
                     let new_h = xcfg.height as u32;
-                    // let mut attrs: xlib::XWindowAttributes = std::mem::zeroed();
-                    // xlib::XGetWindowAttributes(self.display, self.window, &mut attrs);
-                    // let new_w = attrs.width as u32;
-                    // let new_h = attrs.height as u32;
-
                     let mut size = self.size.write().unwrap();
                     if new_w == 0 || new_h == 0 {
                         // ignore weird zero sizes
@@ -141,8 +148,6 @@ impl X11Window {
                         size.height = new_h;
                         println!("resize {}-{}-{}-{}", xcfg.width, xcfg.height, new_w, new_h);
                         return WindowEvent::Resize(size.clone());
-                        // self.resized.store(true, Ordering::SeqCst);
-                        // let _ = self.sender.try_send((self.id, WindowEvent::Resize(size.clone())));
                     }
                 }
                 xlib::ClientMessage => {
@@ -152,39 +157,38 @@ impl X11Window {
                     if xclient.data.get_long(0) as Atom == self.wm_delete_atom { return WindowEvent::ReqClose; }
                 }
                 xlib::KeyPress => {
-                    let xkey: xlib::XKeyEvent = event.key;
-                    let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
-                    let key = Key::from_c_ulong(ks);
-                    return WindowEvent::KeyPress(key);
+                    println!("key-press");
+                    self.ime.focus_in();
+                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    match self.ime.is_available() {
+                        true => self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty),
+                        false => return WindowEvent::KeyPress(Key::from_c_ulong(keysym))
+                    }
                 }
                 xlib::KeyRelease => {
-                    let xkey: xlib::XKeyEvent = event.key;
-                    let ks = xlib::XLookupKeysym(&xkey as *const xlib::XKeyEvent as *mut _, 0);
-                    println!("key-{}", ks);
-                    let key = Key::from_c_ulong(ks);
-                    return WindowEvent::KeyRelease(key);
+                    println!("key-release");
+                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    match self.ime.is_available() {
+                        true => self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release),
+                        false => return WindowEvent::KeyPress(Key::from_c_ulong(keysym))
+                    }
                 }
                 xlib::ButtonRelease => {
                     let xb: xlib::XButtonEvent = event.button;
                     return WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 });
-                    // self.sender.send((self.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }))).unwrap();
-                    // eprintln!("Mouse Release {} at ({}, {})", xb.button, xb.x, xb.y);
                 }
                 xlib::ButtonPress => {
                     let xb: xlib::XButtonEvent = event.button;
                     return WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 });
-                    // self.sender.try_send((self.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 })));
-                    // eprintln!("Mouse Press {} at ({}, {})", xb.button, xb.x, xb.y);
                 }
                 xlib::MotionNotify => {
                     let xm: xlib::XMotionEvent = event.motion;
                     return WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 });
-                    // self.sender.send((self.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))).unwrap();
-                    // eprintln!("Mouse move: ({}, {})", xm.x, xm.y);
                 }
                 _ => {}
             }
         }
+        self.ime.update();
         WindowEvent::None
     }
 
@@ -208,6 +212,8 @@ impl X11Window {
         let raw_display_handle = RawDisplayHandle::Xlib(x11_display_handle);
         unsafe { DisplayHandle::borrow_raw(raw_display_handle) }
     }
+
+    pub fn ime(&self) -> &Arc<IME> { &self.ime }
 }
 
 impl Drop for X11Window {
@@ -215,6 +221,7 @@ impl Drop for X11Window {
         unsafe {
             xlib::XDestroyWindow(self.display, self.window);
             xlib::XCloseDisplay(self.display);
+            drop(Box::from_raw(self.display));
         }
     }
 }

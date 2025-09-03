@@ -1,3 +1,4 @@
+use std::mem;
 use crate::frame::context::{Context, UpdateType};
 use crate::key::Key;
 use crate::render::rectangle::param::RectParam;
@@ -278,13 +279,9 @@ impl Widget for TextEdit {
                 self.changed = true;
                 ui.context.window.request_redraw();
             }
-            UpdateType::MouseRelease => {}
-            UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(ref mut key) => {
                 if self.focused { self.key_input(key.take(), ui); }
             }
-            UpdateType::Offset(_) => {}
-            UpdateType::Drop => {}
             UpdateType::None => {
                 // if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
                 // let next_char = self.char_layout.next_char(&self.cursor_render);
@@ -317,6 +314,17 @@ impl Widget for TextEdit {
                 //     }
                 // }
             }
+            UpdateType::IME(ref mut chars)=>{
+                let chars=mem::take(chars);
+                for c in chars {
+                    self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
+                }
+                // match ui.context.window.ime().is_working() {
+                //     true => {}
+                //     false => {}
+                // }
+            }
+            _=>{}
         }
         Response::new(&self.id, &self.fill_render.param.rect)
     }

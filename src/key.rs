@@ -28,6 +28,12 @@ impl Key {
             65363 => Key::RightArrow,
             65364 => Key::DownArrow,
             65535 => Key::Delete,
+            65436 => Key::Char('1'),
+            65433 => Key::Char('2'),
+            65435 => Key::Char('3'),
+            65430 => Key::Char('4'),
+            65437 => Key::Char('5'),
+            65432 => Key::Char('6'),
             _ => Key::Char(char::from(l as u8)),
         }
     }

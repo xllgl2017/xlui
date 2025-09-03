@@ -2,10 +2,7 @@ use std::sync::Arc;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
-use xlui::widgets::button::Button;
-use xlui::widgets::combobox::ComboBox;
-use xlui::{Font, WindowAttribute};
-use xlui::widgets::textedit::TextEdit;
+use xlui::{Button, ComboBox, Font, TextEdit, WindowAttribute};
 
 fn main() {
     XlUi {}.run();

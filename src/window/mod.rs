@@ -11,10 +11,13 @@ pub mod winit_app;
 pub mod application;
 #[cfg(feature = "winit")]
 mod winit_window;
+mod ime;
 
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use crate::Size;
+use crate::window::ime::IME;
 use crate::window::x11::X11Window;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
@@ -38,7 +41,7 @@ pub enum WindowKind {
     #[cfg(feature = "winit")]
     WInit(winit::window::Window),
     #[cfg(target_os = "linux")]
-    Xlib(X11Window),
+    X11(X11Window),
     #[cfg(target_os = "windows")]
     Win32(Win32Window),
 }
@@ -47,7 +50,7 @@ impl WindowKind {
     #[cfg(target_os = "linux")]
     pub fn x11(&self) -> &X11Window {
         match self {
-            WindowKind::Xlib(v) => v,
+            WindowKind::X11(v) => v,
             #[cfg(feature = "winit")]
             _ => panic!("only not winit"),
         }
@@ -71,7 +74,7 @@ impl WindowKind {
                 }
             }
             #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => v.size(),
+            WindowKind::X11(v) => v.size(),
             #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.size()
         }
@@ -81,7 +84,7 @@ impl WindowKind {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => v.request_redraw(),
             #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => v.request_redraw(),
+            WindowKind::X11(v) => v.request_redraw(),
             #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.request_redraw(),
         }
@@ -89,7 +92,7 @@ impl WindowKind {
 
     pub fn send_update(&self) {
         match self {
-            WindowKind::Xlib(v) => v.send_update(),
+            WindowKind::X11(v) => v.send_update(),
             #[cfg(feature = "winit")]
             _ => panic!("only not winit"),
         }
@@ -100,9 +103,15 @@ impl WindowKind {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => WindowId::from_winit_id(v.id()),
             #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => v.id(),
+            WindowKind::X11(v) => v.id(),
             #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => v.id()
+        }
+    }
+
+    pub fn ime(&self) -> &Arc<IME> {
+        match self {
+            WindowKind::X11(x11) => x11.ime(),
         }
     }
 }
@@ -113,7 +122,7 @@ impl HasWindowHandle for WindowKind {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => v.window_handle(),
             #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => Ok(v.window_handle()),
+            WindowKind::X11(v) => Ok(v.window_handle()),
             #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => Ok(v.window_handle())
         }
@@ -126,7 +135,7 @@ impl HasDisplayHandle for WindowKind {
             #[cfg(feature = "winit")]
             WindowKind::WInit(v) => v.display_handle(),
             #[cfg(target_os = "linux")]
-            WindowKind::Xlib(v) => Ok(v.display_handle()),
+            WindowKind::X11(v) => Ok(v.display_handle()),
             #[cfg(target_os = "windows")]
             WindowKind::Win32(v) => Ok(v.display_handle())
         }

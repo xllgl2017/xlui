@@ -102,6 +102,7 @@ pub mod response;
 pub mod map;
 mod window;
 mod key;
+mod error;
 
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
 #[cfg(target_os = "windows")]
