@@ -17,12 +17,15 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Self {
-        let ime=IME::new_x11("xlui ime").enable();
+        let ime = Arc::new(IME::new_x11("xlui ime").enable());
         ime.set_capabilities(Capabilities::PreeditText | Capabilities::Focus);
+        let ii = ime.clone();
+        ime.create_binding(ii);
+
         Application {
             windows: 0,
             channel: sync_channel(1),
-            ime: Arc::new(ime),
+            ime,
         }
     }
 

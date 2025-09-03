@@ -125,9 +125,8 @@ impl X11Window {
     }
 
     pub fn run(&self) -> WindowEvent {
-        self.ime.update();
+        if self.ime.is_available() { self.ime.update(); }
         unsafe {
-            // if xlib::XPending(self.display) <= 0 { return false; }
             let mut event: xlib::XEvent = mem::zeroed();
             xlib::XNextEvent(self.display, &mut event);
             let typ = event.get_type();
@@ -164,17 +163,23 @@ impl X11Window {
                 xlib::KeyPress => {
                     println!("key-press");
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
-                    match self.ime.is_available() {
-                        true => self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty),
-                        false => return WindowEvent::KeyPress(Key::from_c_ulong(keysym))
+                    return match self.ime.is_available() {
+                        true => {
+                            self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty);
+                            WindowEvent::IME(self.ime.chars())
+                        }
+                        false => WindowEvent::KeyPress(Key::from_c_ulong(keysym))
                     }
                 }
                 xlib::KeyRelease => {
                     println!("key-release");
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     match self.ime.is_available() {
-                        true => self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release),
-                        false => return WindowEvent::KeyPress(Key::from_c_ulong(keysym))
+                        true => {
+                            self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release);
+                            if self.ime.is_commited() { return WindowEvent::IME(self.ime.ime_done()); }
+                        }
+                        false => return WindowEvent::KeyRelease(Key::from_c_ulong(keysym))
                     }
                 }
                 xlib::ButtonRelease => {
@@ -192,7 +197,7 @@ impl X11Window {
                 _ => {}
             }
         }
-        self.ime.update();
+        if self.ime.is_available() { self.ime.update(); }
         WindowEvent::None
     }
 
@@ -222,8 +227,8 @@ impl X11Window {
     pub fn set_ime_position(&mut self, x: f32, y: f32) {
         let root = unsafe { xlib::XRootWindow(self.display, self.screen) };
         let mut child_return: xlib::Window = 0;
-        let mut ax:i32 = 0;
-        let mut ay:i32 = 0;
+        let mut ax: i32 = 0;
+        let mut ay: i32 = 0;
         let status = unsafe {
             xlib::XTranslateCoordinates(
                 self.display, self.window, root, 0, 0, &mut ax, &mut ay,

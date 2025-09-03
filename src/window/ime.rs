@@ -1,9 +1,12 @@
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
+use dbus::blocking::Connection;
+use dbus::Message;
 use crate::window::x11::ime::bus::Bus;
 use crate::window::x11::ime::flag::Modifiers;
+use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
 
 pub enum IMEKind {
     X11(Bus)
@@ -14,16 +17,41 @@ pub struct IME {
     available: bool,
     working: AtomicBool,
     chars: RwLock<Vec<char>>,
+    commited: AtomicBool,
 }
 
 
 impl IME {
+    fn preedit_text(text: UpdatePreeditText, ime: &Arc<IME>) -> bool {
+        println!("preedit_text-{:?}", text);
+        ime.ime_draw(text.text.chars());
+        true
+    }
+
+    fn commit(text: CommitText, ime: &Arc<IME>) -> bool {
+        println!("commit-{:?}", text);
+        ime.ime_commit(text.text.chars());
+        true
+    }
+
+
     pub fn new_x11(name: &str) -> Self {
         IME {
             kind: IMEKind::X11(Bus::new(name).unwrap()),
             available: false,
             working: AtomicBool::new(false),
             chars: RwLock::new(Vec::new()),
+            commited: AtomicBool::new(false),
+        }
+    }
+
+    pub(crate) fn create_binding(&self, ime: Arc<IME>) {
+        match self.kind {
+            IMEKind::X11(ref bus) => {
+                let i = ime.clone();
+                bus.ctx().on_update_preedit_text(move |a, _, _| Self::preedit_text(a, &i)).unwrap();
+                bus.ctx().on_commit_text(move |a, _, _| Self::commit(a, &ime)).unwrap();
+            }
         }
     }
 
@@ -49,10 +77,12 @@ impl IME {
 
     pub fn ime_commit(&self, commit: Vec<char>) {
         self.working.store(false, Ordering::SeqCst);
+        self.commited.store(true, Ordering::SeqCst);
         self.ime_draw(commit);
     }
 
     pub fn ime_done(&self) -> Vec<char> {
+        self.commited.store(false, Ordering::SeqCst);
         let mut chars = self.chars.write().unwrap();
         let chars = mem::take(&mut *chars);
         chars
@@ -69,6 +99,10 @@ impl IME {
 
     pub fn is_working(&self) -> bool {
         self.working.load(Ordering::SeqCst)
+    }
+
+    pub fn is_commited(&self) -> bool {
+        self.commited.load(Ordering::SeqCst)
     }
 
     pub(crate) fn post_key(&self, keysym: u32, code: u32, modifiers: Modifiers) {
@@ -109,3 +143,6 @@ impl IME {
         }
     }
 }
+
+unsafe impl Send for IME {}
+unsafe impl Sync for IME {}

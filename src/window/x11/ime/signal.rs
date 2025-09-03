@@ -36,7 +36,7 @@ impl ReadAll for CommitText {
         Ok(CommitText { text })
     }
 }
-impl dbus::message::SignalArgs for CommitText {
+impl SignalArgs for CommitText {
     const NAME: &'static str = "CommitText";
     const INTERFACE: &'static str = INTERFACE_NAME;
 }

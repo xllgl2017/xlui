@@ -12,6 +12,12 @@ pub struct Text<'a> {
     string: Cow<'a, str>,
 }
 
+impl<'s> Text<'s> {
+    pub fn chars(&self) -> Vec<char> {
+        self.string.chars().collect()
+    }
+}
+
 impl<'a> Arg for Text<'a> {
     const ARG_TYPE: ArgType = ArgType::Variant;
 

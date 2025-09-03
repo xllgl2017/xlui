@@ -2,8 +2,6 @@ use std::mem;
 use std::ptr::null_mut;
 use x11::xlib;
 use x11::xlib::{FocusChangeMask, XBlackPixel, XCreateSimpleWindow, XDefaultScreen, XLookupKeysym, XMapWindow, XOpenDisplay, XRootWindow, XSelectInput, XWhitePixel};
-// use xlui::window::x11::ime::bus::Bus;
-// use xlui::window::x11::ime::flag::{Capabilities, Modifiers};
 
 mod x11_ime;
 
@@ -34,24 +32,24 @@ fn main() {
         XMapWindow(display, window);
         let mut x = 100.0;
         let mut y = 100.0;
-        let bus = Bus::new("input ctx lel").unwrap();
-        let ctx = bus.ctx(); //bus.create_input_context("input ctx lel").unwrap();
-        ctx.set_capabilities(Capabilities::PreeditText | Capabilities::Focus).unwrap();
-        //
-        ctx.on_update_preedit_text(|s, _, _| {
-            println!("preedit: {:?}", s);
-            true
-        }).unwrap();
-        ctx.on_commit_text(|s, _, _| {
-            println!("commit: {:?}", s);
-            true
-        }).unwrap();
+        // let bus = Bus::new("input ctx lel").unwrap();
+        // let ctx = bus.ctx(); //bus.create_input_context("input ctx lel").unwrap();
+        // ctx.set_capabilities(Capabilities::PreeditText | Capabilities::Focus).unwrap();
+        // //
+        // ctx.on_update_preedit_text(|s, _, _| {
+        //     println!("preedit: {:?}", s);
+        //     true
+        // }).unwrap();
+        // ctx.on_commit_text(|s, _, _| {
+        //     println!("commit: {:?}", s);
+        //     true
+        // }).unwrap();
 
-        ctx.focus_in().unwrap();
+        // ctx.focus_in().unwrap();
         loop {
             let mut event = mem::zeroed();
             xlib::XNextEvent(display, &mut event);
-            bus.process(std::time::Duration::from_secs(0)).unwrap();
+            // bus.process(std::time::Duration::from_secs(0)).unwrap();
             match event.get_type() {
                 xlib::Expose => {}
                 xlib::FocusIn => {
@@ -66,22 +64,22 @@ fn main() {
                     println!("press");
                     x += 50.0;
                     y += 50.0;
-                    ctx.set_cursor_location(x as i32, y as i32, 1, 1).unwrap();
+                    // ctx.set_cursor_location(x as i32, y as i32, 1, 1).unwrap();
                 }
                 xlib::KeyPress => {
                     let s = XLookupKeysym(&mut event.key, 0);
                     println!("kpress-{}-{}", s, event.key.keycode);
                     // ibus_input_context_process_key_event(g_context, s as u32, event.key.keycode, 0);
-                    ctx.process_key_event(s as u32, 50, Modifiers::Empty).unwrap();
+                    // ctx.process_key_event(s as u32, 50, Modifiers::Empty).unwrap();
                 }
                 xlib::KeyRelease => {
                     let s = XLookupKeysym(&mut event.key, 0);
                     // ibus_input_context_process_key_event(g_context, s as u32, event.key.keycode, 1 << 30);
-                    ctx.process_key_event(s as u32, event.key.keycode, Modifiers::Release).unwrap();
+                    // ctx.process_key_event(s as u32, event.key.keycode, Modifiers::Release).unwrap();
                 }
                 _ => {}
             }
-            bus.process(std::time::Duration::from_secs(0)).unwrap();
+            // bus.process(std::time::Duration::from_secs(0)).unwrap();
         }
     }
 }
