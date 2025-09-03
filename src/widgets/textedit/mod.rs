@@ -271,7 +271,10 @@ impl Widget for TextEdit {
             }
             UpdateType::MousePress => {
                 self.focused = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
+                ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
+                    // let p = &self.fill_render.param.rect;
+                    ui.context.window.x11().set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.text_buffer.text.height);
                     let pos = ui.device.device_input.mouse.lastest;
                     self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);
@@ -314,17 +317,22 @@ impl Widget for TextEdit {
                 //     }
                 // }
             }
-            UpdateType::IME(ref mut chars)=>{
-                let chars=mem::take(chars);
-                for c in chars {
-                    self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
+            UpdateType::IME(ref mut chars) => {
+                if self.focused {
+                    let chars = mem::take(chars);
+                    for c in chars {
+                        self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
+                    }
+                    self.text_buffer.update_buffer_text(ui, self.char_layout.draw_text());
+                    ui.context.window.request_redraw();
                 }
+
                 // match ui.context.window.ime().is_working() {
                 //     true => {}
                 //     false => {}
                 // }
             }
-            _=>{}
+            _ => {}
         }
         Response::new(&self.id, &self.fill_render.param.rect)
     }

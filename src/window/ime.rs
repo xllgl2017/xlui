@@ -1,12 +1,10 @@
+use crate::window::x11::ime::bus::Bus;
+use crate::window::x11::ime::flag::Modifiers;
+use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use dbus::blocking::Connection;
-use dbus::Message;
-use crate::window::x11::ime::bus::Bus;
-use crate::window::x11::ime::flag::Modifiers;
-use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
 
 pub enum IMEKind {
     X11(Bus)
@@ -18,6 +16,7 @@ pub struct IME {
     working: AtomicBool,
     chars: RwLock<Vec<char>>,
     commited: AtomicBool,
+    requested: RwLock<Vec<bool>>,
 }
 
 
@@ -42,6 +41,7 @@ impl IME {
             working: AtomicBool::new(false),
             chars: RwLock::new(Vec::new()),
             commited: AtomicBool::new(false),
+            requested: RwLock::new(Vec::new()),
         }
     }
 
@@ -66,9 +66,13 @@ impl IME {
         self
     }
 
-    pub fn ime_start(&self) {
-        self.working.store(true, Ordering::SeqCst);
+    pub fn request_ime(&self, i: bool) {
+        self.requested.write().unwrap().push(i);
     }
+
+    // pub fn ime_start(&self) {
+    //     self.working.store(true, Ordering::SeqCst);
+    // }
 
     pub fn ime_draw(&self, new_chars: Vec<char>) {
         let mut chars = self.chars.write().unwrap();
@@ -111,6 +115,12 @@ impl IME {
                 bus.ctx().process_key_event(keysym, code, modifiers).unwrap();
             }
         }
+    }
+
+    pub(crate) fn update_working(&self) {
+        let requested = self.requested.write().unwrap();
+        let req = requested.iter().find(|x| **x == true);
+        self.working.store(req.is_some(), Ordering::SeqCst);
     }
 
     pub(crate) fn update(&self) {

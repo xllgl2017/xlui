@@ -125,7 +125,8 @@ impl X11Window {
     }
 
     pub fn run(&self) -> WindowEvent {
-        if self.ime.is_available() { self.ime.update(); }
+        self.ime.update_working();
+        if self.ime.is_available() && self.ime.is_working() { self.ime.update(); }
         unsafe {
             let mut event: xlib::XEvent = mem::zeroed();
             xlib::XNextEvent(self.display, &mut event);
@@ -137,7 +138,7 @@ impl X11Window {
                     println!("focus in window");
                 }
                 xlib::FocusOut => {
-                    self.ime.focus_out();
+                    // self.ime.focus_out();
                     println!("focus out");
                 }
                 xlib::ConfigureNotify => {
@@ -163,20 +164,20 @@ impl X11Window {
                 xlib::KeyPress => {
                     println!("key-press");
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
-                    return match self.ime.is_available() {
+                    return match self.ime.is_available() && self.ime.is_working() {
                         true => {
                             self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty);
                             WindowEvent::IME(self.ime.chars())
                         }
                         false => WindowEvent::KeyPress(Key::from_c_ulong(keysym))
-                    }
+                    };
                 }
                 xlib::KeyRelease => {
                     println!("key-release");
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     match self.ime.is_available() {
                         true => {
-                            self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release);
+                            if self.ime.is_working() { self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release); }
                             if self.ime.is_commited() { return WindowEvent::IME(self.ime.ime_done()); }
                         }
                         false => return WindowEvent::KeyRelease(Key::from_c_ulong(keysym))
@@ -197,7 +198,7 @@ impl X11Window {
                 _ => {}
             }
         }
-        if self.ime.is_available() { self.ime.update(); }
+        if self.ime.is_available() && self.ime.is_working() { self.ime.update(); }
         WindowEvent::None
     }
 
@@ -224,7 +225,7 @@ impl X11Window {
 
     pub fn ime(&self) -> &Arc<IME> { &self.ime }
 
-    pub fn set_ime_position(&mut self, x: f32, y: f32) {
+    pub fn set_ime_position(&self, x: f32, y: f32) {
         let root = unsafe { xlib::XRootWindow(self.display, self.screen) };
         let mut child_return: xlib::Window = 0;
         let mut ax: i32 = 0;
@@ -236,6 +237,7 @@ impl X11Window {
             )
         };
         if status == 0 { return; }
+        println!("{}-{}", ax + x as i32, ay + y as i32);
         self.ime.set_cursor_position(ax + x as i32, ay + y as i32);
     }
 }
