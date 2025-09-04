@@ -114,6 +114,7 @@ impl LoopWindow {
 impl EventLoopHandle for LoopWindow {
     fn event(&mut self, id: WindowId, event: WindowEvent) {
         if self.app_ctx.context.window.id() != id { return; }
+        println!("{:?}", event);
         match event {
             WindowEvent::None => {}
             WindowEvent::KeyPress(_) => {}

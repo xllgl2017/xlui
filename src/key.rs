@@ -20,6 +20,7 @@ impl Key {
         match l {
             65288 => Key::Backspace,
             65293 => Key::Enter,
+            65421 => Key::Enter,
             32 => Key::Space,
             65367 => Key::End,
             65360 => Key::Home,
@@ -34,7 +35,10 @@ impl Key {
             65430 => Key::Char('4'),
             65437 => Key::Char('5'),
             65432 => Key::Char('6'),
-            _ => Key::Char(char::from(l as u8)),
+            _ => {
+                println!("key-{}", l);
+                Key::Char(char::from(l as u8))
+            }
         }
     }
 }

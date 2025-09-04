@@ -5,13 +5,13 @@ use crate::window::x11::ime::flag::Modifiers;
 use crate::window::WindowId;
 use crate::{Pos, Size};
 use raw_window_handle::*;
-use std::ffi::c_void;
+use std::ffi::{c_void, CString};
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
 use x11::xlib;
-use x11::xlib::{Atom, XInitThreads};
+use x11::xlib::{Atom, XInitThreads, XSetLocaleModifiers};
 
 pub mod ime;
 
@@ -57,7 +57,7 @@ impl X11Window {
             );
 
             // Set window title
-            let c_title = std::ffi::CString::new(title).unwrap();
+            let c_title = CString::new(title).unwrap();
             xlib::XStoreName(display, window, c_title.as_ptr());
 
             // Select events: expose, key, mouse, structure notify (resize), pointer motion
@@ -74,7 +74,7 @@ impl X11Window {
             // WM_DELETE_WINDOW
             // let wm_protocols = xlib::XInternAtom(display, b"WM_PROTOCOLS\0".as_ptr() as *const i8, 0);
             let wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
-            xlib::XSetWMProtocols(display, window, &wm_delete as *const xlib::Atom as *mut xlib::Atom, 1);
+            xlib::XSetWMProtocols(display, window, &wm_delete as *const Atom as *mut Atom, 1);
 
             let mut attrs: xlib::XSetWindowAttributes = mem::zeroed();
             attrs.background_pixel = 0;
@@ -83,7 +83,8 @@ impl X11Window {
             xlib::XMapWindow(display, window);
             xlib::XFlush(display);
             let update_atom = xlib::XInternAtom(display, b"MY_CUSTOM_MESSAGE\0".as_ptr() as *const i8, 0);
-
+            let p=CString::new("@im=none").unwrap();
+            XSetLocaleModifiers(p.as_ptr());
             Ok(Self {
                 display,
                 window,
@@ -166,8 +167,8 @@ impl X11Window {
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     return match self.ime.is_available() && self.ime.is_working() {
                         true => {
-                            self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty);
-                            WindowEvent::IME(self.ime.chars())
+                            let handle = self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
+                            if handle { WindowEvent::IME(self.ime.chars()) } else { WindowEvent::KeyPress(Key::from_c_ulong(keysym)) }
                         }
                         false => WindowEvent::KeyPress(Key::from_c_ulong(keysym))
                     };
@@ -177,7 +178,10 @@ impl X11Window {
                     let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     match self.ime.is_available() {
                         true => {
-                            if self.ime.is_working() { self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release); }
+                            if self.ime.is_working() {
+                                let handle = self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
+                                if !handle {return WindowEvent::KeyRelease(Key::from_c_ulong(keysym)) }
+                            }
                             if self.ime.is_commited() { return WindowEvent::IME(self.ime.ime_done()); }
                         }
                         false => return WindowEvent::KeyRelease(Key::from_c_ulong(keysym))

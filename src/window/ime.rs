@@ -5,6 +5,7 @@ use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
+use crate::error::UiResult;
 
 pub enum IMEKind {
     X11(Bus)
@@ -109,11 +110,9 @@ impl IME {
         self.commited.load(Ordering::SeqCst)
     }
 
-    pub(crate) fn post_key(&self, keysym: u32, code: u32, modifiers: Modifiers) {
+    pub(crate) fn post_key(&self, keysym: u32, code: u32, modifiers: Modifiers) -> UiResult<bool> {
         match self.kind {
-            IMEKind::X11(ref bus) => {
-                bus.ctx().process_key_event(keysym, code, modifiers).unwrap();
-            }
+            IMEKind::X11(ref bus) => bus.ctx().process_key_event(keysym, code, modifiers),
         }
     }
 
