@@ -83,7 +83,7 @@ impl X11Window {
             xlib::XMapWindow(display, window);
             xlib::XFlush(display);
             let update_atom = xlib::XInternAtom(display, b"MY_CUSTOM_MESSAGE\0".as_ptr() as *const i8, 0);
-            let p=CString::new("@im=none").unwrap();
+            let p = CString::new("@im=none").unwrap();
             XSetLocaleModifiers(p.as_ptr());
             Ok(Self {
                 display,
@@ -164,27 +164,28 @@ impl X11Window {
                 }
                 xlib::KeyPress => {
                     println!("key-press");
-                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     return match self.ime.is_available() && self.ime.is_working() {
                         true => {
+                            let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                             let handle = self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
-                            if handle { WindowEvent::IME(self.ime.chars()) } else { WindowEvent::KeyPress(Key::from_c_ulong(keysym)) }
+                            if handle { WindowEvent::IME(self.ime.chars()) } else { WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode)) }
                         }
-                        false => WindowEvent::KeyPress(Key::from_c_ulong(keysym))
+                        false => WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode))
                     };
                 }
                 xlib::KeyRelease => {
                     println!("key-release");
-                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+
                     match self.ime.is_available() {
                         true => {
                             if self.ime.is_working() {
+                                let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                                 let handle = self.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
-                                if !handle {return WindowEvent::KeyRelease(Key::from_c_ulong(keysym)) }
+                                if !handle { return WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode)); }
                             }
                             if self.ime.is_commited() { return WindowEvent::IME(self.ime.ime_done()); }
                         }
-                        false => return WindowEvent::KeyRelease(Key::from_c_ulong(keysym))
+                        false => return WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode))
                     }
                 }
                 xlib::ButtonRelease => {

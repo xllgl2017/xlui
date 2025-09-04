@@ -4,8 +4,10 @@ use crate::layout::popup::Popup;
 use crate::layout::{HorizontalLayout, Layout, LayoutKind, VerticalLayout};
 use crate::map::Map;
 use crate::size::padding::Padding;
+use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Style};
+use crate::text::rich::RichText;
 use crate::widgets::button::Button;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::image::Image;
@@ -16,17 +18,15 @@ use crate::widgets::select::SelectItem;
 use crate::widgets::slider::Slider;
 use crate::widgets::spinbox::SpinBox;
 use crate::widgets::{Widget, WidgetKind};
+use crate::window::inner::InnerWindow;
+use crate::window::WindowId;
 use crate::{Device, NumCastExt, Offset, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use std::sync::atomic::Ordering;
 use std::thread::{spawn, JoinHandle};
-use wgpu::{LoadOp, Operations, RenderPassDescriptor, SurfaceError};
-use crate::size::pos::Pos;
-use crate::text::rich::RichText;
-use crate::window::inner::InnerWindow;
-use crate::window::WindowId;
+use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 
 pub struct AppContext {
     pub(crate) device: Device,
