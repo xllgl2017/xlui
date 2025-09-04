@@ -1,49 +1,58 @@
 use crate::frame::App;
+use crate::map::Map;
 use crate::window::event::WindowEvent;
-use crate::window::wino::LoopWindow;
-use crate::window::WindowId;
+use crate::window::ime::IME;
+use crate::window::wino::{EventLoopHandle, LoopWindow};
+use crate::window::x11::ime::flag::Capabilities;
+use crate::window::x11::X11Window;
+use crate::window::WindowType;
+use crate::WindowAttribute;
 use std::process::exit;
 use std::sync::Arc;
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
-use std::thread::spawn;
-use crate::window::ime::IME;
-use crate::window::x11::ime::flag::Capabilities;
 
 pub struct Application {
-    windows: i32,
-    channel: (SyncSender<(WindowId, WindowEvent)>, Receiver<(WindowId, WindowEvent)>),
-    ime: Arc<IME>,
+    native_window: X11Window,
+    loop_windows: Map<LoopWindow>,
 }
 
 impl Application {
-    pub fn new() -> Self {
+    pub fn new<A: App>(app: A) -> Self {
         let ime = Arc::new(IME::new_x11("xlui ime").enable());
         ime.set_capabilities(Capabilities::PreeditText | Capabilities::Focus);
         let ii = ime.clone();
         ime.create_binding(ii);
-
+        let attr = app.window_attributes();
+        let native_window = X11Window::new(&attr, ime.clone()).unwrap();
+        let window_type = native_window.last_window();
+        let wid = window_type.id;
+        let app = Box::new(app);
+        let loop_window = pollster::block_on(async { LoopWindow::create_window(app, window_type, &attr).await });
+        let mut loop_windows = Map::new();
+        loop_windows.insert(wid.to_string(), loop_window);
         Application {
-            windows: 0,
-            channel: sync_channel(1),
-            ime,
+            native_window,
+            loop_windows,
         }
-    }
-
-    pub fn create_window<A: App>(&mut self, app: A) {
-        self.windows += 1;
-        let sender = self.channel.0.clone();
-        let mut window = pollster::block_on(async { LoopWindow::create_window(app, sender, self.ime.clone()).await });
-        spawn(move || {
-            window.run();
-        });
     }
 
     pub fn run(mut self) {
         loop {
-            let (_, event) = self.channel.1.recv().unwrap();
+            let (wid, event) = self.native_window.run();
             if let WindowEvent::ReqClose = event {
-                self.windows -= 1;
-                if self.windows == 0 { exit(0); }
+                let window = self.loop_windows.remove(&wid.to_string());
+                if let Some(window) = window { if window.app_ctx.context.window.type_ == WindowType::ROOT { exit(0); } }
+                continue
+            }
+            if let Some(window) = self.loop_windows.get_mut(&wid.to_string()) {
+                if let WindowEvent::CreateChild = event {
+                    let window_type = self.native_window.create_child_window(&window.app_ctx.context.window, &WindowAttribute::default());
+                    let (app, attr) = window.app_ctx.context.new_window.take().unwrap();
+                    let wid = window_type.id();
+                    let loop_window = pollster::block_on(async { LoopWindow::create_window(app, window_type, &attr).await });
+                    self.loop_windows.insert(wid, loop_window);
+                    continue
+                }
+                window.event(event);
             }
         }
     }

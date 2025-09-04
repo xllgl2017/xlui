@@ -335,7 +335,7 @@ impl<'a> Ui<'a> {
         let wid = self.context.window.id();
         self.request_update = Some((wid, ut));
         #[cfg(not(feature = "winit"))]
-        self.context.window.send_update();
+        self.context.window.request_update();
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
@@ -359,6 +359,13 @@ impl<'a> Ui<'a> {
         let id = inner_window.id.clone();
         self.inner_windows.as_mut().unwrap().insert(inner_window.id.clone(), inner_window);
         self.inner_windows.as_mut().unwrap().get_mut(&id).unwrap()
+    }
+
+    pub fn create_window<W: App>(&mut self, w: W) {
+        let attr = w.window_attributes();
+        let app = Box::new(w);
+        self.context.new_window = Some((app, attr));
+        self.context.window.create_window();
     }
 
 

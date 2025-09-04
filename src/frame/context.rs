@@ -5,13 +5,14 @@ use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
 use crate::size::Size;
 use crate::text::text_render::TextRender;
-use crate::window::{WindowId, WindowKind};
-use crate::{Device, Font, NumCastExt, Offset};
+use crate::window::{WindowId, WindowType};
+use crate::{Device, Font, NumCastExt, Offset, WindowAttribute};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
 #[cfg(feature = "winit")]
 use winit::event_loop::EventLoopProxy;
+use crate::frame::App;
 use crate::key::Key;
 
 #[derive(Clone)]
@@ -84,6 +85,7 @@ pub enum UpdateType {
     Offset(Offset),
     Drop,
     IME(Vec<char>),
+    CreateWindow,
 }
 
 impl UpdateType {
@@ -108,7 +110,8 @@ impl Debug for UpdateType {
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
             UpdateType::Offset(_) => f.write_str("Offset"),
             UpdateType::Drop => f.write_str("Drop"),
-            UpdateType::IME(_)=>f.write_str("IME"),
+            UpdateType::IME(_) => f.write_str("IME"),
+            UpdateType::CreateWindow => f.write_str("CreateWindow"),
         }
     }
 }
@@ -116,7 +119,7 @@ impl Debug for UpdateType {
 pub struct Context {
     pub size: Size,
     pub viewport: Viewport,
-    pub window: Arc<WindowKind>,
+    pub window: Arc<WindowType>,
     pub font: Arc<Font>,
     pub resize: bool,
     pub render: Render,
@@ -125,6 +128,7 @@ pub struct Context {
     pub event: EventLoopProxy<(WindowId, UpdateType)>,
     #[cfg(not(feature = "winit"))]
     pub user_update: (WindowId, UpdateType),
+    pub new_window: Option<(Box<dyn App>, WindowAttribute)>,
 }
 
 impl Context {

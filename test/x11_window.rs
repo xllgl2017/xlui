@@ -1,7 +1,8 @@
+use std::ffi::CString;
 use std::mem;
 use std::ptr::null_mut;
 use x11::xlib;
-use x11::xlib::{FocusChangeMask, XBlackPixel, XCreateSimpleWindow, XDefaultScreen, XLookupKeysym, XMapWindow, XOpenDisplay, XRootWindow, XSelectInput, XWhitePixel};
+use x11::xlib::{ButtonPressMask, ExposureMask, FocusChangeMask, XBlackPixel, XCreateSimpleWindow, XDefaultScreen, XLookupKeysym, XMapWindow, XOpenDisplay, XRootWindow, XSelectInput, XStoreName, XWhitePixel};
 
 mod x11_ime;
 
@@ -21,7 +22,7 @@ fn main() {
             display, root, 100, 100, 500, 300, 1,
             XBlackPixel(display, screen), XWhitePixel(display, screen));
         let events = xlib::ExposureMask
-            |FocusChangeMask
+            | FocusChangeMask
             | xlib::KeyPressMask
             | xlib::KeyReleaseMask
             | xlib::ButtonPressMask
@@ -46,6 +47,7 @@ fn main() {
         // }).unwrap();
 
         // ctx.focus_in().unwrap();
+        let mut child_window =0;
         loop {
             let mut event = mem::zeroed();
             xlib::XNextEvent(display, &mut event);
@@ -61,12 +63,31 @@ fn main() {
                     println!("focus out");
                 }
                 xlib::ButtonPress => {
-                    println!("press");
                     x += 50.0;
                     y += 50.0;
+                    if event.expose.window==window {
+                        println!("press root");
+                    }else if event.expose.window==child_window {
+                        println!("press child");
+                    }
                     // ctx.set_cursor_location(x as i32, y as i32, 1, 1).unwrap();
                 }
                 xlib::KeyPress => {
+                    child_window = XCreateSimpleWindow(
+                        display,
+                        root, // 父窗口
+                        100, 100,
+                        100, 80,       // 子窗口大小
+                        1,
+                        XBlackPixel(display, screen),   // 边框颜色
+                        0xff0000,                       // 红色背景
+                    );
+
+                    let child_title = CString::new("动态子窗口").unwrap();
+                    XStoreName(display, child_window, child_title.as_ptr());
+
+                    XSelectInput(display, child_window, ExposureMask | ButtonPressMask);
+                    XMapWindow(display, child_window);
                     let s = XLookupKeysym(&mut event.key, 0);
                     println!("kpress-{}-{}", s, event.key.keycode);
                     // ibus_input_context_process_key_event(g_context, s as u32, event.key.keycode, 0);

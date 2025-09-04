@@ -226,7 +226,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             let window = ui.context.window.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_millis(st));
-                window.send_update();
+                window.request_update();
             });
         }
     }

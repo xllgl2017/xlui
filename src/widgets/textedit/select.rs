@@ -167,7 +167,7 @@ impl EditSelection {
                         let window = ui.context.window.clone();
                         std::thread::spawn(move || {
                             std::thread::sleep(std::time::Duration::from_millis(100));
-                            window.send_update();
+                            window.request_update();
                         });
                     }
                 } else if pos.x < cursor.min_pos.x {
@@ -186,7 +186,7 @@ impl EditSelection {
                         let window = ui.context.window.clone();
                         std::thread::spawn(move || {
                             std::thread::sleep(std::time::Duration::from_millis(100));
-                            window.send_update();
+                            window.request_update();
                         });
                     }
                     // #[cfg(feature = "winit")]

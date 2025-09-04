@@ -16,4 +16,5 @@ pub enum WindowEvent {
     ReqClose,
     ReqUpdate,
     IME(Vec<char>),
+    CreateChild,
 }

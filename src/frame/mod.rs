@@ -37,8 +37,7 @@ pub trait App: Any + 'static {
         }
         #[cfg(not(feature = "winit"))]
         {
-            let mut app = Application::new();
-            app.create_window(self);
+            let app = Application::new(self);
             app.run();
         }
     }

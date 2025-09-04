@@ -5,77 +5,66 @@ use crate::ui::AppContext;
 use crate::window::event::WindowEvent;
 #[cfg(target_os = "windows")]
 use crate::window::win32::Win32Window;
-#[cfg(target_os = "linux")]
-use crate::window::x11::X11Window;
-use crate::window::{WindowId, WindowKind};
-use crate::{Device, DeviceInput};
+use crate::window::{WindowId, WindowType};
+use crate::{Device, DeviceInput, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
-use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
-use crate::window::ime::IME;
 
 pub trait EventLoopHandle {
-    fn event(&mut self, id: WindowId, event: WindowEvent);
+    fn event(&mut self, event: WindowEvent);
 }
 
 pub struct LoopWindow {
     pub(crate) app_ctx: AppContext,
     pub(crate) app: Box<dyn App>,
-    sender: SyncSender<(WindowId, WindowEvent)>,
 }
 
 impl LoopWindow {
-    pub async fn create_window<A: App>(app: A, sender: SyncSender<(WindowId, WindowEvent)>, ime: Arc<IME>) -> LoopWindow {
-        let attr = app.window_attributes();
-        #[cfg(target_os = "linux")]
-        let x11_window = X11Window::new(attr.inner_size, &attr.title, ime).unwrap();
-        #[cfg(target_os = "linux")]
-        let platform_window = Arc::new(WindowKind::X11(x11_window));
+    pub async fn create_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: &WindowAttribute) -> LoopWindow {
         #[cfg(target_os = "windows")]
         let win32_window = Win32Window::new(&mut attr);
         #[cfg(target_os = "windows")]
         let platform_window = Arc::new(WindowKind::Win32(win32_window));
         #[cfg(target_os = "windows")]
         unsafe { SetWindowLongPtrW(platform_window.win32().hwnd, GWLP_USERDATA, platform_window.win32() as *const _ as isize); }
-        let device = Self::rebuild_device(&platform_window, sender.clone()).await.unwrap();
+        let device = Self::rebuild_device(&wt, attr.inner_size).await.unwrap();
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
-            size: platform_window.size(),
+            size: attr.inner_size,
             font: attr.font.clone(),
             viewport,
-            window: platform_window.clone(),
+            window: wt,
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
             user_update: (WindowId(crate::unique_id_u32()), UpdateType::None),
+            new_window: None,
         };
         let mut app_ctx = AppContext::new(device, context);
-        let mut app: Box<dyn App> = Box::new(app);
         app_ctx.draw(&mut app);
         LoopWindow {
             app_ctx,
             app,
-            sender,
         }
     }
 
-    pub fn run(&mut self) {
-        let window = self.app_ctx.context.window.clone();
-        self.event(self.app_ctx.context.window.id(), WindowEvent::Redraw);
-        loop {
-            #[cfg(target_os = "linux")]
-            let event = window.x11().run();
-            #[cfg(target_os = "windows")]
-            let event = window.win32().run();
-            self.event(self.app_ctx.context.window.id(), event);
-        }
-    }
+    // pub fn run(&mut self) {
+    //     let window = self.app_ctx.context.window.clone();
+    //     self.event(self.app_ctx.context.window.id(), WindowEvent::Redraw);
+    //     loop {
+    //         #[cfg(target_os = "linux")]
+    //         let event = window.x11().run();
+    //         #[cfg(target_os = "windows")]
+    //         let event = window.win32().run();
+    //         self.event(self.app_ctx.context.window.id(), event);
+    //     }
+    // }
 
-    pub(crate) async fn rebuild_device(window: &Arc<WindowKind>, sender: SyncSender<(WindowId, WindowEvent)>) -> Result<Device, Box<dyn Error>> {
+    pub(crate) async fn rebuild_device(window: &Arc<WindowType>, size: Size) -> Result<Device, Box<dyn Error>> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
@@ -87,15 +76,15 @@ impl LoopWindow {
             format: cap.formats[0],
             view_formats: vec![cap.formats[0].add_srgb_suffix()],
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
-            width: window.size().width,
-            height: window.size().height,
+            width: size.width,
+            height: size.height,
             desired_maximum_frame_latency: 2,
             present_mode: wgpu::PresentMode::AutoVsync,
         };
-        let wid = window.id();
+        // let wid = window.id();
 
         device.on_uncaptured_error(Box::new(move |err: wgpu::Error| {
-            sender.send((wid, WindowEvent::Reinit)).unwrap();
+            // sender.send((wid, WindowEvent::Reinit)).unwrap();
             println!("Error: {:#?}", err);
             println!("{}", err.to_string());
         }));
@@ -112,8 +101,7 @@ impl LoopWindow {
 }
 
 impl EventLoopHandle for LoopWindow {
-    fn event(&mut self, id: WindowId, event: WindowEvent) {
-        if self.app_ctx.context.window.id() != id { return; }
+    fn event(&mut self, event: WindowEvent) {
         println!("{:?}", event);
         match event {
             WindowEvent::None => {}
@@ -151,12 +139,13 @@ impl EventLoopHandle for LoopWindow {
                 let config = &self.app_ctx.device.surface_config;
                 self.app_ctx.device.surface.configure(device, config);
             }
-            WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
+            // WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
             WindowEvent::IME(chars) => self.app_ctx.update(UpdateType::IME(chars), &mut self.app),
+            _ => {}
         }
     }
 }
 
-unsafe impl Send for LoopWindow {}
-unsafe impl Sync for LoopWindow {}
+// unsafe impl Send for LoopWindow {}
+// unsafe impl Sync for LoopWindow {}
