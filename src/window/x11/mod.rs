@@ -11,6 +11,7 @@ use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
 use std::os::raw::c_long;
 use x11::xlib;
+use x11::xlib::XCloseDisplay;
 
 pub mod ime;
 
@@ -83,8 +84,6 @@ impl Drop for X11WindowType {
     fn drop(&mut self) {
         unsafe {
             xlib::XDestroyWindow(self.display, self.window);
-            xlib::XCloseDisplay(self.display);
-            drop(Box::from_raw(self.display));
         }
     }
 }
@@ -96,7 +95,8 @@ unsafe impl Sync for X11WindowType {}
 pub struct X11Window {
     display: *mut xlib::Display,
     windows: Vec<Arc<WindowType>>,
-    pub(crate) wm_delete_atom: xlib::Atom,
+    wm_delete_atom: xlib::Atom,
+
     size: RwLock<Size>,
     root: xlib::Window,
 }
@@ -113,12 +113,13 @@ impl X11Window {
             }
             let screen = xlib::XDefaultScreen(display);
             let root = xlib::XRootWindow(display, screen);
-            let mut window = X11Window::create_window(display, screen, root, attr);
+            let mut wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
+            let mut window = X11Window::create_window(display, screen, root, attr, &mut wm_delete);
 
             // WM_DELETE_WINDOW
             // let wm_protocols = xlib::XInternAtom(display, b"WM_PROTOCOLS\0".as_ptr() as *const i8, 0);
-            let wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
-            xlib::XSetWMProtocols(display, window.window, &wm_delete as *const xlib::Atom as *mut xlib::Atom, 1);
+
+            // xlib::XSetWMProtocols(display, window.window, &wm_delete as *const xlib::Atom as *mut xlib::Atom, 1);
             let update_atom = xlib::XInternAtom(display, b"MY_CUSTOM_MESSAGE\0".as_ptr() as *const i8, 0);
             window.update_atom = update_atom;
             let p = CString::new("@im=none").unwrap();
@@ -144,7 +145,7 @@ impl X11Window {
         self.windows.last().cloned().unwrap()
     }
 
-    fn create_window(display: *mut xlib::Display, screen: i32, root: xlib::Window, attr: &WindowAttribute) -> X11WindowType {
+    fn create_window(display: *mut xlib::Display, screen: i32, root: xlib::Window, attr: &WindowAttribute, wm_delete: &mut xlib::Atom) -> X11WindowType {
         unsafe {
             let child = xlib::XCreateSimpleWindow(
                 display, root,
@@ -172,6 +173,7 @@ impl X11Window {
             // xlib::XMapWindow(display, root);
             xlib::XMapWindow(display, child);
             xlib::XFlush(display);
+            xlib::XSetWMProtocols(display, child, wm_delete, 1);
             X11WindowType {
                 display,
                 window: child,
@@ -182,7 +184,9 @@ impl X11Window {
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> Arc<WindowType> {
-        let mut window = X11Window::create_window(parent.x11().display, parent.x11().screen, self.root, attr);
+        let mut window = X11Window::create_window(
+            parent.x11().display, parent.x11().screen, self.root, attr,
+            &mut self.wm_delete_atom);
         window.update_atom = parent.x11().update_atom;
         let window = Arc::from(WindowType {
             id: WindowId::unique_id(),
@@ -194,7 +198,7 @@ impl X11Window {
         window
     }
 
-    pub fn run(&self) -> (WindowId, WindowEvent) {
+    pub fn run(&mut self) -> (WindowId, WindowEvent) {
         unsafe {
             let mut event: xlib::XEvent = mem::zeroed();
             xlib::XNextEvent(self.display, &mut event);
@@ -238,6 +242,8 @@ impl X11Window {
                             _ => (window.id, WindowEvent::None)
                         };
                     } else if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
+                        let pos = self.windows.iter().position(|x| x.x11().window == event.expose.window).unwrap();
+                        let window = self.windows.remove(pos);
                         return (window.id, WindowEvent::ReqClose);
                     }
                 }
@@ -290,6 +296,7 @@ impl X11Window {
 impl Drop for X11Window {
     fn drop(&mut self) {
         unsafe {
+            XCloseDisplay(self.display);
             let _ = Box::from_raw(self.display);
         }
     }
