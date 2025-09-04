@@ -114,7 +114,6 @@ impl LoopWindow {
 impl EventLoopHandle for LoopWindow {
     fn event(&mut self, id: WindowId, event: WindowEvent) {
         if self.app_ctx.context.window.id() != id { return; }
-        println!("{:?}", event);
         match event {
             WindowEvent::None => {}
             WindowEvent::KeyPress(_) => {}
@@ -149,15 +148,7 @@ impl EventLoopHandle for LoopWindow {
                 self.app_ctx.device.surface_config.height = size.height;
                 let device = &self.app_ctx.device.device;
                 let config = &self.app_ctx.device.surface_config;
-                println!("3333333333333333");
-                // window.app_ctx.device.device.poll(wgpu::PollType::Wait).unwrap();
-                println!("3434564545454545");
                 self.app_ctx.device.surface.configure(device, config);
-                println!("444444444444444");
-                // // window.resize(size);
-                // window.render();
-                // window.app_ctx.redraw(&mut window.app)
-                // window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),

@@ -236,7 +236,7 @@ impl EditCursor {
             let char_min = self.min_pos.x + sum_width + cchar.offset.x;
             let char_max = self.min_pos.x + sum_width + cchar.offset.x + cc.width;
             // println!("{} {} {} {} {} {}", pos.x, char_min, pos.x, char_max, cchar.offset.x, horiz);
-            if pos.x > char_min && pos.x < char_max {
+            if pos.x >= char_min && pos.x <= char_max {
                 char_width = cc.width;
                 break;
             }
@@ -244,8 +244,8 @@ impl EditCursor {
             horiz += 1;
         }
         let char_min = self.min_pos.x + sum_width + cchar.offset.x;
-        let char_max = self.min_pos.x + sum_width + cchar.offset.x + char_width;
-        println!("{} {} {} {} {}", self.max_pos.x, char_max, pos.x, char_min, char_width);
+        // let char_max = self.min_pos.x + sum_width + cchar.offset.x + char_width;
+        println!("{}-{}-{}-{}-{}", pos.x, self.min_pos.x, char_min + char_width / 2.0, horiz, sum_width);
         if pos.x < self.min_pos.x {
             self.horiz = 0;
             self.offset.x = 0.0;
