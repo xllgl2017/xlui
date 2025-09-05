@@ -18,16 +18,16 @@ pub mod ime;
 pub enum UserEvent {
     ReqUpdate = 0,
     CreateChild = 1,
-
+    IMECommit = 2,
 }
 
 pub struct X11WindowType {
     display: *mut xlib::Display,
     window: xlib::Window,
-    // parent: xlib::Window,
     update_atom: xlib::Atom,
     screen: i32,
 }
+
 
 impl X11WindowType {
     pub fn request_redraw(&self) {
@@ -253,7 +253,10 @@ impl X11Window {
                         true => {
                             let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                             let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
-                            if handle { (window.id, WindowEvent::IME(window.ime.chars())) } else { (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode))) }
+                            if window.ime.is_working() {
+                                window.ime.update();
+                                (window.id, WindowEvent::IME)
+                            } else { (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode))) }
                         }
                         false => (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode)))
                     };
@@ -266,9 +269,12 @@ impl X11Window {
                             if window.ime.is_working() {
                                 let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                                 let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
-                                if !handle { return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode))); }
+                                println!("release-handle-{}-{}", handle, window.ime.is_commited());
+                                if !handle && !window.ime.is_working() {
+                                    let key = Key::from_c_ulong(event.key.keycode);
+                                    return (window.id, WindowEvent::KeyRelease(key));
+                                }
                             }
-                            if window.ime.is_commited() { return (window.id, WindowEvent::IME(window.ime.ime_done())); }
                         }
                         false => return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode)))
                     }
@@ -283,7 +289,11 @@ impl X11Window {
                 }
                 xlib::MotionNotify => {
                     let xm: xlib::XMotionEvent = event.motion;
-                    return (window.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }));
+                    return if window.ime.is_commited() {
+                        (window.id, WindowEvent::IME)
+                    } else {
+                        (window.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))
+                    };
                 }
                 _ => {}
             }

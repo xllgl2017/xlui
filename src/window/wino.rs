@@ -141,7 +141,7 @@ impl EventLoopHandle for LoopWindow {
             }
             // WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
-            WindowEvent::IME(chars) => self.app_ctx.update(UpdateType::IME(chars), &mut self.app),
+            WindowEvent::IME => self.app_ctx.update(UpdateType::IME, &mut self.app),
             _ => {}
         }
     }

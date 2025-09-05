@@ -67,12 +67,9 @@ impl Context {
         F: FnMut(UpdatePreeditText, &Connection, &Message) -> bool + Send + 'static,
     {
         let token = self.with_proxy(|p| {
-            p.match_signal(
-                move |a: UpdatePreeditText, b: &Connection, c: &Message| {
-                    println!("{:?}", a);
-                    (callback)(a, b, c)
-                },
-            )
+            p.match_signal(move |a: UpdatePreeditText, b: &Connection, c: &Message| {
+                callback(a, b, c)
+            })
         })?;
         Ok(token)
     }

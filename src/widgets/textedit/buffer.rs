@@ -138,7 +138,7 @@ impl CharBuffer {
         self.lines.iter().map(|x| x.raw_text()).collect()
     }
 
-    pub fn remove_by_range(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) {
+    pub fn remove_by_range(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) {
         if cursor.vert > selection.start_vert { //向下删除
             let start_line = &mut self.lines[selection.start_vert];
             while start_line.chars.len() > selection.start_horiz {
@@ -196,6 +196,8 @@ impl CharBuffer {
             }
             self.rebuild_text(ui);
         }
+        selection.reset(cursor);
+        selection.has_selected = false;
     }
 
     fn rebuild_text(&mut self, ui: &mut Ui) {
@@ -203,7 +205,7 @@ impl CharBuffer {
         self.set_text(&raw_text, ui);
     }
 
-    pub fn remove_chars_before_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) {
+    pub fn remove_chars_before_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) {
         if cursor.horiz == 0 && cursor.vert == 0 { return; }
         println!("delete-before-{}-{}", selection.has_selected, cursor.horiz);
         if !selection.has_selected {
@@ -214,7 +216,7 @@ impl CharBuffer {
         }
     }
 
-    pub fn remove_chars_after_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) {
+    pub fn remove_chars_after_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) {
         println!("{} {} {} {}", cursor.vert, self.lines.len() - 1, cursor.horiz, self.lines.last().unwrap().len());
         if cursor.vert == self.lines.len() - 1 && cursor.horiz == self.lines.last().unwrap().len() && cursor.horiz == 0 { return; }
         if !selection.has_selected {
@@ -225,7 +227,7 @@ impl CharBuffer {
         }
     }
 
-    pub fn inset_char(&mut self, c: char, ui: &mut Ui, cursor: &mut EditCursor, selection: &EditSelection) { //返回x最大值 ，给游标偏移
+    pub fn inset_char(&mut self, c: char, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) { //返回x最大值 ，给游标偏移
         if selection.has_selected {
             self.remove_by_range(ui, cursor, selection);
         }
@@ -235,7 +237,9 @@ impl CharBuffer {
         line.chars.insert(cursor.horiz, cchar);
         self.rebuild_text(ui);
         let line = &mut self.lines[cursor.vert];
-        if cursor.min_pos.x + line.get_width_in_char(cursor.horiz + 1) > cursor.max_pos.x {
+        println!("insert before-{}-{}", line.chars.len(), cursor.horiz + 1);
+        let horiz = if cursor.horiz + 1 >= line.chars.len() { line.chars.len() } else { cursor.horiz + 1 };
+        if cursor.min_pos.x + line.get_width_in_char(horiz) > cursor.max_pos.x {
             self.offset.x -= width;
         }
         cursor.move_right(self);

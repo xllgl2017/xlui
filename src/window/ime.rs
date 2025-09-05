@@ -1,3 +1,4 @@
+use crate::error::UiResult;
 use crate::window::x11::ime::bus::Bus;
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
@@ -5,7 +6,6 @@ use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use crate::error::UiResult;
 
 pub enum IMEKind {
     X11(Bus)
@@ -71,9 +71,6 @@ impl IME {
         self.requested.write().unwrap().push(i);
     }
 
-    // pub fn ime_start(&self) {
-    //     self.working.store(true, Ordering::SeqCst);
-    // }
 
     pub fn ime_draw(&self, new_chars: Vec<char>) {
         let mut chars = self.chars.write().unwrap();
@@ -86,16 +83,15 @@ impl IME {
         self.ime_draw(commit);
     }
 
-    pub fn ime_done(&self) -> Vec<char> {
+    pub fn ime_done(&self) {
         self.commited.store(false, Ordering::SeqCst);
-        let mut chars = self.chars.write().unwrap();
-        let chars = mem::take(&mut *chars);
-        chars
     }
 
     pub fn chars(&self) -> Vec<char> {
-        let chars = self.chars.read().unwrap();
-        chars.clone()
+        let mut chars = self.chars.write().unwrap();
+        let res = chars.clone();
+        chars.clear();
+        res
     }
 
     pub fn is_available(&self) -> bool {

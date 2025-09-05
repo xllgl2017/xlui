@@ -88,10 +88,12 @@ impl EditSelection {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, cursor: &EditCursor) {
         for render in self.renders.iter_mut() {
             render.param.rect.set_x_max(render.param.rect.dx().min);
         }
+        self.start_vert = cursor.vert;
+        self.start_horiz = cursor.horiz;
         self.changed = true;
         self.has_selected = false;
     }
@@ -208,6 +210,36 @@ impl EditSelection {
         self.has_selected = true;
         println!("move_select-{} {} {} {}", self.start_horiz, self.start_vert, cursor.horiz, cursor.vert);
         if self.start_horiz == cursor.horiz && self.start_vert == cursor.vert { self.has_selected = false; }
+        self.changed = true;
+    }
+
+    pub fn select_by_ime(&mut self, start_horiz: usize, start_vert: usize, cchar: &CharBuffer, cursor: &EditCursor) {
+        self.reset(cursor);
+        self.start_horiz = start_horiz;
+        self.start_vert = start_vert;
+        self.has_selected = true;
+        if start_vert == cursor.vert { //处于同一行中
+            let line = &cchar.lines[cursor.vert];
+            let x_min = line.get_width_in_char(start_horiz) + cursor.min_pos.x;
+            let x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
+            self.renders[cursor.vert].param.rect.set_x_min(x_min);
+            self.renders[cursor.vert].param.rect.set_x_max(x_max);
+        } else {
+            let start_line = &cchar.lines[start_vert];
+            let end_line = &cchar.lines[cursor.vert];
+            let sm = start_line.get_width_in_char(start_horiz) + cursor.min_pos.x;
+            self.renders[start_vert].param.rect.set_x_min(sm);
+            self.renders[start_vert].param.rect.set_x_max(cursor.max_pos.x);
+            self.renders[cursor.vert].param.rect.set_x_min(cursor.min_pos.x);
+            let em = end_line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
+            self.renders[cursor.vert].param.rect.set_x_max(em);
+            for v in start_vert + 1..cursor.vert {
+                self.renders[v].param.rect.set_x_min(cursor.min_pos.x);
+                self.renders[v].param.rect.set_x_max(cursor.max_pos.x);
+            }
+        }
+
+
         self.changed = true;
     }
 }

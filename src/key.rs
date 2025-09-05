@@ -13,14 +13,14 @@ pub enum Key {
     RightArrow,
     UpArrow,
     DownArrow,
+    LShift,
+    RShift,
 }
 
 impl Key {
     pub fn from_c_ulong(l: c_uint) -> Key {
         println!("key-{}", l);
         match l {
-
-
             10 => Key::Char('1'),
             11 => Key::Char('2'),
             12 => Key::Char('3'),
@@ -60,6 +60,7 @@ impl Key {
             47 => Key::Char(';'),
             48 => Key::Char('\''),
 
+            50 => Key::LShift,
             52 => Key::Char('z'),
             53 => Key::Char('x'),
             54 => Key::Char('c'),
@@ -70,6 +71,7 @@ impl Key {
             59 => Key::Char(','),
             60 => Key::Char('.'),
             61 => Key::Char('/'),
+            62 => Key::RShift,
             63 => Key::Char('*'),
             65 => Key::Space,
 

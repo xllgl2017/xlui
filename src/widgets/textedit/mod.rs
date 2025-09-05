@@ -96,7 +96,7 @@ impl TextEdit {
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
         self.char_layout.set_text(&text, ui);
         self.text_buffer.set_text(text);
-        self.select_render.reset();
+        self.select_render.reset(&self.cursor_render);
         self.changed = true;
     }
 
@@ -158,12 +158,12 @@ impl TextEdit {
         self.changed = true;
         match key.unwrap() {
             Key::Backspace => {
-                self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render);
+                self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &mut self.select_render);
                 self.text_buffer.clip_x = self.char_layout.offset.x;
             }
-            Key::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &self.select_render),
+            Key::Enter => self.char_layout.inset_char('\n', ui, &mut self.cursor_render, &mut self.select_render),
             Key::Space => {
-                self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &self.select_render);
+                self.char_layout.inset_char(' ', ui, &mut self.cursor_render, &mut self.select_render);
                 self.text_buffer.clip_x = self.char_layout.offset.x;
             }
             Key::Home => {
@@ -179,9 +179,9 @@ impl TextEdit {
                 }
                 self.cursor_render.set_cursor(line.len(), self.cursor_render.vert, &self.char_layout)
             }
-            Key::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &self.select_render),
+            Key::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &mut self.select_render),
             Key::Char(c) => {
-                self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
+                self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                 self.text_buffer.clip_x = self.char_layout.offset.x;
             }
             Key::LeftArrow => {
@@ -200,9 +200,10 @@ impl TextEdit {
                 self.cursor_render.move_right(&self.char_layout)
             }
             Key::UpArrow => self.cursor_render.move_up(&self.char_layout),
-            Key::DownArrow => self.cursor_render.move_down(&self.char_layout)
+            Key::DownArrow => self.cursor_render.move_down(&self.char_layout),
+            _ => {}
         }
-        self.select_render.reset();
+        self.select_render.reset(&self.cursor_render);
         // if let Some(ref mut callback) = self.callback {
         //     let app = ui.app.take().unwrap();
         //     callback(app, ui, self.char_layout.text());
@@ -247,7 +248,6 @@ impl Widget for TextEdit {
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
                     // let p = &self.fill_render.param.rect;
-                    ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.text_buffer.text.height);
                     let pos = ui.device.device_input.mouse.lastest;
                     self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);
@@ -258,52 +258,31 @@ impl Widget for TextEdit {
             UpdateType::KeyRelease(ref mut key) => {
                 if self.focused { self.key_input(key.take(), ui); }
             }
-            UpdateType::None => {
-                // if !self.focused { return Response::new(&self.id, &self.fill_render.param.rect); }
-                // let next_char = self.char_layout.next_char(&self.cursor_render);
-                // if let Some(cchar) = next_char && ui.device.device_input.mouse.lastest.x > self.text_buffer.rect.dx().max
-                //     && ui.device.device_input.mouse.lastest.x > ui.device.device_input.mouse.pressed_pos.x {
-                //     self.text_buffer.clip_x -= cchar.width;
-                //
-                //     self.cursor_render.horiz += 1;
-                //     self.char_layout.offset.x -= cchar.width;
-                //     return Response::new(&self.id, &self.fill_render.param.rect);
-                // }
-                // let previous_char = self.char_layout.previous_char(&self.cursor_render);
-                // println!("{:?}", previous_char);
-                // if ui.device.device_input.mouse.lastest.x < self.text_buffer.rect.dx().min && self.focused {
-                //     match previous_char {
-                //         None => {
-                //             self.text_buffer.clip_x = 0.0;
-                //             self.cursor_render.horiz = 0;
-                //             self.char_layout.offset.x = 0.0;
-                //         }
-                //         Some(cchar) => {
-                //             self.text_buffer.clip_x += cchar.width;
-                //             // self.cursor_render.horiz -= 1;
-                //             self.char_layout.offset.x += cchar.width;
-                //             if self.char_layout.offset.x >= 0.0 {
-                //                 self.text_buffer.clip_x = 0.0;
-                //                 self.char_layout.offset.x = 0.0
-                //             }
-                //         }
-                //     }
-                // }
-            }
-            UpdateType::IME(ref mut chars) => {
+            UpdateType::IME => {
                 if self.focused {
-                    let chars = mem::take(chars);
+                    let chars = ui.context.window.ime().chars();
+                    println!("text edit{:?}-{}-{}", chars, self.cursor_render.horiz, self.cursor_render.vert);
+                    // let chars = mem::take(chars);
+                    let start_horiz = self.select_render.start_horiz;
+                    let start_vert = self.select_render.start_vert;
                     for c in chars {
-                        self.char_layout.inset_char(c, ui, &mut self.cursor_render, &self.select_render);
+                        self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                     }
                     self.text_buffer.update_buffer_text(ui, self.char_layout.draw_text());
+
+                    println!("set-ime-{}-{}", self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.text_buffer.text.height);
+                    if !ui.context.window.ime().is_commited() {
+                        self.select_render.select_by_ime(start_horiz, start_vert, &self.char_layout, &self.cursor_render);
+                        ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.text_buffer.text.height);
+                    } else {
+                        ui.context.window.ime().request_ime(true);
+                        self.select_render.reset(&self.cursor_render);
+                        ui.context.window.ime().ime_done();
+                    }
+
+                    self.changed = true;
                     ui.context.window.request_redraw();
                 }
-
-                // match ui.context.window.ime().is_working() {
-                //     true => {}
-                //     false => {}
-                // }
             }
             _ => {}
         }
