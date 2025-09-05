@@ -211,7 +211,7 @@ impl X11Window {
                     }
                 }
                 xlib::ButtonRelease => {
-                    self.clipboard.request_get_clipboard(window.x11().window);
+                    self.clipboard.request_get_clipboard(window.x11().window, self.clipboard.targets_atom);
                     let xb: xlib::XButtonEvent = event.button;
                     return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }));
                 }
