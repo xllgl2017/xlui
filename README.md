@@ -19,7 +19,13 @@ GUI库。目标是利用Rust语言原生构建GUI、最小第三方依赖,体积
 |  ⬜️  |    Web    |    Wasm     |  winit   |
 |  ❌   | HarmonyOS |   暂无适配计划    |          |
 
-## 下面是xlui的最小运行示例
+## [🎯](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)控件(目前可用)
+
+![控件状态](/res/img/doc/img_1.png)
+
+## 快速开始xlui
+
+### xlui的最小运行示例
 
 ```rust
 use xlui::frame::App;
@@ -28,9 +34,9 @@ use xlui::ui::Ui;
 use xlui::frame::context::Context;
 
 fn main() {
-    let app=XlUiApp::new();
+    let app = XlUiApp::new();
     //直接调run()                                                                                                           
-    app.run();                                                                                                        
+    app.run();
 }
 
 struct XlUiApp {
@@ -40,20 +46,20 @@ struct XlUiApp {
 
 
 impl XlUiApp {
-    fn new()->XlUiApp{
-        XlUiApp{
+    fn new() -> XlUiApp {
+        XlUiApp {
             label: Label::new("hello").width(100.0),
             count: 0,
         }
     }
-    fn add(&mut self,_:&mut Button,ui: &mut Ui){
+    fn add(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count += 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);
     }
 
-    fn reduce(&mut self,_:&mut Button,ui: &mut Ui){
-        self.count-=1;
+    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
+        self.count -= 1;
         self.label.set_text(format!("count: {}", self.count));
         self.label.update(ui);
     }
@@ -78,18 +84,18 @@ impl App for XlUiApp {
     }
 
     fn window_attributes(&self) -> WindowAttribute {
-        WindowAttribute{
-            inner_size:(800,600).into(),
+        WindowAttribute {
+            inner_size: (800, 600).into(),
             ..Default::default()
         }
     }
 }
-                                                                                                         
+
 ```
 
-## [🎯](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)控件(目前可用)
+### 详细用法，参考Wiki
 
-![控件状态](/res/img/doc/img_1.png)
-
+* [控件使用🦖](https://github.com/xllgl2017/xlui/wiki/%E6%8E%A7%E4%BB%B6)
+* [布局使用🦖](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)
 
 [//]:  # (❌⬜️)  

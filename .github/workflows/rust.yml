@@ -15,20 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: Swatinem/rust-cache@v2
-      with:
-        key: ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
-        cache-on-failure: true
-        cache-directories: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ./target
-        prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
-    - name: Install mold
-      run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
-    - name: Build
-      run: cargo check
-    - name: Doc tests
-      run: cargo test --doc --all
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
+          cache-on-failure: true
+          cache-directories: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ./target
+          prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
+      - name: Install mold
+        run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
+      - name: Check Native
+        run: cargo check
+      - name: Check WInit
+        run: cargo check
+      - name: Doc tests
+        run: cargo test --doc --all
 

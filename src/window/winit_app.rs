@@ -110,7 +110,6 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
         let wid = super::WindowId::from_winit_id(id);
         let window = self.windows.get_mut(&wid);
-        println!("{:?}-{}", id, window.is_some());
         if window.is_none() { return; }
         let window = window.unwrap();
         match event {
