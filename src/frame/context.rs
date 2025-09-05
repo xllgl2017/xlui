@@ -10,8 +10,6 @@ use crate::{Device, Font, NumCastExt, Offset, WindowAttribute};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
-#[cfg(feature = "winit")]
-use winit::event_loop::EventLoopProxy;
 use crate::frame::App;
 use crate::key::Key;
 
@@ -124,9 +122,6 @@ pub struct Context {
     pub resize: bool,
     pub render: Render,
     pub updates: Map<String, ContextUpdate>,
-    #[cfg(feature = "winit")]
-    pub event: EventLoopProxy<(WindowId, UpdateType)>,
-    #[cfg(not(feature = "winit"))]
     pub user_update: (WindowId, UpdateType),
     pub new_window: Option<(Box<dyn App>, WindowAttribute)>,
 }

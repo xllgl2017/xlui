@@ -10,14 +10,15 @@ use winit::event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{ImePurpose, WindowId};
-use crate::window::{WindowKind, WindowType};
+use crate::window::{UserEvent, WindowKind, WindowType};
 use crate::window::ime::IME;
-use crate::window::winit_window::Window;
+use crate::window::wnit::handle::WInitWindowHandle;
+use crate::window::wnit::Window;
 
 pub struct WInitApplication<A> {
     windows: HashMap<super::WindowId, Window>,
     app: Option<A>,
-    proxy_event: Option<EventLoopProxy<(super::WindowId, UpdateType)>>,
+    proxy_event: Option<EventLoopProxy<(super::WindowId, UserEvent)>>,
     rebuilding: bool,
 }
 
@@ -35,12 +36,12 @@ impl<A> WInitApplication<A> {
         self.app = app;
     }
 
-    pub fn set_proxy_event(&mut self, proxy_event: Option<EventLoopProxy<(super::WindowId, UpdateType)>>) {
+    pub fn set_proxy_event(&mut self, proxy_event: Option<EventLoopProxy<(super::WindowId, UserEvent)>>) {
         self.proxy_event = proxy_event;
     }
 }
 
-impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WInitApplication<A> {
+impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WInitApplication<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         println!("111111111111111111111111111111");
         let app = self.app.take().unwrap();
@@ -52,53 +53,57 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WIn
         winit_window.set_ime_cursor_area(PhysicalPosition::new(400, 300), PhysicalSize::new(100, 100));
         winit_window.set_ime_purpose(ImePurpose::Normal);
         let id = super::WindowId::from_winit_id(winit_window.id());
-        let loop_window = Arc::new(WindowType {
-            kind: WindowKind::Winit(winit_window),
+        let handle = WInitWindowHandle::new(winit_window, event);
+        let window_type = WindowType {
+            kind: WindowKind::Winit(handle),
             id,
             type_: WindowType::ROOT,
             ime: Arc::new(IME::new_winit()),
-        });
-        let window = pollster::block_on(Window::new_winit(loop_window.clone(), Box::new(app), attr, event)).unwrap();
+        };
+        let loop_window = Arc::new(window_type);
+        let window = pollster::block_on(Window::new_winit(loop_window.clone(), Box::new(app), attr)).unwrap();
         self.windows.insert(loop_window.id(), window);
         loop_window.request_redraw();
     }
 
-    fn user_event(&mut self, _: &ActiveEventLoop, (wid, t): (super::WindowId, UpdateType)) {
+    fn user_event(&mut self, _: &ActiveEventLoop, (wid, t): (super::WindowId, UserEvent)) {
         if self.rebuilding {
             println!("Rebuilding");
             return;
         }
-        if let UpdateType::ReInit = t {
-            self.rebuilding = true;
-            println!("sleep start");
-            println!("sleep end");
-            let window = self.windows.get_mut(&wid).unwrap();
-            // println!("recv {:?}", window.app_ctx.context.window.size());
-            let event = window.app_ctx.context.event.clone();
-            let wid = window.app_ctx.context.window.id();
-            window.app_ctx.device = pollster::block_on(async {
-                Window::rebuild_device(&window.app_ctx.context.window, |device| {
-                    device.on_uncaptured_error(Box::new(move |err| {
-                        println!("Error: {:#?}", err);
-                        let _ = event.send_event((wid, UpdateType::ReInit));
-                    }))
-                }).await
-            }).unwrap();
-            println!("1");
-            window.app_ctx.context.viewport = Viewport::new(&window.app_ctx.device.device, &window.app_ctx.device.cache);
-            println!("2");
-            window.app_ctx.context.render = Render::new(&window.app_ctx.device);
-            println!("3");
-            window.configure_surface();
-            println!("4");
-            window.app_ctx.update(UpdateType::ReInit, &mut window.app);
-            println!("5");
-            self.rebuilding = false;
-            println!("re init finished");
-        } else {
-            println!("recv event");
-            let window = self.windows.get_mut(&wid).unwrap();
-            window.app_ctx.update(t, &mut window.app)
+        match t {
+            UserEvent::ReqUpdate => {
+                println!("recv event");
+                let window = self.windows.get_mut(&wid).unwrap();
+                window.app_ctx.update(window.app_ctx.context.user_update.1.clone(), &mut window.app)
+            }
+            UserEvent::CreateChild => {}
+            UserEvent::ReInit => {
+                self.rebuilding = true;
+                println!("sleep start");
+                println!("sleep end");
+                let window = self.windows.get_mut(&wid).unwrap();
+                let w = window.app_ctx.context.window.clone();
+                window.app_ctx.device = pollster::block_on(async {
+                    Window::rebuild_device(&window.app_ctx.context.window, |device| {
+                        device.on_uncaptured_error(Box::new(move |err| {
+                            println!("Error: {:#?}", err);
+                            w.request_update(UserEvent::ReInit);
+                        }))
+                    }).await
+                }).unwrap();
+                println!("1");
+                window.app_ctx.context.viewport = Viewport::new(&window.app_ctx.device.device, &window.app_ctx.device.cache);
+                println!("2");
+                window.app_ctx.context.render = Render::new(&window.app_ctx.device);
+                println!("3");
+                window.configure_surface();
+                println!("4");
+                window.app_ctx.update(UpdateType::ReInit, &mut window.app);
+                println!("5");
+                self.rebuilding = false;
+                println!("re init finished");
+            }
         }
     }
 

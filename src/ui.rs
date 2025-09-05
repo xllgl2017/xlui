@@ -19,7 +19,7 @@ use crate::widgets::slider::Slider;
 use crate::widgets::spinbox::SpinBox;
 use crate::widgets::{Widget, WidgetKind};
 use crate::window::inner::InnerWindow;
-use crate::window::WindowId;
+use crate::window::{UserEvent, WindowId};
 use crate::{Device, NumCastExt, Offset, SAMPLE_COUNT};
 use std::any::Any;
 use std::fmt::Display;
@@ -119,10 +119,8 @@ impl AppContext {
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
         if let Some(u) = ui.request_update.take() {
-            #[cfg(feature = "winit")]
-            { ui.context.event.send_event(u).unwrap() }
-            #[cfg(not(feature = "winit"))]
-            { ui.context.user_update = u; }
+            ui.context.user_update = u;
+            ui.context.window.request_update(UserEvent::ReqUpdate);
         }
         self.inner_windows = ui.inner_windows.take();
     }
@@ -202,10 +200,8 @@ impl AppContext {
             popup.redraw(&mut ui);
         }
         if let Some(u) = ui.request_update.take() {
-            #[cfg(feature = "winit")]
-            { ui.context.event.send_event(u).unwrap(); }
-            #[cfg(not(feature = "winit"))]
-            { ui.context.user_update = u; }
+            ui.context.user_update = u;
+            ui.context.window.request_update(UserEvent::ReqUpdate);
         }
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.redraw(&mut ui);
@@ -242,10 +238,8 @@ impl AppContext {
         }
         self.inner_windows = ui.inner_windows.take();
         if let Some(u) = ui.request_update.take() {
-            #[cfg(feature = "winit")]
-            { ui.context.event.send_event(u).unwrap(); }
-            #[cfg(not(feature = "winit"))]
-            { ui.context.user_update = u; }
+            ui.context.user_update = u;
+            ui.context.window.request_update(UserEvent::ReqUpdate);
         }
     }
 }
@@ -307,8 +301,8 @@ impl<'a> Ui<'a> {
     pub fn request_update(&mut self, ut: UpdateType) {
         let wid = self.context.window.id();
         self.request_update = Some((wid, ut));
-        #[cfg(not(feature = "winit"))]
-        self.context.window.request_update();
+        // #[cfg(not(feature = "winit"))]
+        // self.context.window.request_update();
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
@@ -338,7 +332,7 @@ impl<'a> Ui<'a> {
         let attr = w.window_attributes();
         let app = Box::new(w);
         self.context.new_window = Some((app, attr));
-        self.context.window.create_window();
+        self.context.window.request_update(UserEvent::CreateChild);
     }
 
 

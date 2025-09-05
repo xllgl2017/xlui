@@ -41,6 +41,7 @@ use std::ops::{AddAssign, Range, SubAssign};
 use crate::key::Key;
 use crate::size::pos::Pos;
 use crate::widgets::textedit::TextEdit;
+use crate::window::UserEvent;
 
 pub struct SpinBox<T> {
     pub(crate) id: String,
@@ -212,23 +213,28 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
 
     fn listen_input(&mut self, ui: &mut Ui, st: u64) {
         let wid = ui.context.window.id();
-        #[cfg(feature = "winit")]
-        {
-            let event = ui.context.event.clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(st));
-                event.send_event((wid, UpdateType::None)).unwrap();
-            });
-        }
-        #[cfg(not(feature = "winit"))]
-        {
-            ui.context.user_update = (wid, UpdateType::None);
-            let window = ui.context.window.clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(st));
-                window.request_update();
-            });
-        }
+        ui.context.user_update = (wid, UpdateType::None);
+        let window = ui.context.window.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(st));
+            window.request_update(UserEvent::ReqUpdate);
+        });
+        // #[cfg(feature = "winit")]
+        // {
+        //     let w = ui.context.window.clone();
+        //     std::thread::spawn(move || {
+        //         std::thread::sleep(std::time::Duration::from_millis(st));
+        //         w.request_update(UserEvent::ReqUpdate);
+        //     });
+        // }
+        // #[cfg(not(feature = "winit"))]
+        // {
+        //     let window = ui.context.window.clone();
+        //     std::thread::spawn(move || {
+        //         std::thread::sleep(std::time::Duration::from_millis(st));
+        //         window.request_update(UserEvent::ReqUpdate);
+        //     });
+        // }
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {

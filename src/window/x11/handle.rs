@@ -6,7 +6,7 @@ use std::sync::Arc;
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, XlibDisplayHandle, XlibWindowHandle};
 use x11::xlib;
 use crate::window::ime::IME;
-use crate::window::x11::UserEvent;
+use crate::window::UserEvent;
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,

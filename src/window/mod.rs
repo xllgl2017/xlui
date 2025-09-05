@@ -9,18 +9,18 @@ pub mod event;
 pub mod winit_app;
 #[cfg(not(feature = "winit"))]
 pub mod application;
-#[cfg(feature = "winit")]
-mod winit_window;
 mod ime;
+#[cfg(feature = "winit")]
+mod wnit;
 
 use crate::window::ime::IME;
+#[cfg(feature = "winit")]
+use crate::window::wnit::handle::WInitWindowHandle;
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
-use crate::window::x11::UserEvent;
+use crate::window::x11::handle::X11WindowHandle;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
-#[cfg(all(target_os = "linux", not(feature = "winit")))]
-use crate::window::x11::handle::X11WindowHandle;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -47,7 +47,14 @@ pub enum WindowKind {
     #[cfg(all(target_os = "linux", not(feature = "winit")))]
     X11(X11WindowHandle),
     #[cfg(feature = "winit")]
-    Winit(winit::window::Window),
+    Winit(WInitWindowHandle),
+}
+
+#[derive(Debug)]
+pub enum UserEvent {
+    ReqUpdate = 0,
+    CreateChild = 1,
+    ReInit = 2,
 }
 
 pub struct WindowType {
@@ -71,7 +78,7 @@ impl WindowType {
     }
 
     #[cfg(feature = "winit")]
-    pub fn winit(&self) -> &winit::window::Window {
+    pub fn winit(&self) -> &WInitWindowHandle {
         match self.kind {
             WindowKind::Winit(ref window) => window,
         }
@@ -82,11 +89,7 @@ impl WindowType {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.set_ime_position(&self.ime, x, y),
             #[cfg(feature = "winit")]
-            WindowKind::Winit(ref window) => {
-                let pos = winit::dpi::LogicalPosition::new(x, y);
-                let size = winit::dpi::LogicalSize::new(100.0, 100.0);
-                window.set_ime_cursor_area(pos, size);
-            }
+            WindowKind::Winit(ref window) => window.set_ime_position(x, y)
         }
     }
 
@@ -103,12 +106,12 @@ impl WindowType {
         }
     }
 
-    pub fn request_update(&self) {
+    pub fn request_update(&self, event: UserEvent) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
-            WindowKind::X11(ref window) => window.send_update(UserEvent::ReqUpdate),
+            WindowKind::X11(ref window) => window.send_update(event),
             #[cfg(feature = "winit")]
-            WindowKind::Winit(_) => {}
+            WindowKind::Winit(ref window) => window.send_user_event(self.id, event).unwrap()
         }
     }
 
@@ -116,14 +119,14 @@ impl WindowType {
         &self.ime
     }
 
-    pub fn create_window(&self) {
-        match self.kind {
-            #[cfg(all(target_os = "linux", not(feature = "winit")))]
-            WindowKind::X11(ref window) => window.send_update(UserEvent::CreateChild),
-            #[cfg(feature = "winit")]
-            WindowKind::Winit(_) => {}
-        }
-    }
+    // pub fn create_window(&self) {
+    //     match self.kind {
+    //         #[cfg(all(target_os = "linux", not(feature = "winit")))]
+    //         WindowKind::X11(ref window) => window.send_update(UserEvent::CreateChild),
+    //         #[cfg(feature = "winit")]
+    //         WindowKind::Winit(_) => {}
+    //     }
+    // }
 }
 
 impl HasWindowHandle for WindowType {

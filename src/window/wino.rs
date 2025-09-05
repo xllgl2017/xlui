@@ -5,7 +5,7 @@ use crate::ui::AppContext;
 use crate::window::event::WindowEvent;
 #[cfg(target_os = "windows")]
 use crate::window::win32::Win32Window;
-use crate::window::{WindowId, WindowType};
+use crate::window::{UserEvent, WindowId, WindowType};
 use crate::{Device, DeviceInput, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
@@ -52,18 +52,6 @@ impl LoopWindow {
         }
     }
 
-    // pub fn run(&mut self) {
-    //     let window = self.app_ctx.context.window.clone();
-    //     self.event(self.app_ctx.context.window.id(), WindowEvent::Redraw);
-    //     loop {
-    //         #[cfg(target_os = "linux")]
-    //         let event = window.x11().run();
-    //         #[cfg(target_os = "windows")]
-    //         let event = window.win32().run();
-    //         self.event(self.app_ctx.context.window.id(), event);
-    //     }
-    // }
-
     pub(crate) async fn rebuild_device(window: &Arc<WindowType>, size: Size) -> Result<Device, Box<dyn Error>> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
@@ -81,10 +69,9 @@ impl LoopWindow {
             desired_maximum_frame_latency: 2,
             present_mode: wgpu::PresentMode::AutoVsync,
         };
-        // let wid = window.id();
-
+        let w = window.clone();
         device.on_uncaptured_error(Box::new(move |err: wgpu::Error| {
-            // sender.send((wid, WindowEvent::Reinit)).unwrap();
+            w.request_update(UserEvent::ReInit);
             println!("Error: {:#?}", err);
             println!("{}", err.to_string());
         }));

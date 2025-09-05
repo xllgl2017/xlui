@@ -11,6 +11,7 @@ use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::Offset;
+use crate::window::UserEvent;
 
 pub struct EditSelection {
     renders: Vec<RenderParam<RectParam>>,
@@ -155,55 +156,54 @@ impl EditSelection {
                 }
                 if pos.x > cursor.max_pos.x {
                     let wid = ui.context.window.id();
-                    #[cfg(feature = "winit")]
-                    {
-                        let event = ui.context.event.clone();
-                        std::thread::spawn(move || {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            event.send_event((wid, UpdateType::None)).unwrap();
-                        });
-                    }
-                    #[cfg(not(feature = "winit"))]
-                    {
-                        ui.context.user_update = (wid, UpdateType::None);
-                        let window = ui.context.window.clone();
-                        std::thread::spawn(move || {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            window.request_update();
-                        });
-                    }
+                    ui.context.user_update = (wid, UpdateType::None);
+                    let window = ui.context.window.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        window.request_update(UserEvent::ReqUpdate);
+                    });
+                    // #[cfg(feature = "winit")]
+                    // {
+                    //     let window = ui.context.window.clone();
+                    //     std::thread::spawn(move || {
+                    //         std::thread::sleep(std::time::Duration::from_millis(100));
+                    //         window.request_update(UserEvent::ReqUpdate);
+                    //     });
+                    // }
+                    // #[cfg(not(feature = "winit"))]
+                    // {
+                    //     ui.context.user_update = (wid, UpdateType::None);
+                    //     let window = ui.context.window.clone();
+                    //     std::thread::spawn(move || {
+                    //         std::thread::sleep(std::time::Duration::from_millis(100));
+                    //         window.request_update(UserEvent::ReqUpdate);
+                    //     });
+                    // }
                 } else if pos.x < cursor.min_pos.x {
                     let wid = ui.context.window.id();
-                    #[cfg(feature = "winit")]
-                    {
-                        let event = ui.context.event.clone();
-                        std::thread::spawn(move || {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            event.send_event((wid, UpdateType::None)).unwrap();
-                        });
-                    }
-                    #[cfg(not(feature = "winit"))]
-                    {
-                        ui.context.user_update = (wid, UpdateType::None);
-                        let window = ui.context.window.clone();
-                        std::thread::spawn(move || {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            window.request_update();
-                        });
-                    }
+                    ui.context.user_update = (wid, UpdateType::None);
+                    let window = ui.context.window.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        window.request_update(UserEvent::ReqUpdate);
+                    });
                     // #[cfg(feature = "winit")]
-                    // let event = ui.context.event.clone();
-                    // let wid = ui.context.window.id();
-                    // let window = ui.context.window.clone();
+                    // {
+                    //     let w = ui.context.window.clone();
+                    //     std::thread::spawn(move || {
+                    //         std::thread::sleep(std::time::Duration::from_millis(100));
+                    //         w.request_update(UserEvent::ReqUpdate);
+                    //     });
+                    // }
                     // #[cfg(not(feature = "winit"))]
-                    // ui.context.user_update = (wid, UpdateType::None);
-                    // std::thread::spawn(move || {
-                    //     std::thread::sleep(std::time::Duration::from_millis(100));
-                    //     #[cfg(feature = "winit")]
-                    //     event.send_event((wid, UpdateType::None)).unwrap();
-                    //     #[cfg(not(feature = "winit"))]
-                    //     window.send_update();
-                    // });
+                    // {
+                    //     ui.context.user_update = (wid, UpdateType::None);
+                    //     let window = ui.context.window.clone();
+                    //     std::thread::spawn(move || {
+                    //         std::thread::sleep(std::time::Duration::from_millis(100));
+                    //         window.request_update(UserEvent::ReqUpdate);
+                    //     });
+                    // }
                 }
             }
         }

@@ -1,13 +1,14 @@
+pub mod handle;
+
 use crate::frame::context::{Context, Render, UpdateType};
 use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
-use crate::window::{WindowId, WindowType};
+use crate::window::{UserEvent, WindowType};
 use crate::{Device, DeviceInput, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
 use std::sync::Arc;
-use winit::event_loop::EventLoopProxy;
 
 pub(crate) struct Window {
     pub(crate) app_ctx: AppContext,
@@ -16,12 +17,11 @@ pub(crate) struct Window {
 
 impl Window {
     #[cfg(feature = "winit")]
-    pub(crate) async fn new_winit(window: Arc<WindowType>, mut app: Box<dyn App>, attr: WindowAttribute, event: EventLoopProxy<(WindowId, UpdateType)>) -> Result<Self, Box<dyn Error>> {
-        let e = event.clone();
-        let wid = window.id();
+    pub(crate) async fn new_winit(window: Arc<WindowType>, mut app: Box<dyn App>, attr: WindowAttribute) -> Result<Self, Box<dyn Error>> {
+        let w = window.clone();
         let device = Self::rebuild_device(&window, |device| {
             device.on_uncaptured_error(Box::new(move |err| {
-                e.send_event((wid, UpdateType::ReInit)).unwrap();
+                w.request_update(UserEvent::ReInit);
                 println!("Error: {:?}", err);
             }));
         }).await?;
@@ -32,12 +32,12 @@ impl Window {
                 height: window.winit().inner_size().height,
             },
             font: attr.font.clone(),
+            user_update: (window.id, UpdateType::None),
             viewport,
             window,
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
-            event,
             new_window: None,
         };
         let mut app_ctx = AppContext::new(device, context);
@@ -56,10 +56,8 @@ impl Window {
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
         let cache = Cache::new(&device);
-        // let target = window.surface_window().into();
         let surface = instance.create_surface(window.clone())?;
         let cap = surface.get_capabilities(&adapter);
-        // let size = window.inner_size();
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: cap.formats[0],
@@ -72,12 +70,6 @@ impl Window {
             present_mode: wgpu::PresentMode::AutoVsync,
         };
         listen(&device);
-        // let wid = window.id();
-        // let e = event.clone();
-        // device.on_uncaptured_error(Box::new(move |err| {
-        //     e.send_event((wid, UpdateType::ReInit)).unwrap();
-        //     println!("Error: {:?}", err);
-        // }));
         Ok(Device {
             device,
             queue,
@@ -100,9 +92,7 @@ impl Window {
             width: self.app_ctx.context.size.width,
             height: self.app_ctx.context.size.height,
         });
-        println!("44444444444444444444");
         self.app_ctx.redraw(&mut self.app);
-        println!("44444444444444444444");
     }
 
     pub(crate) fn resize(&mut self, new_size: Size) {
@@ -111,6 +101,6 @@ impl Window {
         self.app_ctx.context.size.height = new_size.height;
         self.app_ctx.device.surface_config.width = new_size.width;
         self.app_ctx.device.surface_config.height = new_size.height;
-        // self.configure_surface();
+        self.configure_surface();
     }
 }

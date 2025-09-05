@@ -16,13 +16,6 @@ pub mod ime;
 pub mod handle;
 mod clipboard;
 
-pub enum UserEvent {
-    ReqUpdate = 0,
-    CreateChild = 1,
-    IMECommit = 2,
-}
-
-
 pub struct X11Window {
     display: *mut xlib::Display,
     handles: Vec<Arc<WindowType>>,
