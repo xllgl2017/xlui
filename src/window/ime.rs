@@ -1,16 +1,28 @@
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::error::UiResult;
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::window::x11::ime::bus::Bus;
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::window::x11::ime::flag::Modifiers;
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
+use std::sync::Arc;
+use std::sync::RwLock;
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 use std::time::Duration;
 
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 pub enum IMEKind {
-    X11(Bus)
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
+    X11(Bus),
+    #[cfg(feature = "winit")]
+    Winit,
 }
 
 pub struct IME {
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     kind: IMEKind,
     available: bool,
     working: AtomicBool,
@@ -19,7 +31,7 @@ pub struct IME {
     requested: RwLock<Vec<bool>>,
 }
 
-
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
 impl IME {
     fn preedit_text(text: UpdatePreeditText, ime: &Arc<IME>) -> bool {
         println!("preedit_text-{:?}", text);
@@ -52,6 +64,28 @@ impl IME {
                 bus.ctx().on_update_preedit_text(move |a, _, _| Self::preedit_text(a, &i)).unwrap();
                 bus.ctx().on_commit_text(move |a, _, _| Self::commit(a, &ime)).unwrap();
             }
+        }
+    }
+
+    pub(crate) fn post_key(&self, keysym: u32, code: u32, modifiers: Modifiers) -> UiResult<bool> {
+        match self.kind {
+            IMEKind::X11(ref bus) => bus.ctx().process_key_event(keysym, code, modifiers),
+        }
+    }
+}
+
+
+impl IME {
+    #[cfg(feature = "winit")]
+    pub fn new_winit() -> IME {
+        IME {
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
+            kind: IMEKind::Winit,
+            available: false,
+            working: AtomicBool::new(false),
+            chars: RwLock::new(Vec::new()),
+            commited: AtomicBool::new(false),
+            requested: RwLock::new(Vec::new()),
         }
     }
 
@@ -105,45 +139,57 @@ impl IME {
         self.commited.load(Ordering::SeqCst)
     }
 
-    pub(crate) fn post_key(&self, keysym: u32, code: u32, modifiers: Modifiers) -> UiResult<bool> {
-        match self.kind {
-            IMEKind::X11(ref bus) => bus.ctx().process_key_event(keysym, code, modifiers),
-        }
-    }
-
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     pub(crate) fn update_working(&self) {
         let requested = self.requested.write().unwrap();
         let req = requested.iter().find(|x| **x == true);
         self.working.store(req.is_some(), Ordering::SeqCst);
     }
-
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     pub(crate) fn update(&self) {
         match self.kind {
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.process(Duration::from_secs(0)).unwrap(); }
+            #[cfg(feature = "winit")]
+            IMEKind::Winit=>{}
         }
     }
-
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     pub(crate) fn focus_in(&self) {
         match self.kind {
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().focus_in().unwrap(); }
+            #[cfg(feature = "winit")]
+            IMEKind::Winit=>{}
         }
     }
-
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     pub(crate) fn focus_out(&self) {
         match self.kind {
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().focus_out().unwrap(); }
+            #[cfg(feature = "winit")]
+            IMEKind::Winit=>{}
         }
     }
 
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     pub(crate) fn set_capabilities(&self, capabilities: u32) {
         match self.kind {
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().set_capabilities(capabilities).unwrap(); }
+            #[cfg(feature = "winit")]
+            IMEKind::Winit=>{}
         }
     }
 
+    #[cfg(all(target_os = "linux", not(feature = "winit")))]
     pub(crate) fn set_cursor_position(&self, x: i32, y: i32) {
         match self.kind {
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().set_cursor_location(x, y, 1, 1).unwrap(); }
+            #[cfg(feature = "winit")]
+            IMEKind::Winit=>{}
         }
     }
 }

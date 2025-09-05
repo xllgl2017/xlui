@@ -6,11 +6,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
-use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
+use winit::event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{ImePurpose, WindowId};
-use crate::window::WindowKind;
+use crate::window::{WindowKind, WindowType};
+use crate::window::ime::IME;
 use crate::window::winit_window::Window;
 
 pub struct WInitApplication<A> {
@@ -50,7 +51,13 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WIn
         winit_window.set_ime_allowed(true);
         winit_window.set_ime_cursor_area(PhysicalPosition::new(400, 300), PhysicalSize::new(100, 100));
         winit_window.set_ime_purpose(ImePurpose::Normal);
-        let loop_window = Arc::new(WindowKind::WInit(winit_window));
+        let id = super::WindowId::from_winit_id(winit_window.id());
+        let loop_window = Arc::new(WindowType {
+            kind: WindowKind::Winit(winit_window),
+            id,
+            type_: WindowType::ROOT,
+            ime: Arc::new(IME::new_winit()),
+        });
         let window = pollster::block_on(Window::new_winit(loop_window.clone(), Box::new(app), attr, event)).unwrap();
         self.windows.insert(loop_window.id(), window);
         loop_window.request_redraw();
@@ -66,7 +73,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WIn
             println!("sleep start");
             println!("sleep end");
             let window = self.windows.get_mut(&wid).unwrap();
-            println!("recv {:?}", window.app_ctx.context.window.size());
+            // println!("recv {:?}", window.app_ctx.context.window.size());
             let event = window.app_ctx.context.event.clone();
             let wid = window.app_ctx.context.window.id();
             window.app_ctx.device = pollster::block_on(async {
@@ -98,14 +105,17 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WIn
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
         let wid = super::WindowId::from_winit_id(id);
         let window = self.windows.get_mut(&wid);
+        println!("{:?}-{}", id, window.is_some());
         if window.is_none() { return; }
         let window = window.unwrap();
         match event {
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
-                // let pos = self.windows.iter().position(|x| x.get_window().id() == id).unwrap();
-                self.windows.remove(&wid);
-                if self.windows.len() == 0 { event_loop.exit(); }
+                if window.app_ctx.context.window.type_ == WindowType::ROOT {
+                    event_loop.exit();
+                } else {
+                    self.windows.remove(&wid);
+                }
             }
             WindowEvent::RedrawRequested => {
                 if self.rebuilding {
@@ -173,7 +183,12 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UpdateType)> for WIn
                 window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::Ime(ime) => {
-                println!("{:?}", ime);
+                match ime {
+                    Ime::Preedit(ps, _) => window.app_ctx.context.window.ime().ime_draw(ps.chars().collect()),
+                    Ime::Commit(cs) => window.app_ctx.context.window.ime().ime_commit(cs.chars().collect()),
+                    _ => {}
+                }
+                window.app_ctx.update(UpdateType::IME, &mut window.app);
             }
             _ => (),
         }
