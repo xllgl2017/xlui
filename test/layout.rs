@@ -5,9 +5,9 @@ use xlui::style::ClickStyle;
 use xlui::style::color::Color;
 use xlui::ui::Ui;
 
-struct Frame {}
+pub struct TestLayout {}
 
-impl App for Frame {
+impl App for TestLayout {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -196,5 +196,5 @@ impl App for Frame {
 
 
 fn main() {
-    Frame {}.run();
+    TestLayout {}.run();
 }

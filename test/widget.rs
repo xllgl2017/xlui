@@ -199,7 +199,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "ImageButton");
             ui.add_space(10.0);
-            ui.add(Button::image_and_text("logo.jpg", "按钮").width(50.0).height(40.0).connect(Self::image_button_click));
+            ui.add(Button::image_and_text("logo.jpg", "Image").width(50.0).height(40.0).connect(Self::image_button_click));
         });
         ui.horizontal(|ui| {
             ui.radio(true, "SelectValue");

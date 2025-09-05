@@ -71,14 +71,14 @@ pub struct Button {
     image_rect: Rect,
     hovered: bool,
     changed: bool,
-    align: Align,
 }
 
 
 impl Button {
     pub fn new(text: impl Into<RichText>) -> Self {
         let padding = Padding::same(2.0);
-        let text_buffer = TextBuffer::new(text);
+        let mut text_buffer = TextBuffer::new(text);
+        text_buffer.align = Align::Center;
         Button {
             id: crate::gen_unique_id(),
             text_buffer,
@@ -91,7 +91,6 @@ impl Button {
             hovered: false,
             changed: false,
             fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
-            align: Align::LeftTop,
         }
     }
 
@@ -161,7 +160,6 @@ impl Button {
 
     ///仅作用于draw
     pub fn align(mut self, align: Align) -> Self {
-        self.align = align;
         self.text_buffer.align = align;
         self
     }

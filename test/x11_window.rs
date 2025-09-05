@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{c_int, CString};
 use std::mem;
 use std::ptr::null_mut;
 use x11::xlib;
@@ -47,7 +47,7 @@ fn main() {
         // }).unwrap();
 
         // ctx.focus_in().unwrap();
-        let mut child_window =0;
+        let mut child_window = 0;
         loop {
             let mut event = mem::zeroed();
             xlib::XNextEvent(display, &mut event);
@@ -65,9 +65,9 @@ fn main() {
                 xlib::ButtonPress => {
                     x += 50.0;
                     y += 50.0;
-                    if event.expose.window==window {
+                    if event.expose.window == window {
                         println!("press root");
-                    }else if event.expose.window==child_window {
+                    } else if event.expose.window == child_window {
                         println!("press child");
                     }
                     // ctx.set_cursor_location(x as i32, y as i32, 1, 1).unwrap();
@@ -75,8 +75,8 @@ fn main() {
                 xlib::KeyPress => {
                     child_window = XCreateSimpleWindow(
                         display,
-                        root, // 父窗口
-                        100, 100,
+                        window, // 父窗口
+                        x as c_int, y as c_int,
                         100, 80,       // 子窗口大小
                         1,
                         XBlackPixel(display, screen),   // 边框颜色
@@ -90,6 +90,8 @@ fn main() {
                     XMapWindow(display, child_window);
                     let s = XLookupKeysym(&mut event.key, 0);
                     println!("kpress-{}-{}", s, event.key.keycode);
+                    x += 50.0;
+                    y += 50.0;
                     // ibus_input_context_process_key_event(g_context, s as u32, event.key.keycode, 0);
                     // ctx.process_key_event(s as u32, 50, Modifiers::Empty).unwrap();
                 }
