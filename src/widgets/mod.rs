@@ -22,6 +22,11 @@ pub mod space;
 pub mod processbar;
 pub mod triangle;
 pub mod circle;
+pub mod table;
+pub mod column;
+pub mod cell;
+
+pub type UiDraw = Box<dyn Fn(&mut Ui)>;
 
 pub trait Widget: Any {
     // #[deprecated="use Widget::update"]
