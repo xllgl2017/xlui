@@ -194,7 +194,7 @@ impl LayoutKind {
         }
     }
 
-    fn widgets(&mut self) -> &mut Map<WidgetKind> {
+    fn widgets(&mut self) -> &mut Map<String, WidgetKind> {
         match self {
             LayoutKind::Horizontal(v) => &mut v.widgets,
             LayoutKind::Vertical(v) => &mut v.widgets,
@@ -204,7 +204,7 @@ impl LayoutKind {
         }
     }
 
-    fn children(&mut self) -> &mut Map<LayoutKind> {
+    fn children(&mut self) -> &mut Map<String, LayoutKind> {
         match self {
             LayoutKind::Horizontal(v) => &mut v.children,
             LayoutKind::Vertical(v) => &mut v.children,
@@ -292,8 +292,8 @@ pub enum LayoutDirection {
 
 pub struct HorizontalLayout {
     id: String,
-    children: Map<LayoutKind>,
-    widgets: Map<WidgetKind>,
+    children: Map<String, LayoutKind>,
+    widgets: Map<String, WidgetKind>,
     pub(crate) max_rect: Rect,
     pub(crate) available_rect: Rect,
     pub(crate) width: f32,
@@ -301,7 +301,7 @@ pub struct HorizontalLayout {
     pub(crate) item_space: f32, //item之间的间隔
     offset_changed: bool,
     widget_offset: Offset,
-    display: Map<usize>,
+    display: Map<String, usize>,
 }
 
 impl HorizontalLayout {
@@ -396,8 +396,8 @@ impl Layout for HorizontalLayout {
 
 pub struct VerticalLayout {
     id: String,
-    children: Map<LayoutKind>,
-    widgets: Map<WidgetKind>,
+    children: Map<String, LayoutKind>,
+    widgets: Map<String, WidgetKind>,
     pub(crate) max_rect: Rect,
     pub(crate) available_rect: Rect,
     width: f32,
@@ -405,7 +405,7 @@ pub struct VerticalLayout {
     item_space: f32, //item之间的间隔
     widget_offset: Offset,
     offset_changed: bool,
-    display: Map<usize>,
+    display: Map<String, usize>,
     size_mode: SizeMode,
 }
 

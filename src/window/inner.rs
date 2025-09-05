@@ -32,8 +32,8 @@ pub struct InnerWindow {
     pub(crate) on_close: Option<Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)>>,
     w: Box<dyn App>,
     layout: Option<LayoutKind>,
-    popups: Option<Map<Popup>>,
-    inner_windows: Option<Map<InnerWindow>>,
+    popups: Option<Map<String, Popup>>,
+    inner_windows: Option<Map<String, InnerWindow>>,
     pub(crate) request_close: Arc<AtomicBool>,
 }
 

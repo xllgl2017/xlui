@@ -123,7 +123,7 @@ pub struct Context {
     pub font: Arc<Font>,
     pub resize: bool,
     pub render: Render,
-    pub updates: Map<ContextUpdate>,
+    pub updates: Map<String, ContextUpdate>,
     #[cfg(feature = "winit")]
     pub event: EventLoopProxy<(WindowId, UpdateType)>,
     #[cfg(not(feature = "winit"))]

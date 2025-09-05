@@ -8,7 +8,7 @@ use crate::vertex::ImageVertex;
 
 pub struct ImageRender {
     pipeline: wgpu::RenderPipeline,
-    textures: Map<ImageTexture>,
+    textures: Map<String, ImageTexture>,
     bind_group_layout: wgpu::BindGroupLayout,
 
 }

@@ -84,7 +84,7 @@ pub enum ListUpdate<T> {
 pub struct ListView<T> {
     lid: String,
     data: Vec<T>,
-    items: Map<T>,
+    items: Map<String, T>,
     current: Arc<RwLock<Option<String>>>,
     callback: Arc<Option<Box<dyn Fn(&mut Box<dyn App>, &mut Ui)>>>,
     dyn_item_widget: Box<dyn Fn(&mut Ui, &T)>,
