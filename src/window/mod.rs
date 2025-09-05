@@ -14,10 +14,11 @@ mod winit_window;
 mod ime;
 
 use crate::window::ime::IME;
-use crate::window::x11::{UserEvent, X11WindowType};
+use crate::window::x11::UserEvent;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
+use crate::window::x11::handle::X11WindowHandle;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -40,7 +41,7 @@ impl Display for WindowId {
 }
 
 pub enum WindowKind {
-    X11(X11WindowType)
+    X11(X11WindowHandle)
 }
 
 pub struct WindowType {
@@ -56,7 +57,7 @@ impl WindowType {
     pub const ROOT: u32 = 0;
     pub const CHILD: u32 = 1;
 
-    pub fn x11(&self) -> &X11WindowType {
+    pub fn x11(&self) -> &X11WindowHandle {
         match self.kind {
             WindowKind::X11(ref window) => window,
         }

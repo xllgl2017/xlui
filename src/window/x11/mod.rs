@@ -4,16 +4,17 @@ use crate::window::ime::IME;
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
-use raw_window_handle::*;
-use std::ffi::{c_void, CString};
-use std::ptr::NonNull;
+use std::ffi::CString;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
-use std::os::raw::c_long;
 use x11::xlib;
 use x11::xlib::XCloseDisplay;
+use crate::window::x11::clipboard::X11ClipBoard;
+use crate::window::x11::handle::X11WindowHandle;
 
 pub mod ime;
+pub mod handle;
+mod clipboard;
 
 pub enum UserEvent {
     ReqUpdate = 0,
@@ -21,83 +22,15 @@ pub enum UserEvent {
     IMECommit = 2,
 }
 
-pub struct X11WindowType {
-    display: *mut xlib::Display,
-    window: xlib::Window,
-    update_atom: xlib::Atom,
-    screen: i32,
-}
-
-
-impl X11WindowType {
-    pub fn request_redraw(&self) {
-        unsafe {
-            xlib::XClearArea(self.display, self.window, 0, 0, 0, 0, xlib::True);
-            xlib::XFlush(self.display);
-        }
-    }
-
-    pub fn send_update(&self, ue: UserEvent) {
-        let mut event: xlib::XClientMessageEvent = unsafe { mem::zeroed() };
-        event.type_ = xlib::ClientMessage;
-        event.display = self.display;
-        event.window = self.window;
-        event.message_type = self.update_atom;
-        event.format = 32;
-        event.data.set_long(0, ue as c_long);
-        let mask = xlib::NoEventMask;
-        unsafe { xlib::XSendEvent(self.display, self.window, 0, mask, &mut event as *mut _ as *mut _); }
-        unsafe { xlib::XFlush(self.display); }
-    }
-
-    pub fn window_handle(&self) -> WindowHandle {
-        let xlib_window_handle = XlibWindowHandle::new(self.window);
-        let raw_window_handle = RawWindowHandle::Xlib(xlib_window_handle);
-        unsafe { WindowHandle::borrow_raw(raw_window_handle) }
-    }
-
-    pub fn display_handle(&self) -> DisplayHandle {
-        let display = NonNull::new(self.display as *mut c_void);
-        let x11_display_handle = XlibDisplayHandle::new(display, self.screen);
-        let raw_display_handle = RawDisplayHandle::Xlib(x11_display_handle);
-        unsafe { DisplayHandle::borrow_raw(raw_display_handle) }
-    }
-
-    pub fn set_ime_position(&self, ime: &Arc<IME>, x: f32, y: f32) {
-        let root = unsafe { xlib::XRootWindow(self.display, self.screen) };
-        let mut child_return: xlib::Window = 0;
-        let mut ax: i32 = 0;
-        let mut ay: i32 = 0;
-        let status = unsafe {
-            xlib::XTranslateCoordinates(
-                self.display, self.window, root, 0, 0, &mut ax, &mut ay,
-                &mut child_return,
-            )
-        };
-        if status == 0 { return; }
-        ime.set_cursor_position(ax + x as i32, ay + y as i32);
-    }
-}
-
-impl Drop for X11WindowType {
-    fn drop(&mut self) {
-        unsafe {
-            xlib::XDestroyWindow(self.display, self.window);
-        }
-    }
-}
-
-unsafe impl Send for X11WindowType {}
-unsafe impl Sync for X11WindowType {}
-
 
 pub struct X11Window {
     display: *mut xlib::Display,
-    windows: Vec<Arc<WindowType>>,
+    handles: Vec<Arc<WindowType>>,
     wm_delete_atom: xlib::Atom,
 
     size: RwLock<Size>,
     root: xlib::Window,
+    clipboard: X11ClipBoard,
 }
 
 impl X11Window {
@@ -129,20 +62,21 @@ impl X11Window {
             };
             Ok(Self {
                 display,
-                windows: vec![Arc::new(window)],
+                handles: vec![Arc::new(window)],
                 wm_delete_atom: wm_delete,
                 size: RwLock::new(attr.inner_size),
                 root,
+                clipboard: X11ClipBoard::new(display).unwrap(),
             })
         }
     }
 
 
     pub fn last_window(&self) -> Arc<WindowType> {
-        self.windows.last().cloned().unwrap()
+        self.handles.last().cloned().unwrap()
     }
 
-    fn create_window(display: *mut xlib::Display, screen: i32, root: xlib::Window, attr: &WindowAttribute, wm_delete: &mut xlib::Atom) -> X11WindowType {
+    fn create_window(display: *mut xlib::Display, screen: i32, root: xlib::Window, attr: &WindowAttribute, wm_delete: &mut xlib::Atom) -> X11WindowHandle {
         unsafe {
             let child = xlib::XCreateSimpleWindow(
                 display, root,
@@ -171,7 +105,7 @@ impl X11Window {
             xlib::XMapWindow(display, child);
             xlib::XFlush(display);
             xlib::XSetWMProtocols(display, child, wm_delete, 1);
-            X11WindowType {
+            X11WindowHandle {
                 display,
                 window: child,
                 update_atom: 0,
@@ -191,7 +125,7 @@ impl X11Window {
             type_: WindowType::CHILD,
             ime: parent.ime.clone(),
         });
-        self.windows.push(window.clone());
+        self.handles.push(window.clone());
         window
     }
 
@@ -199,7 +133,7 @@ impl X11Window {
         unsafe {
             let mut event: xlib::XEvent = mem::zeroed();
             xlib::XNextEvent(self.display, &mut event);
-            let window = self.windows.iter().find(|x| x.x11().window == event.expose.window);
+            let window = self.handles.iter().find(|x| x.x11().window == event.expose.window);
             if window.is_none() { return (WindowId::unique_id(), WindowEvent::None); }
             let window = window.unwrap();
             window.ime.update_working();
@@ -239,8 +173,8 @@ impl X11Window {
                             _ => (window.id, WindowEvent::None)
                         };
                     } else if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
-                        let pos = self.windows.iter().position(|x| x.x11().window == event.expose.window).unwrap();
-                        let window = self.windows.remove(pos);
+                        let pos = self.handles.iter().position(|x| x.x11().window == event.expose.window).unwrap();
+                        let window = self.handles.remove(pos);
                         return (window.id, WindowEvent::ReqClose);
                     }
                 }
@@ -277,6 +211,7 @@ impl X11Window {
                     }
                 }
                 xlib::ButtonRelease => {
+                    self.clipboard.request_get_clipboard(window.x11().window, self.clipboard.targets_atom);
                     let xb: xlib::XButtonEvent = event.button;
                     return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }));
                 }
@@ -291,6 +226,11 @@ impl X11Window {
                     } else {
                         (window.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))
                     };
+                }
+                xlib::SelectionRequest => self.clipboard.handle_request(&event).unwrap(),
+                xlib::SelectionNotify => {
+                    let clipboard_res = self.clipboard.get_clipboard_data(event, window.x11().window);
+                    println!("clipboard_res: {:?}", clipboard_res);
                 }
                 _ => {}
             }
