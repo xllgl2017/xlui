@@ -1,15 +1,12 @@
-use std::{env, fs};
+use crate::error::{UiError, UiResult};
+use crate::window::x11::ime::context::Context;
+use dbus::blocking::Connection;
+use dbus::channel::Channel;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::sync::Arc;
 use std::time::Duration;
-use dbus::blocking::Connection;
-use dbus::channel::Channel;
-use x11::xlib;
-use crate::error::{UiError, UiResult};
-use crate::window::WindowType;
-use crate::window::x11::ime::context::Context;
-use crate::window::x11::UserEvent;
+use std::{env, fs};
 
 pub const DEST: &'static str = "org.freedesktop.IBus";
 pub const DBUS_PATH: &'static str = "/org/freedesktop/IBus";
@@ -77,7 +74,4 @@ impl Bus {
         &self.ctx
     }
 
-    pub fn ime_commit(&self, window: &Arc<WindowType>) {
-        window.x11().send_update(UserEvent::IMECommit);
-    }
 }

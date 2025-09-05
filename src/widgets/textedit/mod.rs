@@ -1,4 +1,3 @@
-use std::mem;
 use crate::frame::context::{Context, UpdateType};
 use crate::key::Key;
 use crate::render::rectangle::param::RectParam;
@@ -247,7 +246,6 @@ impl Widget for TextEdit {
                 self.focused = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
-                    // let p = &self.fill_render.param.rect;
                     let pos = ui.device.device_input.mouse.lastest;
                     self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);
@@ -261,16 +259,12 @@ impl Widget for TextEdit {
             UpdateType::IME => {
                 if self.focused {
                     let chars = ui.context.window.ime().chars();
-                    println!("text edit{:?}-{}-{}", chars, self.cursor_render.horiz, self.cursor_render.vert);
-                    // let chars = mem::take(chars);
                     let start_horiz = self.select_render.start_horiz;
                     let start_vert = self.select_render.start_vert;
                     for c in chars {
                         self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                     }
                     self.text_buffer.update_buffer_text(ui, self.char_layout.draw_text());
-
-                    println!("set-ime-{}-{}", self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.text_buffer.text.height);
                     if !ui.context.window.ime().is_commited() {
                         self.select_render.select_by_ime(start_horiz, start_vert, &self.char_layout, &self.cursor_render);
                         ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.text_buffer.text.height);

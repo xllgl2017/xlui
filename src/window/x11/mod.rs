@@ -75,7 +75,6 @@ impl X11WindowType {
             )
         };
         if status == 0 { return; }
-        println!("{}-{}", ax + x as i32, ay + y as i32);
         ime.set_cursor_position(ax + x as i32, ay + y as i32);
     }
 }
@@ -118,8 +117,6 @@ impl X11Window {
 
             // WM_DELETE_WINDOW
             // let wm_protocols = xlib::XInternAtom(display, b"WM_PROTOCOLS\0".as_ptr() as *const i8, 0);
-
-            // xlib::XSetWMProtocols(display, window.window, &wm_delete as *const xlib::Atom as *mut xlib::Atom, 1);
             let update_atom = xlib::XInternAtom(display, b"MY_CUSTOM_MESSAGE\0".as_ptr() as *const i8, 0);
             window.update_atom = update_atom;
             let p = CString::new("@im=none").unwrap();
@@ -252,7 +249,7 @@ impl X11Window {
                     return match window.ime.is_available() && window.ime.is_working() {
                         true => {
                             let keysym = xlib::XLookupKeysym(&mut event.key, 0);
-                            let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
+                            window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
                             if window.ime.is_working() {
                                 window.ime.update();
                                 (window.id, WindowEvent::IME)

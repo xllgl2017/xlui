@@ -2,7 +2,6 @@ use crate::error::UiResult;
 use crate::window::x11::ime::bus::Bus;
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
-use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
