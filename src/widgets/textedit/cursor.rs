@@ -127,10 +127,10 @@ impl EditCursor {
     pub fn delete_after(&mut self, cchar: &mut CharBuffer) -> EditChar {
         let len = cchar.lines.len();
         let line = &mut cchar.lines[self.vert];
-        let c = if self.horiz == line.len() && self.vert < len && self.horiz == 0 {
+        let c = if self.horiz == line.len() && self.vert < len {
             let wrap = line.auto_wrap;
             line.auto_wrap = true;
-            if wrap { cchar.lines[self.vert + 1].chars.remove(0) } else { EditChar::new('\n', 0.0) }
+            if wrap && self.vert + 1 < len { cchar.lines[self.vert + 1].chars.remove(0) } else { EditChar::new('\n', 0.0) }
         } else if self.horiz < line.len() {
             let c = line.chars.remove(self.horiz);
             cchar.offset.x += c.width;
