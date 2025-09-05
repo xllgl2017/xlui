@@ -156,33 +156,6 @@ impl TextEdit {
     fn key_input(&mut self, key: Option<Key>, ui: &mut Ui) {
         if key.is_none() { return; }
         self.changed = true;
-        // winit::keyboard::Key::Named(name) => {
-        //     println!("{:?}", name);
-        //     match name {
-        //         //更新游标
-        //         Key::LeftArrow => {
-        //
-        //         }
-        //         winit::keyboard::NamedKey::ArrowRight => {
-        //             // let cx = self.char_layout.lines[self.cursor_render.vert].get_width_in_char(self.cursor_render.horiz + 1);
-        //
-        //         }
-        //         winit::keyboard::NamedKey::ArrowUp => ,
-        //         winit::keyboard::NamedKey::ArrowDown => ,
-        //         //更新游标+文本
-        //         winit::keyboard::NamedKey::Backspace =>
-        //         winit::keyboard::NamedKey::Delete =>
-        //         winit::keyboard::NamedKey::Space =>
-        //         winit::keyboard::NamedKey::Enter =>
-        //         winit::keyboard::NamedKey::Home =>
-        //         winit::keyboard::NamedKey::End =>
-        //         _ => {}
-        //     }
-        // }
-        // //更新游标+文本
-        // winit::keyboard::Key::Character(c) =>
-        // winit::keyboard::Key::Unidentified(_) => {}
-        // winit::keyboard::Key::Dead(_) => {}
         match key.unwrap() {
             Key::Backspace => {
                 self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &self.select_render);

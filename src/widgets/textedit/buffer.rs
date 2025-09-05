@@ -47,7 +47,7 @@ impl EditLine {
 
     pub fn get_width_in_char(&self, index: usize) -> f32 {
         let mut width = 0.0;
-        let index = if index >= self.chars.len() { return self.width } else { index };
+        // let index = if index >= self.chars.len() { return self.width } else { index };
         self.chars[..index].iter().for_each(|x| width += x.width);
         width
     }
