@@ -47,6 +47,7 @@ impl TextBuffer {
 
 
     fn reset(&mut self) {
+        if self.buffer.is_none() { return; }
         self.text.width = 0.0;
         self.lines.clear();
         let buffer = self.buffer.as_ref().unwrap();
@@ -67,7 +68,7 @@ impl TextBuffer {
             }
             self.lines.push(line);
         }
-        // println!("{:#?}", self.lines);
+        println!("{:#?}", self.lines);
     }
 
     pub fn init(&mut self, ui: &mut Ui) {

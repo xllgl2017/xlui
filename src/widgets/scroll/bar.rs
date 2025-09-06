@@ -14,13 +14,7 @@ use crate::size::radius::Radius;
 pub struct ScrollBar {
     id: String,
     fill_render: RenderParam<RectParam>,
-    // fill_param: RectParam,
-    // fill_id: String,
-    // fill_buffer: Option<wgpu::Buffer>,
     slider_render: RenderParam<RectParam>,
-    // slider_param: RectParam,
-    // slider_id: String,
-    // slider_buffer: Option<wgpu::Buffer>,
     context_height: f32,
     focused: bool,
     offset: f32,
@@ -45,23 +39,12 @@ impl ScrollBar {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(10.0, 20.0), fill_style)),
             slider_render: RenderParam::new(RectParam::new(Rect::new().with_size(10.0, 10.0), slider_style)),
-            // fill_param: RectParam::new(Rect::new().with_size(10.0, 20.0), fill_style),
-            // fill_id: "".to_string(),
-            // fill_buffer: None,
-            // slider_param: RectParam::new(Rect::new().with_size(10.0, 10.0), slider_style),
-            // slider_id: "".to_string(),
-            // slider_buffer: None,
             context_height: 0.0,
             focused: false,
             offset: 0.0,
             changed: false,
         }
     }
-
-    // pub fn with_rect(mut self, rect: Rect) -> Self {
-    //     self.set_rect(rect);
-    //     self
-    // }
 
     pub fn set_rect(&mut self, rect: Rect) {
         self.fill_render.param.rect = rect;
@@ -79,11 +62,6 @@ impl ScrollBar {
         self.slider_render.param.rect.set_height(slider_height);
         self.changed = true;
     }
-
-    // pub fn context_height(mut self, context_height: f32) -> Self {
-    //     self.set_context_height(context_height);
-    //     self
-    // }
 
     pub fn set_height(&mut self, height: f32) {
         self.fill_render.param.rect.set_height(height);
@@ -113,17 +91,9 @@ impl ScrollBar {
     fn init(&mut self, ui: &mut Ui) {
         //背景
         self.fill_render.init_rectangle(ui, false, false);
-        // let data = self.fill_param.as_draw_param(false, false);
-        // let fill_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.fill_id = ui.context.render.rectangle.create_bind_group(&ui.device, &fill_buffer);
-        // self.fill_buffer = Some(fill_buffer);
         //滑块
         self.slider_render.param.rect = self.fill_render.param.rect.clone_with_size(&self.slider_render.param.rect);
         self.slider_render.init_rectangle(ui, false, false);
-        // let data = self.slider_param.as_draw_param(false, false);
-        // let slider_buffer = ui.context.render.rectangle.create_buffer(&ui.device, data);
-        // self.slider_id = ui.context.render.rectangle.create_bind_group(&ui.device, &slider_buffer);
-        // self.slider_buffer = Some(slider_buffer);
     }
 }
 
@@ -153,10 +123,7 @@ impl Widget for ScrollBar {
                     self.offset = roy;
                     let ut = UpdateType::Offset(offset);
                     ui.update_type = UpdateType::None;
-                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y(self.context_offset_y(-roy)));
                     self.slider_render.update(ui, true, true);
-                    // let data = self.slider_param.as_draw_param(true, true);
-                    // ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
                     ui.context.window.request_redraw();
                     ui.request_update(ut);
                 }
@@ -176,16 +143,12 @@ impl Widget for ScrollBar {
                 let ut = UpdateType::Offset(offset);
                 ui.update_type = UpdateType::None;
                 self.slider_render.update(ui, true, true);
-                // let data = self.slider_param.as_draw_param(true, true);
-                // ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
                 ui.request_update(ut);
             }
             _ => {
                 if self.changed {
                     self.changed = false;
                     self.slider_render.update(ui, false, false);
-                    // let data = self.slider_param.as_draw_param(false, false);
-                    // ui.device.queue.write_buffer(self.slider_buffer.as_ref().unwrap(), 0, data);
                 }
             }
         }

@@ -10,6 +10,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
+use crate::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
@@ -50,8 +51,6 @@ impl TextEdit {
         fill_style.border.inactive = Border::new(0.0).radius(Radius::same(2));
         fill_style.border.hovered = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill_style.border.clicked = fill_style.border.hovered.clone();
-
-
         TextEdit {
             id: crate::gen_unique_id(),
             // text_buffer: TextBuffer::new(text.wrap(TextWrap::WrapAny)),
@@ -72,6 +71,7 @@ impl TextEdit {
         let mut res = Self::new(txt.to_string());
         res.desire_lines = 1;
         res.char_layout.edit_kind = EditKind::Single;
+        res.char_layout.buffer.set_wrap(TextWrap::NoWrap);
         res
     }
 
@@ -91,20 +91,18 @@ impl TextEdit {
     }
 
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
-        // self.char_layout.buffer.set_text(text);
-        // self.char_layout.set_text(&text, ui);
-        // self.text_buffer.set_text(text);
-        self.char_layout.buffer.update_buffer_text(ui,&text);
+        self.char_layout.buffer.update_buffer_text(ui, &text);
         self.select_render.reset(&self.cursor_render);
         self.changed = true;
     }
 
     pub fn text(&self) -> String {
-        self.char_layout.buffer.lines.iter().map(|x|x.raw_text()).collect()
-        // self.char_layout.raw_text()
+        self.char_layout.buffer.lines.iter().map(|x| x.raw_text()).collect()
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
+        self.char_layout.buffer.rect.set_width(194.0);
+        self.char_layout.buffer.size_mode = SizeMode::FixWidth;
         self.char_layout.buffer.init(ui); //计算行高
         let height = self.char_layout.buffer.text.height * self.desire_lines as f32 + 6.0;
         match self.size_mode {
@@ -148,7 +146,7 @@ impl TextEdit {
             self.cursor_render.set_rect(cursor_rect);
         }
         self.fill_render.init_rectangle(ui, false, false);
-        self.cursor_render.init( &self.char_layout, ui, init);
+        self.cursor_render.init(&self.char_layout, ui, init);
         self.select_render.init(self.desire_lines, &self.char_layout.buffer.rect, self.char_layout.buffer.text.height, ui, init);
         // self.text_buffer.draw(ui);
     }

@@ -9,8 +9,6 @@ use crate::text::buffer::TextBuffer;
 
 pub(crate) struct CharBuffer {
     pub(crate) buffer: TextBuffer,
-    // #[deprecated]
-    // draw_text: String,
     font_size: f32,
     line_height: f32,
     max_wrap_width: f32,
@@ -22,7 +20,6 @@ impl CharBuffer {
     pub fn new(text: impl ToString) -> CharBuffer {
         CharBuffer {
             buffer: TextBuffer::new(text.to_string().wrap(TextWrap::WrapAny)),
-            // draw_text: "".to_string(),
             font_size: 0.0,
             line_height: 0.0,
             max_wrap_width: 0.0,
@@ -30,47 +27,6 @@ impl CharBuffer {
             edit_kind: EditKind::Multi,
         }
     }
-    // pub fn set_text(&mut self, text: &str, ui: &mut Ui) {
-    //     self.draw_text.clear();
-    //     self.lines.clear();
-    //     match self.edit_kind {
-    //         EditKind::Single => {
-    //             let mut line = LineChar::new();
-    //             for cchar in text.chars() {
-    //                 let cchar = if cchar == '\n' { '↩' } else { cchar };
-    //                 let width = ui.context.font.char_width(cchar, self.font_size);
-    //                 self.draw_text.push(cchar);
-    //                 line.push(CChar::new(cchar, width));
-    //             }
-    //             line.auto_wrap = true;
-    //             self.lines.push(line);
-    //         }
-    //         EditKind::Multi => {
-    //             println!("{:?}", text);
-    //             let mut line = LineChar::new();
-    //             for cchar in text.chars() {
-    //                 if cchar == '\n' {
-    //                     self.draw_text.push('\n');
-    //                     line.auto_wrap = false;
-    //                     let line = mem::take(&mut line);
-    //                     self.lines.push(line);
-    //                 } else {
-    //                     let width = ui.context.font.char_width(cchar, self.font_size);
-    //                     if line.width + width > self.max_wrap_width { //需要换行
-    //                         self.draw_text.push('\n');
-    //                         line.auto_wrap = true;
-    //                         let line = mem::take(&mut line);
-    //                         self.lines.push(line);
-    //                     }
-    //                     self.draw_text.push(cchar);
-    //                     line.push(CChar::new(cchar, width));
-    //                 }
-    //             }
-    //             line.auto_wrap = true;
-    //             if line.chars.len() != 0 || text.len() == 0 { self.lines.push(line); }
-    //         }
-    //     }
-    // }
 
     pub fn set_font_size(&mut self, font_size: f32) {
         self.font_size = font_size;
@@ -83,13 +39,6 @@ impl CharBuffer {
     pub fn set_max_wrap_width(&mut self, max_wrap_width: f32) {
         self.max_wrap_width = max_wrap_width;
     }
-
-    // #[deprecated]
-    // pub fn draw_text(&self) -> &str { &self.draw_text }
-
-    // pub fn raw_text(&self) -> String {
-    //     self.lines.iter().map(|x| x.raw_text()).collect()
-    // }
 
     pub fn remove_by_range(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) {
         if cursor.vert > selection.start_vert { //向下删除
@@ -156,8 +105,6 @@ impl CharBuffer {
     fn rebuild_text(&mut self, ui: &mut Ui) {
         let text: String = self.buffer.lines.iter().map(|x| x.raw_text()).collect();
         self.buffer.update_buffer_text(ui, &text)
-        // let raw_text = self.raw_text();
-        // self.set_text(&raw_text, ui);
     }
 
     pub fn remove_chars_before_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) {
@@ -186,7 +133,6 @@ impl CharBuffer {
         if selection.has_selected {
             self.remove_by_range(ui, cursor, selection);
         }
-        // let width = ui.context.font.char_width(c, self.font_size);
         let cchar = CChar::new(c, 0.0);
         let line = &mut self.buffer.lines[cursor.vert];
         line.chars.insert(cursor.horiz, cchar);

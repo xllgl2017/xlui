@@ -56,28 +56,6 @@ impl Font {
         self
     }
 
-    // #[deprecated]
-    // pub(crate) fn text_size(&self, text: &mut RichText) {
-    //     if text.size.is_none() { text.size = Some(self.size); }
-    //     let scale = PxScale::from(text.font_size());
-    //     let scale_font = self.glyph_font.as_scaled(scale);
-    //     let ascent = scale_font.ascent();
-    //     let descent = scale_font.descent();
-    //     let line_gap = scale_font.line_gap();
-    //     text.height = ascent - descent + line_gap;
-    //     let face = Face::from_slice(&self.data, 0).expect("invalid font data");
-    //     let mut buf = UnicodeBuffer::new();
-    //     buf.push_str(&text.text);
-    //     let glyph_buffer = rustybuzz::shape(&face, &[], buf);
-    //     let positions = glyph_buffer.glyph_positions();
-    //     let upem = face.units_per_em() as f32;
-    //     let scale = text.font_size() / upem;
-    //     for pos in positions {
-    //         println!("offset {}-{}", pos.x_offset, text.text);
-    //         text.width += pos.x_advance as f32 * scale;
-    //     }
-    // }
-
     pub(crate) fn line_height(&self, font_size: f32) -> f32 {
         let scale = PxScale::from(font_size);
         let scale_font = self.glyph_font.as_scaled(scale);
@@ -86,16 +64,6 @@ impl Font {
         let line_gap = scale_font.line_gap();
         ascent - descent + line_gap
     }
-
-    // pub(crate) fn char_width(&self, char: char, font_size: f32) -> f32 {
-    //     let scale = PxScale::from(font_size);
-    //     let scale_font = self.glyph_font.as_scaled(scale);
-    //     let glyph = self.glyph_font.glyph_id(char);
-    //     scale_font.h_advance(glyph)
-    //     // let glyph=glyph.with_scale_and_position(scale,ab_glyph::point(0.0,0.0));
-    //     // // scale_font.glyph_bounds(&scale_font.scaled_glyph(char)).width()
-    //     // scale_font.outline_glyph(glyph).unwrap().px_bounds().width()
-    // }
 
     pub(crate) fn family(&self) -> glyphon::Family {
         glyphon::Family::Name(&self.family)
