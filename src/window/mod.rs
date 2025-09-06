@@ -129,7 +129,7 @@ impl WindowType {
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.send_user_event(self.id, event).unwrap(),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-            WindowKind::Win32(ref window) => {}
+            WindowKind::Win32(ref window) => window.send_update(event),
         }
     }
 

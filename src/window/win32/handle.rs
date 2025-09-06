@@ -4,6 +4,8 @@ use std::num::NonZeroIsize;
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM, HIMC};
 use windows::Win32::UI::WindowsAndMessaging::{CloseWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
+use crate::window::UserEvent;
+use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
@@ -27,6 +29,15 @@ impl Win32WindowHandle {
         unsafe { ImmSetCompositionWindow(himc, &comp_form).ok()?; }
         unsafe { ImmReleaseContext(self.hwnd, himc).ok()? };
         Ok(())
+    }
+
+    pub fn send_update(&self, event: UserEvent) {
+        let event = match event {
+            UserEvent::ReqUpdate => REQ_UPDATE,
+            UserEvent::CreateChild => CREATE_CHILD,
+            UserEvent::ReInit => RE_INIT
+        };
+        unsafe { PostMessageW(Some(self.hwnd), event, WPARAM(0), LPARAM(0)).unwrap() }
     }
 
 

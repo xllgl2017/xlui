@@ -20,6 +20,9 @@ pub(crate) mod handle;
 mod until;
 
 const TRAY_ICON: u32 = WM_USER + 1;
+const REQ_UPDATE: u32 = WM_USER + 2;
+const CREATE_CHILD: u32 = WM_USER + 3;
+const RE_INIT: u32 = WM_USER + 4;
 
 pub struct Win32Window {
     size: Size,
@@ -196,6 +199,18 @@ impl Win32Window {
                 WM_IME_ENDCOMPOSITION => {
                     println!("ime end");
                     (window.id, WindowEvent::None)
+                }
+                REQ_UPDATE => {
+                    println!("req_update");
+                    (window.id, WindowEvent::ReqUpdate)
+                }
+                CREATE_CHILD => {
+                    println!("create_child");
+                    (window.id, WindowEvent::CreateChild)
+                }
+                RE_INIT => {
+                    println!("re_init");
+                    (window.id, WindowEvent::Reinit)
                 }
                 _ => {
                     TranslateMessage(&msg);
