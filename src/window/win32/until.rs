@@ -48,6 +48,7 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
 }
 
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    println!("ime2-----------{}", msg);
     match msg {
         WM_CLOSE => {
             println!("req quit-{:?}", hwnd);
@@ -57,7 +58,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         TRAY_ICON => {
             match lparam.0 as u32 {
                 WM_RBUTTONUP => {
-                    let app: &Win32Window = unsafe{ (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window).as_ref() }.unwrap();
+                    let app: &Win32Window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window).as_ref() }.unwrap();
                     app.show_tray_menu().unwrap();
                 }
                 _ => {}
@@ -65,14 +66,15 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             LRESULT(0)
         }
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
-            unsafe{PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap()};
+            unsafe { PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap() };
             LRESULT(0)
         }
         WM_IME_NOTIFY => {
+
             match wparam.0 as u32 {
                 IMN_OPENCANDIDATE | IMN_CHANGECANDIDATE | IMN_CLOSECANDIDATE => {
                     // 鼠标点击候选词会触发这些
-                    unsafe{
+                    unsafe {
                         let himc = ImmGetContext(hwnd);
                         let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
                         if size > 0 {
@@ -84,7 +86,6 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                         }
                         ImmReleaseContext(hwnd, himc).unwrap();
                     }
-
                 }
                 _ => {}
             }

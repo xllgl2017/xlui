@@ -1,3 +1,4 @@
+use std::ptr::null_mut;
 use crate::error::UiResult;
 use crate::key::Key;
 use crate::map::Map;
@@ -7,12 +8,12 @@ use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, GCS_COMPSTR, GCS_RESULTSTR};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, GCS_COMPSTR, GCS_RESULTSTR, HIMC};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 use crate::window::win32::clipboard::Win32Clipboard;
@@ -111,7 +112,7 @@ impl Win32Window {
                 None,
             )
         }?;
-        Ok(Win32WindowHandle { hwnd })
+        Ok(Win32WindowHandle { hwnd, himc: RwLock::new(HIMC(null_mut())) })
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
@@ -131,6 +132,7 @@ impl Win32Window {
             let mut msg = std::mem::zeroed::<MSG>();
             let ret = GetMessageW(&mut msg, None, 0, 0);
             if ret.0 == 0 { return (self.handles[0].id, WindowEvent::ReqClose); }
+            // println!("ime4-----------{}", msg.message);
             let window = self.handles.iter().find(|x| x.win32().hwnd == msg.hwnd);
             if window.is_none() { return (WindowId(0), WindowEvent::None); }
             let window = window.unwrap();
@@ -179,13 +181,14 @@ impl Win32Window {
                     (window.id, WindowEvent::Reinit)
                 }
                 IME => {
-                    let himc = ImmGetContext(window.win32().hwnd);
+                    let himc = window.win32().himc.read().unwrap();
+                    println!("ime-----{}", msg.lParam.0);
                     if msg.lParam.0 == 7168 {
-                        let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
+                        let size = ImmGetCompositionStringW(*himc, GCS_RESULTSTR, None, 0);
                         if size > 0 {
                             let len = size as usize / 2;
                             let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            ImmGetCompositionStringW(*himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
                             let s = String::from_utf16_lossy(&buf);
                             window.ime().ime_commit(s.chars().collect());
                             println!("ime2: {}", s);
@@ -193,14 +196,16 @@ impl Win32Window {
                         }
                     }
                     if msg.lParam.0 == 440 {
-                        let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
+                        let size = ImmGetCompositionStringW(*himc, GCS_COMPSTR, None, 0);
                         if size > 0 {
                             let len = (size as usize) / 2;
                             let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            ImmGetCompositionStringW(*himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
                             let s = String::from_utf16_lossy(&buf);
                             println!("ime1: {}", s);
                             window.ime().ime_draw(s.chars().collect());
+                            // drop(himc);
+                            // window.win32().release_ime().unwrap();
                             return (window.id, WindowEvent::IME);
                         }
                     }

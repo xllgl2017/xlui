@@ -64,7 +64,6 @@ pub enum ClipboardData {
 }
 
 
-
 #[derive(Debug)]
 pub enum UserEvent {
     ReqUpdate = 0,

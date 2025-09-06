@@ -3,21 +3,37 @@ use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT};
 use crate::window::UserEvent;
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 use std::num::NonZeroIsize;
+use std::ptr::null_mut;
+use std::sync::RwLock;
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
+use windows::Win32::UI::Input::Ime::{ImmAssociateContext, ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM, HIMC};
 use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
+    pub(crate) himc: RwLock<HIMC>,
 }
 impl Win32WindowHandle {
+    pub fn request_ime(&self) {
+        let mut himc = self.himc.write().unwrap();
+        himc.0 = unsafe { ImmGetContext(self.hwnd) }.0;
+        unsafe { ImmAssociateContext(self.hwnd, *himc); }
+    }
+
+    // pub fn release_ime(&self) -> UiResult<()> {
+    //     let mut himc = self.himc.write().unwrap();
+    //     unsafe { ImmReleaseContext(self.hwnd, *himc).ok()? };
+    //     unsafe { let _ = Box::from_raw(himc.0); }
+    //     himc.0 = null_mut();
+    //     Ok(())
+    // }
+
     pub fn set_ime_position(&self, x: f32, y: f32, _: f32) -> UiResult<()> {
-        let himc = unsafe { ImmGetContext(self.hwnd) };
+        let himc = self.himc.read().or(Err("无法获取输入法句柄"))?;
         let mut cf = COMPOSITIONFORM::default();
         cf.dwStyle = CFS_POINT;
         cf.ptCurrentPos = POINT { x: x as i32, y: y as i32 };
-        unsafe { ImmSetCompositionWindow(himc, &cf).ok()? }
-        unsafe { ImmReleaseContext(self.hwnd, himc).ok()? };
+        unsafe { ImmSetCompositionWindow(*himc, &cf).ok()? }
         Ok(())
     }
 
