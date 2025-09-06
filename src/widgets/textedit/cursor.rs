@@ -1,16 +1,15 @@
-use crate::Offset;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::size::border::Border;
 use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
-use crate::style::ClickStyle;
 use crate::style::color::Color;
-use crate::text::buffer::TextBuffer;
+use crate::style::ClickStyle;
 use crate::text::cchar::CChar;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
+use crate::Offset;
 
 pub struct EditCursor {
     pub(crate) min_pos: Pos,
@@ -45,16 +44,16 @@ impl EditCursor {
         }
     }
 
-    pub fn init(&mut self, text: &TextBuffer, cchar: &CharBuffer, ui: &mut Ui, init: bool) {
+    pub fn init(&mut self, cchar: &CharBuffer, ui: &mut Ui, init: bool) {
         if init {
-            self.min_pos.x = text.rect.dx().min;
-            self.min_pos.y = text.rect.dy().min;
-            self.max_pos.x = text.rect.dx().max;
-            self.max_pos.y = text.rect.dy().max;
-            self.line_height = text.text.height;
-            self.vert = cchar.lines.len();
+            self.min_pos.x = cchar.buffer.rect.dx().min;
+            self.min_pos.y = cchar.buffer.rect.dy().min;
+            self.max_pos.x = cchar.buffer.rect.dx().max;
+            self.max_pos.y = cchar.buffer.rect.dy().max;
+            self.line_height = cchar.buffer.text.height;
+            self.vert = cchar.buffer.lines.len();
             // let last_line = cchar.lines.last().unwrap();
-            self.horiz = cchar.lines.last().unwrap().len();
+            self.horiz = cchar.buffer.lines.last().unwrap().len();
             // let oy = (self.vert - 1) as f32 * text.text.height;
             // self.offset.x = last_line.width;
             // self.offset.y = oy;
@@ -91,12 +90,12 @@ impl EditCursor {
         if self.horiz == 0 && self.vert == 0 { return; }
         if self.horiz == 0 {
             self.vert -= 1;
-            self.horiz = cchar.lines[self.vert].len();
+            self.horiz = cchar.buffer.lines[self.vert].len();
             self.offset.y -= self.line_height;
-            self.offset.x = cchar.lines[self.vert].width + cchar.offset.x;
+            self.offset.x = cchar.buffer.lines[self.vert].width + cchar.offset.x;
         } else {
             self.horiz -= 1;
-            self.offset.x = cchar.lines[self.vert].get_width_in_char(self.horiz) + cchar.offset.x;
+            self.offset.x = cchar.buffer.lines[self.vert].get_width_in_char(self.horiz) + cchar.offset.x;
             // self.offset.x -= cchar.lines[self.vert].chars[self.horiz - 1].width + cchar.offset.x;
 
         }
@@ -107,7 +106,7 @@ impl EditCursor {
         self.changed = true;
         if self.horiz == 0 {
             self.vert -= 1;
-            let line = &mut cchar.lines[self.vert];
+            let line = &mut cchar.buffer.lines[self.vert];
             self.horiz = if line.auto_wrap { line.chars.len() - 1 } else { line.chars.len() };
             let c = if line.auto_wrap { line.chars.remove(self.horiz) } else { CChar::new('\n', 0.0) };
             line.auto_wrap = true;
@@ -115,7 +114,7 @@ impl EditCursor {
             self.offset.y -= self.line_height;
             c
         } else {
-            let line = &mut cchar.lines[self.vert];
+            let line = &mut cchar.buffer.lines[self.vert];
             let c = line.chars.remove(self.horiz - 1);
             cchar.offset.x += c.width;
             if cchar.offset.x >= 0.0 { cchar.offset.x = 0.0; }
@@ -126,12 +125,12 @@ impl EditCursor {
     }
 
     pub fn delete_after(&mut self, cchar: &mut CharBuffer) -> CChar {
-        let len = cchar.lines.len();
-        let line = &mut cchar.lines[self.vert];
+        let len = cchar.buffer.lines.len();
+        let line = &mut cchar.buffer.lines[self.vert];
         let c = if self.horiz == line.len() && self.vert < len {
             let wrap = line.auto_wrap;
             line.auto_wrap = true;
-            if wrap && self.vert + 1 < len { cchar.lines[self.vert + 1].chars.remove(0) } else { CChar::new('\n', 0.0) }
+            if wrap && self.vert + 1 < len { cchar.buffer.lines[self.vert + 1].chars.remove(0) } else { CChar::new('\n', 0.0) }
         } else if self.horiz < line.len() {
             let c = line.chars.remove(self.horiz);
             cchar.offset.x += c.width;
@@ -144,9 +143,9 @@ impl EditCursor {
 
     pub fn move_right(&mut self, cchar: &CharBuffer) {
         println!("move right-{}-{}", self.horiz, self.vert);
-        let line = &cchar.lines[self.vert];
+        let line = &cchar.buffer.lines[self.vert];
         if self.horiz == line.len() {
-            if self.vert == cchar.lines.len() - 1 { return; }
+            if self.vert == cchar.buffer.lines.len() - 1 { return; }
             self.vert += 1;
             self.horiz = 0;
             self.offset.x = 0.0;
@@ -159,7 +158,7 @@ impl EditCursor {
     }
 
     fn up_down_offset(&mut self, cchar: &CharBuffer) {
-        let line = &cchar.lines[self.vert];
+        let line = &cchar.buffer.lines[self.vert];
         let mut sum_width = 0.0;
         self.horiz = 0;
         for c in line.chars.iter() {
@@ -190,7 +189,7 @@ impl EditCursor {
     }
 
     pub fn move_down(&mut self, cchar: &CharBuffer) {
-        if self.vert == cchar.lines.len() - 1 { return; }
+        if self.vert == cchar.buffer.lines.len() - 1 { return; }
         self.vert += 1;
         self.up_down_offset(cchar);
         println!("current cursor {} {}", self.vert, self.horiz);
@@ -201,9 +200,9 @@ impl EditCursor {
     pub fn update_by_pos(&mut self, pos: Pos, cchar: &mut CharBuffer) {
         let clip_height = pos.y + cchar.offset.y - self.min_pos.y;
         let mut line_index = (clip_height / self.line_height) as usize;
-        if line_index >= cchar.lines.len() { line_index = cchar.lines.len() - 1; }
+        if line_index >= cchar.buffer.lines.len() { line_index = cchar.buffer.lines.len() - 1; }
         self.vert = line_index;
-        let line = &cchar.lines[self.vert];
+        let line = &cchar.buffer.lines[self.vert];
 
 
         if pos.x > self.max_pos.x && self.min_pos.x + line.width > self.max_pos.x {
@@ -272,7 +271,7 @@ impl EditCursor {
         println!("remove-cursor-{}-{}", horiz, vert);
         self.horiz = horiz;
         self.vert = vert;
-        self.offset.x = cchar.lines[vert].get_width_in_char(horiz) + cchar.offset.x;
+        self.offset.x = cchar.buffer.lines[vert].get_width_in_char(horiz) + cchar.offset.x;
         self.offset.y = vert as f32 * self.line_height;
         self.changed = true;
     }

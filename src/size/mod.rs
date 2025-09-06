@@ -29,6 +29,14 @@ impl SizeMode {
             _ => {}
         }
     }
+
+
+    pub fn is_fixed_width(&self) -> bool {
+        match self {
+            SizeMode::FixWidth | SizeMode::Fix => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Copy, PartialEq)]

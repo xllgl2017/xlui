@@ -1,3 +1,4 @@
+use std::mem;
 use crate::align::Align;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
@@ -38,6 +39,7 @@ impl TextBuffer {
         }
     }
 
+    #[deprecated = "user RichText::wrap"]
     pub fn with_wrap(mut self, wrap: TextWrap) -> Self {
         self.text = self.text.wrap(wrap);
         self
@@ -50,16 +52,22 @@ impl TextBuffer {
         let buffer = self.buffer.as_ref().unwrap();
         for buffer_line in &buffer.lines {
             let mut line = LineChar::new();
+            line.auto_wrap = false;
             for layout in buffer_line.layout_opt().unwrap() {
                 for glyph in &layout.glyphs {
                     let cchar = buffer_line.text()[glyph.start..glyph.end].chars().next().unwrap();
+                    if self.size_mode.is_fixed_width() && line.width + glyph.w >= self.rect.width() && self.text.wrap.is_wrap() {
+                        let mut line = mem::take(&mut line);
+                        line.auto_wrap = true;
+                        self.lines.push(line);
+                    }
                     line.push(CChar::new(cchar, glyph.w));
                     self.text.width += glyph.w;
                 }
             }
             self.lines.push(line);
         }
-        println!("{:#?}", self.lines);
+        // println!("{:#?}", self.lines);
     }
 
     pub fn init(&mut self, ui: &mut Ui) {

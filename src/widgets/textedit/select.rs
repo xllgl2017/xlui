@@ -106,14 +106,14 @@ impl EditSelection {
         if cursor.vert > self.start_vert { //向下选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index == self.start_vert {
-                    let line = &cchar.lines[index];
+                    let line = &cchar.buffer.lines[index];
                     render.param.rect.set_x_min(line.get_width_in_char(self.start_horiz) + cursor.min_pos.x);
                     render.param.rect.set_x_max(line.width + cursor.min_pos.x);
                 } else if index == cursor.vert {
                     render.param.rect.set_x_min(cursor.min_pos.x);
                     render.param.rect.set_x_max(cursor.cursor_min());
                 } else if index > self.start_vert && index < cursor.vert {
-                    let line = &cchar.lines[index];
+                    let line = &cchar.buffer.lines[index];
                     render.param.rect.set_x_min(cursor.min_pos.x);
                     render.param.rect.set_x_max(cursor.min_pos.x + line.width);
                 } else {
@@ -125,11 +125,11 @@ impl EditSelection {
                 if index == self.start_vert {
                     render.param.rect.set_x_min(cursor.min_pos.x);
                 } else if index == cursor.vert {
-                    let line = &cchar.lines[index];
+                    let line = &cchar.buffer.lines[index];
                     render.param.rect.set_x_min(cursor.cursor_min());
                     render.param.rect.set_x_max(cursor.min_pos.x + line.width);
                 } else if index > cursor.vert && index < self.start_vert {
-                    let line = &cchar.lines[index];
+                    let line = &cchar.buffer.lines[index];
                     render.param.rect.set_x_min(cursor.min_pos.x);
                     render.param.rect.set_x_max(cursor.min_pos.x + line.width);
                 } else {
@@ -142,7 +142,7 @@ impl EditSelection {
                     render.param.rect.set_x_max(render.param.rect.dx().min);
                     continue;
                 }
-                let line = &cchar.lines[self.start_vert];
+                let line = &cchar.buffer.lines[self.start_vert];
                 if cursor.horiz > self.start_horiz { //向右选择
                     let ox = line.get_width_in_char(self.start_horiz) + cchar.offset.x;
                     let ox = if cursor.min_pos.x + ox < cursor.min_pos.x { cursor.min_pos.x } else { cursor.min_pos.x + ox };
@@ -219,14 +219,14 @@ impl EditSelection {
         self.start_vert = start_vert;
         self.has_selected = true;
         if start_vert == cursor.vert { //处于同一行中
-            let line = &cchar.lines[cursor.vert];
+            let line = &cchar.buffer.lines[cursor.vert];
             let x_min = line.get_width_in_char(start_horiz) + cursor.min_pos.x;
             let x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
             self.renders[cursor.vert].param.rect.set_x_min(x_min);
             self.renders[cursor.vert].param.rect.set_x_max(x_max);
         } else {
-            let start_line = &cchar.lines[start_vert];
-            let end_line = &cchar.lines[cursor.vert];
+            let start_line = &cchar.buffer.lines[start_vert];
+            let end_line = &cchar.buffer.lines[cursor.vert];
             let sm = start_line.get_width_in_char(start_horiz) + cursor.min_pos.x;
             self.renders[start_vert].param.rect.set_x_min(sm);
             self.renders[start_vert].param.rect.set_x_max(cursor.max_pos.x);
