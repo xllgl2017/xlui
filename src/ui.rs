@@ -25,7 +25,8 @@ use std::any::Any;
 use std::fmt::Display;
 use std::ops::{AddAssign, DerefMut, Range, SubAssign};
 use std::sync::atomic::Ordering;
-use std::thread::{spawn, JoinHandle};
+use std::thread::{sleep, spawn, JoinHandle};
+use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 
 pub struct AppContext {
@@ -107,8 +108,19 @@ impl AppContext {
             }
         }
         ui.app = Some(app);
-        for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
+        let inner_windows = self.inner_windows.as_mut().unwrap();
+        inner_windows.sort_by_key(|x| x.value().top);
+        for i in 0..inner_windows.len() {
+            let inner_window = &mut inner_windows[i];
             inner_window.update(&mut ui);
+            if !inner_window.top { continue; }
+            inner_windows.iter_mut().for_each(|x| x.top = false);
+            inner_windows[i].top = true;
+            if i != inner_windows.len() - 1 {
+                println!("requst redraw for inner window");
+                ui.context.window.request_redraw();
+            }
+            break;
         }
         ui.inner_windows = self.inner_windows.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
@@ -131,7 +143,7 @@ impl AppContext {
             let window = self.context.window.clone();
             let t = self.previous_time;
             self.redraw_thread = spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(crate::time_ms() as u64 - t as u64));
+                sleep(Duration::from_millis(crate::time_ms() as u64 - t as u64));
                 window.request_redraw();
             });
             return;
@@ -203,6 +215,7 @@ impl AppContext {
             ui.context.user_update = u;
             ui.context.window.request_update(UserEvent::ReqUpdate);
         }
+        self.inner_windows.as_mut().unwrap().sort_by_key(|x| x.value().top);
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
             inner_window.redraw(&mut ui);
         }
@@ -322,7 +335,9 @@ impl<'a> Ui<'a> {
     }
 
     pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {
-        let inner_window = InnerWindow::new(w, self);
+        let mut inner_window = InnerWindow::new(w, self);
+        inner_window.top = true;
+        self.inner_windows.as_mut().unwrap().iter_mut().for_each(|x| x.top = false);
         let id = inner_window.id.clone();
         self.inner_windows.as_mut().unwrap().insert(inner_window.id.clone(), inner_window);
         self.inner_windows.as_mut().unwrap().get_mut(&id).unwrap()

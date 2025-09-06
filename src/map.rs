@@ -8,6 +8,12 @@ pub struct MapNode<K, V> {
     value: V,
 }
 
+impl<K, V> MapNode<K, V> {
+    pub fn value(&self) -> &V {
+        &self.value
+    }
+}
+
 
 pub struct Map<K, V> {
     keys: HashMap<K, usize>,
@@ -107,6 +113,18 @@ impl<K: Clone + Eq + Hash, V> Map<K, V> {
         self.keys.clear();
         self.values.reverse();
         self.values.iter().enumerate().for_each(|(i, x)| { self.keys.insert(x.key.clone(), i); });
+    }
+
+    pub fn sort_by_key<SK, F>(&mut self, f: F)
+    where
+        F: FnMut(&MapNode<K, V>) -> SK,
+        SK: Ord,
+    {
+        self.values.sort_by_key(f);
+        self.keys.clear();
+        self.values.iter().enumerate().for_each(|(index, v)| {
+            self.keys.insert(v.key.clone(), index);
+        })
     }
 }
 

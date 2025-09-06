@@ -1,10 +1,9 @@
+use crate::error::UiResult;
 use crate::window::win32::{Win32Window, IME, REQ_CLOSE, TRAY_ICON};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, HBITMAP, HGDIOBJ};
-use windows::Win32::UI::Input::Ime::*;
 use windows::Win32::UI::WindowsAndMessaging::*;
-use crate::error::UiResult;
 
 pub fn to_wstr(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(Some(0)).collect()

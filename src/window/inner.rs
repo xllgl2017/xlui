@@ -35,6 +35,7 @@ pub struct InnerWindow {
     popups: Option<Map<String, Popup>>,
     inner_windows: Option<Map<String, InnerWindow>>,
     pub(crate) request_close: Arc<AtomicBool>,
+    pub(crate) top: bool,
 }
 
 impl InnerWindow {
@@ -71,6 +72,7 @@ impl InnerWindow {
             inner_windows: Some(Map::new()),
             request_close: Arc::new(AtomicBool::new(false)),
             attr,
+            top: false,
         };
         window.draw_title(ui);
         window.draw_context(ui);
@@ -166,11 +168,14 @@ impl InnerWindow {
                 }
             }
             UpdateType::MousePress => {
-                self.press_title = ui.device.device_input.pressed_at(&self.title_rect);
+                self.press_title = ui.device.device_input.pressed_at(&self.title_rect) && self.top;
                 if self.press_title { return false; }
             }
             UpdateType::MouseRelease => {
                 self.press_title = false;
+                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
+                    self.top = true;
+                }
                 if ui.device.device_input.hovered_at(&self.title_rect) { return false; }
             }
             _ => {}
@@ -199,7 +204,7 @@ impl InnerWindow {
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
-        if self.window_update(oui) { return; }
+        if self.window_update(oui) || !self.top { return; }
         if !oui.device.device_input.hovered_at(&self.fill_render.param.rect) && !self.press_title { return; }
         let mut nui = Ui {
             device: oui.device,
