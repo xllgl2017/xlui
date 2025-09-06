@@ -2,9 +2,8 @@ use xlui::align::Align;
 use xlui::frame::App;
 use xlui::style::color::Color;
 use xlui::style::{ClickStyle, FillStyle};
-use xlui::text::rich::RichTextExt;
 use xlui::ui::Ui;
-use xlui::{Button, Label, WindowAttribute};
+use xlui::{Button, Label, RichTextExt, WindowAttribute};
 
 pub struct TestAlign {}
 

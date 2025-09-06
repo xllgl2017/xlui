@@ -88,7 +88,7 @@ mod widgets;
 pub mod align;
 pub mod vertex;
 pub mod layout;
-pub mod text;
+mod text;
 mod size;
 pub mod frame;
 pub mod ui;
@@ -109,6 +109,7 @@ pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview
                   checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
                   circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,
                   Widget, triangle::Triangle};
+pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

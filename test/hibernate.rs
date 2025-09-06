@@ -2,7 +2,7 @@ use std::sync::Arc;
 use xlui::frame::App;
 use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
-use xlui::{Button, ComboBox, Font, TextEdit, WindowAttribute};
+use xlui::{Button, ComboBox, Font, Label, RichTextExt, TextEdit, TextWrap, WindowAttribute};
 
 fn main() {
     XlUi {}.run();
@@ -14,6 +14,7 @@ impl App for XlUi {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.label("sc");
+            ui.add(Label::new("23454576767868678679789".wrap(TextWrap::NoWrap)).width(100.0).height(100.0));
             ui.button("btn");
             ui.checkbox(false, "1");
             ui.spinbox(1, 1, 0..100);

@@ -57,7 +57,9 @@ impl TextBuffer {
                     self.text.width += glyph.w;
                 }
             }
+            self.lines.push(line);
         }
+        println!("{:#?}", self.lines);
     }
 
     pub fn init(&mut self, ui: &mut Ui) {
@@ -127,7 +129,6 @@ impl TextBuffer {
                 self.clip_y = oy;
             }
         }
-
     }
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {

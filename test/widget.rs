@@ -1,10 +1,9 @@
 use std::fmt::{Display, Formatter};
 use xlui::frame::App;
-use xlui::text::rich::RichText;
 use xlui::ui::Ui;
 #[cfg(target_os = "windows")]
 use xlui::Tray;
-use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
+use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, RichText, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
 
 #[allow(dead_code)]
 fn main() {

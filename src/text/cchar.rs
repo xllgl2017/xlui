@@ -10,7 +10,7 @@ impl CChar {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LineChar {
     pub(crate) chars: Vec<CChar>,
     pub(crate) auto_wrap: bool,

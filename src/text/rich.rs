@@ -59,6 +59,7 @@ impl<T: Display> From<T> for RichText {
 pub trait RichTextExt {
     fn color(self, color: Color) -> RichText;
     fn size(self, size: f32) -> RichText;
+    fn wrap(self, wrap: TextWrap) -> RichText;
 }
 
 
@@ -69,5 +70,9 @@ impl<T: Display> RichTextExt for T {
 
     fn size(self, size: f32) -> RichText {
         RichText::new(self.to_string()).size(size)
+    }
+
+    fn wrap(self, wrap: TextWrap) -> RichText {
+        RichText::new(self.to_string()).wrap(wrap)
     }
 }
