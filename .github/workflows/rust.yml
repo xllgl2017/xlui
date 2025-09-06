@@ -27,8 +27,10 @@ jobs:
           prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
       - name: Install mold
         run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
-      - name: Check Native
-        run: cargo check
+      - name: Check Native Linux
+        run: cargo check --target x86_64-unknown-linux-gnu
+      - name: Check Native Windows
+        run: cargo check --target x86_64-pc-windows-msvc
       - name: Check WInit
         run: cargo check
       - name: Doc tests

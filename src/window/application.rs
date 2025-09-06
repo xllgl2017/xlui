@@ -11,12 +11,15 @@ use crate::window::{WindowId, WindowType};
 use crate::WindowAttribute;
 use std::process::exit;
 use std::sync::Arc;
+#[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
+#[cfg(target_os = "windows")]
 use crate::window::win32::Win32Window;
 
 pub struct Application {
     #[cfg(target_os = "linux")]
     native_window: X11Window,
+    #[cfg(target_os = "windows")]
     native_window: Win32Window,
     loop_windows: Map<WindowId, LoopWindow>,
 }
@@ -35,6 +38,7 @@ impl Application {
         let mut attr = app.window_attributes();
         #[cfg(target_os = "linux")]
         let native_window = X11Window::new(&attr, ime.clone()).unwrap();
+        #[cfg(target_os = "windows")]
         let native_window = Win32Window::new(&mut attr, ime).unwrap();
         let window_type = native_window.last_window();
         let wid = window_type.id;
@@ -49,6 +53,7 @@ impl Application {
     }
 
     pub fn run(mut self) {
+        #[cfg(target_os = "windows")]
         unsafe { SetWindowLongPtrW(self.native_window.last_window().win32().hwnd, GWLP_USERDATA, &self as *const _ as isize); }
         loop {
             let (wid, event) = self.native_window.run();

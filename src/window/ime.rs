@@ -87,6 +87,7 @@ impl IME {
         }
     }
 
+    #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub fn new_win32() -> IME {
         IME {
             available: false,
