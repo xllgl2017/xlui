@@ -25,17 +25,17 @@ pub fn get_y_lparam(lp: LPARAM) -> i32 {
     ((lp.0 >> 16) as i16) as i32
 }
 
-pub unsafe fn icon_to_bitmap(h_icon: HICON, width: i32, height: i32) -> HBITMAP {
-    let hdc = GetDC(None);
-    let hdc_mem = CreateCompatibleDC(Some(hdc));
-    let hbm = CreateCompatibleBitmap(hdc, width, height);
-    SelectObject(hdc_mem, HGDIOBJ::from(hbm));
+pub fn icon_to_bitmap(h_icon: HICON, width: i32, height: i32) -> HBITMAP {
+    let hdc = unsafe { GetDC(None) };
+    let hdc_mem = unsafe { CreateCompatibleDC(Some(hdc)) };
+    let hbm = unsafe { CreateCompatibleBitmap(hdc, width, height) };
+    unsafe { SelectObject(hdc_mem, HGDIOBJ::from(hbm)) };
 
     // 绘制图标到位图
-    DrawIconEx(hdc_mem, 0, 0, h_icon, width, height, 0, None, DI_NORMAL);
+    unsafe { DrawIconEx(hdc_mem, 0, 0, h_icon, width, height, 0, None, DI_NORMAL) };
 
-    DeleteDC(hdc_mem);
-    ReleaseDC(None, hdc);
+    unsafe { DeleteDC(hdc_mem) };
+    unsafe { ReleaseDC(None, hdc) };
     hbm
 }
 
