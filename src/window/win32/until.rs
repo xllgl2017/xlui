@@ -69,28 +69,6 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             unsafe { PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap() };
             LRESULT(0)
         }
-        WM_IME_NOTIFY => {
-
-            match wparam.0 as u32 {
-                IMN_OPENCANDIDATE | IMN_CHANGECANDIDATE | IMN_CLOSECANDIDATE => {
-                    // 鼠标点击候选词会触发这些
-                    unsafe {
-                        let himc = ImmGetContext(hwnd);
-                        let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
-                        if size > 0 {
-                            let len = size as usize / 2;
-                            let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
-                            let s = String::from_utf16_lossy(&buf);
-                            println!("Mouse select Result: {}", s);
-                        }
-                        ImmReleaseContext(hwnd, himc).unwrap();
-                    }
-                }
-                _ => {}
-            }
-            LRESULT(0)
-        }
         _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
     }
 }

@@ -11,14 +11,14 @@ use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, GetWindowLongPtrW, 
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
-    pub(crate) himc: RwLock<HIMC>,
+    // pub(crate) himc: RwLock<HIMC>,
 }
 impl Win32WindowHandle {
-    pub fn request_ime(&self) {
-        let mut himc = self.himc.write().unwrap();
-        himc.0 = unsafe { ImmGetContext(self.hwnd) }.0;
-        unsafe { ImmAssociateContext(self.hwnd, *himc); }
-    }
+    // pub fn request_ime(&self) {
+    //     let mut himc = self.himc.write().unwrap();
+    //     himc.0 = unsafe { ImmGetContext(self.hwnd) }.0;
+    //     unsafe { ImmAssociateContext(self.hwnd, *himc); }
+    // }
 
     // pub fn release_ime(&self) -> UiResult<()> {
     //     let mut himc = self.himc.write().unwrap();
@@ -29,11 +29,11 @@ impl Win32WindowHandle {
     // }
 
     pub fn set_ime_position(&self, x: f32, y: f32, _: f32) -> UiResult<()> {
-        let himc = self.himc.read().or(Err("无法获取输入法句柄"))?;
-        let mut cf = COMPOSITIONFORM::default();
-        cf.dwStyle = CFS_POINT;
-        cf.ptCurrentPos = POINT { x: x as i32, y: y as i32 };
-        unsafe { ImmSetCompositionWindow(*himc, &cf).ok()? }
+        // let himc = self.himc.read().or(Err("无法获取输入法句柄"))?;
+        // let mut cf = COMPOSITIONFORM::default();
+        // cf.dwStyle = CFS_POINT;
+        // cf.ptCurrentPos = POINT { x: x as i32, y: y as i32 };
+        // unsafe { ImmSetCompositionWindow(*himc, &cf).ok()? }
         Ok(())
     }
 

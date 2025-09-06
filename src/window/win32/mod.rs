@@ -14,7 +14,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, GCS_COMPSTR, GCS_RESULTSTR, HIMC};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR, HIMC};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
@@ -112,7 +112,7 @@ impl Win32Window {
                 None,
             )
         }?;
-        Ok(Win32WindowHandle { hwnd, himc: RwLock::new(HIMC(null_mut())) })
+        Ok(Win32WindowHandle { hwnd })
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
@@ -134,7 +134,11 @@ impl Win32Window {
             if ret.0 == 0 { return (self.handles[0].id, WindowEvent::ReqClose); }
             // println!("ime4-----------{}", msg.message);
             let window = self.handles.iter().find(|x| x.win32().hwnd == msg.hwnd);
-            if window.is_none() { return (WindowId(0), WindowEvent::None); }
+            if window.is_none() {
+                let _ = TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+                return (WindowId(0), WindowEvent::None);
+            }
             let window = window.unwrap();
             match msg.message {
                 WM_SIZE => {
@@ -149,11 +153,11 @@ impl Win32Window {
                     (window.id, WindowEvent::Redraw)
                     // LRESULT(0)
                 }
-                WM_KEYDOWN => {
-                    println!("Key down: {}", msg.wParam.0);
-                    println!("1111111111111={:?}", Win32Clipboard {}.get_clipboard_data());
-                    (window.id, WindowEvent::KeyPress(Key::Backspace))
-                }
+                // WM_KEYDOWN => {
+                //     println!("Key down: {}", msg.wParam.0);
+                //     println!("1111111111111={:?}", Win32Clipboard {}.get_clipboard_data());
+                //     (window.id, WindowEvent::KeyPress(Key::Backspace))
+                // }
                 WM_LBUTTONDOWN => {
                     //切换输入法
                     // let h_ime = ImmGetContext(window.win32().hwnd);
@@ -181,31 +185,32 @@ impl Win32Window {
                     (window.id, WindowEvent::Reinit)
                 }
                 IME => {
-                    let himc = window.win32().himc.read().unwrap();
+                    // let himc = window.win32().himc.read().unwrap();
+                    let himc = ImmGetContext(window.win32().hwnd);
                     println!("ime-----{}", msg.lParam.0);
                     if msg.lParam.0 == 7168 {
-                        let size = ImmGetCompositionStringW(*himc, GCS_RESULTSTR, None, 0);
+                        let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
                         if size > 0 {
                             let len = size as usize / 2;
                             let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(*himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
                             let s = String::from_utf16_lossy(&buf);
                             window.ime().ime_commit(s.chars().collect());
                             println!("ime2: {}", s);
+                            ImmReleaseContext(window.win32().hwnd, himc).unwrap();
                             return (window.id, WindowEvent::IME);
                         }
                     }
                     if msg.lParam.0 == 440 {
-                        let size = ImmGetCompositionStringW(*himc, GCS_COMPSTR, None, 0);
+                        let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
                         if size > 0 {
                             let len = (size as usize) / 2;
                             let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(*himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
                             let s = String::from_utf16_lossy(&buf);
                             println!("ime1: {}", s);
                             window.ime().ime_draw(s.chars().collect());
-                            // drop(himc);
-                            // window.win32().release_ime().unwrap();
+                            ImmReleaseContext(window.win32().hwnd, himc).unwrap();
                             return (window.id, WindowEvent::IME);
                         }
                     }
