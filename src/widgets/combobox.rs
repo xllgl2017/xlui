@@ -34,7 +34,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::Widget;
@@ -80,7 +80,7 @@ impl<T: Display + 'static> ComboBox<T> {
     }
 
     fn reset_size(&mut self, ui: &mut Ui) {
-        self.text_buffer.reset_size(ui);
+        self.text_buffer.init(ui);
         match self.size_mode {
             SizeMode::Auto => self.fill_render.param.rect.set_size(100.0, 20.0),
             SizeMode::FixWidth => self.fill_render.param.rect.set_height(20.0),
@@ -142,7 +142,7 @@ impl<T: Display + 'static> ComboBox<T> {
         fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         self.fill_render.init_rectangle(ui, false, false);
         //文本
-        self.text_buffer.draw(ui);
+        self.text_buffer.init(ui);
     }
 
     pub fn parent(&self) -> Arc<RwLock<Option<String>>> {

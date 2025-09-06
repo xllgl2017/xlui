@@ -7,6 +7,7 @@ use crate::ui::Ui;
 use crate::SAMPLE_COUNT;
 use glyphon::Shaping;
 use wgpu::MultisampleState;
+use crate::text::cchar::{CChar, LineChar};
 
 pub struct TextBuffer {
     pub(crate) text: RichText,
@@ -18,7 +19,7 @@ pub struct TextBuffer {
     pub(crate) clip_y: f32,
     pub(crate) change: bool,
     pub(crate) align: Align,
-    pub(crate) chars_with: Vec<f32>,
+    pub(crate) lines: Vec<LineChar>,
 }
 
 impl TextBuffer {
@@ -33,7 +34,7 @@ impl TextBuffer {
             clip_y: 0.0,
             change: false,
             align: Align::LeftTop,
-            chars_with: vec![],
+            lines: vec![],
         }
     }
 
@@ -42,11 +43,40 @@ impl TextBuffer {
         self
     }
 
-    pub fn reset_size(&mut self, ui: &mut Ui) {
-        // self.text.init_size(&context.font);
-        self.draw(ui);
 
+    fn reset(&mut self) {
+        self.text.width = 0.0;
+        self.lines.clear();
+        let buffer = self.buffer.as_ref().unwrap();
+        for buffer_line in &buffer.lines {
+            let mut line = LineChar::new();
+            for layout in buffer_line.layout_opt().unwrap() {
+                for glyph in &layout.glyphs {
+                    let cchar = buffer_line.text()[glyph.start..glyph.end].chars().next().unwrap();
+                    line.push(CChar::new(cchar, glyph.w));
+                    self.text.width += glyph.w;
+                }
+            }
+        }
+    }
 
+    pub fn init(&mut self, ui: &mut Ui) {
+        if self.text.size.is_none() { self.text.size = Some(ui.context.font.size) }
+        self.text.height = ui.context.font.line_height(self.text.font_size());
+        let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
+        if let SizeMode::Fix = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(self.rect.width()), Some(self.rect.height())) }
+        if let SizeMode::FixWidth = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(self.rect.width()), None) }
+        if let SizeMode::FixHeight = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, None, Some(self.rect.height())) }
+        buffer.set_wrap(&mut ui.context.render.text.font_system, self.text.wrap.as_gamma());
+        buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &ui.context.font.font_attr(), Shaping::Advanced);
+        let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
+            count: SAMPLE_COUNT,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        }, None);
+        self.render = Some(render);
+        self.buffer = Some(buffer);
+        self.reset();
         match self.size_mode {
             SizeMode::Auto => self.rect.set_size(self.text.width, self.text.height),
             SizeMode::FixWidth => self.rect.set_height(self.text.height),
@@ -97,35 +127,10 @@ impl TextBuffer {
                 self.clip_y = oy;
             }
         }
-    }
 
-    pub(crate) fn draw(&mut self, ui: &mut Ui) {
-        self.text.width = 0.0;
-        if self.text.size.is_none() { self.text.size = Some(ui.context.font.size) }
-        self.text.height = ui.context.font.line_height(self.text.font_size());
-        let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
-        buffer.set_wrap(&mut ui.context.render.text.font_system, glyphon::Wrap::Glyph);
-        buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &ui.context.font.font_attr(), Shaping::Advanced);
-        for (index, buffer_line) in buffer.lines.iter().enumerate() {
-            for (line, layout) in buffer_line.layout_opt().unwrap().iter().enumerate() {
-                for glyph in &layout.glyphs {
-                    println!("{}-{}-{}-{}-{} {}", index, line, glyph.glyph_id, self.text.text, glyph.x, glyph.w);
-                    self.text.width += glyph.w;
-                }
-            }
-        }
-        let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
-            count: SAMPLE_COUNT,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        }, None);
-        self.buffer = Some(buffer);
-        self.render = Some(render);
     }
-
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
-        // self.update_buffer(ui);
         let bounds = glyphon::TextBounds {
             left: self.rect.dx().min as i32,
             top: 0,
@@ -159,9 +164,11 @@ impl TextBuffer {
     pub fn update_buffer_text(&mut self, ui: &mut Ui, text: &str) {
         match self.buffer {
             None => self.set_text(text.to_string()),
-            Some(ref mut buffer) => buffer.set_text(
-                &mut ui.context.render.text.font_system,
-                text, &ui.context.font.font_attr(), Shaping::Advanced)
+            Some(ref mut buffer) => {
+                buffer.set_text(&mut ui.context.render.text.font_system,
+                                text, &ui.context.font.font_attr(), Shaping::Advanced);
+                self.reset();
+            }
         }
     }
 
@@ -171,10 +178,12 @@ impl TextBuffer {
         self.buffer.as_mut().unwrap().set_text(
             &mut ui.context.render.text.font_system, self.text.text.as_str(),
             &ui.context.font.font_attr(), Shaping::Advanced);
+        self.reset();
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {
         self.text.wrap = wrap;
+        self.reset();
     }
 
     pub fn set_width(&mut self, width: f32) {

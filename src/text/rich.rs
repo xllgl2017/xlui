@@ -1,8 +1,6 @@
 use crate::style::color::Color;
 use crate::text::TextWrap;
-use crate::Font;
 use std::fmt::Display;
-use std::sync::Arc;
 
 pub struct RichText {
     pub(crate) text: String,

@@ -5,59 +5,12 @@ use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::textedit::EditKind;
 use crate::Offset;
 use std::mem;
+use crate::text::cchar::{CChar, LineChar};
 
-#[derive(Debug)]
-pub(crate) struct EditChar {
-    cchar: char,
-    pub(crate) width: f32,
-}
-
-impl EditChar {
-    pub fn new(cchar: char, width: f32) -> EditChar {
-        EditChar { cchar, width }
-    }
-}
-
-#[derive(Default)]
-pub struct EditLine {
-    pub(crate) chars: Vec<EditChar>,
-    pub(crate) auto_wrap: bool,
-    pub(crate) width: f32,
-}
-
-impl EditLine {
-    pub fn new() -> EditLine {
-        EditLine {
-            chars: vec![],
-            auto_wrap: true,
-            width: 0.0,
-        }
-    }
-
-    pub fn push(&mut self, cchar: EditChar) {
-        self.width += cchar.width;
-        self.chars.push(cchar);
-    }
-
-    pub fn raw_text(&self) -> String {
-        let mut res: String = self.chars.iter().map(|x| x.cchar.to_string()).collect();
-        if !self.auto_wrap { res += "\n"; }
-        res
-    }
-
-    pub fn get_width_in_char(&self, index: usize) -> f32 {
-        let mut width = 0.0;
-        // let index = if index >= self.chars.len() { return self.width } else { index };
-        self.chars[..index].iter().for_each(|x| width += x.width);
-        width
-    }
-
-    pub fn len(&self) -> usize { self.chars.len() }
-}
 
 
 pub(crate) struct CharBuffer {
-    pub(crate) lines: Vec<EditLine>,
+    pub(crate) lines: Vec<LineChar>,
     draw_text: String,
     font_size: f32,
     line_height: f32,
@@ -83,19 +36,19 @@ impl CharBuffer {
         self.lines.clear();
         match self.edit_kind {
             EditKind::Single => {
-                let mut line = EditLine::new();
+                let mut line = LineChar::new();
                 for cchar in text.chars() {
                     let cchar = if cchar == '\n' { '↩' } else { cchar };
                     let width = ui.context.font.char_width(cchar, self.font_size);
                     self.draw_text.push(cchar);
-                    line.push(EditChar::new(cchar, width));
+                    line.push(CChar::new(cchar, width));
                 }
                 line.auto_wrap = true;
                 self.lines.push(line);
             }
             EditKind::Multi => {
                 println!("{:?}", text);
-                let mut line = EditLine::new();
+                let mut line = LineChar::new();
                 for cchar in text.chars() {
                     if cchar == '\n' {
                         self.draw_text.push('\n');
@@ -111,7 +64,7 @@ impl CharBuffer {
                             self.lines.push(line);
                         }
                         self.draw_text.push(cchar);
-                        line.push(EditChar::new(cchar, width));
+                        line.push(CChar::new(cchar, width));
                     }
                 }
                 line.auto_wrap = true;
@@ -232,7 +185,7 @@ impl CharBuffer {
             self.remove_by_range(ui, cursor, selection);
         }
         let width = ui.context.font.char_width(c, self.font_size);
-        let cchar = EditChar::new(c, width);
+        let cchar = CChar::new(c, width);
         let line = &mut self.lines[cursor.vert];
         line.chars.insert(cursor.horiz, cchar);
         self.rebuild_text(ui);
@@ -250,12 +203,12 @@ impl CharBuffer {
         println!("insert char-{}-{}", cursor.vert, cursor.horiz);
     }
 
-    pub fn next_char(&self, cursor: &EditCursor) -> Option<&EditChar> {
+    pub fn next_char(&self, cursor: &EditCursor) -> Option<&CChar> {
         if cursor.horiz >= self.lines[cursor.vert].len() { return None; }
         self.lines.get(cursor.vert)?.chars.get(cursor.horiz)
     }
 
-    pub fn previous_char(&self, cursor: &EditCursor) -> Option<&EditChar> {
+    pub fn previous_char(&self, cursor: &EditCursor) -> Option<&CChar> {
         if cursor.horiz == 0 { return None; }
         if cursor.horiz - 1 == 0 { return self.lines.get(cursor.vert)?.chars.get(0); }
         self.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)

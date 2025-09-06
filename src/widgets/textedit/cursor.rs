@@ -7,9 +7,10 @@ use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::style::color::Color;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
+use crate::text::cchar::CChar;
 use crate::ui::Ui;
-use crate::widgets::textedit::buffer::{CharBuffer, EditChar};
+use crate::widgets::textedit::buffer::CharBuffer;
 
 pub struct EditCursor {
     pub(crate) min_pos: Pos,
@@ -102,13 +103,13 @@ impl EditCursor {
         self.changed = true;
     }
 
-    pub fn delete_before(&mut self, cchar: &mut CharBuffer) -> EditChar {
+    pub fn delete_before(&mut self, cchar: &mut CharBuffer) -> CChar {
         self.changed = true;
         if self.horiz == 0 {
             self.vert -= 1;
             let line = &mut cchar.lines[self.vert];
             self.horiz = if line.auto_wrap { line.chars.len() - 1 } else { line.chars.len() };
-            let c = if line.auto_wrap { line.chars.remove(self.horiz) } else { EditChar::new('\n', 0.0) };
+            let c = if line.auto_wrap { line.chars.remove(self.horiz) } else { CChar::new('\n', 0.0) };
             line.auto_wrap = true;
             self.offset.x = line.width - c.width;
             self.offset.y -= self.line_height;
@@ -124,19 +125,19 @@ impl EditCursor {
         }
     }
 
-    pub fn delete_after(&mut self, cchar: &mut CharBuffer) -> EditChar {
+    pub fn delete_after(&mut self, cchar: &mut CharBuffer) -> CChar {
         let len = cchar.lines.len();
         let line = &mut cchar.lines[self.vert];
         let c = if self.horiz == line.len() && self.vert < len {
             let wrap = line.auto_wrap;
             line.auto_wrap = true;
-            if wrap && self.vert + 1 < len { cchar.lines[self.vert + 1].chars.remove(0) } else { EditChar::new('\n', 0.0) }
+            if wrap && self.vert + 1 < len { cchar.lines[self.vert + 1].chars.remove(0) } else { CChar::new('\n', 0.0) }
         } else if self.horiz < line.len() {
             let c = line.chars.remove(self.horiz);
             cchar.offset.x += c.width;
             if cchar.offset.x >= 0.0 { cchar.offset.x = 0.0; }
             c
-        } else { EditChar::new(' ', 0.0) };
+        } else { CChar::new(' ', 0.0) };
         self.changed = true;
         c
     }

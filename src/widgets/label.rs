@@ -23,7 +23,7 @@ use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::response::Response;
 use crate::text::rich::RichText;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::Widget;
@@ -66,11 +66,6 @@ impl Label {
         self.buffer.set_height(h);
         self
     }
-    // ///仅作用于draw
-    // pub fn size(mut self, s: f32) -> Self {
-    //     self.buffer.text_size.font_size = s;
-    //     self
-    // }
 
     pub fn text(&self) -> &String {
         &self.buffer.text.text
@@ -82,8 +77,7 @@ impl Label {
 
     fn init(&mut self, ui: &mut Ui) {
         self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
-        self.buffer.reset_size(ui);
-        // self.buffer.draw(ui);
+        self.buffer.init(ui);
     }
 
     fn update_before_draw(&mut self, ui: &mut Ui) {
@@ -108,15 +102,7 @@ impl Widget for Label {
     fn update(&mut self, ui: &mut Ui) -> Response { //处理鼠标键盘时间
         match &ui.update_type {
             UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => {
-                println!("11111111111111111");
-                self.buffer.draw(ui)
-            }
-            // UpdateType::Offset(o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.buffer.rect); }
-            //     self.buffer.rect.offset(o);
-            //     ui.context.window.request_redraw();
-            // }
+            UpdateType::ReInit => self.buffer.init(ui),
             _ => {}
         }
         Response::new(&self.id, &self.buffer.rect)

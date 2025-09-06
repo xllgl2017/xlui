@@ -31,7 +31,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 use std::fmt::Display;
@@ -77,7 +77,7 @@ impl<T: Display> SelectItem<T> {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.reset_size(ui);
+        self.text.init(ui);
         match self.size_mode {
             SizeMode::Auto => {
                 let width = self.text.rect.width() + self.padding.horizontal();
@@ -132,7 +132,7 @@ impl<T: Display> SelectItem<T> {
         let selected = current.as_ref() == Some(&self.value.to_string());
         self.fill_render.init_rectangle(ui, selected, selected);
         //文本
-        self.text.draw(ui);
+        self.text.init(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {

@@ -1,6 +1,7 @@
-pub mod text_buffer;
-pub mod text_render;
+pub mod buffer;
+pub mod render;
 pub mod rich;
+pub mod cchar;
 
 pub enum TextWrap {
     NoWrap,

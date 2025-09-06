@@ -10,7 +10,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
@@ -104,7 +104,7 @@ impl TextEdit {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text_buffer.reset_size(ui); //计算行高
+        self.text_buffer.init(ui); //计算行高
         let height = self.text_buffer.text.height * self.desire_lines as f32 + 6.0;
         match self.size_mode {
             SizeMode::Auto => self.fill_render.param.rect.set_size(200.0, height),
@@ -149,7 +149,7 @@ impl TextEdit {
         self.fill_render.init_rectangle(ui, false, false);
         self.cursor_render.init(&self.text_buffer, &self.char_layout, ui, init);
         self.select_render.init(self.desire_lines, &self.text_buffer.rect, self.text_buffer.text.height, ui, init);
-        self.text_buffer.draw(ui);
+        // self.text_buffer.draw(ui);
     }
 
     fn key_input(&mut self, key: Option<Key>, ui: &mut Ui) {

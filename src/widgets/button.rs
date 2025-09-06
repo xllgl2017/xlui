@@ -54,7 +54,7 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::ClickStyle;
 use crate::text::rich::RichText;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::image::Image;
 use crate::widgets::Widget;
@@ -102,7 +102,7 @@ impl Button {
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text_buffer.size_mode = self.size_mode;
-        self.text_buffer.reset_size(ui);
+        self.text_buffer.init(ui);
         match self.size_mode {
             SizeMode::Auto => {
                 let width = self.text_buffer.rect.width() + self.padding.horizontal();
@@ -129,7 +129,7 @@ impl Button {
             self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
             self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
         }
-        self.text_buffer.reset_size(ui);
+        self.text_buffer.init(ui);
     }
 
 
@@ -149,9 +149,6 @@ impl Button {
         self.size_mode = SizeMode::Fix;
     }
 
-    // pub fn set_font_size(&mut self, font_size: f32) {
-    //     self.text_buffer.text.size = font_size;
-    // }
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.set_width(w);
@@ -222,7 +219,7 @@ impl Button {
             image.rect = self.image_rect.clone();
         }
         //按钮文本
-        self.text_buffer.draw(ui);
+        // self.text_buffer.draw(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -284,13 +281,6 @@ impl Widget for Button {
                     ui.context.window.request_redraw();
                 }
             }
-            // UpdateType::Offset(o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
-            //     self.fill_render.param.rect.offset(o);
-            //     self.text_buffer.rect.offset(o);
-            //     self.changed = true;
-            //     ui.context.window.request_redraw();
-            // }
             _ => {}
         }
         Response::new(&self.id, &self.fill_render.param.rect)

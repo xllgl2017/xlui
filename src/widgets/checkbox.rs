@@ -40,7 +40,7 @@ use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::rich::RichText;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 
@@ -87,7 +87,7 @@ impl CheckBox {
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text.rect = self.rect.clone();
-        self.text.reset_size(ui);
+        self.text.init(ui);
         self.text.rect.add_min_x(15.0);
         self.text.rect.add_max_x(15.0);
         // self.text.rect.offset_x(15.0);
@@ -143,10 +143,11 @@ impl CheckBox {
         self.check_render.param.rect.set_height(15.0);
         self.check_render.init_rectangle(ui, false, self.value);
         //文本
-        self.text.draw(ui);
-        self.check_text.reset_size(ui);
+        self.check_text.init(ui);
+        // self.text.draw(ui);
+        // self.check_text.reset_size(ui);
         self.check_text.rect = self.check_render.param.rect.clone();
-        self.check_text.draw(ui);
+        // self.check_text.draw(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {

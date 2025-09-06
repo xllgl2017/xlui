@@ -35,7 +35,7 @@ use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::rich::RichText;
-use crate::text::text_buffer::TextBuffer;
+use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
 
@@ -89,7 +89,7 @@ impl RadioButton {
         self.text.rect = self.rect.clone();
         self.text.rect.add_min_x(18.0);
         self.text.rect.add_max_x(18.0);
-        self.text.reset_size(ui);
+        self.text.init(ui);
         match self.size_mode {
             SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),
             SizeMode::FixWidth => {}
@@ -143,7 +143,7 @@ impl RadioButton {
         self.inner_render.param.rect.set_width(self.inner_render.param.rect.height());
         self.inner_render.init_circle(ui, self.value, self.value);
         //文本
-        self.text.draw(ui);
+        self.text.init(ui);
     }
 
     // fn update_radio(&mut self, ui: &mut Ui) {

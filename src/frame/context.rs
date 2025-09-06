@@ -4,7 +4,7 @@ use crate::render::image::ImageRender;
 use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
 use crate::size::Size;
-use crate::text::text_render::TextRender;
+use crate::text::render::TextRender;
 use crate::window::{WindowId, WindowType};
 use crate::{Device, Font, NumCastExt, Offset, WindowAttribute};
 use glyphon::Viewport;
