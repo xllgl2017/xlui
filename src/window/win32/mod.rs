@@ -11,7 +11,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmSetCandidateWindow, CANDIDATEFORM, CFS_CANDIDATEPOS, GCS_COMPSTR, GCS_RESULTSTR};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmGetOpenStatus, ImmReleaseContext, ImmSetCandidateWindow, ImmSetOpenStatus, CANDIDATEFORM, CFS_CANDIDATEPOS, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
@@ -37,14 +37,7 @@ impl Win32Window {
     pub fn new(attr: &mut WindowAttribute, ime: Arc<IME>) -> Win32Window {
         unsafe {
             let handle = Win32Window::create_window(attr);
-            let himc = unsafe { ImmGetContext(handle.hwnd) };
-            let cand_ford = CANDIDATEFORM {
-                dwIndex: 0,
-                dwStyle: CFS_CANDIDATEPOS,
-                ptCurrentPos: POINT { x: 200, y: 200 },
-                rcArea: Default::default(),
-            };
-            unsafe { ImmSetCandidateWindow(himc, &cand_ford); }
+
             let window_type = WindowType {
                 kind: WindowKind::Win32(handle),
                 id: WindowId::unique_id(),
@@ -165,6 +158,11 @@ impl Win32Window {
                     (window.id, WindowEvent::KeyPress(Key::Backspace))
                 }
                 WM_LBUTTONDOWN => {
+                    //切换输入法
+                    // let h_ime = ImmGetContext(window.win32().hwnd);
+                    // let open=ImmGetOpenStatus(h_ime);
+                    // ImmSetOpenStatus(h_ime, !open.as_bool());
+                    // ImmReleaseContext(window.win32().hwnd, h_ime);
                     let x = until::get_x_lparam(msg.lParam) as f32;
                     let y = until::get_y_lparam(msg.lParam) as f32;
                     (window.id, WindowEvent::MousePress(Pos { x, y }))
@@ -179,17 +177,6 @@ impl Win32Window {
                     let y = until::get_y_lparam(msg.lParam) as f32;
                     (window.id, WindowEvent::MouseMove(Pos { x, y }))
                 }
-                // WM_DESTROY => {
-                //     // unsafe { PostQuitMessage(0); }
-                //     println!("exit");
-                //     match self.tray {
-                //         None => (window.id, WindowEvent::ReqClose),
-                //         Some(_) => {
-                //             window.win32().set_visible(false).unwrap();
-                //             (window.id, WindowEvent::ReqClose)
-                //         }
-                //     }
-                // }
                 REQ_UPDATE => {
                     println!("req_update");
                     (window.id, WindowEvent::ReqUpdate)
@@ -204,16 +191,6 @@ impl Win32Window {
                 }
                 IME => {
                     let himc = ImmGetContext(window.win32().hwnd);
-                    if msg.lParam.0 == 440 {
-                        let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
-                        if size > 0 {
-                            let len = (size as usize) / 2;
-                            let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
-                            let s = String::from_utf16_lossy(&buf);
-                            println!("ime: {}", s);
-                        }
-                    }
                     if msg.lParam.0 == 7168 {
                         let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
                         if size > 0 {
@@ -221,9 +198,23 @@ impl Win32Window {
                             let mut buf: Vec<u16> = vec![0; len];
                             ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
                             let s = String::from_utf16_lossy(&buf);
+                            window.ime().ime_commit(s.chars().collect());
                             println!("ime2: {}", s);
+                            return (window.id, WindowEvent::IME);
                         }
                     }
+                    if msg.lParam.0 == 440 {
+                        let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
+                        if size > 0 {
+                            let len = (size as usize) / 2;
+                            let mut buf: Vec<u16> = vec![0; len];
+                            ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            let s = String::from_utf16_lossy(&buf);
+                            window.ime().ime_draw(s.chars().collect());
+                            return (window.id, WindowEvent::IME);
+                        }
+                    }
+
                     (window.id, WindowEvent::None)
                 }
                 REQ_CLOSE => {

@@ -1,32 +1,27 @@
 use crate::error::UiResult;
+use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT};
+use crate::window::UserEvent;
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 use std::num::NonZeroIsize;
-use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM, HIMC};
-use windows::Win32::UI::WindowsAndMessaging::{CloseWindow, DestroyWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
-use crate::window::UserEvent;
-use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT};
+use windows::Win32::Foundation::{HWND, LPARAM, POINT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::ClientToScreen;
+use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCandidateWindow, ImmSetCompositionWindow, CANDIDATEFORM, CFS_CANDIDATEPOS, CFS_POINT, COMPOSITIONFORM};
+use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, GetWindowLongPtrW, GetWindowRect, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
-    // pub(crate) ime: HIMC,
 }
 impl Win32WindowHandle {
-    // pub fn request_ime(&self) -> UiResult<()> {
-    //
-    //     let mut ime = self.ime.write()?;
-    //     *ime = Some(himc);
-    //     Ok(())
-    // }
-
     pub fn set_ime_position(&self, x: f32, y: f32) -> UiResult<()> {
+        // let mut rect = RECT::default();
+        // unsafe { GetWindowRect(self.hwnd, &mut rect)?; }
         let himc = unsafe { ImmGetContext(self.hwnd) };
-        let comp_form = COMPOSITIONFORM {
-            dwStyle: CFS_POINT,
-            ptCurrentPos: POINT { x: x as i32, y: y as i32 },
-            rcArea: Default::default(),
-        };
-        unsafe { ImmSetCompositionWindow(himc, &comp_form).ok()?; }
+        let mut cf = COMPOSITIONFORM::default();
+        let mut pt = POINT { x: x as i32, y: y as i32 };
+        // unsafe { ClientToScreen(self.hwnd, &mut pt).ok()? };
+        cf.dwStyle = CFS_POINT;
+        cf.ptCurrentPos = pt;
+        unsafe { ImmSetCompositionWindow(himc, &cf).ok()? }
         unsafe { ImmReleaseContext(self.hwnd, himc).ok()? };
         Ok(())
     }

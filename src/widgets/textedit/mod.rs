@@ -266,7 +266,7 @@ impl Widget for TextEdit {
                     // self.char_layout.buffer.update_buffer_text(ui, self.char_layout.draw_text());
                     if !ui.context.window.ime().is_commited() {
                         self.select_render.select_by_ime(start_horiz, start_vert, &self.char_layout, &self.cursor_render);
-                        ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y + self.char_layout.buffer.text.height);
+                        ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y, self.char_layout.buffer.text.height);
                     } else {
                         ui.context.window.ime().request_ime(true);
                         self.select_render.reset(&self.cursor_render);

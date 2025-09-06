@@ -2,7 +2,8 @@ use crate::window::win32::{Win32Window, IME, REQ_CLOSE, TRAY_ICON};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, HBITMAP, HGDIOBJ};
-use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, DrawIconEx, GetWindowLongPtrW, LoadImageW, PostMessageW, DI_NORMAL, GWLP_USERDATA, HICON, IMAGE_ICON, LR_LOADFROMFILE, WM_DESTROY, WM_CLOSE, WM_IME_COMPOSITION, WM_IME_ENDCOMPOSITION, WM_IME_STARTCOMPOSITION, WM_RBUTTONUP};
+use windows::Win32::UI::Input::Ime::*;
+use windows::Win32::UI::WindowsAndMessaging::*;
 
 pub fn to_wstr(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(Some(0)).collect()
@@ -52,13 +53,6 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             PostMessageW(Some(hwnd), REQ_CLOSE, WPARAM(0), LPARAM(0)).unwrap();
             LRESULT(0)
         }
-
-        // WM_DESTROY => {
-        //     println!("req quit-{:?}", hwnd);
-        //     // unsafe { PostQuitMessage(0) };
-        //     PostMessageW(Some(hwnd), REQ_CLOSE, WPARAM(0), LPARAM(0)).unwrap();
-        //     LRESULT(0)
-        // }
         TRAY_ICON => {
             match lparam.0 as u32 {
                 WM_RBUTTONUP => {
@@ -71,6 +65,25 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         }
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
             PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap();
+            LRESULT(0)
+        }
+        WM_IME_NOTIFY => {
+            match wparam.0 as u32 {
+                IMN_OPENCANDIDATE | IMN_CHANGECANDIDATE | IMN_CLOSECANDIDATE => {
+                    // 鼠标点击候选词会触发这些
+                    let himc = ImmGetContext(hwnd);
+                    let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
+                    if size > 0 {
+                        let len = size as usize / 2;
+                        let mut buf: Vec<u16> = vec![0; len];
+                        ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                        let s = String::from_utf16_lossy(&buf);
+                        println!("Mouse select Result: {}", s);
+                    }
+                    ImmReleaseContext(hwnd, himc);
+                }
+                _ => {}
+            }
             LRESULT(0)
         }
         _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },

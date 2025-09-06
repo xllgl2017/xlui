@@ -96,12 +96,12 @@ impl WindowType {
         }
     }
 
-    pub fn set_ime_position(&self, x: f32, y: f32) {
+    pub fn set_ime_position(&self, x: f32, y: f32, cursor_height: f32) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
-            WindowKind::X11(ref window) => window.set_ime_position(&self.ime, x, y),
+            WindowKind::X11(ref window) => window.set_ime_position(&self.ime, x, y + cursor_height),
             #[cfg(feature = "winit")]
-            WindowKind::Winit(ref window) => window.set_ime_position(x, y),
+            WindowKind::Winit(ref window) => window.set_ime_position(x, y + cursor_height),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             WindowKind::Win32(ref window) => window.set_ime_position(x, y).unwrap(),
         }
