@@ -56,6 +56,16 @@ pub enum WindowKind {
 }
 
 #[derive(Debug)]
+pub enum ClipboardData {
+    Unsupported,
+    Text(String),
+    Image(Vec<u8>),
+    Url(String),
+}
+
+
+
+#[derive(Debug)]
 pub enum UserEvent {
     ReqUpdate = 0,
     CreateChild = 1,

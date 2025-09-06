@@ -153,13 +153,3 @@ impl X11ClipBoard {
         Ok(ClipboardData::Unsupported)
     }
 }
-
-#[derive(Debug)]
-pub enum ClipboardData {
-    Unsupported,
-    Text(String),
-    Image(Vec<u8>),
-    Url(String),
-}
-
-

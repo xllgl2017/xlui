@@ -15,10 +15,12 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
+use crate::window::win32::clipboard::Win32Clipboard;
 
 pub mod tray;
 pub(crate) mod handle;
 mod until;
+mod clipboard;
 
 const TRAY_ICON: u32 = WM_USER + 1;
 const REQ_UPDATE: u32 = WM_USER + 2;
@@ -147,6 +149,7 @@ impl Win32Window {
                 }
                 WM_KEYDOWN => {
                     println!("Key down: {}", msg.wParam.0);
+                    println!("1111111111111={:?}", Win32Clipboard {}.get_clipboard_data());
                     (window.id, WindowEvent::KeyPress(Key::Backspace))
                 }
                 WM_LBUTTONDOWN => {
@@ -210,7 +213,7 @@ impl Win32Window {
                     (window.id, WindowEvent::ReqClose)
                 }
                 _ => {
-                    TranslateMessage(&msg).unwrap();
+                    let _ = TranslateMessage(&msg);
                     DispatchMessageW(&msg);
                     (window.id, WindowEvent::None)
                 }
