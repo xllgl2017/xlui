@@ -315,7 +315,7 @@ pub(crate) fn time_ms() -> u128 {
 
 pub fn unique_id_u32() -> u32 {
     let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
-    println!("{}", t.to_string()[10..].to_string());
+    println!("unique {}", t.to_string()[10..].to_string());
     t.to_string()[10..].to_string().parse::<u32>().unwrap()
 }
 

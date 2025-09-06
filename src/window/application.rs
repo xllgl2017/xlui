@@ -11,6 +11,7 @@ use crate::window::{WindowId, WindowType};
 use crate::WindowAttribute;
 use std::process::exit;
 use std::sync::Arc;
+use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 use crate::window::win32::Win32Window;
 
 pub struct Application {
@@ -48,6 +49,7 @@ impl Application {
     }
 
     pub fn run(mut self) {
+        unsafe { SetWindowLongPtrW(self.native_window.last_window().win32().hwnd, GWLP_USERDATA, &self as *const _ as isize); }
         loop {
             let (wid, event) = self.native_window.run();
             if let WindowEvent::ReqClose = event {

@@ -46,6 +46,7 @@ impl Win32Window {
             };
             let mut handles = Map::new();
             handles.insert(window_type.id, Arc::new(window_type));
+
             let window = Win32Window {
                 size: attr.inner_size,
                 tray: attr.tray.take(),
@@ -127,8 +128,6 @@ impl Win32Window {
             ime: parent.ime.clone(),
         });
         self.handles.insert(window_type.id, window_type.clone());
-        let err = unsafe { windows::Win32::Foundation::GetLastError() };
-        println!("hwnd={:?}, err={:?}", window_type.win32().hwnd, err);
         window_type
     }
 
@@ -138,7 +137,7 @@ impl Win32Window {
             let ret = GetMessageW(&mut msg, None, 0, 0);
             if ret.0 == 0 { return (self.handles[0].id, WindowEvent::ReqClose); }
             let window = self.handles.iter().find(|x| x.win32().hwnd == msg.hwnd);
-            if window.is_none() { return (WindowId::unique_id(), WindowEvent::None); }
+            if window.is_none() { return (WindowId(0), WindowEvent::None); }
             let window = window.unwrap();
             match msg.message {
                 WM_SIZE => {
@@ -177,14 +176,8 @@ impl Win32Window {
                     let y = until::get_y_lparam(msg.lParam) as f32;
                     (window.id, WindowEvent::MouseMove(Pos { x, y }))
                 }
-                REQ_UPDATE => {
-                    println!("req_update");
-                    (window.id, WindowEvent::ReqUpdate)
-                }
-                CREATE_CHILD => {
-                    println!("create_child");
-                    (window.id, WindowEvent::CreateChild)
-                }
+                REQ_UPDATE => (window.id, WindowEvent::ReqUpdate),
+                CREATE_CHILD => (window.id, WindowEvent::CreateChild),
                 RE_INIT => {
                     println!("re_init");
                     (window.id, WindowEvent::Reinit)
@@ -210,6 +203,7 @@ impl Win32Window {
                             let mut buf: Vec<u16> = vec![0; len];
                             ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
                             let s = String::from_utf16_lossy(&buf);
+                            println!("ime1: {}", s);
                             window.ime().ime_draw(s.chars().collect());
                             return (window.id, WindowEvent::IME);
                         }
@@ -218,7 +212,6 @@ impl Win32Window {
                     (window.id, WindowEvent::None)
                 }
                 REQ_CLOSE => {
-                    println!("req_close");
                     let wid = window.id;
                     let window = self.handles.remove(&wid).unwrap();
                     (window.id, WindowEvent::ReqClose)

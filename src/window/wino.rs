@@ -22,17 +22,6 @@ pub struct LoopWindow {
 
 impl LoopWindow {
     pub async fn create_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: &WindowAttribute) -> LoopWindow {
-        // #[cfg(target_os = "windows")]
-        // let win32_window = Win32Window::new(attr);
-        // #[cfg(target_os = "windows")]
-        // let platform_window = Arc::new(WindowType {
-        //     kind: WindowKind::Win32(win32_window),
-        //     id: WindowId::unique_id(),
-        //     type_: WindowType::ROOT,
-        //     ime: Arc::new(IME::new_win32()),
-        // });
-        #[cfg(target_os = "windows")]
-        unsafe { SetWindowLongPtrW(wt.win32().hwnd, GWLP_USERDATA, wt.win32() as *const _ as isize); }
         let device = Self::rebuild_device(&wt, attr.inner_size).await.unwrap();
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
