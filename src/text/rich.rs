@@ -43,9 +43,9 @@ impl RichText {
         self
     }
 
-    pub(crate) fn init_size(&mut self, font: &Arc<Font>) {
-        font.text_size(self);
-    }
+    // pub(crate) fn init_size(&mut self, font: &Arc<Font>) {
+    //     font.text_size(self);
+    // }
 
     pub(crate) fn font_size(&self) -> f32 {
         self.size.unwrap()

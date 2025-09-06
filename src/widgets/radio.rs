@@ -24,7 +24,7 @@
 //!     ui.add(radio);
 //! }
 
-use crate::frame::context::{Context, ContextUpdate, UpdateType};
+use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
 use crate::render::{RenderParam, WrcRender};
@@ -84,12 +84,12 @@ impl RadioButton {
             changed: false,
         }
     }
-    fn reset_size(&mut self, context: &Context) {
+    fn reset_size(&mut self, ui: &mut Ui) {
         self.rect.set_height(16.0);
         self.text.rect = self.rect.clone();
         self.text.rect.add_min_x(18.0);
         self.text.rect.add_max_x(18.0);
-        self.text.reset_size(context);
+        self.text.reset_size(ui);
         match self.size_mode {
             SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),
             SizeMode::FixWidth => {}
@@ -126,7 +126,7 @@ impl RadioButton {
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
-        self.reset_size(&ui.context);
+        self.reset_size(ui);
         self.re_init(ui);
     }
 

@@ -23,7 +23,7 @@ impl App for XlUi {
         ui.slider(0.0, 0.0..100.0);
         ui.select_value(1);
         ui.add(Button::image_and_text("logo.jpg", "btn").width(100.0).height(50.0));
-        ui.add(TextEdit::single_edit("".to_string()));
+        ui.add(TextEdit::single_edit("fdfgfdhg的\n风格的fjhgkjhl".to_string()));
         ui.horizontal(|ui| {
             ui.button("btn");
         });

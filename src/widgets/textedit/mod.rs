@@ -1,4 +1,4 @@
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::UpdateType;
 use crate::key::Key;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -103,8 +103,8 @@ impl TextEdit {
         self.char_layout.raw_text()
     }
 
-    pub(crate) fn reset_size(&mut self, context: &Context) {
-        self.text_buffer.reset_size(context); //计算行高
+    pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
+        self.text_buffer.reset_size(ui); //计算行高
         let height = self.text_buffer.text.height * self.desire_lines as f32 + 6.0;
         match self.size_mode {
             SizeMode::Auto => self.fill_render.param.rect.set_size(200.0, height),
@@ -134,7 +134,7 @@ impl TextEdit {
     fn init(&mut self, ui: &mut Ui, init: bool) {
         if init {
             self.fill_render.param.rect = ui.available_rect().clone_with_size(&self.fill_render.param.rect);
-            self.reset_size(&ui.context);
+            self.reset_size(ui);
             self.char_layout.set_font_size(self.text_buffer.text.font_size());
             self.char_layout.set_line_height(self.text_buffer.text.height);
             println!("111111111111111-{}-{}", self.text_buffer.rect.width(), self.fill_render.param.rect.width());

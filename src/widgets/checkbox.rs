@@ -28,7 +28,7 @@
 //! }
 //! ```
 
-use crate::frame::context::{Context, ContextUpdate, UpdateType};
+use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -85,9 +85,9 @@ impl CheckBox {
     }
 
 
-    pub(crate) fn reset_size(&mut self, context: &Context) {
+    pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text.rect = self.rect.clone();
-        self.text.reset_size(context);
+        self.text.reset_size(ui);
         self.text.rect.add_min_x(15.0);
         self.text.rect.add_max_x(15.0);
         // self.text.rect.offset_x(15.0);
@@ -132,7 +132,7 @@ impl CheckBox {
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
-        self.reset_size(&ui.context);
+        self.reset_size(ui);
         self.re_init(ui);
     }
 
@@ -144,7 +144,7 @@ impl CheckBox {
         self.check_render.init_rectangle(ui, false, self.value);
         //文本
         self.text.draw(ui);
-        self.check_text.reset_size(&ui.context);
+        self.check_text.reset_size(ui);
         self.check_text.rect = self.check_render.param.rect.clone();
         self.check_text.draw(ui);
     }

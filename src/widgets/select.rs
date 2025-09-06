@@ -20,9 +20,7 @@
 //! }
 //! ```
 
-use std::fmt::Display;
-use std::sync::{Arc, RwLock};
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
@@ -36,6 +34,8 @@ use crate::style::ClickStyle;
 use crate::text::text_buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::Widget;
+use std::fmt::Display;
+use std::sync::{Arc, RwLock};
 
 pub struct SelectItem<T> {
     pub(crate) id: String,
@@ -76,8 +76,8 @@ impl<T: Display> SelectItem<T> {
         }
     }
 
-    pub(crate) fn reset_size(&mut self, context: &Context) {
-        self.text.reset_size(&context);
+    pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
+        self.text.reset_size(ui);
         match self.size_mode {
             SizeMode::Auto => {
                 let width = self.text.rect.width() + self.padding.horizontal();
@@ -122,7 +122,7 @@ impl<T: Display> SelectItem<T> {
 
     fn init(&mut self, ui: &mut Ui) {
         self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
-        self.reset_size(&ui.context);
+        self.reset_size(ui);
         self.re_init(ui);
     }
 

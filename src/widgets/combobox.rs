@@ -21,7 +21,7 @@
 //! }
 //! ```
 
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::render::rectangle::param::RectParam;
@@ -79,8 +79,8 @@ impl<T: Display + 'static> ComboBox<T> {
         }
     }
 
-    fn reset_size(&mut self, context: &Context) {
-        self.text_buffer.reset_size(context);
+    fn reset_size(&mut self, ui: &mut Ui) {
+        self.text_buffer.reset_size(ui);
         match self.size_mode {
             SizeMode::Auto => self.fill_render.param.rect.set_size(100.0, 20.0),
             SizeMode::FixWidth => self.fill_render.param.rect.set_height(20.0),
@@ -127,7 +127,7 @@ impl<T: Display + 'static> ComboBox<T> {
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
         self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
-        self.reset_size(&ui.context);
+        self.reset_size(ui);
         //下拉框布局
         let popup = Popup::new(ui, self.popup_rect.clone());
         self.popup_id = popup.id.clone();

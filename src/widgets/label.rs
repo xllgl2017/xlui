@@ -82,8 +82,8 @@ impl Label {
 
     fn init(&mut self, ui: &mut Ui) {
         self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
-        self.buffer.reset_size(ui.context);
-        self.buffer.draw(ui);
+        self.buffer.reset_size(ui);
+        // self.buffer.draw(ui);
     }
 
     fn update_before_draw(&mut self, ui: &mut Ui) {

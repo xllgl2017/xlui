@@ -1,5 +1,4 @@
 use crate::align::Align;
-use crate::frame::context::Context;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::text::rich::RichText;
@@ -19,6 +18,7 @@ pub struct TextBuffer {
     pub(crate) clip_y: f32,
     pub(crate) change: bool,
     pub(crate) align: Align,
+    pub(crate) chars_with: Vec<f32>,
 }
 
 impl TextBuffer {
@@ -33,6 +33,7 @@ impl TextBuffer {
             clip_y: 0.0,
             change: false,
             align: Align::LeftTop,
+            chars_with: vec![],
         }
     }
 
@@ -41,8 +42,11 @@ impl TextBuffer {
         self
     }
 
-    pub fn reset_size(&mut self, context: &Context) {
-        self.text.init_size(&context.font);
+    pub fn reset_size(&mut self, ui: &mut Ui) {
+        // self.text.init_size(&context.font);
+        self.draw(ui);
+
+
         match self.size_mode {
             SizeMode::Auto => self.rect.set_size(self.text.width, self.text.height),
             SizeMode::FixWidth => self.rect.set_height(self.text.height),
@@ -96,9 +100,20 @@ impl TextBuffer {
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui) {
+        self.text.width = 0.0;
+        if self.text.size.is_none() { self.text.size = Some(ui.context.font.size) }
+        self.text.height = ui.context.font.line_height(self.text.font_size());
         let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
         buffer.set_wrap(&mut ui.context.render.text.font_system, glyphon::Wrap::Glyph);
         buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &ui.context.font.font_attr(), Shaping::Advanced);
+        for (index, buffer_line) in buffer.lines.iter().enumerate() {
+            for (line, layout) in buffer_line.layout_opt().unwrap().iter().enumerate() {
+                for glyph in &layout.glyphs {
+                    println!("{}-{}-{}-{}-{} {}", index, line, glyph.glyph_id, self.text.text, glyph.x, glyph.w);
+                    self.text.width += glyph.w;
+                }
+            }
+        }
         let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
             count: SAMPLE_COUNT,
             mask: !0,

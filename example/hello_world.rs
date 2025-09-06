@@ -57,11 +57,12 @@ impl State {
             size: xlui::Size { width: window.inner_size().width, height: window.inner_size().height },
             font: font.clone(),
             viewport,
-            window,
             resize: false,
             render: Render::new(&device),
             updates: Map::new(),
-            event,
+            user_update: (, UpdateType::None),
+            new_window: None,
+            window: Arc::new(()),
         };
         let rounded_renderer = RoundedBorderRenderer::new(&device.device, cap.formats[0]);
         let mut state = State {

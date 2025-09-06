@@ -44,7 +44,7 @@
 //! ```
 
 use crate::align::Align;
-use crate::frame::context::{Context, UpdateType};
+use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -100,9 +100,9 @@ impl Button {
         res
     }
 
-    pub(crate) fn reset_size(&mut self, context: &Context) {
+    pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text_buffer.size_mode = self.size_mode;
-        self.text_buffer.reset_size(&context);
+        self.text_buffer.reset_size(ui);
         match self.size_mode {
             SizeMode::Auto => {
                 let width = self.text_buffer.rect.width() + self.padding.horizontal();
@@ -129,7 +129,7 @@ impl Button {
             self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
             self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
         }
-        self.text_buffer.reset_size(&context);
+        self.text_buffer.reset_size(ui);
     }
 
 
@@ -213,7 +213,7 @@ impl Button {
     fn init(&mut self, ui: &mut Ui, init: bool) {
         if init {
             self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
-            self.reset_size(&ui.context);
+            self.reset_size(ui);
         }
         //按钮矩形
         self.fill_render.init_rectangle(ui, false, false);
