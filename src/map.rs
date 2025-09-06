@@ -35,7 +35,7 @@ impl<K: Clone + Eq + Hash, V> Map<K, V> {
         MapIter { inner: self.values.iter() }
     }
 
-    pub fn iter_mut(&mut self) -> MapIterMut<K, V> {
+    pub fn iter_mut(&mut self) -> MapIterMut<'_, K, V> {
         MapIterMut { inner: self.values.iter_mut() }
     }
 

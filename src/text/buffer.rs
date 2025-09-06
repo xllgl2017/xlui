@@ -68,7 +68,7 @@ impl TextBuffer {
             }
             self.lines.push(line);
         }
-        println!("{:#?}", self.lines);
+        // println!("{:#?}", self.lines);
     }
 
     pub fn init(&mut self, ui: &mut Ui) {

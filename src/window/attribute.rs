@@ -3,8 +3,8 @@ use std::sync::Arc;
 use winit::window::{Icon, WindowLevel};
 use crate::Font;
 use crate::size::Size;
-#[cfg(target_os = "windows")]
-use crate::window::tray::Tray;
+#[cfg(all(target_os = "windows",not(feature = "winit")))]
+use crate::window::win32::tray::Tray;
 
 pub struct WindowAttribute {
     pub inner_size: Size,
@@ -22,7 +22,7 @@ pub struct WindowAttribute {
     #[cfg(feature = "winit")]
     pub window_level: WindowLevel,
     pub font: Arc<Font>,
-    #[cfg(target_os = "windows")]
+    #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub tray: Option<Tray>,
 }
 
@@ -83,7 +83,7 @@ impl Default for WindowAttribute {
             #[cfg(feature = "winit")]
             window_level: WindowLevel::Normal,
             font: Arc::new(Font::default()),
-            #[cfg(target_os = "windows")]
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             tray: None,
         }
     }

@@ -3,8 +3,6 @@ use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
 use crate::window::event::WindowEvent;
-#[cfg(target_os = "windows")]
-use crate::window::win32::Win32Window;
 use crate::window::{UserEvent, WindowId, WindowType};
 use crate::{Device, DeviceInput, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
@@ -24,12 +22,17 @@ pub struct LoopWindow {
 
 impl LoopWindow {
     pub async fn create_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: &WindowAttribute) -> LoopWindow {
+        // #[cfg(target_os = "windows")]
+        // let win32_window = Win32Window::new(attr);
+        // #[cfg(target_os = "windows")]
+        // let platform_window = Arc::new(WindowType {
+        //     kind: WindowKind::Win32(win32_window),
+        //     id: WindowId::unique_id(),
+        //     type_: WindowType::ROOT,
+        //     ime: Arc::new(IME::new_win32()),
+        // });
         #[cfg(target_os = "windows")]
-        let win32_window = Win32Window::new(&mut attr);
-        #[cfg(target_os = "windows")]
-        let platform_window = Arc::new(WindowKind::Win32(win32_window));
-        #[cfg(target_os = "windows")]
-        unsafe { SetWindowLongPtrW(platform_window.win32().hwnd, GWLP_USERDATA, platform_window.win32() as *const _ as isize); }
+        unsafe { SetWindowLongPtrW(wt.win32().hwnd, GWLP_USERDATA, wt.win32() as *const _ as isize); }
         let device = Self::rebuild_device(&wt, attr.inner_size).await.unwrap();
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);

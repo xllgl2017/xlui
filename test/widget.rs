@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use xlui::frame::App;
 use xlui::ui::Ui;
-#[cfg(target_os = "windows")]
+#[cfg(all(not(feature = "winit"), target_os = "windows"))]
 use xlui::Tray;
 use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, RichText, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
 
@@ -234,15 +234,15 @@ impl App for TestWidget {
     }
 
     fn window_attributes(&self) -> WindowAttribute {
-        #[cfg(target_os = "windows")]
+        #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         let mut tray = Tray::new().hovered_text("Rust Icon");
-        #[cfg(target_os = "windows")]
+        #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         tray.add_menu("退出", None);
-        #[cfg(target_os = "windows")]
+        #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         tray.add_menu("其他", None);
         WindowAttribute {
             inner_size: (1000, 800).into(),
-            #[cfg(target_os = "windows")]
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             tray: Some(tray),
             ..Default::default()
         }

@@ -3,26 +3,38 @@ use crate::map::Map;
 use crate::window::event::WindowEvent;
 use crate::window::ime::IME;
 use crate::window::wino::{EventLoopHandle, LoopWindow};
+#[cfg(target_os = "linux")]
 use crate::window::x11::ime::flag::Capabilities;
+#[cfg(target_os = "linux")]
 use crate::window::x11::X11Window;
 use crate::window::{WindowId, WindowType};
 use crate::WindowAttribute;
 use std::process::exit;
 use std::sync::Arc;
+use crate::window::win32::Win32Window;
 
 pub struct Application {
+    #[cfg(target_os = "linux")]
     native_window: X11Window,
+    native_window: Win32Window,
     loop_windows: Map<WindowId, LoopWindow>,
 }
 
 impl Application {
     pub fn new<A: App>(app: A) -> Self {
+        #[cfg(target_os = "linux")]
         let ime = Arc::new(IME::new_x11("xlui ime").enable());
+        #[cfg(target_os = "linux")]
         ime.set_capabilities(Capabilities::PreeditText | Capabilities::Focus);
+        #[cfg(target_os = "linux")]
         let ii = ime.clone();
+        #[cfg(target_os = "linux")]
         ime.create_binding(ii);
-        let attr = app.window_attributes();
+        let ime = Arc::new(IME::new_win32());
+        let mut attr = app.window_attributes();
+        #[cfg(target_os = "linux")]
         let native_window = X11Window::new(&attr, ime.clone()).unwrap();
+        let native_window = Win32Window::new(&mut attr, ime);
         let window_type = native_window.last_window();
         let wid = window_type.id;
         let app = Box::new(app);

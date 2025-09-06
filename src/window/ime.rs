@@ -79,8 +79,16 @@ impl IME {
     #[cfg(feature = "winit")]
     pub fn new_winit() -> IME {
         IME {
-            #[cfg(all(target_os = "linux", not(feature = "winit")))]
-            kind: IMEKind::Winit,
+            available: false,
+            working: AtomicBool::new(false),
+            chars: RwLock::new(Vec::new()),
+            commited: AtomicBool::new(false),
+            requested: RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn new_win32() -> IME {
+        IME {
             available: false,
             working: AtomicBool::new(false),
             chars: RwLock::new(Vec::new()),

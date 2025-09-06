@@ -13,6 +13,9 @@ mod ime;
 #[cfg(feature = "winit")]
 mod wnit;
 
+#[cfg(all(not(feature = "winit"), target_os = "windows"))]
+pub(crate) mod win32;
+
 use crate::window::ime::IME;
 #[cfg(feature = "winit")]
 use crate::window::wnit::handle::WInitWindowHandle;
@@ -48,6 +51,8 @@ pub enum WindowKind {
     X11(X11WindowHandle),
     #[cfg(feature = "winit")]
     Winit(WInitWindowHandle),
+    #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+    Win32(win32::handle::Win32WindowHandle),
 }
 
 #[derive(Debug)]
@@ -84,12 +89,21 @@ impl WindowType {
         }
     }
 
+    #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+    pub fn win32(&self) -> &win32::handle::Win32WindowHandle {
+        match self.kind {
+            WindowKind::Win32(ref window) => window
+        }
+    }
+
     pub fn set_ime_position(&self, x: f32, y: f32) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.set_ime_position(&self.ime, x, y),
             #[cfg(feature = "winit")]
-            WindowKind::Winit(ref window) => window.set_ime_position(x, y)
+            WindowKind::Winit(ref window) => window.set_ime_position(x, y),
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+            WindowKind::Win32(ref window) => {}
         }
     }
 
@@ -102,7 +116,9 @@ impl WindowType {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.request_redraw(),
             #[cfg(feature = "winit")]
-            WindowKind::Winit(ref window) => window.request_redraw()
+            WindowKind::Winit(ref window) => window.request_redraw(),
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+            WindowKind::Win32(ref window) => window.request_redraw().unwrap()
         }
     }
 
@@ -111,7 +127,9 @@ impl WindowType {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.send_update(event),
             #[cfg(feature = "winit")]
-            WindowKind::Winit(ref window) => window.send_user_event(self.id, event).unwrap()
+            WindowKind::Winit(ref window) => window.send_user_event(self.id, event).unwrap(),
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+            WindowKind::Win32(ref window) => {}
         }
     }
 
@@ -119,14 +137,12 @@ impl WindowType {
         &self.ime
     }
 
-    // pub fn create_window(&self) {
-    //     match self.kind {
-    //         #[cfg(all(target_os = "linux", not(feature = "winit")))]
-    //         WindowKind::X11(ref window) => window.send_update(UserEvent::CreateChild),
-    //         #[cfg(feature = "winit")]
-    //         WindowKind::Winit(_) => {}
-    //     }
-    // }
+    #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+    pub fn set_visible(&self, visible: bool) {
+        match self.kind {
+            WindowKind::Win32(ref window) => window.set_visible(visible).unwrap(),
+        }
+    }
 }
 
 impl HasWindowHandle for WindowType {
@@ -136,6 +152,8 @@ impl HasWindowHandle for WindowType {
             WindowKind::X11(ref window) => Ok(window.window_handle()),
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.window_handle(),
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+            WindowKind::Win32(ref window) => Ok(window.window_handle()),
         }
     }
 }
@@ -147,6 +165,8 @@ impl HasDisplayHandle for WindowType {
             WindowKind::X11(ref window) => Ok(window.display_handle()),
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.display_handle(),
+            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+            WindowKind::Win32(ref window) => Ok(window.display_handle())
         }
     }
 }
