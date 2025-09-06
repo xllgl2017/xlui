@@ -43,7 +43,8 @@ impl Application {
         let window_type = native_window.last_window();
         let wid = window_type.id;
         let app = Box::new(app);
-        let loop_window = pollster::block_on(async { LoopWindow::create_window(app, window_type, &attr).await });
+        let mut loop_window = pollster::block_on(async { LoopWindow::create_window(app, window_type, &attr).await });
+        loop_window.event(WindowEvent::Redraw);
         let mut loop_windows = Map::new();
         loop_windows.insert(wid, loop_window);
         Application {

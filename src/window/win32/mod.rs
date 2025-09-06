@@ -1,22 +1,22 @@
-use std::ptr::null_mut;
 use crate::error::UiResult;
 use crate::key::Key;
 use crate::map::Map;
 use crate::window::event::WindowEvent;
 use crate::window::ime::IME;
+use crate::window::win32::clipboard::Win32Clipboard;
 use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
+use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, GCS_COMPSTR, GCS_RESULTSTR, HIMC};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, GCS_COMPSTR, GCS_RESULTSTR, HIMC};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
-use crate::window::win32::clipboard::Win32Clipboard;
 
 pub mod tray;
 pub(crate) mod handle;
@@ -237,7 +237,7 @@ impl Win32Window {
                         let h_icon = until::load_tray_icon(ip);
                         let h_bitmap = until::icon_to_bitmap(h_icon, 16, 16)?; // 需要把 HICON 转成 HBITMAP
                         let mut mii = MENUITEMINFOW::default();
-                        mii.cbSize = std::mem::size_of::<MENUITEMINFOW>() as u32;
+                        mii.cbSize = size_of::<MENUITEMINFOW>() as u32;
                         mii.fMask = MIIM_BITMAP;
                         mii.hbmpItem = h_bitmap; // HBITMAP 或 HBMMENU_CALLBACK
                         SetMenuItemInfoW(h_menu, menu.event as u32, false, &mii)?;

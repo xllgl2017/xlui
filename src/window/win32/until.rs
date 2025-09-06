@@ -48,7 +48,7 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
 }
 
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-    println!("ime2-----------{}", msg);
+    // println!("ime2-----------{}", msg);
     match msg {
         WM_CLOSE => {
             println!("req quit-{:?}", hwnd);
