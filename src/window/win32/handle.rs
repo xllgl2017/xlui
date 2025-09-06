@@ -3,7 +3,7 @@ use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, Window
 use std::num::NonZeroIsize;
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM, HIMC};
-use windows::Win32::UI::WindowsAndMessaging::{CloseWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
+use windows::Win32::UI::WindowsAndMessaging::{CloseWindow, DestroyWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
 use crate::window::UserEvent;
 use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT};
 
@@ -79,6 +79,6 @@ unsafe impl Send for Win32WindowHandle {}
 
 impl Drop for Win32WindowHandle {
     fn drop(&mut self) {
-        unsafe { CloseWindow(self.hwnd).unwrap(); }
+        unsafe { DestroyWindow(self.hwnd).unwrap(); }
     }
 }

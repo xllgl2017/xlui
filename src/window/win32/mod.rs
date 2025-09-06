@@ -11,7 +11,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmSetCandidateWindow, CANDIDATEFORM, CFS_CANDIDATEPOS};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmSetCandidateWindow, CANDIDATEFORM, CFS_CANDIDATEPOS, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
@@ -23,6 +23,8 @@ const TRAY_ICON: u32 = WM_USER + 1;
 const REQ_UPDATE: u32 = WM_USER + 2;
 const CREATE_CHILD: u32 = WM_USER + 3;
 const RE_INIT: u32 = WM_USER + 4;
+const IME: u32 = WM_USER + 5;
+const REQ_CLOSE: u32 = 99999;
 
 pub struct Win32Window {
     size: Size,
@@ -137,7 +139,7 @@ impl Win32Window {
         window_type
     }
 
-    pub fn run(&self) -> (WindowId, WindowEvent) {
+    pub fn run(&mut self) -> (WindowId, WindowEvent) {
         unsafe {
             let mut msg = std::mem::zeroed::<MSG>();
             let ret = GetMessageW(&mut msg, None, 0, 0);
@@ -177,29 +179,17 @@ impl Win32Window {
                     let y = until::get_y_lparam(msg.lParam) as f32;
                     (window.id, WindowEvent::MouseMove(Pos { x, y }))
                 }
-                WM_DESTROY => {
-                    // unsafe { PostQuitMessage(0); }
-                    println!("exit");
-                    match self.tray {
-                        None => (window.id, WindowEvent::ReqClose),
-                        Some(_) => {
-                            window.win32().set_visible(false).unwrap();
-                            (window.id, WindowEvent::ReqClose)
-                        }
-                    }
-                }
-                WM_IME_STARTCOMPOSITION => {
-                    println!("ime start");
-                    (window.id, WindowEvent::None)
-                }
-                WM_IME_COMPOSITION => {
-                    println!("ime com");
-                    (window.id, WindowEvent::None)
-                }
-                WM_IME_ENDCOMPOSITION => {
-                    println!("ime end");
-                    (window.id, WindowEvent::None)
-                }
+                // WM_DESTROY => {
+                //     // unsafe { PostQuitMessage(0); }
+                //     println!("exit");
+                //     match self.tray {
+                //         None => (window.id, WindowEvent::ReqClose),
+                //         Some(_) => {
+                //             window.win32().set_visible(false).unwrap();
+                //             (window.id, WindowEvent::ReqClose)
+                //         }
+                //     }
+                // }
                 REQ_UPDATE => {
                     println!("req_update");
                     (window.id, WindowEvent::ReqUpdate)
@@ -211,6 +201,36 @@ impl Win32Window {
                 RE_INIT => {
                     println!("re_init");
                     (window.id, WindowEvent::Reinit)
+                }
+                IME => {
+                    let himc = ImmGetContext(window.win32().hwnd);
+                    if msg.lParam.0 == 440 {
+                        let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
+                        if size > 0 {
+                            let len = (size as usize) / 2;
+                            let mut buf: Vec<u16> = vec![0; len];
+                            ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            let s = String::from_utf16_lossy(&buf);
+                            println!("ime: {}", s);
+                        }
+                    }
+                    if msg.lParam.0 == 7168 {
+                        let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
+                        if size > 0 {
+                            let len = size as usize / 2;
+                            let mut buf: Vec<u16> = vec![0; len];
+                            ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            let s = String::from_utf16_lossy(&buf);
+                            println!("ime2: {}", s);
+                        }
+                    }
+                    (window.id, WindowEvent::None)
+                }
+                REQ_CLOSE => {
+                    println!("req_close");
+                    let wid = window.id;
+                    let window = self.handles.remove(&wid).unwrap();
+                    (window.id, WindowEvent::ReqClose)
                 }
                 _ => {
                     TranslateMessage(&msg);
