@@ -39,11 +39,11 @@ impl TextBuffer {
         }
     }
 
-    #[deprecated = "user RichText::wrap"]
-    pub fn with_wrap(mut self, wrap: TextWrap) -> Self {
-        self.text = self.text.wrap(wrap);
-        self
-    }
+    // #[deprecated = "user RichText::wrap"]
+    // pub fn with_wrap(mut self, wrap: TextWrap) -> Self {
+    //     self.text = self.text.wrap(wrap);
+    //     self
+    // }
 
 
     fn reset(&mut self) {

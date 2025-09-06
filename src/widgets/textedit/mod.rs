@@ -15,7 +15,6 @@ use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::Widget;
-use crate::RichTextExt;
 pub(crate) mod buffer;
 mod select;
 mod cursor;

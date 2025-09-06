@@ -58,10 +58,10 @@ impl ScrollBar {
         }
     }
 
-    pub fn with_rect(mut self, rect: Rect) -> Self {
-        self.set_rect(rect);
-        self
-    }
+    // pub fn with_rect(mut self, rect: Rect) -> Self {
+    //     self.set_rect(rect);
+    //     self
+    // }
 
     pub fn set_rect(&mut self, rect: Rect) {
         self.fill_render.param.rect = rect;

@@ -9,8 +9,8 @@ use crate::text::buffer::TextBuffer;
 
 pub(crate) struct CharBuffer {
     pub(crate) buffer: TextBuffer,
-    #[deprecated]
-    draw_text: String,
+    // #[deprecated]
+    // draw_text: String,
     font_size: f32,
     line_height: f32,
     max_wrap_width: f32,
@@ -22,7 +22,7 @@ impl CharBuffer {
     pub fn new(text: impl ToString) -> CharBuffer {
         CharBuffer {
             buffer: TextBuffer::new(text.to_string().wrap(TextWrap::WrapAny)),
-            draw_text: "".to_string(),
+            // draw_text: "".to_string(),
             font_size: 0.0,
             line_height: 0.0,
             max_wrap_width: 0.0,
@@ -84,8 +84,8 @@ impl CharBuffer {
         self.max_wrap_width = max_wrap_width;
     }
 
-    #[deprecated]
-    pub fn draw_text(&self) -> &str { &self.draw_text }
+    // #[deprecated]
+    // pub fn draw_text(&self) -> &str { &self.draw_text }
 
     // pub fn raw_text(&self) -> String {
     //     self.lines.iter().map(|x| x.raw_text()).collect()
@@ -186,12 +186,13 @@ impl CharBuffer {
         if selection.has_selected {
             self.remove_by_range(ui, cursor, selection);
         }
-        let width = ui.context.font.char_width(c, self.font_size);
-        let cchar = CChar::new(c, width);
+        // let width = ui.context.font.char_width(c, self.font_size);
+        let cchar = CChar::new(c, 0.0);
         let line = &mut self.buffer.lines[cursor.vert];
         line.chars.insert(cursor.horiz, cchar);
         self.rebuild_text(ui);
         let line = &mut self.buffer.lines[cursor.vert];
+        let width = line.chars[cursor.horiz - 1].width;
         println!("insert before-{}-{}", line.chars.len(), cursor.horiz + 1);
         let horiz = if cursor.horiz + 1 >= line.chars.len() { line.chars.len() } else { cursor.horiz + 1 };
         if cursor.min_pos.x + line.get_width_in_char(horiz) > cursor.max_pos.x {
