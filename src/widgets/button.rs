@@ -243,7 +243,7 @@ impl Widget for Button {
         self.text_buffer.redraw(ui);
     }
 
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }

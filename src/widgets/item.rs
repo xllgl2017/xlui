@@ -105,7 +105,7 @@ impl Widget for ItemWidget {
         self.layout.as_mut().unwrap().redraw(ui);
     }
 
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         // self.layout.as_mut().unwrap().update(ui);注意这里不能直接调widgets的update
         match ui.update_type {
             UpdateType::Init => self.init(ui),

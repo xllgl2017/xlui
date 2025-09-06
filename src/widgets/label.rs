@@ -99,7 +99,7 @@ impl Widget for Label {
     }
 
 
-    fn update(&mut self, ui: &mut Ui) -> Response { //处理鼠标键盘时间
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> { //处理鼠标键盘时间
         match &ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.buffer.init(ui),

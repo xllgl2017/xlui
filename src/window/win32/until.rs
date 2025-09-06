@@ -4,6 +4,7 @@ use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, HBITMAP, HGDIOBJ};
 use windows::Win32::UI::Input::Ime::*;
 use windows::Win32::UI::WindowsAndMessaging::*;
+use crate::error::UiResult;
 
 pub fn to_wstr(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(Some(0)).collect()
@@ -26,18 +27,18 @@ pub fn get_y_lparam(lp: LPARAM) -> i32 {
     ((lp.0 >> 16) as i16) as i32
 }
 
-pub fn icon_to_bitmap(h_icon: HICON, width: i32, height: i32) -> HBITMAP {
+pub fn icon_to_bitmap(h_icon: HICON, width: i32, height: i32) -> UiResult<HBITMAP> {
     let hdc = unsafe { GetDC(None) };
     let hdc_mem = unsafe { CreateCompatibleDC(Some(hdc)) };
     let hbm = unsafe { CreateCompatibleBitmap(hdc, width, height) };
     unsafe { SelectObject(hdc_mem, HGDIOBJ::from(hbm)) };
 
     // 绘制图标到位图
-    unsafe { DrawIconEx(hdc_mem, 0, 0, h_icon, width, height, 0, None, DI_NORMAL) };
+    unsafe { DrawIconEx(hdc_mem, 0, 0, h_icon, width, height, 0, None, DI_NORMAL)? };
 
-    unsafe { DeleteDC(hdc_mem) };
+    unsafe { DeleteDC(hdc_mem).ok()? };
     unsafe { ReleaseDC(None, hdc) };
-    hbm
+    Ok(hbm)
 }
 
 pub unsafe fn load_tray_icon(ip: &str) -> HICON {
@@ -50,37 +51,40 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
     match msg {
         WM_CLOSE => {
             println!("req quit-{:?}", hwnd);
-            PostMessageW(Some(hwnd), REQ_CLOSE, WPARAM(0), LPARAM(0)).unwrap();
+            unsafe { PostMessageW(Some(hwnd), REQ_CLOSE, WPARAM(0), LPARAM(0)).unwrap() };
             LRESULT(0)
         }
         TRAY_ICON => {
             match lparam.0 as u32 {
                 WM_RBUTTONUP => {
-                    let app: &Win32Window = &*unsafe { GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window };
-                    app.show_tray_menu();
+                    let app: &Win32Window = unsafe{ (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window).as_ref() }.unwrap();
+                    app.show_tray_menu().unwrap();
                 }
                 _ => {}
             }
             LRESULT(0)
         }
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
-            PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap();
+            unsafe{PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap()};
             LRESULT(0)
         }
         WM_IME_NOTIFY => {
             match wparam.0 as u32 {
                 IMN_OPENCANDIDATE | IMN_CHANGECANDIDATE | IMN_CLOSECANDIDATE => {
                     // 鼠标点击候选词会触发这些
-                    let himc = ImmGetContext(hwnd);
-                    let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
-                    if size > 0 {
-                        let len = size as usize / 2;
-                        let mut buf: Vec<u16> = vec![0; len];
-                        ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
-                        let s = String::from_utf16_lossy(&buf);
-                        println!("Mouse select Result: {}", s);
+                    unsafe{
+                        let himc = ImmGetContext(hwnd);
+                        let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
+                        if size > 0 {
+                            let len = size as usize / 2;
+                            let mut buf: Vec<u16> = vec![0; len];
+                            ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                            let s = String::from_utf16_lossy(&buf);
+                            println!("Mouse select Result: {}", s);
+                        }
+                        ImmReleaseContext(hwnd, himc).unwrap();
                     }
-                    ImmReleaseContext(hwnd, himc);
+
                 }
                 _ => {}
             }

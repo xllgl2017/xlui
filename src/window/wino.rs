@@ -8,8 +8,6 @@ use crate::{Device, DeviceInput, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
 use std::sync::Arc;
-#[cfg(target_os = "windows")]
-use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 
 pub trait EventLoopHandle {
     fn event(&mut self, event: WindowEvent);

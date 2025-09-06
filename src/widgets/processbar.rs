@@ -101,7 +101,7 @@ impl Widget for ProcessBar {
         ui.context.render.rectangle.render(&self.process_render, pass);
     }
 
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
             self.change = true;

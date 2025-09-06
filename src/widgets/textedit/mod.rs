@@ -222,7 +222,7 @@ impl Widget for TextEdit {
         self.char_layout.buffer.redraw(ui);
     }
 
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),

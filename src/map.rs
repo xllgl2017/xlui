@@ -31,7 +31,7 @@ impl<K: Clone + Eq + Hash, V> Map<K, V> {
             Some(index) => self.values[*index] = MapNode { key, value }
         }
     }
-    pub fn iter(&self) -> MapIter<K, V> {
+    pub fn iter(&self) -> MapIter<'_, K, V> {
         MapIter { inner: self.values.iter() }
     }
 
@@ -39,7 +39,7 @@ impl<K: Clone + Eq + Hash, V> Map<K, V> {
         MapIterMut { inner: self.values.iter_mut() }
     }
 
-    pub fn entry_mut(&mut self) -> EntryMapIterMut<K, V> {
+    pub fn entry_mut(&mut self) -> EntryMapIterMut<'_, K, V> {
         EntryMapIterMut { inner: self.values.iter_mut() }
     }
 

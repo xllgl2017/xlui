@@ -103,7 +103,7 @@ impl WindowType {
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.set_ime_position(x, y + cursor_height),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-            WindowKind::Win32(ref window) => window.set_ime_position(x, y).unwrap(),
+            WindowKind::Win32(ref window) => window.set_ime_position(x, y, cursor_height).unwrap(),
         }
     }
 

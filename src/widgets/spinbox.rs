@@ -272,7 +272,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         ui.context.render.triangle.render(&self.up_render, pass);
     }
 
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),

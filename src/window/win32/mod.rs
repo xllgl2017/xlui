@@ -1,3 +1,4 @@
+use crate::error::UiResult;
 use crate::key::Key;
 use crate::map::Map;
 use crate::window::event::WindowEvent;
@@ -11,7 +12,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmGetOpenStatus, ImmReleaseContext, ImmSetCandidateWindow, ImmSetOpenStatus, CANDIDATEFORM, CFS_CANDIDATEPOS, GCS_COMPSTR, GCS_RESULTSTR};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
@@ -27,45 +28,40 @@ const IME: u32 = WM_USER + 5;
 const REQ_CLOSE: u32 = 99999;
 
 pub struct Win32Window {
-    size: Size,
     tray: Option<Tray>,
     handles: Map<WindowId, Arc<WindowType>>,
 }
 
 
 impl Win32Window {
-    pub fn new(attr: &mut WindowAttribute, ime: Arc<IME>) -> Win32Window {
-        unsafe {
-            let handle = Win32Window::create_window(attr);
+    pub fn new(attr: &mut WindowAttribute, ime: Arc<IME>) -> UiResult<Win32Window> {
+        let handle = Win32Window::create_window(attr)?;
+        let window_type = WindowType {
+            kind: WindowKind::Win32(handle),
+            id: WindowId::unique_id(),
+            type_: WindowType::ROOT,
+            ime,
+        };
+        let mut handles = Map::new();
+        handles.insert(window_type.id, Arc::new(window_type));
 
-            let window_type = WindowType {
-                kind: WindowKind::Win32(handle),
-                id: WindowId::unique_id(),
-                type_: WindowType::ROOT,
-                ime,
-            };
-            let mut handles = Map::new();
-            handles.insert(window_type.id, Arc::new(window_type));
-
-            let window = Win32Window {
-                size: attr.inner_size,
-                tray: attr.tray.take(),
-                handles,
-            };
-            window.show_tray();
-            window
-        }
+        let window = Win32Window {
+            tray: attr.tray.take(),
+            handles,
+        };
+        window.show_tray()?;
+        Ok(window)
     }
 
     pub fn last_window(&self) -> Arc<WindowType> {
         self.handles.last().unwrap().clone()
     }
 
-    pub fn show_tray(&self) {
+    pub fn show_tray(&self) -> UiResult<()> {
         println!("show  tray-{}", self.tray.is_some());
         if let Some(ref tray) = self.tray {
             let h_icon = match tray.icon {
-                None => unsafe { LoadIconW(None, IDI_APPLICATION).unwrap() }
+                None => unsafe { LoadIconW(None, IDI_APPLICATION)? }
                 Some(ref ip) => unsafe { until::load_tray_icon(ip) },
             };
             // 配置托盘图标数据
@@ -83,22 +79,19 @@ impl Win32Window {
                 ..Default::default()
             };
             // 添加托盘图标
-            unsafe { Shell_NotifyIconW(NIM_ADD, &mut nid); }
+            unsafe { Shell_NotifyIconW(NIM_ADD, &mut nid).ok()?; }
         }
+        Ok(())
     }
 
-    pub fn size(&self) -> Size {
-        self.size
-    }
-
-    fn create_window(attr: &WindowAttribute) -> Win32WindowHandle {
-        let hinstance = unsafe { GetModuleHandleW(None) }.unwrap();
+    fn create_window(attr: &WindowAttribute) -> UiResult<Win32WindowHandle> {
+        let hinstance = unsafe { GetModuleHandleW(None) }?;
         let class_name = until::to_wstr(&(attr.title.clone()));
         let wc = WNDCLASSW {
             lpfnWndProc: Some(until::wndproc),
             hInstance: HINSTANCE::from(hinstance),
             lpszClassName: PCWSTR(class_name.as_ptr()),
-            hCursor: unsafe { LoadCursorW(None, IDC_ARROW).unwrap() },
+            hCursor: unsafe { LoadCursorW(None, IDC_ARROW)? },
             ..Default::default()
         };
         unsafe { RegisterClassW(&wc); }
@@ -115,12 +108,12 @@ impl Win32Window {
                 Some(HINSTANCE::from(hinstance)),
                 None,
             )
-        }.unwrap();
-        Win32WindowHandle { hwnd }
+        }?;
+        Ok(Win32WindowHandle { hwnd })
     }
 
-    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> Arc<WindowType> {
-        let handle = Win32Window::create_window(attr);
+    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
+        let handle = Win32Window::create_window(attr)?;
         let window_type = Arc::new(WindowType {
             kind: WindowKind::Win32(handle),
             id: WindowId::unique_id(),
@@ -128,7 +121,7 @@ impl Win32Window {
             ime: parent.ime.clone(),
         });
         self.handles.insert(window_type.id, window_type.clone());
-        window_type
+        Ok(window_type)
     }
 
     pub fn run(&mut self) -> (WindowId, WindowEvent) {
@@ -148,7 +141,7 @@ impl Win32Window {
                 }
                 WM_PAINT => {
                     println!("paint");
-                    ValidateRect(Option::from(window.win32().hwnd), None);
+                    ValidateRect(Option::from(window.win32().hwnd), None).unwrap();
                     (window.id, WindowEvent::Redraw)
                     // LRESULT(0)
                 }
@@ -217,7 +210,7 @@ impl Win32Window {
                     (window.id, WindowEvent::ReqClose)
                 }
                 _ => {
-                    TranslateMessage(&msg);
+                    TranslateMessage(&msg).unwrap();
                     DispatchMessageW(&msg);
                     (window.id, WindowEvent::None)
                 }
@@ -225,26 +218,26 @@ impl Win32Window {
         }
     }
 
-    pub fn show_tray_menu(&self) {
+    pub fn show_tray_menu(&self) -> UiResult<()> {
         unsafe {
             if let Some(ref tray) = self.tray {
-                let h_menu = CreatePopupMenu().unwrap();
+                let h_menu = CreatePopupMenu()?;
                 for menu in &tray.menus {
                     // 添加普通菜单项
-                    AppendMenuW(h_menu, MF_STRING, menu.event, PCWSTR(until::to_wstr(&menu.label).as_ptr()));
+                    AppendMenuW(h_menu, MF_STRING, menu.event, PCWSTR(until::to_wstr(&menu.label).as_ptr()))?;
                     if let Some(ref ip) = menu.icon {
                         let h_icon = until::load_tray_icon(ip);
-                        let h_bitmap = until::icon_to_bitmap(h_icon, 16, 16); // 需要把 HICON 转成 HBITMAP
+                        let h_bitmap = until::icon_to_bitmap(h_icon, 16, 16)?; // 需要把 HICON 转成 HBITMAP
                         let mut mii = MENUITEMINFOW::default();
                         mii.cbSize = std::mem::size_of::<MENUITEMINFOW>() as u32;
                         mii.fMask = MIIM_BITMAP;
                         mii.hbmpItem = h_bitmap; // HBITMAP 或 HBMMENU_CALLBACK
-                        SetMenuItemInfoW(h_menu, menu.event as u32, false, &mii);
+                        SetMenuItemInfoW(h_menu, menu.event as u32, false, &mii)?;
                     }
                 }
                 // 获取鼠标位置
                 let mut pt = POINT::default();
-                GetCursorPos(&mut pt);
+                GetCursorPos(&mut pt)?;
 
                 // 必须先把窗口设为前台，否则菜单可能不会自动消失
                 // SetForegroundWindow(self.hwnd);
@@ -258,11 +251,12 @@ impl Win32Window {
                     Some(0),
                     self.handles[0].win32().hwnd,
                     None,
-                );
+                ).ok()?;
                 println!("111111111111");
 
-                DestroyMenu(h_menu);
+                DestroyMenu(h_menu)?;
             }
+            Ok(())
         }
     }
 }

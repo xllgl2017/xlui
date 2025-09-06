@@ -65,11 +65,11 @@ impl Font {
         ascent - descent + line_gap
     }
 
-    pub(crate) fn family(&self) -> glyphon::Family {
+    pub(crate) fn family(&self) -> glyphon::Family<'_> {
         glyphon::Family::Name(&self.family)
     }
 
-    pub(crate) fn font_attr(&self) -> glyphon::Attrs {
+    pub(crate) fn font_attr(&self) -> glyphon::Attrs<'_> {
         glyphon::Attrs::new().family(self.family())
     }
 }

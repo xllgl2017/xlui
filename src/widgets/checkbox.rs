@@ -175,7 +175,7 @@ impl Widget for CheckBox {
         if self.value { self.check_text.redraw(ui); }
     }
 
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),

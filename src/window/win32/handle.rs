@@ -11,7 +11,7 @@ pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
 }
 impl Win32WindowHandle {
-    pub fn set_ime_position(&self, x: f32, y: f32) -> UiResult<()> {
+    pub fn set_ime_position(&self, x: f32, y: f32, _: f32) -> UiResult<()> {
         let himc = unsafe { ImmGetContext(self.hwnd) };
         let mut cf = COMPOSITIONFORM::default();
         cf.dwStyle = CFS_POINT;
@@ -44,7 +44,7 @@ impl Win32WindowHandle {
         Ok(())
     }
 
-    pub fn window_handle(&self) -> WindowHandle {
+    pub fn window_handle(&self) -> WindowHandle<'_> {
         let hwnd_nz = NonZeroIsize::new(self.hwnd.0 as isize).unwrap();
         let mut win32_window_handle = raw_window_handle::Win32WindowHandle::new(hwnd_nz);
         let hinst = unsafe { GetWindowLongPtrW(self.hwnd, GWLP_HINSTANCE) };
@@ -56,7 +56,7 @@ impl Win32WindowHandle {
         unsafe { WindowHandle::borrow_raw(raw_window_handle) }
     }
 
-    pub fn display_handle(&self) -> DisplayHandle {
+    pub fn display_handle(&self) -> DisplayHandle<'_> {
         let win32_display_handle = WindowsDisplayHandle::new();
         let raw_display_handle = RawDisplayHandle::Windows(win32_display_handle);
         unsafe { DisplayHandle::borrow_raw(raw_display_handle) }

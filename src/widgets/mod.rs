@@ -24,7 +24,7 @@ pub mod circle;
 
 pub trait Widget: Any {
     fn redraw(&mut self, ui: &mut Ui); //绘制调用
-    fn update(&mut self, ui: &mut Ui) -> Response; //后续更新调用
+    fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
 }
 
 pub struct WidgetKind {

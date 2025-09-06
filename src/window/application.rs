@@ -35,7 +35,7 @@ impl Application {
         let mut attr = app.window_attributes();
         #[cfg(target_os = "linux")]
         let native_window = X11Window::new(&attr, ime.clone()).unwrap();
-        let native_window = Win32Window::new(&mut attr, ime);
+        let native_window = Win32Window::new(&mut attr, ime).unwrap();
         let window_type = native_window.last_window();
         let wid = window_type.id;
         let app = Box::new(app);
@@ -59,7 +59,7 @@ impl Application {
             }
             if let Some(window) = self.loop_windows.get_mut(&wid) {
                 if let WindowEvent::CreateChild = event {
-                    let window_type = self.native_window.create_child_window(&window.app_ctx.context.window, &WindowAttribute::default());
+                    let window_type = self.native_window.create_child_window(&window.app_ctx.context.window, &WindowAttribute::default()).unwrap();
                     let (app, attr) = window.app_ctx.context.new_window.take().unwrap();
                     let wid = window_type.id();
                     let loop_window = pollster::block_on(async { LoopWindow::create_window(app, window_type, &attr).await });
