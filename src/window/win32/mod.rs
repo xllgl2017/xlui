@@ -1,6 +1,8 @@
 use crate::key::Key;
+use crate::map::Map;
 use crate::window::event::WindowEvent;
 use crate::window::ime::IME;
+use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
@@ -9,6 +11,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmSetCandidateWindow, CANDIDATEFORM, CFS_CANDIDATEPOS};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
@@ -19,60 +22,37 @@ mod until;
 const TRAY_ICON: u32 = WM_USER + 1;
 
 pub struct Win32Window {
-    // id: WindowId,
-    // pub(crate) hwnd: HWND,
     size: Size,
     tray: Option<Tray>,
-    handles: Vec<Arc<WindowType>>,
+    handles: Map<WindowId, Arc<WindowType>>,
 }
 
 
 impl Win32Window {
     pub fn new(attr: &mut WindowAttribute, ime: Arc<IME>) -> Win32Window {
         unsafe {
-            let hinstance = GetModuleHandleW(None).unwrap();
-            let class_name = until::to_wstr(&attr.title);
-            let wc = WNDCLASSW {
-                lpfnWndProc: Some(until::wndproc),
-                hInstance: HINSTANCE::from(hinstance),
-                lpszClassName: PCWSTR(class_name.as_ptr()),
-                hCursor: LoadCursorW(None, IDC_ARROW).unwrap(),
-                // hbrBackground: HBRUSH(COLOR_WINDOW.0 as isize),
-                ..Default::default()
+            let handle = Win32Window::create_window(attr);
+            let himc = unsafe { ImmGetContext(handle.hwnd) };
+            let cand_ford = CANDIDATEFORM {
+                dwIndex: 0,
+                dwStyle: CFS_CANDIDATEPOS,
+                ptCurrentPos: POINT { x: 200, y: 200 },
+                rcArea: Default::default(),
             };
-
-            RegisterClassW(&wc);
-            let hwnd = CreateWindowExW(
-                Default::default(),
-                PCWSTR(class_name.as_ptr()),
-                PCWSTR(until::to_wstr(&attr.title).as_ptr()),
-                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
-                attr.inner_size.width as i32,
-                attr.inner_size.height as i32,
-                None,
-                None,
-                Some(HINSTANCE::from(hinstance)),
-                None,
-            ).unwrap();
-            let handle = handle::Win32WindowHandle {
-                hwnd,
-            };
+            unsafe { ImmSetCandidateWindow(himc, &cand_ford); }
             let window_type = WindowType {
                 kind: WindowKind::Win32(handle),
                 id: WindowId::unique_id(),
                 type_: WindowType::ROOT,
                 ime,
             };
-            let mut window = Win32Window {
-                // id: WindowId(crate::unique_id_u32()),
-                // hwnd,
+            let mut handles = Map::new();
+            handles.insert(window_type.id, Arc::new(window_type));
+            let window = Win32Window {
                 size: attr.inner_size,
                 tray: attr.tray.take(),
-                handles: vec![Arc::new(window_type)],
+                handles,
             };
-            // unsafe { SetWindowLongPtrW(window.hwnd, GWLP_USERDATA, &window as *const _ as isize); }
             window.show_tray();
             window
         }
@@ -112,8 +92,46 @@ impl Win32Window {
         self.size
     }
 
-    pub fn create_child_window(&self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> Arc<WindowType> {
-        self.handles[0].clone()
+    fn create_window(attr: &WindowAttribute) -> Win32WindowHandle {
+        let hinstance = unsafe { GetModuleHandleW(None) }.unwrap();
+        let class_name = until::to_wstr(&(attr.title.clone()));
+        let wc = WNDCLASSW {
+            lpfnWndProc: Some(until::wndproc),
+            hInstance: HINSTANCE::from(hinstance),
+            lpszClassName: PCWSTR(class_name.as_ptr()),
+            hCursor: unsafe { LoadCursorW(None, IDC_ARROW).unwrap() },
+            ..Default::default()
+        };
+        unsafe { RegisterClassW(&wc); }
+        let hwnd = unsafe {
+            CreateWindowExW(
+                Default::default(),
+                PCWSTR(class_name.as_ptr()),
+                PCWSTR(until::to_wstr(&attr.title).as_ptr()),
+                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                attr.position[0], attr.position[1],
+                attr.inner_size.width as i32, attr.inner_size.height as i32,
+                None,
+                None,
+                Some(HINSTANCE::from(hinstance)),
+                None,
+            )
+        }.unwrap();
+        Win32WindowHandle { hwnd }
+    }
+
+    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> Arc<WindowType> {
+        let handle = Win32Window::create_window(attr);
+        let window_type = Arc::new(WindowType {
+            kind: WindowKind::Win32(handle),
+            id: WindowId::unique_id(),
+            type_: WindowType::CHILD,
+            ime: parent.ime.clone(),
+        });
+        self.handles.insert(window_type.id, window_type.clone());
+        let err = unsafe { windows::Win32::Foundation::GetLastError() };
+        println!("hwnd={:?}, err={:?}", window_type.win32().hwnd, err);
+        window_type
     }
 
     pub fn run(&self) -> (WindowId, WindowEvent) {
@@ -121,56 +139,68 @@ impl Win32Window {
             let mut msg = std::mem::zeroed::<MSG>();
             let ret = GetMessageW(&mut msg, None, 0, 0);
             if ret.0 == 0 { return (self.handles[0].id, WindowEvent::ReqClose); }
-
-            println!("{}", msg.message);
+            let window = self.handles.iter().find(|x| x.win32().hwnd == msg.hwnd);
+            if window.is_none() { return (WindowId::unique_id(), WindowEvent::None); }
+            let window = window.unwrap();
             match msg.message {
                 WM_SIZE => {
                     let width = until::loword(msg.lParam.0 as u32) as u32;
                     let height = until::hiword(msg.lParam.0 as u32) as u32;
                     println!("resize-{}-{}", width, height);
-                    (self.handles[0].id, WindowEvent::Resize(Size { width, height }))
+                    (window.id, WindowEvent::Resize(Size { width, height }))
                 }
                 WM_PAINT => {
                     println!("paint");
-                    ValidateRect(Option::from(self.handles[0].win32().hwnd), None);
-                    (self.handles[0].id, WindowEvent::Redraw)
+                    ValidateRect(Option::from(window.win32().hwnd), None);
+                    (window.id, WindowEvent::Redraw)
                     // LRESULT(0)
                 }
                 WM_KEYDOWN => {
                     println!("Key down: {}", msg.wParam.0);
-                    (self.handles[0].id, WindowEvent::KeyPress(Key::Backspace))
+                    (window.id, WindowEvent::KeyPress(Key::Backspace))
                 }
                 WM_LBUTTONDOWN => {
                     let x = until::get_x_lparam(msg.lParam) as f32;
                     let y = until::get_y_lparam(msg.lParam) as f32;
-                    (self.handles[0].id, WindowEvent::MousePress(Pos { x, y }))
+                    (window.id, WindowEvent::MousePress(Pos { x, y }))
                 }
                 WM_LBUTTONUP => {
                     let x = until::get_x_lparam(msg.lParam) as f32;
                     let y = until::get_y_lparam(msg.lParam) as f32;
-                    (self.handles[0].id, WindowEvent::MouseRelease(Pos { x, y }))
+                    (window.id, WindowEvent::MouseRelease(Pos { x, y }))
                 }
                 WM_MOUSEMOVE => {
                     let x = until::get_x_lparam(msg.lParam) as f32;
                     let y = until::get_y_lparam(msg.lParam) as f32;
-                    (self.handles[0].id, WindowEvent::MouseMove(Pos { x, y }))
+                    (window.id, WindowEvent::MouseMove(Pos { x, y }))
                 }
                 WM_DESTROY => {
                     // unsafe { PostQuitMessage(0); }
                     println!("exit");
                     match self.tray {
-                        None => (self.handles[0].id, WindowEvent::ReqClose),
+                        None => (window.id, WindowEvent::ReqClose),
                         Some(_) => {
-                            self.handles[0].win32().set_visible(false).unwrap();
-                            (self.handles[0].id, WindowEvent::ReqClose)
+                            window.win32().set_visible(false).unwrap();
+                            (window.id, WindowEvent::ReqClose)
                         }
                     }
+                }
+                WM_IME_STARTCOMPOSITION => {
+                    println!("ime start");
+                    (window.id, WindowEvent::None)
+                }
+                WM_IME_COMPOSITION => {
+                    println!("ime com");
+                    (window.id, WindowEvent::None)
+                }
+                WM_IME_ENDCOMPOSITION => {
+                    println!("ime end");
+                    (window.id, WindowEvent::None)
                 }
                 _ => {
                     TranslateMessage(&msg);
                     DispatchMessageW(&msg);
-                    // DefWindowProcW(self.hwnd, msg.message, msg.wParam, msg.lParam);
-                    (self.handles[0].id, WindowEvent::None)
+                    (window.id, WindowEvent::None)
                 }
             }
         }
@@ -181,10 +211,6 @@ impl Win32Window {
             if let Some(ref tray) = self.tray {
                 let h_menu = CreatePopupMenu().unwrap();
                 for menu in &tray.menus {
-                    // // AppendMenuW(h_menu, MF_STRING, ID_TRAY_EXIT as usize, w!("退出"));
-                    // let h_sub_menu = CreatePopupMenu().unwrap();
-                    // AppendMenuW(h_sub_menu, MF_STRING, ID_TRAY_SUB_OPTION1 as usize, w!("子菜单1"));
-                    // AppendMenuW(h_sub_menu, MF_STRING, ID_TRAY_SUB_OPTION2 as usize, w!("子菜单2"));
                     // 添加普通菜单项
                     AppendMenuW(h_menu, MF_STRING, menu.event, PCWSTR(until::to_wstr(&menu.label).as_ptr()));
                     if let Some(ref ip) = menu.icon {

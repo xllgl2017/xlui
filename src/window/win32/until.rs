@@ -1,7 +1,9 @@
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, HBITMAP, HGDIOBJ};
-use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, DrawIconEx, GetWindowLongPtrW, LoadImageW, PostQuitMessage, DI_NORMAL, GWLP_USERDATA, HICON, IMAGE_ICON, LR_LOADFROMFILE, WM_DESTROY, WM_RBUTTONUP};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
+use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, DrawIconEx, GetWindowLongPtrW, LoadImageW, PostQuitMessage, DI_NORMAL, GWLP_USERDATA, HICON, IMAGE_ICON, LR_LOADFROMFILE, WM_DESTROY, WM_IME_COMPOSITION, WM_IME_ENDCOMPOSITION, WM_IME_STARTCOMPOSITION, WM_RBUTTONUP};
+use crate::window::event::WindowEvent;
 use crate::window::win32::{Win32Window, TRAY_ICON};
 
 pub fn to_wstr(s: &str) -> Vec<u16> {
@@ -60,6 +62,51 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                 _ => {}
             }
             // PostMessageW(Some(hwnd), TRAY_ICON, wparam, lparam);
+            LRESULT(0)
+        }
+        WM_IME_STARTCOMPOSITION => {
+            println!("ime start1");
+            LRESULT(0)
+        }
+        WM_IME_COMPOSITION => {
+            println!("ime com1-{}", lparam.0);
+            let himc = ImmGetContext(hwnd);
+            if lparam.0 == 440 {
+                let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
+                if size > 0 {
+                    let len = (size as usize) / 2;
+                    let mut buf: Vec<u16> = vec![0; len];
+                    ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                    let s = String::from_utf16_lossy(&buf);
+                    println!("ime: {}", s);
+                }
+            }
+            if lparam.0 == 7168 {
+                let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
+                if size > 0 {
+                    let len = size as usize / 2;
+                    let mut buf: Vec<u16> = vec![0; len];
+                    ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                    let s = String::from_utf16_lossy(&buf);
+                    println!("ime2: {}", s);
+                }
+            }
+            ImmReleaseContext(hwnd, himc);
+            LRESULT(0)
+        }
+        WM_IME_ENDCOMPOSITION => {
+            println!("ime end1");
+            let himc = ImmGetContext(hwnd);
+            if lparam.0 & GCS_COMPSTR.0 as isize != 0 {
+                let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
+                if size > 0 {
+                    let len = (size as usize) / 2;
+                    let mut buf: Vec<u16> = vec![0; len];
+                    ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                    let s = String::from_utf16_lossy(&buf);
+                    println!("imedone: {}", s);
+                }
+            }
             LRESULT(0)
         }
         _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },

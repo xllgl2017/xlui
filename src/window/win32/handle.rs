@@ -1,14 +1,36 @@
-use std::num::NonZeroIsize;
-use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
-use windows::Win32::Foundation::{HWND, LPARAM, WPARAM};
-use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
 use crate::error::UiResult;
+use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
+use std::num::NonZeroIsize;
+use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM, HIMC};
+use windows::Win32::UI::WindowsAndMessaging::{CloseWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
+    // pub(crate) ime: HIMC,
 }
 impl Win32WindowHandle {
-    pub fn set_visible(&self, visible: bool)->UiResult<()> {
+    // pub fn request_ime(&self) -> UiResult<()> {
+    //
+    //     let mut ime = self.ime.write()?;
+    //     *ime = Some(himc);
+    //     Ok(())
+    // }
+
+    pub fn set_ime_position(&self, x: f32, y: f32) -> UiResult<()> {
+        let himc = unsafe { ImmGetContext(self.hwnd) };
+        let comp_form = COMPOSITIONFORM {
+            dwStyle: CFS_POINT,
+            ptCurrentPos: POINT { x: x as i32, y: y as i32 },
+            rcArea: Default::default(),
+        };
+        unsafe { ImmSetCompositionWindow(himc, &comp_form).ok()?; }
+        unsafe { ImmReleaseContext(self.hwnd, himc).ok()? };
+        Ok(())
+    }
+
+
+    pub fn set_visible(&self, visible: bool) -> UiResult<()> {
         match visible {
             true => unsafe { ShowWindow(self.hwnd, SW_SHOW).ok()?; },
             false => unsafe { ShowWindow(self.hwnd, SW_HIDE).ok()?; },
@@ -43,3 +65,9 @@ impl Win32WindowHandle {
 unsafe impl Sync for Win32WindowHandle {}
 
 unsafe impl Send for Win32WindowHandle {}
+
+impl Drop for Win32WindowHandle {
+    fn drop(&mut self) {
+        unsafe { CloseWindow(self.hwnd).unwrap(); }
+    }
+}
