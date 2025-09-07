@@ -142,6 +142,8 @@ impl<T: Display + 'static> ComboBox<T> {
         fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         self.fill_render.init_rectangle(ui, false, false);
         //文本
+        self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&Padding::same(2.0));
+        self.text_buffer.size_mode = SizeMode::Fix;
         self.text_buffer.init(ui);
     }
 

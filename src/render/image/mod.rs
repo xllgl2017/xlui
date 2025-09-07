@@ -37,7 +37,6 @@ impl ImageSource {
                 hasher.finish().to_string()
             }
         };
-        println!("image source uri: {}", res);
         res
     }
 }
@@ -170,11 +169,6 @@ impl ImageRender {
                 let texture = ImageTexture::new(device, source, &self.bind_group_layout);
                 let size = texture.size();
                 self.textures.insert(uri, texture);
-                println!("1");
-
-                // let texture = ImageTexture::new(device, img, &self.bind_group_layout);
-                // self.textures.insert(uri, texture);
-                // size
                 size
             }
             Some(texture) => texture.size()
