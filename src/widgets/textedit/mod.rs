@@ -10,7 +10,9 @@ use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
+use crate::text::buffer::TextBuffer;
 use crate::TextWrap;
+use crate::align::Align;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
@@ -24,12 +26,12 @@ mod cursor;
 enum EditKind {
     Single,
     Multi,
+    Password,
 }
 
 
 pub struct TextEdit {
     id: String,
-    // text_buffer: TextBuffer,
     fill_render: RenderParam<RectParam>,
     select_render: EditSelection,
     cursor_render: EditCursor,
@@ -39,6 +41,7 @@ pub struct TextEdit {
     char_layout: CharBuffer,
     desire_lines: usize,
     pub(crate) focused: bool,
+    psd_buffer: TextBuffer,
 
 }
 
@@ -53,7 +56,6 @@ impl TextEdit {
         fill_style.border.clicked = fill_style.border.hovered.clone();
         TextEdit {
             id: crate::gen_unique_id(),
-            // text_buffer: TextBuffer::new(text.wrap(TextWrap::WrapAny)),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
             select_render: EditSelection::new(),
             cursor_render: EditCursor::new(),
@@ -63,6 +65,7 @@ impl TextEdit {
             char_layout: CharBuffer::new(text),
             desire_lines: 8,
             focused: false,
+            psd_buffer: TextBuffer::new("🔒"), //👁🔓
         }
     }
 
@@ -73,6 +76,11 @@ impl TextEdit {
         res.char_layout.edit_kind = EditKind::Single;
         res.char_layout.buffer.set_wrap(TextWrap::NoWrap);
         res
+    }
+
+    pub fn password(mut self) -> TextEdit {
+        self.char_layout.edit_kind = EditKind::Password;
+        self
     }
 
     pub fn multi_edit(txt: impl ToString) -> TextEdit {
@@ -127,7 +135,6 @@ impl TextEdit {
         self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
         self.cursor_render.update(ui);
         self.select_render.update(ui);
-        // self.char_layout.buffer.update_buffer_text(ui, &self.char_layout.draw_text());
     }
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
@@ -138,8 +145,14 @@ impl TextEdit {
             self.char_layout.set_line_height(self.char_layout.buffer.text.height);
             println!("111111111111111-{}-{}", self.char_layout.buffer.rect.width(), self.fill_render.param.rect.width());
             self.char_layout.set_max_wrap_width(self.char_layout.buffer.rect.width());
-            // self.char_layout.set_text(&self.char_layout.buffer.text.text, ui);
-            // self.char_layout.buffer.update_buffer_text(ui, self.char_layout.draw_text());
+            if let EditKind::Password = self.char_layout.edit_kind { self.char_layout.rebuild_text(ui); }
+
+            self.psd_buffer.align = Align::Center;
+            self.psd_buffer.rect = self.fill_render.param.rect.clone();
+            self.psd_buffer.rect.set_x_min(self.fill_render.param.rect.dx().max - 20.0);
+            self.psd_buffer.init(ui);
+            self.psd_buffer.rect.add_min_y(1.0);
+
             let mut cursor_rect = self.char_layout.buffer.rect.clone();
             cursor_rect.set_width(2.0);
             cursor_rect.set_height(self.char_layout.buffer.text.height);
@@ -148,7 +161,6 @@ impl TextEdit {
         self.fill_render.init_rectangle(ui, false, false);
         self.cursor_render.init(&self.char_layout, ui, init);
         self.select_render.init(self.desire_lines, &self.char_layout.buffer.rect, self.char_layout.buffer.text.height, ui, init);
-        // self.text_buffer.draw(ui);
     }
 
     fn key_input(&mut self, key: Option<Key>, ui: &mut Ui) {
@@ -220,6 +232,9 @@ impl Widget for TextEdit {
         self.select_render.render(ui, self.char_layout.buffer.lines.len());
         if self.focused { self.cursor_render.render(ui); }
         self.char_layout.buffer.redraw(ui);
+        if let EditKind::Password = self.char_layout.edit_kind {
+            self.psd_buffer.redraw(ui);
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
@@ -253,6 +268,16 @@ impl Widget for TextEdit {
                 self.changed = true;
                 ui.context.window.request_redraw();
             }
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.click_at(&self.psd_buffer.rect) {
+                    self.char_layout.looking = !self.char_layout.looking;
+                    self.psd_buffer.update_buffer_text(ui, if self.char_layout.looking { "🔓" } else { "🔒" });
+                    self.char_layout.rebuild_text(ui);
+                    self.cursor_render.reset_x(&self.char_layout);
+                    ui.context.window.request_redraw();
+                    self.changed = true;
+                }
+            }
             UpdateType::KeyRelease(ref mut key) => {
                 if self.focused { self.key_input(key.take(), ui); }
             }
@@ -264,7 +289,6 @@ impl Widget for TextEdit {
                     for c in chars {
                         self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                     }
-                    // self.char_layout.buffer.update_buffer_text(ui, self.char_layout.draw_text());
                     if !ui.context.window.ime().is_commited() {
                         self.select_render.select_by_ime(start_horiz, start_vert, &self.char_layout, &self.cursor_render);
                         ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y, self.char_layout.buffer.text.height);

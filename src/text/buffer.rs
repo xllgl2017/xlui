@@ -66,6 +66,7 @@ impl TextBuffer {
                     self.text.width += glyph.w;
                 }
             }
+            line.auto_wrap = true;
             self.lines.push(line);
         }
         // println!("{:#?}", self.lines);
@@ -180,6 +181,11 @@ impl TextBuffer {
                 self.reset();
             }
         }
+    }
+
+    pub fn update_if_not(&mut self, ui: &mut Ui, text: &str, reset: bool) {
+        self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, text, &ui.context.font.font_attr(), Shaping::Advanced);
+        if reset { self.reset(); }
     }
 
     pub fn update_buffer(&mut self, ui: &mut Ui) {

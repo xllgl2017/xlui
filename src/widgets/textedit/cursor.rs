@@ -52,14 +52,14 @@ impl EditCursor {
             self.max_pos.y = cchar.buffer.rect.dy().max;
             self.line_height = cchar.buffer.text.height;
             self.vert = cchar.buffer.lines.len();
-            // let last_line = cchar.lines.last().unwrap();
             self.horiz = cchar.buffer.lines.last().unwrap().len();
-            // let oy = (self.vert - 1) as f32 * text.text.height;
-            // self.offset.x = last_line.width;
-            // self.offset.y = oy;
-            // self.render.param.rect.offset(&self.offset);
         }
         self.render.init_rectangle(ui, false, false);
+    }
+
+    pub fn reset_x(&mut self, cchar: &CharBuffer) {
+        self.offset.x = cchar.buffer.lines[self.vert].get_width_in_char(self.horiz);
+        self.changed = true;
     }
 
     pub fn update(&mut self, ui: &mut Ui) {
