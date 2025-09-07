@@ -84,6 +84,9 @@ features = [
     "Win32_Graphics_Imaging"
 ]
 
+[features]
+default = ["winit"]
+
 [profile.release]
 opt-level = 's' #2
 lto = true
