@@ -66,6 +66,12 @@ impl From<&[u8]> for ImageSource {
     }
 }
 
+impl<const N: usize> From<&[u8; N]> for ImageSource {
+    fn from(value: &[u8; N]) -> Self {
+        ImageSource::Bytes(value.to_vec())
+    }
+}
+
 
 pub struct ImageRender {
     pipeline: wgpu::RenderPipeline,

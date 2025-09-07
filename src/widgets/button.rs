@@ -8,7 +8,7 @@
 //!
 //! fn clicked<A:App>(_:&mut A,btn:&mut Button,ui:&mut Ui){
 //!    //修改图片
-//!    btn.set_image("logo.jpg",ui);
+//!    btn.set_image("logo.jpg" );
 //!    //修改文本
 //!    btn.set_text("被点击了");
 //!    println!("按钮被点击了");
@@ -193,7 +193,7 @@ impl Button {
     pub fn set_text(&mut self, text: impl ToString) {
         self.text_buffer.set_text(text.to_string());
     }
-    pub fn set_image(&mut self, source: impl Into<ImageSource>, ui: &mut Ui) {
+    pub fn set_image(&mut self, source: impl Into<ImageSource>) {
         match self.image {
             None => self.image = Some(Image::new(source)),
             Some(ref mut image) => image.set_image(source)

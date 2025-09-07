@@ -71,7 +71,7 @@ impl TestWidget {
         self.label.set_text(format!("image button: {}", self.count));
         self.label.update(ui);
         self.change_image = true;
-        btn.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png", ui);
+        btn.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png");
         btn.update(ui);
     }
 
@@ -190,7 +190,7 @@ impl App for TestWidget {
             ui.radio(true, "Image");
             ui.add_space(50.0);
             ui.image("logo.jpg", (50.0, 50.0));
-            ui.add(Image::new("logo.jpg").with_size(50.0, 50.0).with_id("test_image"));
+            ui.add(Image::new(include_bytes!("../logo.jpg")).with_size(50.0, 50.0).with_id("test_image"));
             ui.add_space(182.0);
             ui.checkbox(false, "网络图片");
             ui.checkbox(false, "bytes图片流");
