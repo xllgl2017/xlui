@@ -166,7 +166,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
-            ui.add(TextEdit::single_edit("abcdefghijklmnopqrstuvwsyz1234567890".to_string()).with_rows(1));
+            ui.add(TextEdit::single_edit("abcdefghi👁jkl●m•nopqrstuvwsyz1234567890".to_string()).with_rows(1));
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");
@@ -215,6 +215,10 @@ impl App for TestWidget {
         });
         ui.horizontal(|ui| {
             let edit = TextEdit::multi_edit("abcdefghijk\nlmnopqrstuvwsyz12\n34567890"); //\nsdfsdfsd\nfgfdgdfdfg\ndfgdfgdfg\nsdfsdf\nsdfdsjfsdf
+            ui.add(edit);
+        });
+        ui.horizontal(|ui| {
+            let edit = TextEdit::single_edit("dsfdsf").password();
             ui.add(edit);
         });
     }

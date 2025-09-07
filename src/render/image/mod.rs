@@ -230,5 +230,6 @@ pub fn load_image_bytes(bytes: &[u8]) -> UiResult<(Vec<u8>, Size)> {
     return Ok((vec![], Size { width: 0, height: 0 }));
     #[cfg(not(target_os = "windows"))]
     let img = image::load_from_memory(bytes)?;
+    #[cfg(not(target_os = "windows"))]
     Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
 }

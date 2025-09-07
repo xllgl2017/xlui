@@ -14,6 +14,7 @@ pub(crate) struct CharBuffer {
     max_wrap_width: f32,
     pub(crate) offset: Offset,
     pub(super) edit_kind: EditKind,
+    pub(crate) looking: bool,
 }
 
 impl CharBuffer {
@@ -25,6 +26,7 @@ impl CharBuffer {
             max_wrap_width: 0.0,
             offset: Offset::new(Pos::new()),
             edit_kind: EditKind::Multi,
+            looking: false,
         }
     }
 
@@ -102,9 +104,25 @@ impl CharBuffer {
         selection.has_selected = false;
     }
 
-    fn rebuild_text(&mut self, ui: &mut Ui) {
+    pub(crate) fn rebuild_text(&mut self, ui: &mut Ui) {
         let text: String = self.buffer.lines.iter().map(|x| x.raw_text()).collect();
-        self.buffer.update_buffer_text(ui, &text)
+        println!("rebuild text: {:?}", text);
+        if let EditKind::Password = self.edit_kind && !self.looking {
+            let text = vec!["●"; text.chars().count()];
+            self.buffer.update_if_not(ui, &text.join(""), false);
+            // self.buffer.update_buffer_text(ui, &text.join(""));
+            self.buffer.lines.iter_mut().for_each(|line| {
+                let mut width = 0.0;
+                line.chars.iter_mut().for_each(|x| {
+                    x.width = 14.0;
+                    width += 14.0;
+                });
+                line.width = width;
+            });
+        } else {
+            // self.buffer.update_buffer_text(ui, &text)
+            self.buffer.update_if_not(ui, &text, true);
+        }
     }
 
     pub fn remove_chars_before_cursor(&mut self, ui: &mut Ui, cursor: &mut EditCursor, selection: &mut EditSelection) {
