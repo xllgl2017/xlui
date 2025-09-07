@@ -3,7 +3,7 @@ use std::sync::Arc;
 use winit::window::{Icon, WindowLevel};
 use crate::Font;
 use crate::size::Size;
-#[cfg(all(target_os = "windows",not(feature = "winit")))]
+#[cfg(all(target_os = "windows", not(feature = "winit")))]
 use crate::window::win32::tray::Tray;
 
 pub struct WindowAttribute {
@@ -30,9 +30,10 @@ impl WindowAttribute {
     #[cfg(feature = "winit")]
     pub fn as_winit_attributes(&self) -> winit::window::WindowAttributes {
         let attr = winit::window::WindowAttributes::default();
-        let img = image::load_from_memory(self.window_icon.as_ref()).unwrap();
-        let rgb8 = img.to_rgba8();
-        let icon = Icon::from_rgba(rgb8.to_vec(), img.width(), img.height()).unwrap();
+        let (rgba, size) = super::super::render::image::load_image_bytes(self.window_icon.as_ref()).unwrap();
+        // let img = image::load_from_memory(self.window_icon.as_ref()).unwrap();
+        // let rgb8 = img.to_rgba8();
+        let icon = Icon::from_rgba(rgba, size.width, size.height).unwrap();
         attr.with_inner_size(self.inner_size.as_physical_size())
             .with_min_inner_size(self.min_inner_size.as_physical_size())
             .with_max_inner_size(self.max_inner_size.as_physical_size())

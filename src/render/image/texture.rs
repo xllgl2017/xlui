@@ -1,19 +1,4 @@
-#[cfg(target_os = "windows")]
-use std::ptr::null_mut;
-#[cfg(not(target_os = "windows"))]
-use image::GenericImageView;
-#[cfg(target_os = "windows")]
-use windows::core::PCWSTR;
-#[cfg(target_os = "windows")]
-use windows::Win32::Foundation::GENERIC_READ;
-#[cfg(target_os = "windows")]
-use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
-#[cfg(target_os = "windows")]
-use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
 use crate::{Device, Size};
-use crate::error::UiResult;
-#[cfg(target_os = "windows")]
-use crate::window::win32;
 
 pub struct ImageTexture {
     size: Size,
@@ -22,43 +7,12 @@ pub struct ImageTexture {
 
 impl ImageTexture {
     pub fn new(device: &Device, fp: &str, layout: &wgpu::BindGroupLayout) -> ImageTexture {
-        #[cfg(target_os = "windows")]
-        let (rgba, size) = ImageTexture::load_win32_image(fp).unwrap();
-        #[cfg(not(target_os = "windows"))]
-        let (rgba, size) = ImageTexture::load_image(fp).unwrap();
+        let (rgba, size) = super::load_image_file(fp).unwrap();
         let bind_group = Self::create_bind_group(device, rgba, size, layout);
         ImageTexture {
             bind_group,
             size,
         }
-    }
-
-    #[cfg(target_os = "windows")]
-    fn load_win32_image(fp: &str) -> UiResult<(Vec<u8>, Size)> {
-        unsafe { CoInitialize(None).ok()?; }
-        let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
-        let filename = win32::until::to_wstr(fp);
-        let decoder = unsafe {
-            factory.CreateDecoderFromFilename(
-                PCWSTR(filename.as_ptr()), None, GENERIC_READ, WICDecodeMetadataCacheOnLoad)?
-        };
-        let frame = unsafe { decoder.GetFrame(0) }?;
-        let converter = unsafe { factory.CreateFormatConverter() }?;
-        unsafe { converter.Initialize(&frame, &GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, None, 0.0, WICBitmapPaletteTypeCustom)?; }
-        let mut size = Size { width: 0, height: 0 };
-        unsafe { converter.GetSize(&mut size.width, &mut size.height)?; }
-        let stride = (size.width * 4) as usize;
-        let buf_size = stride * size.height as usize;
-        let mut buffer = vec![0; buf_size];
-        unsafe { converter.CopyPixels(null_mut(), stride as u32, &mut buffer)?; }
-        Ok((buffer, size))
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    fn load_image(fp: &str) -> UiResult<(Vec<u8>, Size)> {
-        let img = image::open(fp)?;
-        let (w, h) = img.dimensions();
-        Ok((img.to_rgba8().to_vec(), Size { width: w, height: h }))
     }
 
     fn create_bind_group(device: &Device, rgba: Vec<u8>, size: Size, group_layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {

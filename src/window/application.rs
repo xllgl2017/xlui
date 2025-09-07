@@ -38,7 +38,7 @@ impl Application {
         let ime = Arc::new(IME::new_win32());
         let mut attr = app.window_attributes();
         #[cfg(target_os = "linux")]
-        let native_window = X11Window::new(&attr, ime.clone()).unwrap();
+        let native_window = X11Window::new(&mut attr, ime.clone()).unwrap();
         #[cfg(target_os = "windows")]
         let native_window = Win32Window::new(&mut attr, ime).unwrap();
         let window_type = native_window.last_window();

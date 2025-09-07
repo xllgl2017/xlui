@@ -1,6 +1,17 @@
 pub mod texture;
 
-// use image::GenericImageView;
+
+#[cfg(target_os = "windows")]
+use std::ptr::null_mut;
+#[cfg(target_os = "windows")]
+use windows::core::PCWSTR;
+#[cfg(target_os = "windows")]
+use windows::Win32::Foundation::GENERIC_READ;
+#[cfg(target_os = "windows")]
+use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
+#[cfg(target_os = "windows")]
+use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
+use crate::error::UiResult;
 use crate::{Device, Size, SAMPLE_COUNT};
 use crate::map::Map;
 use crate::render::image::texture::ImageTexture;
@@ -121,4 +132,45 @@ impl ImageRender {
         render_pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.draw_indexed(0..6, 0, 0..1);
     }
+}
+
+#[cfg(target_os = "windows")]
+pub fn load_win32_image(fp: &str) -> UiResult<(Vec<u8>, Size)> {
+    unsafe { CoInitialize(None).ok()?; }
+    let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
+    let filename: Vec<u16> = fp.encode_utf16().chain(Some(0)).collect();
+    let decoder = unsafe {
+        factory.CreateDecoderFromFilename(
+            PCWSTR(filename.as_ptr()), None, GENERIC_READ, WICDecodeMetadataCacheOnLoad)?
+    };
+    let frame = unsafe { decoder.GetFrame(0) }?;
+    let converter = unsafe { factory.CreateFormatConverter() }?;
+    unsafe { converter.Initialize(&frame, &GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, None, 0.0, WICBitmapPaletteTypeCustom)?; }
+    let mut size = Size { width: 0, height: 0 };
+    unsafe { converter.GetSize(&mut size.width, &mut size.height)?; }
+    let stride = (size.width * 4) as usize;
+    let buf_size = stride * size.height as usize;
+    let mut buffer = vec![0; buf_size];
+    unsafe { converter.CopyPixels(null_mut(), stride as u32, &mut buffer)?; }
+    Ok((buffer, size))
+}
+
+pub fn load_image_file(fp: &str) -> UiResult<(Vec<u8>, Size)> {
+    #[cfg(target_os = "windows")]
+    let (rgba, size) = load_win32_image(fp)?;
+    #[cfg(target_os = "windows")]
+    return Ok((rgba, size));
+    #[cfg(not(target_os = "windows"))]
+    let img = image::open(fp)?;
+    #[cfg(not(target_os = "windows"))]
+    Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
+}
+
+
+pub fn load_image_bytes(bytes: &[u8]) -> UiResult<(Vec<u8>, Size)> {
+    #[cfg(target_os = "windows")]
+    return Ok((vec![], Size { width: 0, height: 0 }));
+    #[cfg(not(target_os = "windows"))]
+    let img = image::load_from_memory(bytes)?;
+    Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
 }
