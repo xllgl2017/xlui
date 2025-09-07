@@ -315,8 +315,6 @@ impl<'a> Ui<'a> {
     pub fn request_update(&mut self, ut: UpdateType) {
         let wid = self.context.window.id();
         self.request_update = Some((wid, ut));
-        // #[cfg(not(feature = "winit"))]
-        // self.context.window.request_update();
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {

@@ -77,7 +77,15 @@ impl Layout for Popup {
     fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
             UpdateType::Init | UpdateType::ReInit => self.scroll_area.update(ui),
-            _ => if self.open { self.scroll_area.update(ui); }
+            _ => if self.open {
+                self.scroll_area.update(ui);
+                if let UpdateType::MouseRelease = ui.update_type {
+                    if !ui.device.device_input.click_at(&self.fill_render.param.rect) {
+                        self.open = false;
+                        ui.context.window.request_redraw();
+                    }
+                }
+            }
         }
     }
 

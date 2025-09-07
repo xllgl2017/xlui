@@ -188,7 +188,10 @@ impl LayoutKind {
             LayoutKind::Vertical(v) => {
                 v.max_rect = rect;
                 v.available_rect = v.max_rect.clone_add_padding(&padding);
-                v.available_rect.set_y_max(f32::INFINITY);
+                match v.max_rect.direction() {
+                    LayoutDirection::Min => v.available_rect.set_y_max(f32::INFINITY),
+                    LayoutDirection::Max => v.available_rect.set_y_min(-f32::INFINITY),
+                }
             }
             LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
         }
