@@ -38,13 +38,13 @@ path = "test/hibernate.rs"
 name = "test_all"
 path = "test/all.rs"
 
-[[bin]]
-name = "test_x11_window"
-path = "test/x11_window.rs"
+#[[bin]]
+#name = "test_x11_window"
+#path = "test/x11_window.rs"
 
-[[bin]]
-name = "test_win"
-path = "test/test_win.rs"
+#[[bin]]
+#name = "test_win"
+#path = "test/test_win.rs"
 
 #[lib]
 #name = "xlui-web"
