@@ -1,6 +1,7 @@
 pub mod texture;
 
-
+use std::hash::{DefaultHasher, Hasher};
+use std::path::{Path, PathBuf};
 #[cfg(target_os = "windows")]
 use std::ptr::null_mut;
 #[cfg(target_os = "windows")]
@@ -16,6 +17,55 @@ use crate::{Device, Size, SAMPLE_COUNT};
 use crate::map::Map;
 use crate::render::image::texture::ImageTexture;
 use crate::vertex::ImageVertex;
+
+pub enum ImageSource {
+    File(PathBuf),
+    Bytes(Vec<u8>),
+}
+
+impl ImageSource {
+    pub fn uri(&self) -> String {
+        let res = match self {
+            ImageSource::File(f) => {
+                let mut hasher = DefaultHasher::new();
+                hasher.write(format!("{}", f.display()).as_bytes());
+                hasher.finish().to_string()
+            }
+            ImageSource::Bytes(b) => {
+                let mut hasher = DefaultHasher::new();
+                hasher.write(b);
+                hasher.finish().to_string()
+            }
+        };
+        println!("image source uri: {}", res);
+        res
+    }
+}
+
+impl From<PathBuf> for ImageSource {
+    fn from(p: PathBuf) -> Self {
+        ImageSource::File(p)
+    }
+}
+
+impl From<Vec<u8>> for ImageSource {
+    fn from(b: Vec<u8>) -> Self {
+        ImageSource::Bytes(b)
+    }
+}
+
+impl From<&str> for ImageSource {
+    fn from(value: &str) -> Self {
+        ImageSource::File(PathBuf::from(value))
+    }
+}
+
+impl From<&[u8]> for ImageSource {
+    fn from(value: &[u8]) -> Self {
+        ImageSource::Bytes(value.to_vec())
+    }
+}
+
 
 pub struct ImageRender {
     pipeline: wgpu::RenderPipeline,
@@ -107,10 +157,11 @@ impl ImageRender {
         render_pipeline
     }
 
-    pub fn insert_image(&mut self, device: &Device, uri: String, fp: &str) -> Size {
+    pub fn insert_image(&mut self, device: &Device, source: &ImageSource) -> Size {
+        let uri = source.uri();
         match self.textures.get(&uri) {
             None => {
-                let texture = ImageTexture::new(device, fp, &self.bind_group_layout);
+                let texture = ImageTexture::new(device, source, &self.bind_group_layout);
                 let size = texture.size();
                 self.textures.insert(uri, texture);
                 println!("1");
@@ -135,7 +186,8 @@ impl ImageRender {
 }
 
 #[cfg(target_os = "windows")]
-pub fn load_win32_image(fp: &str) -> UiResult<(Vec<u8>, Size)> {
+pub fn load_win32_image(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
+    let fp = fp.as_ref().to_str().ok_or("图片路径错误")?;
     unsafe { CoInitialize(None).ok()?; }
     let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
     let filename: Vec<u16> = fp.encode_utf16().chain(Some(0)).collect();
@@ -155,7 +207,7 @@ pub fn load_win32_image(fp: &str) -> UiResult<(Vec<u8>, Size)> {
     Ok((buffer, size))
 }
 
-pub fn load_image_file(fp: &str) -> UiResult<(Vec<u8>, Size)> {
+pub fn load_image_file(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(target_os = "windows")]
     let (rgba, size) = load_win32_image(fp)?;
     #[cfg(target_os = "windows")]

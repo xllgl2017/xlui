@@ -28,6 +28,7 @@ use std::sync::atomic::Ordering;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use crate::render::image::ImageSource;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -386,7 +387,7 @@ impl<'a> Ui<'a> {
         self.add(slider)
     }
 
-    pub fn image(&mut self, source: &'static str, size: (f32, f32)) -> &mut Image {
+    pub fn image(&mut self, source: impl Into<ImageSource>, size: (f32, f32)) -> &mut Image {
         let image = Image::new(source).with_size(size.0, size.1);
         self.add(image)
     }
@@ -401,7 +402,4 @@ impl<'a> Ui<'a> {
         self.add(select_value)
     }
 
-    pub fn set_image_handle(&mut self, source: &str) {
-        self.context.render.image.insert_image(&self.device, source.to_string(), source);
-    }
 }

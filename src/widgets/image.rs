@@ -16,8 +16,6 @@
 //!
 //! fn update(ui:&mut Ui){
 //!    //注意这里不应该在每次调用update的时候都更新图片。建议给一个状态，更新状态是否修改图片
-//!    //修改图片
-//!    ui.set_image_handle("logo_2.png");
 //!    //获取Image的可变引用
 //!    let image:&mut Image=ui.get_widget("my_image").unwrap();
 //!    //修改图片
@@ -32,12 +30,13 @@ use crate::vertex::ImageVertex;
 use crate::widgets::Widget;
 use wgpu::util::DeviceExt;
 use crate::frame::context::UpdateType;
+use crate::render::image::ImageSource;
 use crate::response::Response;
 use crate::Size;
 
 pub struct Image {
     pub(crate) id: String,
-    source: String,
+    source: ImageSource,
     pub(crate) rect: Rect,
     size_mode: SizeMode,
 
@@ -48,10 +47,10 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(fp: &str) -> Self {
+    pub fn new(source: impl Into<ImageSource>) -> Self {
         Image {
             id: crate::gen_unique_id(),
-            source: fp.to_string(),
+            source: source.into(),
             rect: Rect::new(),
             size_mode: SizeMode::Fix,
             vertices: vec![],
@@ -98,8 +97,9 @@ impl Image {
         self
     }
 
-    pub fn set_image(&mut self, source: impl ToString) {
-        self.source = source.to_string();
+    pub fn set_image(&mut self, source: impl Into<ImageSource>) {
+        self.source = source.into();
+        self.changed = true;
     }
 
     fn init(&mut self, ui: &mut Ui) {
@@ -108,7 +108,7 @@ impl Image {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
-        let size = ui.context.render.image.insert_image(&ui.device, self.source.to_string(), self.source.as_str());
+        let size = ui.context.render.image.insert_image(&ui.device, &self.source);
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         self.vertices = vec![
@@ -145,6 +145,7 @@ impl Image {
             }
             v.screen_size = ui.context.size.as_gamma_size();
         }
+        ui.context.render.image.insert_image(&ui.device, &self.source);
         ui.device.queue.write_buffer(
             self.vertex_buffer.as_ref().unwrap(), 0,
             bytemuck::cast_slice(self.vertices.as_slice()));
@@ -156,7 +157,7 @@ impl Widget for Image {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.image.render(
-            &self.source.to_string(),
+            &self.source.uri(),
             self.vertex_buffer.as_ref().unwrap(),
             self.index_buffer.as_ref().unwrap(),
             pass,

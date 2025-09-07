@@ -48,6 +48,7 @@ use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
+use crate::render::image::ImageSource;
 use crate::response::{Callback, Response};
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
@@ -94,7 +95,7 @@ impl Button {
         }
     }
 
-    pub fn image_and_text(source: &'static str, text: impl Into<RichText>) -> Self {
+    pub fn image_and_text(source: impl Into<ImageSource>, text: impl Into<RichText>) -> Self {
         let mut res = Button::new(text);
         res.image = Some(Image::new(source));
         res
@@ -192,13 +193,10 @@ impl Button {
     pub fn set_text(&mut self, text: impl ToString) {
         self.text_buffer.set_text(text.to_string());
     }
-    pub fn set_image(&mut self, source: &'static str, ui: &mut Ui) {
+    pub fn set_image(&mut self, source: impl Into<ImageSource>, ui: &mut Ui) {
         match self.image {
             None => self.image = Some(Image::new(source)),
-            Some(ref mut image) => {
-                ui.context.render.image.insert_image(&ui.device, source.to_string(), source);
-                image.set_image(source)
-            }
+            Some(ref mut image) => image.set_image(source)
         }
     }
 
