@@ -54,7 +54,7 @@ impl InnerWindow {
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);
         let padding = Padding::same(5.0);
-        let mut layout = VerticalLayout::new();
+        let mut layout = VerticalLayout::top_to_bottom();
         layout.max_rect = rect;
         layout.available_rect = layout.max_rect.clone_add_padding(&padding);
         let layout = LayoutKind::Vertical(layout);
@@ -132,7 +132,7 @@ impl InnerWindow {
 
     fn draw_context(&mut self, ui: &mut Ui) {
         let context_rect = self.layout.as_ref().unwrap().available_rect().clone();
-        let mut context_layout = VerticalLayout::new();
+        let mut context_layout = VerticalLayout::top_to_bottom();
         context_layout.max_rect = context_rect;
         context_layout.available_rect = context_layout.max_rect.clone();
         let previous_layout = ui.layout.replace(LayoutKind::Vertical(context_layout));

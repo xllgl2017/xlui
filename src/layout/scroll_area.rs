@@ -74,7 +74,7 @@ impl ScrollArea {
         self.context_rect = self.fill_render.param.rect.clone();
         self.context_rect.set_width(self.fill_render.param.rect.width() - 5.0 - self.padding.right);
 
-        let mut current_layout = VerticalLayout::new().max_rect(self.context_rect.clone(), self.padding.clone());
+        let mut current_layout = VerticalLayout::top_to_bottom().max_rect(self.context_rect.clone(), self.padding.clone());
         current_layout.size_mode = SizeMode::Fix;
         let previous_layout = ui.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
         //视图内容

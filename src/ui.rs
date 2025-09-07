@@ -43,7 +43,7 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new(device: Device, context: Context) -> AppContext {
-        let layout = LayoutKind::Vertical(VerticalLayout::new()).with_size(context.size.width as f32, context.size.height as f32, Padding::same(5.0));
+        let layout = LayoutKind::Vertical(VerticalLayout::top_to_bottom()).with_size(context.size.width as f32, context.size.height as f32, Padding::same(5.0));
         AppContext {
             device,
             layout: Some(layout),
@@ -317,6 +317,19 @@ impl<'a> Ui<'a> {
         self.request_update = Some((wid, ut));
     }
 
+    pub fn add_layout(&mut self, layout: impl Into<LayoutKind>, context: impl FnOnce(&mut Ui)) {
+        let mut layout = layout.into();
+        let x_direction = layout.max_rect().x_direction();
+        let y_direction = layout.max_rect().y_direction();
+        layout.set_rect(self.layout().available_rect().with_x_direction(x_direction).with_y_direction(y_direction), &Padding::same(0.0));
+        println!("add layout={:?}", layout.max_rect());
+
+        let previous_layout = self.layout.replace(layout).unwrap();
+        context(self);
+        let current_layout = self.layout.replace(previous_layout).unwrap();
+        self.layout().add_child(current_layout);
+    }
+
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
         let current_layout = HorizontalLayout::left_to_right().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::Horizontal(current_layout)).unwrap();
@@ -326,7 +339,7 @@ impl<'a> Ui<'a> {
     }
 
     pub fn vertical(&mut self, mut context: impl FnMut(&mut Ui)) {
-        let current_layout = VerticalLayout::new().max_rect(self.layout().available_rect().clone(), Padding::same(0.0));
+        let current_layout = VerticalLayout::top_to_bottom().max_rect(self.layout().available_rect(), Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::Vertical(current_layout)).unwrap();
         context(self);
         let current_layout = self.layout.replace(previous_layout).unwrap();
@@ -350,7 +363,7 @@ impl<'a> Ui<'a> {
     }
 
 
-    pub fn available_rect(&self) -> &Rect {
+    pub fn available_rect(&self) -> Rect {
         self.layout.as_ref().unwrap().available_rect()
     }
 
@@ -399,5 +412,4 @@ impl<'a> Ui<'a> {
         let select_value = SelectItem::new(t);
         self.add(select_value)
     }
-
 }
