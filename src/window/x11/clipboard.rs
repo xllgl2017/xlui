@@ -5,6 +5,7 @@ use std::ptr::null_mut;
 use std::{mem, slice};
 use std::sync::atomic::{AtomicBool, Ordering};
 use x11::xlib;
+use crate::window::ClipboardData;
 
 pub struct X11ClipBoard {
     clipboard_atom: xlib::Atom,

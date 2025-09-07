@@ -9,6 +9,7 @@ use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
 use x11::xlib;
 use x11::xlib::XCloseDisplay;
+use crate::error::UiResult;
 use crate::window::x11::clipboard::X11ClipBoard;
 use crate::window::x11::handle::X11WindowHandle;
 
@@ -107,7 +108,7 @@ impl X11Window {
         }
     }
 
-    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> Arc<WindowType> {
+    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
         let mut window = X11Window::create_window(
             parent.x11().display, parent.x11().screen, self.root, attr,
             &mut self.wm_delete_atom);
@@ -119,7 +120,7 @@ impl X11Window {
             ime: parent.ime.clone(),
         });
         self.handles.push(window.clone());
-        window
+        Ok(window)
     }
 
     pub fn run(&mut self) -> (WindowId, WindowEvent) {

@@ -34,6 +34,7 @@ impl Application {
         let ii = ime.clone();
         #[cfg(target_os = "linux")]
         ime.create_binding(ii);
+        #[cfg(target_os = "windows")]
         let ime = Arc::new(IME::new_win32());
         let mut attr = app.window_attributes();
         #[cfg(target_os = "linux")]
