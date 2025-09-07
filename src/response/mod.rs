@@ -58,6 +58,7 @@ impl Callback {
             let t = app.downcast_mut::<A>().unwrap();
             f(t, window, ui)
         })
+
     }
 
     // pub fn slider(f: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, f32)>>) -> Self {

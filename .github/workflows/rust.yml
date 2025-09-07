@@ -10,29 +10,33 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  check-linux:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
-          cache-on-failure: true
-          cache-directories: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ./target
-          prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
+#      - uses: Swatinem/rust-cache@v2
+#        with:
+#          key: ${{ runner.os }}-cargo-${{ github.ref }}-${{ hashFiles('**/Cargo.lock') }}
+#          cache-on-failure: true
+#          cache-directories: |
+#            ~/.cargo/registry
+#            ~/.cargo/git
+#            ./target
+#          prefix-key: ${{ runner.os }}-cargo-${{ github.ref }}-
       - name: Install mold
         run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
-      - name: Check Native Linux
-        run: cargo check --target x86_64-unknown-linux-gnu
-      - name: Check Native Windows
-        run: cargo check --target x86_64-pc-windows-msvc
-      - name: Check WInit
+      - name: Check Native
         run: cargo check
+      - name: Check WInit
+        run: cargo check --features winit
       - name: Doc tests
         run: cargo test --doc --all
+  check-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4.0.0
+      - name: Check Native
+        run: cargo check
+      - name: Check WInit
+        run: cargo check --features winit
 
