@@ -17,7 +17,7 @@ use windows::Win32::UI::WindowsAndMessaging::*;
 
 pub mod tray;
 pub(crate) mod handle;
-mod until;
+pub(crate) mod until;
 mod clipboard;
 
 const TRAY_ICON: u32 = WM_USER + 1;

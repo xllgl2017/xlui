@@ -1,7 +1,7 @@
 pub mod texture;
 
-use image::GenericImageView;
-use crate::{Device, SAMPLE_COUNT};
+// use image::GenericImageView;
+use crate::{Device, Size, SAMPLE_COUNT};
 use crate::map::Map;
 use crate::render::image::texture::ImageTexture;
 use crate::vertex::ImageVertex;
@@ -96,24 +96,27 @@ impl ImageRender {
         render_pipeline
     }
 
-    pub fn insert_image(&mut self, device: &Device, uri: String, fp: &str) -> (u32, u32) {
+    pub fn insert_image(&mut self, device: &Device, uri: String, fp: &str) -> Size {
         match self.textures.get(&uri) {
             None => {
-                println!("1");
-                let img = image::open(fp).unwrap();
-                let size = img.dimensions();
-                let texture = ImageTexture::new(device, img, &self.bind_group_layout);
+                let texture = ImageTexture::new(device, fp, &self.bind_group_layout);
+                let size = texture.size();
                 self.textures.insert(uri, texture);
+                println!("1");
+
+                // let texture = ImageTexture::new(device, img, &self.bind_group_layout);
+                // self.textures.insert(uri, texture);
+                // size
                 size
             }
-            Some(texture) => texture.size
+            Some(texture) => texture.size()
         }
     }
 
     pub(crate) fn render(&self, uri: &String, vb: &wgpu::Buffer, ib: &wgpu::Buffer, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(&self.pipeline);
         let texture = self.textures.get(uri).unwrap();
-        render_pass.set_bind_group(0, &texture.bind_group, &[]);
+        render_pass.set_bind_group(0, texture.bind_group(), &[]);
         render_pass.set_vertex_buffer(0, vb.slice(..));
         render_pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.draw_indexed(0..6, 0, 0..1);

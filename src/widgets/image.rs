@@ -33,6 +33,7 @@ use crate::widgets::Widget;
 use wgpu::util::DeviceExt;
 use crate::frame::context::UpdateType;
 use crate::response::Response;
+use crate::Size;
 
 pub struct Image {
     pub(crate) id: String,
@@ -60,16 +61,16 @@ impl Image {
         }
     }
 
-    fn reset_size(&mut self, (width, height): (u32, u32)) {
+    fn reset_size(&mut self, size: Size) {
         match self.size_mode {
-            SizeMode::Auto => self.rect.set_size(width as f32, height as f32),
+            SizeMode::Auto => self.rect.set_size(size.width as f32, size.height as f32),
             SizeMode::FixWidth => {
-                let scale = self.rect.height() / height as f32;
-                self.rect.set_width(scale * width as f32)
+                let scale = self.rect.height() / size.height as f32;
+                self.rect.set_width(scale * size.width as f32)
             }
             SizeMode::FixHeight => {
-                let scale = self.rect.width() / width as f32;
-                self.rect.set_height(scale * height as f32);
+                let scale = self.rect.width() / size.width as f32;
+                self.rect.set_height(scale * size.height as f32);
             }
             _ => {}
         }
