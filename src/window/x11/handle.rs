@@ -6,13 +6,15 @@ use std::sync::Arc;
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, XlibDisplayHandle, XlibWindowHandle};
 use x11::xlib;
 use crate::window::ime::IME;
-use crate::window::UserEvent;
+use crate::window::{ClipboardData, UserEvent};
+use crate::window::x11::clipboard::X11ClipBoard;
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,
     pub(crate) window: xlib::Window,
     pub(crate) update_atom: xlib::Atom,
     pub(crate) screen: i32,
+    pub(crate) clipboard: X11ClipBoard,
 }
 
 
@@ -63,6 +65,19 @@ impl X11WindowHandle {
         };
         if status == 0 { return; }
         ime.set_cursor_position(ax + x as i32, ay + y as i32);
+    }
+
+    pub fn request_clipboard(&self, clipboard: ClipboardData) {
+        match clipboard {
+            ClipboardData::Unsupported => {}
+            ClipboardData::Text(_) => self.clipboard.request_get_clipboard(self.window, self.clipboard.utf8_atom),
+            ClipboardData::Image(_) => self.clipboard.request_get_clipboard(self.window, self.clipboard.png_atom),
+            ClipboardData::Url(_) => self.clipboard.request_get_clipboard(self.window, self.clipboard.url_atom)
+        }
+    }
+
+    pub fn set_clipboard(&self, clipboard: ClipboardData) {
+        self.clipboard.request_set_clipboard(self.window, clipboard);
     }
 }
 

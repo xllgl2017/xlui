@@ -1,5 +1,6 @@
 use crate::{Pos, Size};
 use crate::key::Key;
+use crate::window::ClipboardData;
 use crate::window::ime::IMEData;
 
 #[derive(Debug)]
@@ -18,4 +19,5 @@ pub enum WindowEvent {
     ReqUpdate,
     IME(IMEData),
     CreateChild,
+    Clipboard(ClipboardData),
 }

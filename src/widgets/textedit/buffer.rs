@@ -180,4 +180,9 @@ impl CharBuffer {
         if cursor.horiz - 1 == 0 { return self.buffer.lines.get(cursor.vert)?.chars.get(0); }
         self.buffer.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)
     }
+
+    pub fn select_text(&self)->String{
+
+        "test clipboard".to_string()
+    }
 }

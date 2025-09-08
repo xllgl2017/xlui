@@ -82,10 +82,8 @@ impl EventLoopHandle for LoopWindow {
         println!("{:?}", event);
         match event {
             WindowEvent::None => {}
-            WindowEvent::KeyPress(_) => {}
-            WindowEvent::KeyRelease(key) => {
-                self.app_ctx.key_input(UpdateType::KeyRelease(Some(key)), &mut self.app);
-            }
+            WindowEvent::KeyPress(key) => self.app_ctx.key_input(UpdateType::KeyPress(key), &mut self.app),
+            WindowEvent::KeyRelease(key) => self.app_ctx.key_input(UpdateType::KeyRelease(key), &mut self.app),
             WindowEvent::MouseMove(pos) => {
                 self.app_ctx.device.device_input.mouse.update(pos);
                 self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
@@ -121,6 +119,7 @@ impl EventLoopHandle for LoopWindow {
             // WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
             WindowEvent::IME(data) => self.app_ctx.update(UpdateType::IME(data), &mut self.app),
+            WindowEvent::Clipboard(data) => self.app_ctx.update(UpdateType::Clipboard(data), &mut self.app),
             _ => {}
         }
     }

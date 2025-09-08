@@ -19,6 +19,7 @@ use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::Widget;
+use crate::window::ClipboardData;
 use crate::window::ime::IMEData;
 
 pub(crate) mod buffer;
@@ -167,10 +168,9 @@ impl TextEdit {
         self.select_render.init(self.desire_lines, &self.char_layout.buffer.rect, self.char_layout.buffer.text.height, ui, init);
     }
 
-    fn key_input(&mut self, key: Option<Key>, ui: &mut Ui) {
-        if key.is_none() { return; }
+    fn key_input(&mut self, key: Key, ui: &mut Ui) {
         self.changed = true;
-        match key.unwrap() {
+        match key {
             Key::Backspace => {
                 self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &mut self.select_render);
                 self.char_layout.buffer.clip_x = self.char_layout.offset.x;
@@ -282,8 +282,30 @@ impl Widget for TextEdit {
                     self.changed = true;
                 }
             }
+            UpdateType::KeyPress(ref mut key) => {
+                if self.focused {
+                    match key {
+                        Key::CtrlC => ui.context.window.set_clipboard(ClipboardData::Text(self.char_layout.select_text())),
+                        Key::CtrlV => ui.context.window.request_clipboard(ClipboardData::Text(String::new())),
+                        _ => {}
+                    }
+                }
+            }
+            UpdateType::Clipboard(ref mut clipboard) => {
+                if self.focused {
+                    match mem::take(clipboard) {
+                        ClipboardData::Text(t) => {
+                            println!("33333333333333333333333: {:?}", t.chars());
+                            for c in t.chars() {
+                                self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
             UpdateType::KeyRelease(ref mut key) => {
-                if self.focused { self.key_input(key.take(), ui); }
+                if self.focused { self.key_input(mem::take(key), ui); }
             }
             UpdateType::IME(ref mut data) => {
                 if self.focused {
@@ -308,19 +330,6 @@ impl Widget for TextEdit {
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
-                // if self.focused {
-                //     let chars = ui.context.window.ime().chars();
-                //
-                //
-                //     if !ui.context.window.ime().is_commited() {
-                //
-                //     } else {
-                //
-                //         // ui.context.window.ime().ime_done();
-                //     }
-                //
-
-                // }
             }
             _ => {}
         }

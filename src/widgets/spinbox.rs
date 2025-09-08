@@ -312,7 +312,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             }
             UpdateType::KeyRelease(ref key) => {
                 if !self.edit.focused { return Response::new(&self.id, &self.rect); }
-                if let Some(&Key::Enter) = key.as_ref() {
+                if let Key::Enter = key {
                     self.edit.focused = false;
                     self.update_from_edit(ui, true);
                 } else {

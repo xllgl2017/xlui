@@ -4,19 +4,21 @@ use std::os::raw::{c_int, c_ulong};
 use std::ptr::null_mut;
 use std::{mem, slice};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 use x11::xlib;
 use crate::window::ClipboardData;
 
 pub struct X11ClipBoard {
     clipboard_atom: xlib::Atom,
-    utf8_atom: xlib::Atom,
+    pub(crate) utf8_atom: xlib::Atom,
     pub(crate) targets_atom: xlib::Atom,
     display: *mut xlib::Display,
-    png_atom: xlib::Atom,
-    text_atom: xlib::Atom,
-    timestamp_atom: xlib::Atom,
-    url_atom: xlib::Atom,
+    pub(crate) png_atom: xlib::Atom,
+    pub(crate) text_atom: xlib::Atom,
+    pub(crate) timestamp_atom: xlib::Atom,
+    pub(crate) url_atom: xlib::Atom,
     req_targets: AtomicBool,
+    clipboard_data: RwLock<ClipboardData>,
 }
 
 
@@ -47,10 +49,13 @@ impl X11ClipBoard {
             timestamp_atom,
             url_atom,
             req_targets: AtomicBool::new(false),
+            clipboard_data: RwLock::new(ClipboardData::Unsupported),
         })
     }
 
-    pub fn request_set_clipboard(&self, window: xlib::Window) {
+    pub fn request_set_clipboard(&self, window: xlib::Window, data: ClipboardData) {
+        let mut clipboard = self.clipboard_data.write().unwrap();
+        *clipboard = data;
         unsafe { xlib::XSetSelectionOwner(self.display, self.clipboard_atom, window, xlib::CurrentTime); }
     }
 
@@ -71,14 +76,21 @@ impl X11ClipBoard {
         xs.time = xsr.time;
         xs.property = xsr.property;
         if xsr.target == self.targets_atom {
-            let data = [self.utf8_atom];
+            let data = self.clipboard_data.read().unwrap();
+            let data = match *data {
+                ClipboardData::Unsupported => [self.utf8_atom],
+                ClipboardData::Text(_) => [self.utf8_atom],
+                ClipboardData::Image(_) => [self.png_atom],
+                ClipboardData::Url(_) => [self.url_atom]
+            };
             unsafe {
                 //返回粘贴板支持的格式
                 xlib::XChangeProperty(self.display, xsr.requestor, xsr.property, xlib::XA_ATOM, 32,
                                       xlib::PropModeReplace, data.as_ptr() as *const u8, data.len() as i32);
             }
-        } else if xsr.target == self.utf8_atom {
-            let cstr = CString::new("Hello Rust Clipboard")?;
+        } else if xsr.target == self.utf8_atom || xsr.target == self.text_atom {
+            let data = self.clipboard_data.read().unwrap();
+            let cstr = CString::new(data.text())?;
             unsafe {
                 //返回文本数据
                 xlib::XChangeProperty(self.display, xsr.requestor, xsr.property, xlib::XA_ATOM, 8,

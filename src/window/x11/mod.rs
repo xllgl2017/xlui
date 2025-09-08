@@ -25,7 +25,6 @@ pub struct X11Window {
 
     size: RwLock<Size>,
     root: xlib::Window,
-    clipboard: X11ClipBoard,
 }
 
 impl X11Window {
@@ -61,7 +60,6 @@ impl X11Window {
                 wm_delete_atom: wm_delete,
                 size: RwLock::new(attr.inner_size),
                 root,
-                clipboard: X11ClipBoard::new(display).unwrap(),
             })
         }
     }
@@ -104,6 +102,7 @@ impl X11Window {
                 window: child,
                 update_atom: 0,
                 screen,
+                clipboard: X11ClipBoard::new(display).unwrap(),
             }
         }
     }
@@ -183,7 +182,15 @@ impl X11Window {
                         window.ime.update();
                         (window.id, WindowEvent::IME(IMEData::Preedit(window.ime.chars())))
                     } else {
-                        (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode,&buffer[..len as usize])))
+                        let ctrl_press = (event.key.state & xlib::ControlMask) != 0;
+                        if ctrl_press && keysym == x11::keysym::XK_c as u64 {
+                            return (window.id, WindowEvent::KeyPress(Key::CtrlC));
+                        } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
+                            return (window.id, WindowEvent::KeyPress(Key::CtrlV));
+                        }
+
+
+                        (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])))
                     };
                 }
                 xlib::KeyRelease => {
@@ -197,11 +204,17 @@ impl X11Window {
                         if window.ime.is_commited() {
                             return (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())));
                         }
-                        return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])))
+                        let ctrl_press = (event.key.state & xlib::ControlMask) != 0;
+                        if ctrl_press && keysym == x11::keysym::XK_c as u64 {
+                            return (window.id, WindowEvent::None);
+                        } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
+                            return (window.id, WindowEvent::None);
+                        }
+                        return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])));
                     }
                 }
                 xlib::ButtonRelease => {
-                    self.clipboard.request_get_clipboard(window.x11().window, self.clipboard.targets_atom);
+                    // window.x11().clipboard.request_get_clipboard(window.x11().window, window.x11().clipboard.utf8_atom);
                     let xb: xlib::XButtonEvent = event.button;
                     return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }));
                 }
@@ -217,10 +230,11 @@ impl X11Window {
                         (window.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))
                     };
                 }
-                xlib::SelectionRequest => self.clipboard.handle_request(&event).unwrap(),
+                xlib::SelectionRequest => window.x11().clipboard.handle_request(&event).unwrap(),
                 xlib::SelectionNotify => {
-                    let clipboard_res = self.clipboard.get_clipboard_data(event, window.x11().window);
-                    println!("clipboard_res: {:?}", clipboard_res);
+                    let res = window.x11().clipboard.get_clipboard_data(event, window.x11().window).unwrap();
+                    println!("clipboard_res: {:?}", res);
+                    return (window.id, WindowEvent::Clipboard(res));
                 }
                 _ => {}
             }

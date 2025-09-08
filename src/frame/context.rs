@@ -5,7 +5,7 @@ use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
 use crate::size::Size;
 use crate::text::render::TextRender;
-use crate::window::{WindowId, WindowType};
+use crate::window::{ClipboardData, WindowId, WindowType};
 use crate::{Device, Font, NumCastExt, Offset, WindowAttribute};
 use glyphon::Viewport;
 use std::fmt::Debug;
@@ -80,11 +80,13 @@ pub enum UpdateType {
     MousePress,
     MouseRelease,
     MouseWheel,
-    KeyRelease(Option<Key>),
+    KeyPress(Key),
+    KeyRelease(Key),
     Offset(Offset),
     Drop,
     IME(IMEData),
     CreateWindow,
+    Clipboard(ClipboardData),
 }
 
 impl UpdateType {
@@ -111,6 +113,8 @@ impl Debug for UpdateType {
             UpdateType::Drop => f.write_str("Drop"),
             UpdateType::IME(_) => f.write_str("IME"),
             UpdateType::CreateWindow => f.write_str("CreateWindow"),
+            UpdateType::Clipboard(_)=>f.write_str("Clipboard"),
+            UpdateType::KeyPress(_)=>f.write_str("KeyPress"),
         }
     }
 }

@@ -56,12 +56,24 @@ pub enum WindowKind {
     Win32(win32::handle::Win32WindowHandle),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub enum ClipboardData {
+    #[default]
     Unsupported,
     Text(String),
     Image(Vec<u8>),
     Url(String),
+}
+
+impl ClipboardData {
+    pub fn text(&self) -> &str {
+        match self {
+            ClipboardData::Unsupported => "unsupported data",
+            ClipboardData::Text(text) => text.as_str(),
+            ClipboardData::Image(_) => "image",
+            ClipboardData::Url(_) => "url"
+        }
+    }
 }
 
 
@@ -151,6 +163,18 @@ impl WindowType {
     pub fn set_visible(&self, visible: bool) {
         match self.kind {
             WindowKind::Win32(ref window) => window.set_visible(visible).unwrap(),
+        }
+    }
+
+    pub fn request_clipboard(&self, clipboard: ClipboardData) {
+        match self.kind {
+            WindowKind::X11(ref window) => window.request_clipboard(clipboard)
+        }
+    }
+
+    pub fn set_clipboard(&self, clipboard: ClipboardData) {
+        match self.kind {
+            WindowKind::X11(ref window) => window.set_clipboard(clipboard)
         }
     }
 }
