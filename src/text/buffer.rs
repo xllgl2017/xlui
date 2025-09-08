@@ -39,12 +39,6 @@ impl TextBuffer {
         }
     }
 
-    // #[deprecated = "user RichText::wrap"]
-    // pub fn with_wrap(mut self, wrap: TextWrap) -> Self {
-    //     self.text = self.text.wrap(wrap);
-    //     self
-    // }
-
 
     fn reset(&mut self) {
         if self.buffer.is_none() { return; }
@@ -68,7 +62,7 @@ impl TextBuffer {
             }
             self.lines.push(line);
         }
-        if let Some(line) = self.lines.last_mut() { line.auto_wrap = false; }
+        if let Some(line) = self.lines.last_mut() { line.auto_wrap = true; }
     }
 
     pub fn init(&mut self, ui: &mut Ui) {

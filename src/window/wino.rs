@@ -91,11 +91,13 @@ impl EventLoopHandle for LoopWindow {
                 self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
             }
             WindowEvent::MouseWheel => {}
-            WindowEvent::MousePress(_) => {
+            WindowEvent::MousePress(pos) => {
+                self.app_ctx.device.device_input.mouse.update(pos);
                 self.app_ctx.device.device_input.mouse.mouse_press();
                 self.app_ctx.update(UpdateType::MousePress, &mut self.app);
             }
-            WindowEvent::MouseRelease(_) => {
+            WindowEvent::MouseRelease(pos) => {
+                self.app_ctx.device.device_input.mouse.update(pos);
                 self.app_ctx.device.device_input.mouse.mouse_release();
                 self.app_ctx.update(UpdateType::MouseRelease, &mut self.app);
                 self.app_ctx.device.device_input.mouse.a = 0.0;
