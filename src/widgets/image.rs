@@ -1,27 +1,27 @@
-//! ### Image的示例用法
-//!```
-//! use xlui::ui::Ui;
-//! use xlui::*;
-//!
-//! fn draw(ui:&mut Ui){
-//!    let mut image=Image::new("logo.png")
-//!        //设置控件大小
-//!        .with_size(30.0,30.0)
-//!        //设置控件ID
-//!        .with_id("my_image");
-//!    //快速创建图片
-//!    ui.add(image);
-//!
-//! }
-//!
-//! fn update(ui:&mut Ui){
-//!    //注意这里不应该在每次调用update的时候都更新图片。建议给一个状态，更新状态是否修改图片
-//!    //获取Image的可变引用
-//!    let image:&mut Image=ui.get_widget("my_image").unwrap();
-//!    //修改图片
-//!    image.set_image("logo_2.png");
-//! }
-//! ```
+/// ### Image的示例用法
+///```
+/// use xlui::ui::Ui;
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///    let mut image=Image::new("logo.png")
+///        //设置控件大小
+///        .with_size(30.0,30.0)
+///        //设置控件ID
+///        .with_id("my_image");
+///    //快速创建图片
+///    ui.add(image);
+///
+/// }
+///
+/// fn update(ui:&mut Ui){
+///    //注意这里不应该在每次调用update的时候都更新图片。建议给一个状态，更新状态是否修改图片
+///    //获取Image的可变引用
+///    let image:&mut Image=ui.get_widget("my_image").unwrap();
+///    //修改图片
+///    image.set_image("logo_2.png");
+/// }
+/// ```
 
 use crate::size::rect::Rect;
 use crate::size::SizeMode;

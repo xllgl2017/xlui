@@ -1,28 +1,28 @@
-//! ### RadioButton的示例用法
-//! ```
-//! use xlui::frame::App;
-//! use xlui::ui::Ui;
-//! use xlui::*;
-//!
-//! fn checked<A:App>(_:&mut A,_:&mut Ui,checked:bool){
-//!     println!("单选框的状态改变: {}",checked);
-//! }
-//!
-//! fn draw<A:App>(ui:&mut Ui){
-//!     //快速创建一个单选框
-//!     ui.radio(false,"HelloRadio");
-//!     let radio=RadioButton::new(false,"radio")
-//!         //设置控件ID
-//!         .id("my_radio")
-//!         //连接到回调函数
-//!         .connect(checked::<A>)
-//!         //设置控件宽度
-//!         .with_width(100.0)
-//!         //与my_checkbox关联
-//!         .contact("my_checkbox");
-//!
-//!     ui.add(radio);
-//! }
+/// ### RadioButton的示例用法
+/// ```
+/// use xlui::frame::App;
+/// use xlui::ui::Ui;
+/// use xlui::*;
+///
+/// fn checked<A:App>(_:&mut A,_:&mut Ui,checked:bool){
+///     println!("单选框的状态改变: {}",checked);
+/// }
+///
+/// fn draw<A:App>(ui:&mut Ui){
+///     //快速创建一个单选框
+///     ui.radio(false,"HelloRadio");
+///     let radio=RadioButton::new(false,"radio")
+///         //设置控件ID
+///         .id("my_radio")
+///         //连接到回调函数
+///         .connect(checked::<A>)
+///         //设置控件宽度
+///         .with_width(100.0)
+///         //与my_checkbox关联
+///         .contact("my_checkbox");
+///
+///     ui.add(radio);
+/// }
 
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;

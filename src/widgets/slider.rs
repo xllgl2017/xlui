@@ -1,31 +1,31 @@
-//! ### Slider的示例用法
-//! ```
-//!
-//! use xlui::frame::App;
-//! use xlui::ui::Ui;
-//! use xlui::*;
-//!
-//! fn slider_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){
-//!     println!("Slider改变了:{}",v);
-//! }
-//!
-//! fn draw<A:App>(ui:&mut Ui){
-//!     //快速创建一个Slider
-//!     ui.slider(10.0,0.0..100.0)
-//!         //设置回调函数
-//!         .set_callback(slider_changed::<A>);
-//!     let slider=Slider::new(10.0)
-//!         //关联ID为my_spinbox的控件
-//!         .contact("my_spinbox")
-//!         //连接到Slider值监听函数
-//!         .connect(slider_changed::<A>)
-//!         //设置控件ID
-//!         .id("my_slider")
-//!         //设置Slider值的范围
-//!         .with_range(0.0..100.0);
-//!     ui.add(slider);
-//! }
-//! ```
+/// ### Slider的示例用法
+/// ```
+///
+/// use xlui::frame::App;
+/// use xlui::ui::Ui;
+/// use xlui::*;
+///
+/// fn slider_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){
+///     println!("Slider改变了:{}",v);
+/// }
+///
+/// fn draw<A:App>(ui:&mut Ui){
+///     //快速创建一个Slider
+///     ui.slider(10.0,0.0..100.0)
+///         //设置回调函数
+///         .set_callback(slider_changed::<A>);
+///     let slider=Slider::new(10.0)
+///         //关联ID为my_spinbox的控件
+///         .contact("my_spinbox")
+///         //连接到Slider值监听函数
+///         .connect(slider_changed::<A>)
+///         //设置控件ID
+///         .id("my_slider")
+///         //设置Slider值的范围
+///         .with_range(0.0..100.0);
+///     ui.add(slider);
+/// }
+/// ```
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;

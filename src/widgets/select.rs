@@ -1,24 +1,24 @@
-//! ### SelectItem的示例用法
-//! ```
-//! use xlui::Padding;
-//! use xlui::ui::Ui;
-//! use xlui::*;
-//!
-//! fn draw(ui:&mut Ui){
-//!     //快速创建一个SelectItem
-//!     let contact=ui.select_value(1).need_contact();
-//!     let mut item=SelectItem::new(2)
-//!         //关联选择
-//!         .contact(contact.clone())
-//!         //设置控件内部padding
-//!         .padding(Padding::same(5.0));
-//!
-//!         //设置控件大小
-//!     item.set_size(30.0,30.0);
-//!     ui.add(item);
-//!
-//! }
-//! ```
+/// ### SelectItem的示例用法
+/// ```
+/// use xlui::Padding;
+/// use xlui::ui::Ui;
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///     //快速创建一个SelectItem
+///     let contact=ui.select_value(1).need_contact();
+///     let mut item=SelectItem::new(2)
+///         //关联选择
+///         .contact(contact.clone())
+///         //设置控件内部padding
+///         .padding(Padding::same(5.0));
+///
+///         //设置控件大小
+///     item.set_size(30.0,30.0);
+///     ui.add(item);
+///
+/// }
+/// ```
 
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;

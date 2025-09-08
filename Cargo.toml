@@ -85,7 +85,7 @@ features = [
 ]
 
 [features]
-default = ["winit"]
+default = []
 
 [profile.release]
 opt-level = 's' #2

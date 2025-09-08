@@ -1,10 +1,23 @@
+/// ### RichText的示例用法
+/// ```
+/// use xlui::{RichText, RichTextExt, TextWrap};
+/// use xlui::style::color::Color;
+/// use xlui::ui::Ui;
+///
+/// fn draw(ui:&mut Ui){
+///     //此处需要导入RichTextExt，对已实现Display的类型进行转换
+///     ui.label("Rich".color(Color::BLUE).size(16.0).wrap(TextWrap::NoWrap));
+///     ui.label(RichText::new("Rich").color(Color::YELLOW));
+/// }
+/// ```
+
+
 use crate::style::color::Color;
 use crate::text::TextWrap;
 use std::fmt::Display;
 
 pub struct RichText {
     pub(crate) text: String,
-    ///字体大小，如果没有提供就会使用全局字体大小
     pub(crate) size: Option<f32>,
     pub(crate) color: Color,
     ///字符高度
@@ -26,24 +39,21 @@ impl RichText {
         }
     }
 
+    ///设置换行方式，默认为TextWrap::NoWrap
     pub fn wrap(mut self, wrap: TextWrap) -> RichText {
         self.wrap = wrap;
         self
     }
-
+    ///字体大小，如果没有提供就会使用全局字体大小,WindowAttribute::font
     pub fn size(mut self, size: f32) -> RichText {
         self.size = Some(size);
         self
     }
-
+    ///设置字体颜色
     pub fn color(mut self, color: Color) -> RichText {
         self.color = color;
         self
     }
-
-    // pub(crate) fn init_size(&mut self, font: &Arc<Font>) {
-    //     font.text_size(self);
-    // }
 
     pub(crate) fn font_size(&self) -> f32 {
         self.size.unwrap()

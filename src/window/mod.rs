@@ -4,6 +4,7 @@ pub mod inner;
 mod x11;
 #[cfg(not(feature = "winit"))]
 pub mod wino;
+#[cfg(not(feature = "winit"))]
 pub mod event;
 #[cfg(feature = "winit")]
 pub mod winit_app;

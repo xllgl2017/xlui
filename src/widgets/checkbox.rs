@@ -1,32 +1,32 @@
-//! ### CheckBox的示例用法
-//! ```
-//! use xlui::frame::App;
-//! use xlui::ui::Ui;
-//! use xlui::*;
-//!
-//! fn checked<A:App>(_:&mut A,_:&mut Ui,check:bool){
-//!    println!("复选框状态改变: {}",check);
-//! }
-//!
-//! fn draw<A:App>(ui:&mut Ui){
-//!    //快速创建一个复选框
-//!    ui.checkbox(false,"Hello CheckBox")
-//!        //设置回调函数
-//!        .set_callback(checked::<A>);
-//!
-//!    let mut check=CheckBox::new(false,"hello button")
-//!        //连接到回调函数
-//!        .connect(checked::<A>)
-//!        //设置控件宽度
-//!        .with_width(100.0)
-//!        //与ID为my_radio的控件关联
-//!        .contact("my_radio")
-//!        //设置ID
-//!        .id("my_checked");
-//!    ui.add(check);
-//!
-//! }
-//! ```
+/// ### CheckBox的示例用法
+/// ```
+/// use xlui::frame::App;
+/// use xlui::ui::Ui;
+/// use xlui::*;
+///
+/// fn checked<A:App>(_:&mut A,_:&mut Ui,check:bool){
+///    println!("复选框状态改变: {}",check);
+/// }
+///
+/// fn draw<A:App>(ui:&mut Ui){
+///    //快速创建一个复选框
+///    ui.checkbox(false,"Hello CheckBox")
+///        //设置回调函数
+///        .set_callback(checked::<A>);
+///
+///    let mut check=CheckBox::new(false,"hello button")
+///        //连接到回调函数
+///        .connect(checked::<A>)
+///        //设置控件宽度
+///        .with_width(100.0)
+///        //与ID为my_radio的控件关联
+///        .contact("my_radio")
+///        //设置ID
+///        .id("my_checked");
+///    ui.add(check);
+///
+/// }
+/// ```
 
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;

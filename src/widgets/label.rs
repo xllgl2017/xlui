@@ -1,23 +1,23 @@
-//! ### Label的示例用法
-//! ```
-//! use xlui::ui::Ui;
-//! use xlui::*;
-//!
-//! fn draw(ui:&mut Ui){
-//!     //快速创建一个Label
-//!     ui.label("这里是Label");
-//!     let label=Label::new("这里是Label")
-//!         //设置控件宽度
-//!         .width(100.0)
-//!         //设置控件高度
-//!         .height(100.0);
-//!         //设置字体大小
-//!         //.size(14.0);
-//!     //获取控件ID
-//!     let _id=label.get_id();
-//!     ui.add(label);
-//! }
-//! ```
+/// ### Label的示例用法
+/// ```
+/// use xlui::ui::Ui;
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///     //快速创建一个Label
+///     ui.label("这里是Label");
+///     let label=Label::new("这里是Label")
+///         //设置控件宽度
+///         .width(100.0)
+///         //设置控件高度
+///         .height(100.0);
+///         //设置字体大小
+///         //.size(14.0);
+///     //获取控件ID
+///     let _id=label.get_id();
+///     ui.add(label);
+/// }
+/// ```
 
 use crate::align::Align;
 use crate::frame::context::UpdateType;
