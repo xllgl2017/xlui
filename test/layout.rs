@@ -214,5 +214,5 @@ impl App for TestLayout {
 
 
 fn main() {
-    TestLayout {}.run();
+    TestLayout {}.run().unwrap();
 }

@@ -2,7 +2,7 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub struct UiError {
-    pub error: String,
+    error: String,
 }
 
 impl UiError {

@@ -1,6 +1,7 @@
 use std::any::Any;
 #[cfg(feature = "winit")]
 use winit::event_loop::{ControlFlow, EventLoop};
+use crate::error::UiResult;
 #[cfg(feature = "winit")]
 use crate::window::winit_app::WInitApplication;
 use crate::ui::Ui;
@@ -20,25 +21,26 @@ pub trait App: Any + 'static {
         WindowAttribute::default()
     }
 
-    fn run(self)
+    fn run(self) -> UiResult<()>
     where
         Self: Sized,
     {
         //wasm-pack build --target web
         #[cfg(feature = "winit")]
         {
-            let event_loop = EventLoop::with_user_event().build().unwrap();
+            let event_loop = EventLoop::with_user_event().build()?;
             let proxy_event = event_loop.create_proxy();
             event_loop.set_control_flow(ControlFlow::Wait);
             let mut application = WInitApplication::new();
             application.set_app(Some(self));
             application.set_proxy_event(Some(proxy_event));
-            event_loop.run_app(&mut application).unwrap()
+            event_loop.run_app(&mut application)?;
         }
         #[cfg(not(feature = "winit"))]
         {
-            let app = Application::new(self);
-            app.run();
+            let app = Application::new(self)?;
+            app.run()?;
         }
+        Ok(())
     }
 }

@@ -7,7 +7,7 @@ use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, Ri
 
 #[allow(dead_code)]
 fn main() {
-    TestWidget::new().run();
+    TestWidget::new().run().unwrap();
 }
 
 pub struct TestWidget {

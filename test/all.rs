@@ -34,7 +34,7 @@ impl Display for TestKind {
 }
 
 fn main() {
-    XlUi::new().run();
+    XlUi::new().run().unwrap_or_else(|e| println!("{}", e.to_string()));
 }
 
 struct XlUi {}

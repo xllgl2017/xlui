@@ -13,7 +13,7 @@
 //! fn main() {
 //!     let app=XlUiApp::new();
 //!     //直接调run()
-//!     // app.run();
+//!     // app.run().unwrap();
 //! }
 //!
 //! struct XlUiApp {

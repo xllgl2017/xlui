@@ -13,6 +13,7 @@ use std::process::exit;
 use std::sync::Arc;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
+use crate::error::UiResult;
 #[cfg(target_os = "windows")]
 use crate::window::win32::Win32Window;
 
@@ -25,7 +26,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn new<A: App>(app: A) -> Self {
+    pub fn new<A: App>(app: A) -> UiResult<Self> {
         #[cfg(target_os = "linux")]
         let ime = Arc::new(IME::new_x11("xlui ime").enable());
         #[cfg(target_os = "linux")]
@@ -38,7 +39,7 @@ impl Application {
         let ime = Arc::new(IME::new_win32());
         let mut attr = app.window_attributes();
         #[cfg(target_os = "linux")]
-        let native_window = X11Window::new(&mut attr, ime.clone()).unwrap();
+        let native_window = X11Window::new(&mut attr, ime.clone())?;
         #[cfg(target_os = "windows")]
         let native_window = Win32Window::new(&mut attr, ime).unwrap();
         let window_type = native_window.last_window();
@@ -48,13 +49,13 @@ impl Application {
         loop_window.event(WindowEvent::Redraw);
         let mut loop_windows = Map::new();
         loop_windows.insert(wid, loop_window);
-        Application {
+        Ok(Application {
             native_window,
             loop_windows,
-        }
+        })
     }
 
-    pub fn run(mut self) {
+    pub fn run(mut self)->UiResult<()> {
         #[cfg(target_os = "windows")]
         unsafe { SetWindowLongPtrW(self.native_window.last_window().win32().hwnd, GWLP_USERDATA, &self as *const _ as isize); }
         loop {
@@ -66,7 +67,7 @@ impl Application {
             }
             if let Some(window) = self.loop_windows.get_mut(&wid) {
                 if let WindowEvent::CreateChild = event {
-                    let window_type = self.native_window.create_child_window(&window.app_ctx.context.window, &WindowAttribute::default()).unwrap();
+                    let window_type = self.native_window.create_child_window(&window.app_ctx.context.window, &WindowAttribute::default())?;
                     let (app, attr) = window.app_ctx.context.new_window.take().unwrap();
                     let wid = window_type.id();
                     let loop_window = pollster::block_on(async { LoopWindow::create_window(app, window_type, &attr).await });
