@@ -66,10 +66,9 @@ impl TextBuffer {
                     self.text.width += glyph.w;
                 }
             }
-            line.auto_wrap = true;
             self.lines.push(line);
         }
-        // println!("{:#?}", self.lines);
+        if let Some(line) = self.lines.last_mut() { line.auto_wrap = false; }
     }
 
     pub fn init(&mut self, ui: &mut Ui) {
