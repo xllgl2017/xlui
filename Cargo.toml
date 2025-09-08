@@ -81,7 +81,8 @@ features = [
     "Win32_System_Ole",
     "Win32_System_Memory",
     "Win32_System_Com",
-    "Win32_Graphics_Imaging"
+    "Win32_Graphics_Imaging",
+    "Win32_UI_Input_KeyboardAndMouse"
 ]
 
 [features]

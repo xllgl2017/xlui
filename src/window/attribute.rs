@@ -31,6 +31,7 @@ impl WindowAttribute {
     pub fn as_winit_attributes(&self) -> winit::window::WindowAttributes {
         let attr = winit::window::WindowAttributes::default();
         let (rgba, size) = super::super::render::image::load_image_bytes(self.window_icon.as_ref()).unwrap();
+        println!("{} {:?}", rgba.len(), size);
         // let img = image::load_from_memory(self.window_icon.as_ref()).unwrap();
         // let rgb8 = img.to_rgba8();
         let icon = Icon::from_rgba(rgba, size.width, size.height).unwrap();

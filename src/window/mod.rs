@@ -166,6 +166,7 @@ impl WindowType {
         }
     }
 
+    #[cfg(not(feature = "winit"))]
     pub fn request_clipboard(&self, clipboard: ClipboardData) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
@@ -175,6 +176,7 @@ impl WindowType {
         }
     }
 
+    #[cfg(not(feature = "winit"))]
     pub fn set_clipboard(&self, clipboard: ClipboardData) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]

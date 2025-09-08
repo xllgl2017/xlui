@@ -72,6 +72,15 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             }
             LRESULT(0)
         }
+        // WM_KEYDOWN => {
+        //     println!("KeyDown VK={}", wparam.0);
+        //     LRESULT(0)
+        // }
+        // WM_CHAR => {
+        //     let ch = std::char::from_u32(wparam.0 as u32).unwrap_or('\0');
+        //     println!("Char input: {}", ch);
+        //     LRESULT(0)
+        // }
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
             unsafe { PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap() };
             LRESULT(0)

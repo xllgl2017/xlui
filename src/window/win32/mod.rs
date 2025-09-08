@@ -12,8 +12,10 @@ use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
+use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
+use crate::key::Key;
 use crate::window::win32::clipboard::Win32Clipboard;
 
 pub mod tray;
@@ -152,15 +154,23 @@ impl Win32Window {
                     (window.id, WindowEvent::Redraw)
                     // LRESULT(0)
                 }
-                // WM_KEYDOWN => {
-                //     println!("Key down: {}", msg.wParam.0);
-                //     println!("1111111111111={:?}", Win32Clipboard {}.get_clipboard_data());
-                //     (window.id, WindowEvent::KeyPress(Key::Backspace))
-                // }
-                // TEST_TRAY=>{
-                //     println!("test tray2");
-                //     (window.id, WindowEvent::None)
-                // }
+                WM_KEYDOWN => {
+                    let ctrl_pressed = (GetKeyState(VK_CONTROL.0 as i32) as u16 & 0x8000) != 0;
+                    if ctrl_pressed && msg.wParam.0 == 'C' as usize {
+                        (window.id, WindowEvent::KeyPress(Key::CtrlC))
+                    } else if ctrl_pressed && msg.wParam.0 == 'V' as usize {
+                        (window.id, WindowEvent::KeyPress(Key::CtrlV))
+                    } else {
+                        let _ = TranslateMessage(&msg);
+                        DispatchMessageW(&msg);
+                        (window.id, WindowEvent::KeyPress(Key::Unknown))
+                    }
+                }
+                WM_CHAR => {
+                    let ch = std::char::from_u32(msg.wParam.0 as u32).unwrap_or('\0');
+                    println!("Char input: {}", ch);
+                    (window.id, WindowEvent::KeyRelease(Key::Char(ch)))
+                }
                 WM_LBUTTONDOWN => {
                     //切换输入法
                     // let h_ime = ImmGetContext(window.win32().hwnd);
@@ -191,7 +201,7 @@ impl Win32Window {
                     // let himc = window.win32().himc.read().unwrap();
                     let himc = ImmGetContext(window.win32().hwnd);
                     println!("ime-----{}", msg.lParam.0);
-                    if msg.lParam.0 == 7168 {
+                    if msg.lParam.0 == 7168 || msg.lParam.0 == 2048 {
                         let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
                         if size > 0 {
                             let len = size as usize / 2;

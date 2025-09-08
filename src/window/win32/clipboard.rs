@@ -9,7 +9,7 @@ use windows::Win32::System::Ole::*;
 pub struct Win32Clipboard;
 
 impl Win32Clipboard {
-    pub fn get_clipboard_data(&self,_: ClipboardData) -> UiResult<ClipboardData> {
+    pub fn get_clipboard_data(&self, _: ClipboardData) -> UiResult<ClipboardData> {
         unsafe { OpenClipboard(None)? };
         let clipboard_data = unsafe { GetClipboardData(CF_UNICODETEXT.0 as u32)? };
         if clipboard_data.is_invalid() { return Err("获取粘贴板数据失败".into()); }
@@ -44,7 +44,7 @@ impl Win32Clipboard {
                 let h_mem = unsafe { GlobalAlloc(GMEM_MOVEABLE, size)? };
                 let ptr = unsafe { GlobalLock(h_mem) } as *mut u8;
                 unsafe { std::ptr::copy_nonoverlapping(data.as_ptr() as *const u8, ptr, size) };
-                unsafe { GlobalUnlock(h_mem)? };
+                unsafe { let _ = GlobalUnlock(h_mem); };
                 unsafe { SetClipboardData(CF_UNICODETEXT.0 as u32, Some(HANDLE(h_mem.0)))?; }
                 unsafe { CloseClipboard()? };
             }

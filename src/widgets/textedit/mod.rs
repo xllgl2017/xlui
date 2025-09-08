@@ -283,14 +283,16 @@ impl Widget for TextEdit {
                 }
             }
             UpdateType::KeyPress(ref mut key) => {
+                #[cfg(not(feature = "winit"))]
                 if self.focused {
                     match key {
                         Key::CtrlC => ui.context.window.set_clipboard(ClipboardData::Text(self.char_layout.select_text())),
                         Key::CtrlV => {
-                            #[cfg(all(not(feature = "winit"), target_os = "linux"))]
+                            #[cfg(target_os = "linux")]
                             ui.context.window.request_clipboard(ClipboardData::Text(String::new()));
-                            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-                            let res = ui.context.window.win32().clipboard.get_clipboard_data(ClipboardData::Text(String::new())).unwrap();
+                            #[cfg(target_os = "windows")]
+                            let res = ui.context.window.win32().clipboard.get_clipboard_data(ClipboardData::Text(String::new())).unwrap_or(ClipboardData::Unsupported);
+                            #[cfg(target_os = "windows")]
                             match res {
                                 ClipboardData::Unsupported => {}
                                 ClipboardData::Text(t) => {
@@ -301,6 +303,10 @@ impl Widget for TextEdit {
                                 ClipboardData::Image(_) => {}
                                 ClipboardData::Url(_) => {}
                             }
+                            #[cfg(target_os = "windows")]
+                            { self.changed = true; }
+                            #[cfg(target_os = "windows")]
+                            { ui.context.window.request_redraw(); }
                         }
                         _ => {}
                     }
