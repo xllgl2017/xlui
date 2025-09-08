@@ -1,3 +1,4 @@
+use std::mem;
 use crate::frame::context::UpdateType;
 use crate::key::Key;
 use crate::render::rectangle::param::RectParam;
@@ -18,6 +19,8 @@ use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::Widget;
+use crate::window::ime::IMEData;
+
 pub(crate) mod buffer;
 mod select;
 mod cursor;
@@ -282,26 +285,42 @@ impl Widget for TextEdit {
             UpdateType::KeyRelease(ref mut key) => {
                 if self.focused { self.key_input(key.take(), ui); }
             }
-            UpdateType::IME => {
+            UpdateType::IME(ref mut data) => {
                 if self.focused {
-                    let chars = ui.context.window.ime().chars();
                     let start_horiz = self.select_render.start_horiz;
                     let start_vert = self.select_render.start_vert;
-                    for c in chars {
-                        self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
+                    match data {
+                        IMEData::Preedit(cs) => {
+                            for c in mem::take(cs) {
+                                self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
+                            }
+                            self.select_render.select_by_ime(start_horiz, start_vert, &self.char_layout, &self.cursor_render);
+                            ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y, self.char_layout.buffer.text.height);
+                        }
+                        IMEData::Commit(cs) => {
+                            for c in mem::take(cs) {
+                                self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
+                            }
+                            ui.context.window.ime().request_ime(true);
+                            self.select_render.reset(&self.cursor_render);
+                        }
                     }
-                    if !ui.context.window.ime().is_commited() {
-                        self.select_render.select_by_ime(start_horiz, start_vert, &self.char_layout, &self.cursor_render);
-                        ui.context.window.set_ime_position(self.cursor_render.cursor_min(), self.cursor_render.min_pos.y + self.cursor_render.offset.y, self.char_layout.buffer.text.height);
-                    } else {
-                        ui.context.window.ime().request_ime(true);
-                        self.select_render.reset(&self.cursor_render);
-                        ui.context.window.ime().ime_done();
-                    }
-
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
+                // if self.focused {
+                //     let chars = ui.context.window.ime().chars();
+                //
+                //
+                //     if !ui.context.window.ime().is_commited() {
+                //
+                //     } else {
+                //
+                //         // ui.context.window.ime().ime_done();
+                //     }
+                //
+
+                // }
             }
             _ => {}
         }

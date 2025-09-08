@@ -1,7 +1,7 @@
 use crate::error::UiResult;
 use crate::map::Map;
 use crate::window::event::WindowEvent;
-use crate::window::ime::IME;
+use crate::window::ime::{IMEData, IME};
 use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
 use crate::window::{WindowId, WindowKind, WindowType};
@@ -195,7 +195,7 @@ impl Win32Window {
                             window.ime().ime_commit(s.chars().collect());
                             println!("ime2: {}", s);
                             ImmReleaseContext(window.win32().hwnd, himc).unwrap();
-                            return (window.id, WindowEvent::IME);
+                            return (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())));
                         }
                     }
                     if msg.lParam.0 == 440 {
@@ -208,7 +208,7 @@ impl Win32Window {
                             println!("ime1: {}", s);
                             window.ime().ime_draw(s.chars().collect());
                             ImmReleaseContext(window.win32().hwnd, himc).unwrap();
-                            return (window.id, WindowEvent::IME);
+                            return (window.id, WindowEvent::IME(IMEData::Preedit(window.ime.chars())));
                         }
                     }
 

@@ -1,6 +1,6 @@
 use crate::key::Key;
 use crate::window::event::WindowEvent;
-use crate::window::ime::IME;
+use crate::window::ime::{IMEData, IME};
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
@@ -131,7 +131,7 @@ impl X11Window {
             if window.is_none() { return (WindowId::unique_id(), WindowEvent::None); }
             let window = window.unwrap();
             window.ime.update_working();
-            if window.ime.is_available() && window.ime.is_working() { window.ime.update(); }
+            if window.ime.is_working() { window.ime.update(); }
             let typ = event.get_type();
             match typ {
                 xlib::Expose => return (window.id, WindowEvent::Redraw),
@@ -174,34 +174,26 @@ impl X11Window {
                 }
                 xlib::KeyPress => {
                     println!("key-press");
-                    return match window.ime.is_available() && window.ime.is_working() {
-                        true => {
-                            let keysym = xlib::XLookupKeysym(&mut event.key, 0);
-                            window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
-                            if window.ime.is_working() {
-                                window.ime.update();
-                                (window.id, WindowEvent::IME)
-                            } else { (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode))) }
-                        }
-                        false => (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode)))
+                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    let handle=window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
+                    println!("press-handle-{}-{}", handle, window.ime.is_commited());
+                    return if handle {
+                        window.ime.update();
+                        (window.id, WindowEvent::IME(IMEData::Preedit(window.ime.chars())))
+                    } else {
+                        (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode)))
                     };
                 }
                 xlib::KeyRelease => {
-                    println!("key-release");
-
-                    match window.ime.is_available() {
-                        true => {
-                            if window.ime.is_working() {
-                                let keysym = xlib::XLookupKeysym(&mut event.key, 0);
-                                let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
-                                println!("release-handle-{}-{}", handle, window.ime.is_commited());
-                                if !handle && !window.ime.is_working() {
-                                    let key = Key::from_c_ulong(event.key.keycode);
-                                    return (window.id, WindowEvent::KeyRelease(key));
-                                }
-                            }
+                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
+                    println!("release-handle-{}-{}", handle, window.ime.is_commited());
+                    if !handle {
+                        let key = Key::from_c_ulong(event.key.keycode);
+                        if window.ime.is_commited() {
+                            return (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())));
                         }
-                        false => return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode)))
+                        return (window.id, WindowEvent::KeyRelease(key));
                     }
                 }
                 xlib::ButtonRelease => {
@@ -216,7 +208,7 @@ impl X11Window {
                 xlib::MotionNotify => {
                     let xm: xlib::XMotionEvent = event.motion;
                     return if window.ime.is_commited() {
-                        (window.id, WindowEvent::IME)
+                        (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())))
                     } else {
                         (window.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))
                     };
@@ -228,7 +220,7 @@ impl X11Window {
                 }
                 _ => {}
             }
-            if window.ime.is_available() && window.ime.is_working() { window.ime.update(); }
+            if window.ime.is_working() { window.ime.update(); }
             (window.id, WindowEvent::None)
         }
     }

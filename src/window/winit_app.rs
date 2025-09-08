@@ -11,7 +11,7 @@ use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{ImePurpose, WindowId};
 use crate::window::{UserEvent, WindowKind, WindowType};
-use crate::window::ime::IME;
+use crate::window::ime::{IMEData, IME};
 use crate::window::wnit::handle::WInitWindowHandle;
 use crate::window::wnit::Window;
 
@@ -188,11 +188,10 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
             }
             WindowEvent::Ime(ime) => {
                 match ime {
-                    Ime::Preedit(ps, _) => window.app_ctx.context.window.ime().ime_draw(ps.chars().collect()),
-                    Ime::Commit(cs) => window.app_ctx.context.window.ime().ime_commit(cs.chars().collect()),
+                    Ime::Preedit(ps, _) => window.app_ctx.update(UpdateType::IME(IMEData::Preedit(ps.chars().collect())), &mut window.app),
+                    Ime::Commit(cs) => window.app_ctx.update(UpdateType::IME(IMEData::Commit(cs.chars().collect())), &mut window.app),
                     _ => {}
                 }
-                window.app_ctx.update(UpdateType::IME, &mut window.app);
             }
             _ => (),
         }

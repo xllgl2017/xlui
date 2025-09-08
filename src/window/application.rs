@@ -28,7 +28,7 @@ pub struct Application {
 impl Application {
     pub fn new<A: App>(app: A) -> UiResult<Self> {
         #[cfg(target_os = "linux")]
-        let ime = Arc::new(IME::new_x11("xlui ime").enable());
+        let ime = Arc::new(IME::new_x11("xlui ime"));
         #[cfg(target_os = "linux")]
         ime.set_capabilities(Capabilities::PreeditText | Capabilities::Focus);
         #[cfg(target_os = "linux")]

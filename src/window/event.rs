@@ -1,5 +1,6 @@
 use crate::{Pos, Size};
 use crate::key::Key;
+use crate::window::ime::IMEData;
 
 #[derive(Debug)]
 pub enum WindowEvent {
@@ -15,6 +16,6 @@ pub enum WindowEvent {
     Resize(Size),
     ReqClose,
     ReqUpdate,
-    IME,
+    IME(IMEData),
     CreateChild,
 }

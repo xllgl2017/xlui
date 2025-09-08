@@ -21,10 +21,15 @@ pub enum IMEKind {
     Winit,
 }
 
+#[derive(Clone, Debug)]
+pub enum IMEData {
+    Preedit(Vec<char>),
+    Commit(Vec<char>),
+}
+
 pub struct IME {
     #[cfg(all(target_os = "linux", not(feature = "winit")))]
     kind: IMEKind,
-    available: bool,
     working: AtomicBool,
     chars: RwLock<Vec<char>>,
     commited: AtomicBool,
@@ -49,7 +54,6 @@ impl IME {
     pub fn new_x11(name: &str) -> Self {
         IME {
             kind: IMEKind::X11(Bus::new(name).unwrap()),
-            available: false,
             working: AtomicBool::new(false),
             chars: RwLock::new(Vec::new()),
             commited: AtomicBool::new(false),
@@ -79,7 +83,6 @@ impl IME {
     #[cfg(feature = "winit")]
     pub fn new_winit() -> IME {
         IME {
-            available: false,
             working: AtomicBool::new(false),
             chars: RwLock::new(Vec::new()),
             commited: AtomicBool::new(false),
@@ -90,23 +93,11 @@ impl IME {
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub fn new_win32() -> IME {
         IME {
-            available: false,
             working: AtomicBool::new(false),
             chars: RwLock::new(Vec::new()),
             commited: AtomicBool::new(false),
             requested: RwLock::new(Vec::new()),
         }
-    }
-
-
-    pub fn enable(mut self) -> Self {
-        self.available = true;
-        self
-    }
-
-    pub fn disable(mut self) -> Self {
-        self.available = false;
-        self
     }
 
     pub fn request_ime(&self, i: bool) {
@@ -125,19 +116,22 @@ impl IME {
         self.ime_draw(commit);
     }
 
-    pub fn ime_done(&self) {
+    pub fn ime_done(&self) -> Vec<char> {
         self.commited.store(false, Ordering::SeqCst);
-    }
-
-    pub fn chars(&self) -> Vec<char> {
         let mut chars = self.chars.write().unwrap();
         let res = chars.clone();
         chars.clear();
         res
     }
 
-    pub fn is_available(&self) -> bool {
-        self.available
+    pub fn chars(&self) -> Vec<char> {
+        let chars = self.chars.read().unwrap();
+        let res = chars.clone();
+        res
+    }
+
+    pub fn len(&self) -> usize {
+        self.chars.read().unwrap().len()
     }
 
     pub fn is_working(&self) -> bool {
@@ -160,7 +154,7 @@ impl IME {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.process(Duration::from_secs(0)).unwrap(); }
             #[cfg(feature = "winit")]
-            IMEKind::Winit=>{}
+            IMEKind::Winit => {}
         }
     }
     #[cfg(all(target_os = "linux", not(feature = "winit")))]
@@ -169,7 +163,7 @@ impl IME {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().focus_in().unwrap(); }
             #[cfg(feature = "winit")]
-            IMEKind::Winit=>{}
+            IMEKind::Winit => {}
         }
     }
     #[cfg(all(target_os = "linux", not(feature = "winit")))]
@@ -178,7 +172,7 @@ impl IME {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().focus_out().unwrap(); }
             #[cfg(feature = "winit")]
-            IMEKind::Winit=>{}
+            IMEKind::Winit => {}
         }
     }
 
@@ -188,7 +182,7 @@ impl IME {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().set_capabilities(capabilities).unwrap(); }
             #[cfg(feature = "winit")]
-            IMEKind::Winit=>{}
+            IMEKind::Winit => {}
         }
     }
 
@@ -198,7 +192,7 @@ impl IME {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             IMEKind::X11(ref bus) => { bus.ctx().set_cursor_location(x, y, 1, 1).unwrap(); }
             #[cfg(feature = "winit")]
-            IMEKind::Winit=>{}
+            IMEKind::Winit => {}
         }
     }
 }

@@ -12,6 +12,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use crate::frame::App;
 use crate::key::Key;
+use crate::window::ime::IMEData;
 
 #[derive(Clone)]
 pub enum ContextUpdate {
@@ -82,7 +83,7 @@ pub enum UpdateType {
     KeyRelease(Option<Key>),
     Offset(Offset),
     Drop,
-    IME,
+    IME(IMEData),
     CreateWindow,
 }
 
@@ -108,7 +109,7 @@ impl Debug for UpdateType {
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
             UpdateType::Offset(_) => f.write_str("Offset"),
             UpdateType::Drop => f.write_str("Drop"),
-            UpdateType::IME => f.write_str("IME"),
+            UpdateType::IME(_) => f.write_str("IME"),
             UpdateType::CreateWindow => f.write_str("CreateWindow"),
         }
     }
