@@ -12,6 +12,7 @@ use windows::Win32::Foundation::GENERIC_READ;
 use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
+#[cfg(target_os = "windows")]
 use windows::Win32::UI::Shell::SHCreateMemStream;
 use crate::error::UiResult;
 use crate::{Device, Size, SAMPLE_COUNT};
