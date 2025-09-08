@@ -316,7 +316,6 @@ impl Widget for TextEdit {
                 if self.focused {
                     match mem::take(clipboard) {
                         ClipboardData::Text(t) => {
-                            println!("33333333333333333333333: {:?}", t.chars());
                             for c in t.chars() {
                                 self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                             }

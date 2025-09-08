@@ -5,7 +5,6 @@ use crate::Device;
 pub struct RectangleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
-    // bind_groups: Map<wgpu::BindGroup>,
 }
 
 impl RectangleRender {
@@ -34,30 +33,14 @@ impl RectangleRender {
         RectangleRender {
             pipeline,
             bind_group_layout,
-            // bind_groups: Map::new(),
         }
     }
-
-
-    // pub fn render(&self, index: usize, render_pass: &mut wgpu::RenderPass) {
-    //     render_pass.set_pipeline(&self.pipeline);
-    //     render_pass.set_bind_group(0, &self.bind_groups[index], &[]);
-    //     render_pass.draw(0..6, 0..1);
-    // }
 }
 
 impl WrcRender for RectangleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {
         &self.pipeline
     }
-
-    // fn bind_groups(&self) -> &Map<wgpu::BindGroup> {
-    //     &self.bind_groups
-    // }
-    //
-    // fn bind_groups_mut(&mut self) -> &mut Map<wgpu::BindGroup> {
-    //     &mut self.bind_groups
-    // }
 
     fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
         &self.bind_group_layout
