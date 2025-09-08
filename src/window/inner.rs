@@ -20,20 +20,21 @@ use std::any::Any;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use crate::window::attribute::WindowAttribute;
+use crate::window::WindowId;
 
 pub struct InnerWindow {
-    pub(crate) id: String,
-    fill_render: RenderParam<RectParam>,
+    pub(crate) id: WindowId,
+    pub fill_render: RenderParam<RectParam>,
     attr: WindowAttribute,
     title_rect: Rect,
     offset: Offset,
-    press_title: bool,
+    pub(crate) press_title: bool,
     changed: bool,
     pub(crate) on_close: Option<Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)>>,
     w: Box<dyn App>,
     layout: Option<LayoutKind>,
     popups: Option<Map<String, Popup>>,
-    inner_windows: Option<Map<String, InnerWindow>>,
+    inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) request_close: Arc<AtomicBool>,
     pub(crate) top: bool,
 }
@@ -59,7 +60,7 @@ impl InnerWindow {
         layout.available_rect = layout.max_rect.clone_add_padding(&padding);
         let layout = LayoutKind::Vertical(layout);
         let mut window = InnerWindow {
-            id: crate::gen_unique_id(),
+            id: WindowId::unique_id(),
             fill_render,
             layout: Some(layout),
             popups: Some(Map::new()),
@@ -113,6 +114,7 @@ impl InnerWindow {
         btn.set_style(style.clone());
         let closed = self.request_close.clone();
         btn.set_inner_callback(move || {
+            println!("request close");
             closed.store(true, Ordering::SeqCst);
         });
         ui.add(btn);
@@ -148,7 +150,7 @@ impl InnerWindow {
         if !self.changed { return; }
         self.changed = false;
         self.title_rect.offset(&self.offset);
-        self.fill_render.param.rect.offset(&self.offset);
+        // self.fill_render.param.rect.offset(&self.offset);
         self.fill_render.update(ui, false, false);
     }
 
@@ -156,8 +158,9 @@ impl InnerWindow {
         match ui.update_type {
             UpdateType::ReInit => self.fill_render.init_rectangle(ui, false, false),
             UpdateType::MouseMove => {
-                if self.press_title {
+                if self.press_title && ui.device.device_input.mouse.pressed {
                     let (ox, oy) = ui.device.device_input.mouse.offset();
+                    self.fill_render.param.rect.offset(&Offset::new(Pos::new()).with_x(ox).with_y(oy).delete_offset());
                     self.offset.x += ox;
                     self.offset.y += oy;
                     self.offset.pos = ui.device.device_input.mouse.lastest;
@@ -168,15 +171,18 @@ impl InnerWindow {
                 }
             }
             UpdateType::MousePress => {
+                self.top = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
                 self.press_title = ui.device.device_input.pressed_at(&self.title_rect) && self.top;
+                ui.context.window.request_redraw();
                 if self.press_title { return false; }
             }
             UpdateType::MouseRelease => {
                 self.press_title = false;
-                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
-                    self.top = true;
-                }
-                if ui.device.device_input.hovered_at(&self.title_rect) { return false; }
+                // if ui.device.device_input.pressed_at(&self.fill_render.param.rect) {
+                //     self.top = true;
+                //     ui.context.window.request_redraw();
+                // }
+                // if ui.device.device_input.hovered_at(&self.title_rect) { return false; }
             }
             _ => {}
         }
@@ -204,7 +210,7 @@ impl InnerWindow {
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
-        if self.window_update(oui) || !self.top { return; }
+        if self.window_update(oui) { return; }
         if !oui.device.device_input.hovered_at(&self.fill_render.param.rect) && !self.press_title { return; }
         let mut nui = Ui {
             device: oui.device,

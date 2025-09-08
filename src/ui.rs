@@ -34,7 +34,7 @@ pub struct AppContext {
     pub(crate) device: Device,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
-    pub(crate) inner_windows: Option<Map<String, InnerWindow>>,
+    pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) style: Style,
     pub(crate) context: Context,
     previous_time: u128,
@@ -77,6 +77,17 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
+    fn get_event_window(&self) -> Option<WindowId> {
+        let inner_windows = self.inner_windows.as_ref().unwrap();
+        for i in 0..inner_windows.len() {
+            let win = &inner_windows[inner_windows.len() - i - 1];
+            if self.device.device_input.hovered_at(&win.fill_render.param.rect) {
+                return Some(win.id);
+            }
+        }
+        None
+    }
+
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
         let mut ui = Ui {
             device: &self.device,
@@ -88,42 +99,70 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
-            inner_windows: self.inner_windows.take(),
+            inner_windows: None,
             request_update: None,
             offset: Offset::new(Pos::new()),
 
         };
         app.update(&mut ui);
 
-        self.inner_windows = ui.inner_windows.take();
-        for i in 0..self.inner_windows.as_ref().unwrap().len() {
-            let inner_widget = &mut self.inner_windows.as_mut().unwrap()[i];
-            inner_widget.update(&mut ui);
-            let closed = inner_widget.request_close.load(Ordering::SeqCst);
-            if !closed { continue; }
-            let wid = inner_widget.id.clone();
-            let mut inner_window = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
-            let callback = inner_window.on_close.take();
-            if let Some(mut callback) = callback {
-                callback(app, inner_window, &mut ui);
-            }
-        }
+        // self.inner_windows = ui.inner_windows.take();
+        // for i in 0..self.inner_windows.as_ref().unwrap().len() {
+        //     let inner_widget = &mut self.inner_windows.as_mut().unwrap()[i];
+        //     inner_widget.update(&mut ui);
+        //     let closed = inner_widget.request_close.load(Ordering::SeqCst);
+        //     if !closed { continue; }
+        //     let wid = inner_widget.id.clone();
+        //     let mut inner_window = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
+        //     let callback = inner_window.on_close.take();
+        //     if let Some(mut callback) = callback {
+        //         callback(app, inner_window, &mut ui);
+        //     }
+        // }
         ui.app = Some(app);
-        let inner_windows = self.inner_windows.as_mut().unwrap();
-        inner_windows.sort_by_key(|x| x.value().top);
+        let mut event_win = None;
+        let inner_windows = self.inner_windows.as_ref().unwrap();
         for i in 0..inner_windows.len() {
-            let inner_window = &mut inner_windows[i];
-            inner_window.update(&mut ui);
-            if !inner_window.top { continue; }
-            inner_windows.iter_mut().for_each(|x| x.top = false);
-            inner_windows[i].top = true;
-            if i != inner_windows.len() - 1 {
-                println!("requst redraw for inner window");
-                ui.context.window.request_redraw();
+            let win = &inner_windows[inner_windows.len() - i - 1];
+            if self.device.device_input.hovered_at(&win.fill_render.param.rect) || win.press_title {
+                event_win = Some(win.id);
+                break;
             }
-            break;
         }
+
+        if let Some(wid) = event_win {
+            let inner_win = &mut self.inner_windows.as_mut().unwrap()[&wid];
+            inner_win.update(&mut ui);
+            if inner_win.top {
+                let win = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
+                if win.request_close.load(Ordering::SeqCst) {
+                    if let Some(win) = self.inner_windows.as_mut().unwrap().last_mut() {
+                        win.top = true;
+                    }
+                } else {
+                    self.inner_windows.as_mut().unwrap().iter_mut().for_each(|x| x.top = false);
+                    self.inner_windows.as_mut().unwrap().insert(win.id, win);
+                }
+            }
+        };
+
+        // let inner_windows = self.inner_windows.as_mut().unwrap();
+        // inner_windows.sort_by_key(|x| x.value().top);
+        // for i in 0..inner_windows.len() {
+        //     let inner_window = &mut inner_windows[i];
+        //     inner_window.update(&mut ui);
+        //     if !inner_window.top { continue; }
+        //     inner_windows.iter_mut().for_each(|x| x.top = false);
+        //     inner_windows[i].top = true;
+        //     if i != inner_windows.len() - 1 {
+        //         println!("requst redraw for inner window");
+        //         ui.context.window.request_redraw();
+        //     }
+        //     break;
+        // }
         ui.inner_windows = self.inner_windows.take();
+
+
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui)
         }
@@ -268,7 +307,7 @@ pub struct Ui<'a> {
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
     pub(crate) can_offset: bool,
-    pub(crate) inner_windows: Option<Map<String, InnerWindow>>,
+    pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
     pub(crate) offset: Offset,
 }

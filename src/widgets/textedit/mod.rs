@@ -130,6 +130,7 @@ impl TextEdit {
             self.char_layout.buffer.rect.offset(&ui.offset);
             self.cursor_render.offset(&ui.offset);
             self.select_render.offset(&ui.offset);
+            self.psd_buffer.rect.offset(&ui.offset);
             self.fill_render.param.rect.offset(&ui.offset);
         }
         self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
