@@ -12,6 +12,7 @@ use windows::Win32::Foundation::GENERIC_READ;
 use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
+use windows::Win32::UI::Shell::SHCreateMemStream;
 use crate::error::UiResult;
 use crate::{Device, Size, SAMPLE_COUNT};
 use crate::map::Map;
@@ -186,14 +187,25 @@ impl ImageRender {
 }
 
 #[cfg(target_os = "windows")]
-pub fn load_win32_image(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
-    let fp = fp.as_ref().to_str().ok_or("图片路径错误")?;
+pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
+    // let fp = fp.as_ref().to_str().ok_or("图片路径错误")?;
     unsafe { CoInitialize(None).ok()?; }
     let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
-    let filename: Vec<u16> = fp.encode_utf16().chain(Some(0)).collect();
-    let decoder = unsafe {
-        factory.CreateDecoderFromFilename(
-            PCWSTR(filename.as_ptr()), None, GENERIC_READ, WICDecodeMetadataCacheOnLoad)?
+    let decoder = match source {
+        ImageSource::File(fp) => {
+            let fp = fp.to_str().ok_or("图片路径错误")?;
+            let filename: Vec<u16> = fp.encode_utf16().chain(Some(0)).collect();
+            unsafe {
+                factory.CreateDecoderFromFilename(
+                    PCWSTR(filename.as_ptr()), None, GENERIC_READ, WICDecodeMetadataCacheOnLoad)?
+            }
+        }
+        ImageSource::Bytes(bytes) => {
+            let stream = unsafe { SHCreateMemStream(Some(&bytes)) }.unwrap();
+            unsafe {
+                factory.CreateDecoderFromStream(&stream, null_mut(), WICDecodeMetadataCacheOnLoad)?
+            }
+        }
     };
     let frame = unsafe { decoder.GetFrame(0) }?;
     let converter = unsafe { factory.CreateFormatConverter() }?;
@@ -209,7 +221,7 @@ pub fn load_win32_image(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
 
 pub fn load_image_file(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(target_os = "windows")]
-    let (rgba, size) = load_win32_image(fp)?;
+    let (rgba, size) = load_win32_image(ImageSource::File(fp.as_ref().to_path_buf()))?;
     #[cfg(target_os = "windows")]
     return Ok((rgba, size));
     #[cfg(not(target_os = "windows"))]
@@ -221,7 +233,9 @@ pub fn load_image_file(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
 
 pub fn load_image_bytes(bytes: &[u8]) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(target_os = "windows")]
-    return Ok((vec![], Size { width: 0, height: 0 }));
+    let (rgba, size) = load_win32_image(ImageSource::Bytes(bytes.to_vec()))?;
+    #[cfg(target_os = "windows")]
+    return Ok((rgba, size));
     #[cfg(not(target_os = "windows"))]
     let img = image::load_from_memory(bytes)?;
     #[cfg(not(target_os = "windows"))]
