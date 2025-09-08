@@ -43,7 +43,7 @@ pub struct Image {
     vertices: Vec<ImageVertex>,
     vertex_buffer: Option<wgpu::Buffer>,
     index_buffer: Option<wgpu::Buffer>,
-    changed: bool,
+    pub(crate) changed: bool,
 }
 
 impl Image {

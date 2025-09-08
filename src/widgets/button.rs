@@ -215,6 +215,7 @@ impl Button {
         if let Some(ref mut image) = self.image {
             image.update(ui);
             image.rect = self.image_rect.clone();
+            image.changed = true
         }
         //按钮文本
         // self.text_buffer.draw(ui);
@@ -237,8 +238,8 @@ impl Widget for Button {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
-        if let Some(ref mut image) = self.image { image.redraw(ui); }
         self.text_buffer.redraw(ui);
+        if let Some(ref mut image) = self.image { image.redraw(ui); }
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
