@@ -5,7 +5,7 @@ use crate::window::ime::{IMEData, IME};
 use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
 use crate::window::{WindowId, WindowKind, WindowType};
-use crate::{Pos, Size, WindowAttribute};
+use crate::{Pos, Size, TrayMenu, WindowAttribute};
 use std::sync::Arc;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, POINT};
@@ -25,7 +25,8 @@ const REQ_UPDATE: u32 = WM_USER + 2;
 const CREATE_CHILD: u32 = WM_USER + 3;
 const RE_INIT: u32 = WM_USER + 4;
 const IME: u32 = WM_USER + 5;
-const REQ_CLOSE: u32 = 99999;
+const REQ_CLOSE: u32 = WM_USER + 6;
+
 
 pub struct Win32Window {
     tray: Option<Tray>,
@@ -155,6 +156,10 @@ impl Win32Window {
                 //     println!("1111111111111={:?}", Win32Clipboard {}.get_clipboard_data());
                 //     (window.id, WindowEvent::KeyPress(Key::Backspace))
                 // }
+                // TEST_TRAY=>{
+                //     println!("test tray2");
+                //     (window.id, WindowEvent::None)
+                // }
                 WM_LBUTTONDOWN => {
                     //切换输入法
                     // let h_ime = ImmGetContext(window.win32().hwnd);
@@ -228,21 +233,36 @@ impl Win32Window {
         }
     }
 
+    fn add_tray_menu(&self, h_menu: HMENU, id: u32, menu: &TrayMenu, flag: MENU_ITEM_FLAGS) -> UiResult<()> {
+        unsafe {
+            AppendMenuW(h_menu, flag, id as usize, PCWSTR(until::to_wstr(&menu.label).as_ptr()))?;
+            if let Some(ref ip) = menu.icon {
+                let h_icon = until::load_tray_icon(ip);
+                let h_bitmap = until::icon_to_bitmap(h_icon, 16, 16)?; // 需要把 HICON 转成 HBITMAP
+                let mut mii = MENUITEMINFOW::default();
+                mii.cbSize = size_of::<MENUITEMINFOW>() as u32;
+                mii.fMask = MIIM_BITMAP;
+                mii.hbmpItem = h_bitmap; // HBITMAP 或 HBMMENU_CALLBACK
+                SetMenuItemInfoW(h_menu, id, false, &mii)?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn show_tray_menu(&self) -> UiResult<()> {
         unsafe {
             if let Some(ref tray) = self.tray {
                 let h_menu = CreatePopupMenu()?;
                 for menu in &tray.menus {
                     // 添加普通菜单项
-                    AppendMenuW(h_menu, MF_STRING, menu.event, PCWSTR(until::to_wstr(&menu.label).as_ptr()))?;
-                    if let Some(ref ip) = menu.icon {
-                        let h_icon = until::load_tray_icon(ip);
-                        let h_bitmap = until::icon_to_bitmap(h_icon, 16, 16)?; // 需要把 HICON 转成 HBITMAP
-                        let mut mii = MENUITEMINFOW::default();
-                        mii.cbSize = size_of::<MENUITEMINFOW>() as u32;
-                        mii.fMask = MIIM_BITMAP;
-                        mii.hbmpItem = h_bitmap; // HBITMAP 或 HBMMENU_CALLBACK
-                        SetMenuItemInfoW(h_menu, menu.event as u32, false, &mii)?;
+                    if menu.children.len() == 0 {
+                        self.add_tray_menu(h_menu, menu.id, menu, MF_STRING)?;
+                    } else {
+                        let sub_menu = CreatePopupMenu()?;
+                        for child in &menu.children {
+                            self.add_tray_menu(sub_menu, child.id, child, MF_STRING)?;
+                        }
+                        self.add_tray_menu(h_menu, sub_menu.0 as u32, menu, MF_POPUP)?;
                     }
                 }
                 // 获取鼠标位置

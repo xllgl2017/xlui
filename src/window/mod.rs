@@ -168,13 +168,17 @@ impl WindowType {
 
     pub fn request_clipboard(&self, clipboard: ClipboardData) {
         match self.kind {
-            WindowKind::X11(ref window) => window.request_clipboard(clipboard)
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
+            WindowKind::X11(ref window) => window.request_clipboard(clipboard),
+            WindowKind::Win32(ref window) => {}
         }
     }
 
     pub fn set_clipboard(&self, clipboard: ClipboardData) {
         match self.kind {
-            WindowKind::X11(ref window) => window.set_clipboard(clipboard)
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
+            WindowKind::X11(ref window) => window.set_clipboard(clipboard),
+            WindowKind::Win32(ref window) => {}
         }
     }
 }

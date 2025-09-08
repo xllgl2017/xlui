@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::process::exit;
 use xlui::frame::App;
 use xlui::ui::Ui;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
@@ -239,9 +240,13 @@ impl App for TestWidget {
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         let mut tray = Tray::new().hovered_text("Rust Icon");
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-        tray.add_menu("退出", None);
+        tray.add_menu("退出", None).set_callback(|| exit(0));
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-        tray.add_menu("其他", None);
+        let other = tray.add_menu("其他", None);
+        #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+        other.add_child("item1", None);
+        #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+        other.add_child("item2", None);
         WindowAttribute {
             inner_size: (1000, 800).into(),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]

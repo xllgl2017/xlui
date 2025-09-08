@@ -102,7 +102,7 @@ mod key;
 mod error;
 
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-pub use window::win32::tray::Tray;
+pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
