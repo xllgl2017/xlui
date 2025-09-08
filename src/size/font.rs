@@ -9,7 +9,7 @@ pub struct Font {
     data: Arc<Vec<u8>>,
     glyph_font: ab_glyph::FontArc,
     font: Arc<glyphon::Font>,
-    pub size: f32,
+    size: f32,
 }
 
 impl Font {
@@ -65,11 +65,10 @@ impl Font {
         ascent - descent + line_gap
     }
 
-    pub(crate) fn family(&self) -> glyphon::Family<'_> {
-        glyphon::Family::Name(&self.family)
-    }
+    pub(crate) fn family(&self) -> &str { &self.family }
 
-    pub(crate) fn font_attr(&self) -> glyphon::Attrs<'_> {
-        glyphon::Attrs::new().family(self.family())
+
+    pub fn size(&self) -> f32 {
+        self.size
     }
 }

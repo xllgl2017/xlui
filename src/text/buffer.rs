@@ -72,14 +72,15 @@ impl TextBuffer {
     }
 
     pub fn init(&mut self, ui: &mut Ui) {
-        if self.text.size.is_none() { self.text.size = Some(ui.context.font.size) }
+        if self.text.size.is_none() { self.text.size = Some(ui.context.font.size()) }
+        if self.text.family.is_none() { self.text.family=Some(ui.context.font.family().to_string()) }
         self.text.height = ui.context.font.line_height(self.text.font_size());
         let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
         if let SizeMode::Fix = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(self.rect.width()), Some(self.rect.height())) }
         if let SizeMode::FixWidth = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(self.rect.width()), None) }
         if let SizeMode::FixHeight = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, None, Some(self.rect.height())) }
         buffer.set_wrap(&mut ui.context.render.text.font_system, self.text.wrap.as_gamma());
-        buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &ui.context.font.font_attr(), Shaping::Advanced);
+        buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &self.text.font_family(), Shaping::Advanced);
         let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
             count: SAMPLE_COUNT,
             mask: !0,
@@ -176,14 +177,14 @@ impl TextBuffer {
             None => self.set_text(text.to_string()),
             Some(ref mut buffer) => {
                 buffer.set_text(&mut ui.context.render.text.font_system,
-                                text, &ui.context.font.font_attr(), Shaping::Advanced);
+                                text, &self.text.font_family(), Shaping::Advanced);
                 self.reset();
             }
         }
     }
 
     pub fn update_if_not(&mut self, ui: &mut Ui, text: &str, reset: bool) {
-        self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, text, &ui.context.font.font_attr(), Shaping::Advanced);
+        self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, text, &self.text.font_family(), Shaping::Advanced);
         if reset { self.reset(); }
     }
 
@@ -192,7 +193,7 @@ impl TextBuffer {
         self.change = false;
         self.buffer.as_mut().unwrap().set_text(
             &mut ui.context.render.text.font_system, self.text.text.as_str(),
-            &ui.context.font.font_attr(), Shaping::Advanced);
+            &self.text.font_family(), Shaping::Advanced);
         self.reset();
     }
 

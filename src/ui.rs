@@ -77,17 +77,6 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
-    fn get_event_window(&self) -> Option<WindowId> {
-        let inner_windows = self.inner_windows.as_ref().unwrap();
-        for i in 0..inner_windows.len() {
-            let win = &inner_windows[inner_windows.len() - i - 1];
-            if self.device.device_input.hovered_at(&win.fill_render.param.rect) {
-                return Some(win.id);
-            }
-        }
-        None
-    }
-
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
         let mut ui = Ui {
             device: &self.device,

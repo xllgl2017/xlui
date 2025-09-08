@@ -19,7 +19,7 @@ impl App for TestAlign {
         let mut style = ClickStyle::new();
         style.fill = FillStyle::same(Color::rgb(235, 152, 235));
         ui.horizontal(|ui| {
-            ui.add(Label::new("AlignTop🦀".color(Color::GREEN).size(18.0)).height(50.0).width(100.0).align(Align::Center));
+            ui.add(Label::new("AlignTop🦀").height(50.0).width(100.0).align(Align::Center));
             ui.add(Button::new("LT").width(50.0).height(50.0).align(Align::LeftTop).with_style(style.clone()));
             ui.add(Button::new("上中").width(50.0).height(50.0).align(Align::CenterTop).with_style(style.clone()));
             ui.add(Button::new("RT").width(50.0).height(50.0).align(Align::RightTop).with_style(style.clone()));
