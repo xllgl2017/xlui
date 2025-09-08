@@ -191,6 +191,10 @@ impl Win32Window {
                     let y = until::get_y_lparam(msg.lParam) as f32;
                     (window.id, WindowEvent::MouseMove(Pos { x, y }))
                 }
+                WM_MOUSEWHEEL => {
+                    let delta = ((msg.wParam.0 >> 16) & 0xFFFF) as i16;
+                    (window.id, WindowEvent::MouseWheel(delta as f32))
+                }
                 REQ_UPDATE => (window.id, WindowEvent::ReqUpdate),
                 CREATE_CHILD => (window.id, WindowEvent::CreateChild),
                 RE_INIT => {
