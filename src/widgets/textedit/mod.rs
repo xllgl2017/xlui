@@ -286,7 +286,22 @@ impl Widget for TextEdit {
                 if self.focused {
                     match key {
                         Key::CtrlC => ui.context.window.set_clipboard(ClipboardData::Text(self.char_layout.select_text())),
-                        Key::CtrlV => ui.context.window.request_clipboard(ClipboardData::Text(String::new())),
+                        Key::CtrlV => {
+                            #[cfg(all(not(feature = "winit"), target_os = "linux"))]
+                            ui.context.window.request_clipboard(ClipboardData::Text(String::new()));
+                            #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+                            let res = ui.context.window.win32().clipboard.get_clipboard_data(ClipboardData::Text(String::new())).unwrap();
+                            match res {
+                                ClipboardData::Unsupported => {}
+                                ClipboardData::Text(t) => {
+                                    for c in t.chars() {
+                                        self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
+                                    }
+                                }
+                                ClipboardData::Image(_) => {}
+                                ClipboardData::Url(_) => {}
+                            }
+                        }
                         _ => {}
                     }
                 }

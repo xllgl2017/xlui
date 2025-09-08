@@ -9,7 +9,7 @@ use windows::Win32::System::Ole::*;
 pub struct Win32Clipboard;
 
 impl Win32Clipboard {
-    pub fn get_clipboard_data(&self) -> UiResult<ClipboardData> {
+    pub fn get_clipboard_data(&self,_: ClipboardData) -> UiResult<ClipboardData> {
         unsafe { OpenClipboard(None)? };
         let clipboard_data = unsafe { GetClipboardData(CF_UNICODETEXT.0 as u32)? };
         if clipboard_data.is_invalid() { return Err("获取粘贴板数据失败".into()); }

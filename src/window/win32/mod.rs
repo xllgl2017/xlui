@@ -14,6 +14,7 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
+use crate::window::win32::clipboard::Win32Clipboard;
 
 pub mod tray;
 pub(crate) mod handle;
@@ -110,7 +111,7 @@ impl Win32Window {
                 None,
             )
         }?;
-        Ok(Win32WindowHandle { hwnd })
+        Ok(Win32WindowHandle { hwnd, clipboard: Win32Clipboard })
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {

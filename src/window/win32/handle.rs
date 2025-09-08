@@ -6,12 +6,13 @@ use std::num::NonZeroIsize;
 use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
 use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
+use crate::window::win32::clipboard::Win32Clipboard;
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
+    pub(crate) clipboard: Win32Clipboard,
 }
 impl Win32WindowHandle {
-
     pub fn set_ime_position(&self, x: f32, y: f32, _: f32) -> UiResult<()> {
         let himc = unsafe { ImmGetContext(self.hwnd) };
         let mut cf = COMPOSITIONFORM::default();
