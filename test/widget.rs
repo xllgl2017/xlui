@@ -116,7 +116,7 @@ impl App for TestWidget {
             ui.add_mut(&mut self.label);
             ui.add_space(190.0);
             ui.checkbox(true, "文本更新");
-            ui.checkbox(false, "多样文本");
+            ui.checkbox(true, "多样文本");
         });
 
         ui.horizontal(|ui| {
@@ -126,7 +126,7 @@ impl App for TestWidget {
             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
             ui.add_space(225.0);
             ui.checkbox(true, "回调事件");
-            ui.checkbox(false, "文本对齐");
+            ui.checkbox(true, "文本对齐");
         });
 
         ui.horizontal(|ui| {
@@ -170,11 +170,11 @@ impl App for TestWidget {
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");
-            ui.checkbox(false, "多行");
-            ui.checkbox(false, "滚动");
+            ui.checkbox(true, "多行");
+            ui.checkbox(true, "滚动");
             ui.checkbox(false, "复制");
             ui.checkbox(false, "粘贴");
-            ui.checkbox(false, "密码");
+            ui.checkbox(true, "密码");
         });
         let cb = ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4, SV::Item5, SV::Item6]).with_popup_height(150.0).connect(Self::combo_changed);
         let p = cb.parent();
@@ -192,8 +192,7 @@ impl App for TestWidget {
             ui.image("logo.jpg", (50.0, 50.0));
             ui.add(Image::new(include_bytes!("../logo.jpg")).with_size(50.0, 50.0).with_id("test_image"));
             ui.add_space(182.0);
-            ui.checkbox(false, "网络图片");
-            ui.checkbox(false, "bytes图片流");
+            ui.checkbox(true, "bytes图片流");
         });
         ui.horizontal(|ui| {
             ui.radio(true, "ImageButton");
@@ -209,7 +208,7 @@ impl App for TestWidget {
             ui.add(SelectItem::new(SV::Item4).with_size(40.0, 25.0).contact(p.clone()));
         });
         ui.horizontal(|ui| {
-            ui.radio(false, "ProcessBar");
+            ui.radio(true, "ProcessBar");
             ui.add_space(11.0);
             ui.add(ProcessBar::new(50.0).with_id("pbr"));
         });

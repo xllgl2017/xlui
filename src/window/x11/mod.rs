@@ -7,8 +7,9 @@ use crate::{Pos, Size, WindowAttribute};
 use std::ffi::CString;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
+use std::ptr::null_mut;
 use x11::xlib;
-use x11::xlib::XCloseDisplay;
+use x11::xlib::{XCloseDisplay, XLookupString};
 use crate::error::UiResult;
 use crate::window::x11::clipboard::X11ClipBoard;
 use crate::window::x11::handle::X11WindowHandle;
@@ -95,7 +96,6 @@ impl X11Window {
             attrs.background_pixel = 0;
             xlib::XChangeWindowAttributes(display, child, xlib::CWBackPixmap, &mut attrs);
             xlib::XSetWindowBackgroundPixmap(display, child, 0); // 0 == None
-            // xlib::XMapWindow(display, root);
             xlib::XMapWindow(display, child);
             xlib::XFlush(display);
             xlib::XSetWMProtocols(display, child, wm_delete, 1);
@@ -173,27 +173,31 @@ impl X11Window {
                     }
                 }
                 xlib::KeyPress => {
-                    println!("key-press");
-                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
-                    let handle=window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
-                    println!("press-handle-{}-{}", handle, window.ime.is_commited());
+                    let mut keysym = 0;
+                    let mut buffer: [i8; 32] = [0; 32];
+                    // let mut keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    let len = XLookupString(&mut event.key, buffer.as_mut_ptr(), 32, &mut keysym, null_mut());
+                    let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Empty).unwrap();
+                    println!("press-handle-{}-{}-{}", handle, window.ime.is_commited(), keysym);
                     return if handle {
                         window.ime.update();
                         (window.id, WindowEvent::IME(IMEData::Preedit(window.ime.chars())))
                     } else {
-                        (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode)))
+                        (window.id, WindowEvent::KeyPress(Key::from_c_ulong(event.key.keycode,&buffer[..len as usize])))
                     };
                 }
                 xlib::KeyRelease => {
-                    let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    let mut keysym = 0;
+                    // let keysym = xlib::XLookupKeysym(&mut event.key, 0);
+                    let mut buffer: [i8; 32] = [0; 32];
+                    let len = XLookupString(&mut event.key, buffer.as_mut_ptr(), 32, &mut keysym, null_mut());
                     let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
                     println!("release-handle-{}-{}", handle, window.ime.is_commited());
                     if !handle {
-                        let key = Key::from_c_ulong(event.key.keycode);
                         if window.ime.is_commited() {
                             return (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())));
                         }
-                        return (window.id, WindowEvent::KeyRelease(key));
+                        return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])))
                     }
                 }
                 xlib::ButtonRelease => {
