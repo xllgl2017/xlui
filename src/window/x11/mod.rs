@@ -7,6 +7,7 @@ use crate::{Pos, Size, WindowAttribute};
 use std::ffi::CString;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
+use std::os::raw::c_uint;
 use std::ptr::null_mut;
 use x11::xlib;
 use x11::xlib::{XCloseDisplay, XLookupString};
@@ -216,11 +217,21 @@ impl X11Window {
                 xlib::ButtonRelease => {
                     // window.x11().clipboard.request_get_clipboard(window.x11().window, window.x11().clipboard.utf8_atom);
                     let xb: xlib::XButtonEvent = event.button;
-                    return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }));
+                    match xb.button {
+                        1 => return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 })),
+                        2 => {} //鼠标中间键
+                        3 => {} //鼠标右键
+                        4 => return (window.id, WindowEvent::MouseWheel(1.0)), //向上滚动
+                        5 => return (window.id, WindowEvent::MouseWheel(-1.0)), //向下动
+                        _ => {}
+                    }
                 }
                 xlib::ButtonPress => {
                     let xb: xlib::XButtonEvent = event.button;
-                    return (window.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 }));
+                    match xb.button {
+                        1 => return (window.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 })),
+                        _ => {}
+                    }
                 }
                 xlib::MotionNotify => {
                     let xm: xlib::XMotionEvent = event.motion;
