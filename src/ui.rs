@@ -254,6 +254,7 @@ impl AppContext {
         self.previous_time = crate::time_ms();
     }
 
+    #[deprecated="use AppContext::update"]
     pub fn key_input(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
         let mut ui = Ui {
             device: &self.device,

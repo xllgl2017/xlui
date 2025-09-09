@@ -34,25 +34,8 @@ struct XlUiApp {
 
 impl XlUiApp {
     pub fn new() -> Self {
-        // let data = vec![
-        //     TD::new("1"),
-        //     TD::new("2"),
-        //     TD::new("3"),
-        //     TD::new("4"),
-        //     TD::new("5"),
-        //     TD::new("6"),
-        //     TD::new("7"),
-        //     TD::new("8"),
-        //     TD::new("9"),
-        //     TD::new("10"),
-        //     TD::new("11"),
-        //     TD::new("12"),
-        //     TD::new("13"),
-        //     TD::new("14"),
-        //     TD::new("15")
-        // ];
         let mut data = vec![];
-        for i in 0..1000 {
+        for i in 0..100 {
             data.push(TD::new(i + 1));
         }
         Self {
