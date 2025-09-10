@@ -1,5 +1,5 @@
 pub mod attribute;
-pub mod inner;
+// pub mod inner;
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
 mod x11;
 #[cfg(not(feature = "winit"))]

@@ -3,7 +3,7 @@ use crate::Offset;
 use crate::size::padding::Padding;
 use crate::size::pos::{Axis, Pos};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Rect {
     dx: Axis,
     ox: Axis,
@@ -173,6 +173,14 @@ impl Rect {
     }
 
     pub fn y_direction(&self) -> LayoutDirection { self.y_direction }
+
+    pub fn set_x_direction(&mut self, x_direction: LayoutDirection) {
+        self.x_direction = x_direction;
+    }
+
+    pub fn set_y_direction(&mut self, y_direction: LayoutDirection) {
+        self.y_direction = y_direction;
+    }
 }
 
 //位移数值为总位移
@@ -243,6 +251,40 @@ impl Rect {
     pub fn offset_to(&mut self, tx: f32, ty: f32) {
         self.offset_x_to(tx);
         self.offset_y_to(ty);
+    }
+
+    pub fn offset_to_rect(&mut self, rect: &Rect) -> Offset {
+        let mut offset = Offset::new(Pos::new()).delete_offset();
+        match rect.x_direction {
+            LayoutDirection::Min => {
+                let ox = rect.dx.min - self.ox.min;
+                self.dx = self.ox + ox;
+                self.ox += ox;
+                offset.x = ox;
+            }
+            LayoutDirection::Max => {
+                let ox = rect.dx.max - self.ox.max;
+                self.dx = self.ox + ox;
+                self.ox += ox;
+                offset.x = ox;
+            }
+        }
+
+        match rect.y_direction {
+            LayoutDirection::Min => {
+                let oy = rect.dy.min - self.oy.min;
+                self.dy = self.oy + oy;
+                self.oy += oy;
+                offset.y=oy;
+            }
+            LayoutDirection::Max => {
+                let oy = rect.dy.max - self.oy.max;
+                self.dy = self.oy + oy;
+                self.oy += oy;
+                offset.y=oy;
+            }
+        }
+        offset
     }
 
     pub fn get_ox(&self) -> f32 {

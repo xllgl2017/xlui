@@ -3,20 +3,19 @@ use std::any::Any;
 use std::ops::DerefMut;
 use crate::frame::App;
 use crate::size::rect::Rect;
-use crate::widgets::button::Button;
-use crate::window::inner::InnerWindow;
+// use crate::widgets::button::Button;
+// use crate::window::inner::InnerWindow;
 
 pub struct Callback;
 
 impl Callback {
-
-    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)> {
-        Box::new(move |box_app, btn, uim| {
-            let app = box_app.deref_mut() as &mut dyn Any;
-            let t = app.downcast_mut::<A>().unwrap();
-            f(t, btn, uim);
-        })
-    }
+    // pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)> {
+    //     Box::new(move |box_app, btn, uim| {
+    //         let app = box_app.deref_mut() as &mut dyn Any;
+    //         let t = app.downcast_mut::<A>().unwrap();
+    //         f(t, btn, uim);
+    //     })
+    // }
 
     pub(crate) fn create_slider<A: 'static>(f: fn(&mut A, &mut Ui, f32)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)> {
         Box::new(move |box_app, uim, value| {
@@ -26,14 +25,13 @@ impl Callback {
         })
     }
 
-    pub(crate) fn create_inner_close<A: 'static>(mut f: impl FnMut(&mut A, InnerWindow, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)> {
-        Box::new(move |box_app, window, ui| {
-            let app = box_app.deref_mut() as &mut dyn Any;
-            let t = app.downcast_mut::<A>().unwrap();
-            f(t, window, ui)
-        })
-
-    }
+    // pub(crate) fn create_inner_close<A: 'static>(mut f: impl FnMut(&mut A, InnerWindow, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, InnerWindow, &mut Ui)> {
+    //     Box::new(move |box_app, window, ui| {
+    //         let app = box_app.deref_mut() as &mut dyn Any;
+    //         let t = app.downcast_mut::<A>().unwrap();
+    //         f(t, window, ui)
+    //     })
+    // }
 
     pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut Ui, bool)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)> {
         Box::new(move |box_app, uim, value| {
@@ -84,19 +82,21 @@ impl Callback {
 
 pub struct Response<'a> {
     pub id: &'a String,
-    pub rect: &'a Rect,
+    pub width: f32,
+    pub height: f32,
 }
 
 impl<'a> Response<'a> {
-    pub fn new(id: &'a String, rect: &'a Rect) -> Self {
-        Response { id, rect }
+    pub fn new(id: &'a String, w: f32, h: f32) -> Self {
+        Response {
+            id,
+            width: w,
+            height: h,
+        }
     }
 
     pub fn id(&self) -> &str {
         &self.id
     }
 
-    pub fn rect(&self) -> &Rect {
-        &self.rect
-    }
 }

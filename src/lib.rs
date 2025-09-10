@@ -87,7 +87,7 @@ use crate::ui::Ui;
 mod widgets;
 pub mod align;
 pub mod vertex;
-pub mod layout;
+mod layout;
 mod text;
 mod size;
 pub mod frame;
@@ -103,12 +103,14 @@ mod error;
 
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 pub use window::win32::tray::{Tray, TrayMenu};
-pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+pub use window::{attribute::WindowAttribute};
+pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
-pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
-                  checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
-                  circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,
-                  Widget, triangle::Triangle};
+pub use widgets::{label::Label, scroll::ScrollWidget};
+// pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
+//                   checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
+//                   circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,
+//                   Widget, triangle::Triangle};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 
 pub trait NumCastExt: Sized {

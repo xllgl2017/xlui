@@ -26,7 +26,7 @@ use crate::text::rich::RichText;
 use crate::text::buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
-use crate::widgets::Widget;
+use crate::widgets::{Widget, WidgetChange};
 
 pub struct Label {
     id: String,
@@ -76,18 +76,36 @@ impl Label {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
+        // self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
         self.buffer.init(ui);
     }
 
     fn update_before_draw(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_str(&mut self.buffer.text.text);
-            self.buffer.change = true;
+            ui.widget_changed |= WidgetChange::Value;
+            // self.buffer.change = true;
         }
-        if !self.buffer.change && !ui.can_offset { return; }
-        if ui.can_offset { self.buffer.rect.offset(&ui.offset); }
-        self.buffer.update_buffer(ui);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.buffer.rect.offset_to_rect(&ui.draw_rect);
+        }
+
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.buffer.update_buffer(ui);
+        }
+        // if ui.widget_changed == WidgetChange::None as u32 { return; }
+        // match ui.widget_changed {
+        //     WidgetChange::None => {}
+        //     WidgetChange::Position => self.update_position(ui),
+        //     WidgetChange::Value => self.buffer.update_buffer(ui),
+        //     WidgetChange::PositionAndValue => {
+        //         self.update_position(ui);
+        //         self.buffer.update_buffer(ui);
+        //     }
+        // }
+        // if !self.buffer.change { return; }
+        // if ui.can_offset { self.buffer.rect.offset(&ui.offset); }
+        // self.buffer.update_buffer(ui);
     }
 }
 
@@ -103,8 +121,9 @@ impl Widget for Label {
         match &ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.buffer.init(ui),
+            UpdateType::Draw => self.redraw(ui),
             _ => {}
         }
-        Response::new(&self.id, &self.buffer.rect)
+        Response::new(&self.id, self.buffer.rect.width(), self.buffer.rect.height())
     }
 }
