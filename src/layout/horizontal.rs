@@ -22,7 +22,7 @@ pub struct HorizontalLayout {
     size_mode: SizeMode,
     direction: LayoutDirection,
     padding: Padding,
-    offset: Offset
+    offset: Offset,
 }
 
 impl HorizontalLayout {
@@ -42,7 +42,7 @@ impl HorizontalLayout {
             size_mode: SizeMode::Auto,
             direction,
             padding: Padding::same(0.0),
-            offset: Offset::new(Pos::new())
+            offset: Offset::new(Pos::new()),
         }
     }
 
@@ -162,7 +162,7 @@ impl Layout for HorizontalLayout {
         }
         ui.draw_rect = previous_rect;
         let (dw, dh) = self.size_mode.size(width, height);
-        Response::new(&self.id,WidgetSize{
+        Response::new(&self.id, WidgetSize {
             dw,
             dh,
             rw: width,
@@ -202,6 +202,10 @@ impl Layout for HorizontalLayout {
         &mut self.items
     }
 
+    fn add_item(&mut self, item: LayoutItem) {
+        self.items.insert(item.id().to_string(), item);
+    }
+
     // fn redraw(&mut self, ui: &mut Ui) {
     //     ui.can_offset = self.offset_changed;
     //     ui.offset = self.widget_offset.clone();
@@ -219,7 +223,7 @@ impl Layout for HorizontalLayout {
     }
 
     fn set_size(&mut self, w: f32, h: f32) {
-       self.set_width(w);
-       self.set_height(h);
-   }
+        self.set_width(w);
+        self.set_height(h);
+    }
 }

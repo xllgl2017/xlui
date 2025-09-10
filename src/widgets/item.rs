@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -9,6 +10,7 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use std::sync::{Arc, RwLock};
 use crate::frame::context::UpdateType;
+use crate::Label;
 
 pub struct ItemWidget {
     pub(crate) id: String,
@@ -154,5 +156,14 @@ impl Widget for ItemWidget {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+    fn restore(&mut self, datum: &dyn Any) {
+        let datum: &String = datum.downcast_ref().unwrap();
+        let layout = self.layout.as_mut().unwrap();
+        let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
+        println!("4444444444444={}", datum);
+        label.set_text(datum);
+        self.hovered = false;
+        self.selected = false;
     }
 }

@@ -224,7 +224,7 @@ impl AppContext {
             context: &mut self.context,
             app: None,
             pass: Some(pass),
-            layout: None,
+            layout: self.layout.take(),
             // popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::Draw,
@@ -237,6 +237,7 @@ impl AppContext {
         };
         app.redraw(&mut ui);
         ui.app = Some(app);
+        self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);
         // self.popups = ui.popups.take();
         // for popup in self.popups.as_mut().unwrap().iter_mut() {
@@ -325,13 +326,16 @@ impl<'a> Ui<'a> {
     //     self.layout().add_space(space);
     // }
 
-    pub fn add<T: Widget>(&mut self, mut widget: T) -> &mut T {
+    pub fn add<T: Widget>(&mut self, widget: T) -> Option<&mut T> {
         let widget = WidgetKind::new(self, widget);
         let wid = widget.id().to_owned();
-        let layout = self.layout.as_mut().unwrap();
-        let items = layout.layout_mut().items_mut();
-        items.insert(wid.clone(), LayoutItem::Widget(widget));
-        items.get_mut(&wid).unwrap().widget()
+        let layout = self.layout.as_mut()?;
+        layout.add_item(LayoutItem::Widget(widget));
+        layout.get_item_mut(&wid)?.widget()
+
+        // let items = layout.layout_mut().items_mut();
+        // items.insert(wid.clone(), LayoutItem::Widget(widget));
+        // items.get_mut(&wid).unwrap().widget()
         // self.layout().alloc_rect(&widget.rect);
         // self.layout().add_widget(widget.id.clone(), widget);
         // let items = self.layout.as_mut().unwrap().layout_mut().items_mut();
@@ -343,8 +347,9 @@ impl<'a> Ui<'a> {
 
     pub fn get_widget<T: Widget>(&mut self, id: impl ToString) -> Option<&mut T> {
         let layout = self.layout.as_mut()?;
-        let items = layout.layout_mut().items_mut();
-        Some(items.get_mut(&id.to_string())?.widget())
+        layout.get_item_mut(&id.to_string()).unwrap().widget()
+        // let items = layout.layout_mut().items_mut();
+        // Some(items.get_mut(&id.to_string())?.widget())
         // let widget = self.layout().get_widget(&id.to_string())?;
         // let widget = widget.deref_mut() as &mut dyn Any;
         // widget.downcast_mut::<T>()
@@ -371,7 +376,8 @@ impl<'a> Ui<'a> {
         context(self);
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
         current_layout.update(self);
-        self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
+        self.layout().add_item(LayoutItem::Layout(current_layout));
+        // self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
@@ -380,7 +386,8 @@ impl<'a> Ui<'a> {
         context(self);
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
         current_layout.update(self);
-        self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
+        self.layout().add_item(LayoutItem::Layout(current_layout));
+        // self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
         // self.layout().add_child(current_layout);
     }
 
@@ -390,7 +397,8 @@ impl<'a> Ui<'a> {
         context(self);
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
         current_layout.update(self);
-        self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
+        self.layout().add_item(LayoutItem::Layout(current_layout));
+        // self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
         // self.layout().add_child(current_layout);
     }
 

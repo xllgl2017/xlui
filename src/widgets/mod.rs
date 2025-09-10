@@ -1,9 +1,7 @@
 use crate::response::Response;
-use crate::size::rect::Rect;
 use crate::ui::Ui;
 use std::any::Any;
 use std::ops::{BitAnd, BitOr, BitOrAssign, DerefMut};
-use crate::Offset;
 
 pub mod label;
 // pub mod button;
@@ -26,8 +24,8 @@ pub mod listview;
 pub trait Widget: Any {
     fn redraw(&mut self, ui: &mut Ui); //绘制调用
     fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
+    fn restore(&mut self, datum: &dyn Any) {}
 }
-
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum WidgetChange {
@@ -135,9 +133,9 @@ impl WidgetKind {
         &self.id
     }
 
-    pub fn as_mut_<T: Widget>(&mut self) -> &mut T {
+    pub fn as_mut_<T: Widget>(&mut self) -> Option<&mut T> {
         let widget = self.widget.deref_mut() as &mut dyn Any;
-        widget.downcast_mut::<T>().unwrap()
+        widget.downcast_mut::<T>()
     }
 
     pub fn width(&self) -> f32 {

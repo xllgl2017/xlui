@@ -22,6 +22,7 @@ pub trait Layout: Any {
     fn update(&mut self, ui: &mut Ui) -> Response<'_>;
     fn items(&self) -> &Map<String, LayoutItem>;
     fn items_mut(&mut self) -> &mut Map<String, LayoutItem>;
+    fn add_item(&mut self, item: LayoutItem);
     fn set_offset(&mut self, offset: Offset);
     fn set_size(&mut self, w: f32, h: f32);
 }
@@ -39,7 +40,7 @@ impl LayoutItem {
         }
     }
 
-    pub fn widget<T: Widget>(&mut self) -> &mut T {
+    pub fn widget<T: Widget>(&mut self) -> Option<&mut T> {
         match self {
             LayoutItem::Layout(_) => panic!("仅可返回widget"),
             LayoutItem::Widget(widget) => widget.as_mut_()
@@ -57,6 +58,13 @@ impl LayoutItem {
         match self {
             LayoutItem::Layout(v) => v.size.dh,
             LayoutItem::Widget(v) => v.height(),
+        }
+    }
+
+    pub fn id(&self) -> &str {
+        match self {
+            LayoutItem::Layout(layout) => &layout.id,
+            LayoutItem::Widget(widget) => widget.id()
         }
     }
 }
@@ -89,9 +97,9 @@ impl LayoutKind {
         resp
     }
 
-    pub fn layout_mut(&mut self) -> &mut Box<dyn Layout> {
-        &mut self.layout
-    }
+    // pub fn layout_mut(&mut self) -> &mut Box<dyn Layout> {
+    //     &mut self.layout
+    // }
 
     pub fn as_mut_<T: Layout>(&mut self) -> Option<&mut T> {
         let layout = self.layout.deref_mut() as &mut dyn Any;
@@ -109,6 +117,14 @@ impl LayoutKind {
 
     pub fn set_size(&mut self, w: f32, h: f32) {
         self.layout.set_size(w, h);
+    }
+
+    pub fn add_item(&mut self, item: LayoutItem) {
+        self.layout.add_item(item);
+    }
+
+    pub fn get_item_mut(&mut self, id: &String) -> Option<&mut LayoutItem> {
+        self.layout.items_mut().get_mut(id)
     }
 
 
@@ -203,29 +219,18 @@ impl LayoutKind {
     //     }
     // }
 
-    // pub fn get_widget(&mut self, id: &String) -> Option<&mut Box<dyn Widget>> {
-    //     match self {
-    //         LayoutKind::Horizontal(v) => {
-    //             let widget = v.widgets.get_mut(id);
-    //             if widget.is_some() { return Some(&mut widget?.widget); }
-    //             for child in v.children.iter_mut() {
-    //                 let widget = child.get_widget(id);
-    //                 if widget.is_some() { return widget; }
-    //             }
-    //             None
-    //         }
-    //         LayoutKind::Vertical(v) => {
-    //             let widget = v.widgets.get_mut(id);
-    //             if widget.is_some() { return Some(&mut widget?.widget); }
-    //             for child in v.children.iter_mut() {
-    //                 let widget = child.get_widget(id);
-    //                 if widget.is_some() { return widget; }
-    //             }
-    //             None
-    //         }
-    //         LayoutKind::ScrollArea(_) => panic!("使用ScrollArea::show")
-    //     }
-    // }
+    pub fn get_widget<W: Widget>(&mut self, id: &String) -> Option<&mut W> {
+        for (wid, item) in self.layout.items_mut().entry_mut() {
+            match item {
+                LayoutItem::Layout(layout) => {
+                    let widget = layout.get_widget(id);
+                    if widget.is_some() { return widget; }
+                }
+                LayoutItem::Widget(widget) => if wid == id { return widget.as_mut_() }
+            }
+        }
+        None
+    }
 
     // pub fn get_layout(&mut self, id: &String) -> Option<&mut LayoutKind> {
     //     match self {

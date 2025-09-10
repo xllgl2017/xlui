@@ -75,6 +75,11 @@ impl Label {
         &self.id
     }
 
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
     fn init(&mut self, ui: &mut Ui) {
         // self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
         self.buffer.init(ui);
@@ -85,6 +90,9 @@ impl Label {
             v.update_str(&mut self.buffer.text.text);
             ui.widget_changed |= WidgetChange::Value;
             // self.buffer.change = true;
+        }
+        if self.buffer.change {
+            ui.widget_changed |= WidgetChange::Value;
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.buffer.rect.offset_to_rect(&ui.draw_rect);
@@ -124,6 +132,6 @@ impl Widget for Label {
             UpdateType::Draw => self.redraw(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.buffer.rect.width(),self.buffer.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.buffer.rect.width(), self.buffer.rect.height()))
     }
 }

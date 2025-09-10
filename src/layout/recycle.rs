@@ -2,25 +2,23 @@ use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutItem};
 use crate::map::Map;
 use crate::response::Response;
-use crate::size::SizeMode;
 use crate::ui::Ui;
+use crate::widgets::WidgetSize;
 use crate::{Offset, Padding, Pos};
 use std::mem;
 use std::ops::Range;
-use crate::widgets::WidgetSize;
 
 pub struct RecycleLayout {
     id: String,
     items: Map<String, LayoutItem>,
-    size_mode: SizeMode,
     padding: Padding,
     item_space: f32, //item之间的间隔
-    // width: f32,
-    // height: f32,
-    offset: Offset,
-    count: usize,
-    display: Range<usize>,
-    item_height: f32,
+    offset: Offset, //y偏移
+    total_count: usize, //总item数
+    draw_count: usize,
+    display: Range<usize>, //显示范围
+    item_height: f32, //每一个item的高度
+    size: WidgetSize,
 }
 
 impl RecycleLayout {
@@ -28,15 +26,14 @@ impl RecycleLayout {
         RecycleLayout {
             id: crate::gen_unique_id(),
             items: Map::new(),
-            size_mode: SizeMode::Auto,
             padding: Padding::same(0.0),
             item_space: 5.0,
-            // width: 0.0,
-            // height: 0.0,
             offset: Offset::new(Pos::new()),
-            count: 0,
+            total_count: 0,
+            draw_count: 10,
             display: 0..0,
-            item_height: 0.0,
+            item_height: 38.0,
+            size: WidgetSize::same(0.0, 0.0),
         }
     }
 
@@ -50,7 +47,7 @@ impl RecycleLayout {
     }
 
     pub fn set_width(&mut self, w: f32) {
-        self.size_mode.fix_width(w);
+        self.size.dw = w;
     }
 
     pub fn with_height(mut self, h: f32) -> Self {
@@ -59,7 +56,7 @@ impl RecycleLayout {
     }
 
     pub fn set_height(&mut self, h: f32) {
-        self.size_mode.fix_height(h);
+        self.size.dh = h;
     }
 
     pub fn with_space(mut self, s: f32) -> Self {
@@ -84,67 +81,64 @@ impl RecycleLayout {
         self.item_space
     }
 
-    // pub fn width(&self) -> f32 {
-    //     self.width
-    // }
-    //
-    // pub fn height(&self) -> f32 {
-    //     self.height
-    // }
+    pub fn update_display(&mut self) {
+        let item_total_h = self.item_height + self.item_space;
+
+        let mut start = (-self.offset.y / item_total_h).floor().max(0.0) as usize;
+        let mut end = ((-self.offset.y + self.size.dh) / item_total_h).ceil().max(0.0) as usize;
+
+        if start > self.total_count {
+            start = self.total_count;
+        }
+        if end > self.total_count {
+            end = self.total_count;
+        }
+
+        self.display = start..end;
+        println!("recycle display: {:#?} {} {} {} {}", self.display, self.item_height, self.item_space, self.offset.y, self.size.dh);
+    }
+
+    pub fn display_range(&self) -> &Range<usize> {
+        &self.display
+    }
 }
 
 impl Layout for RecycleLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         let previous_rect = mem::take(&mut ui.draw_rect);
-        let mut width = 0.0;
-        let mut height = 0.0;
         match ui.update_type {
             UpdateType::Init => {
-                for item in self.items.iter() {
-                    if width < item.width() { width = item.width(); }
-                    height += item.height() + self.item_space;
-                }
+                // self.size.rw = 0.0;
+                // self.size.rh = 0.0;
+                // for item in self.items.iter() {
+                //     if self.size.rw < item.width() { self.size.rw = item.width(); }
+                //     self.size.rh += item.height() + self.item_space;
+                // }
+                // self.total_count = self.items.len();
+                self.update_display();
             }
             _ => {
                 ui.draw_rect.set_x_min(previous_rect.dx().min + self.padding.left);
                 ui.draw_rect.set_x_max(previous_rect.dx().max - self.padding.right);
                 ui.draw_rect.set_y_min(previous_rect.dy().min + self.padding.top);
                 ui.draw_rect.set_y_max(previous_rect.dy().max - self.padding.bottom);
-                ui.draw_rect.set_x_min(ui.draw_rect.dx().min + self.offset.x);
-                ui.draw_rect.set_y_min(ui.draw_rect.dy().min + self.offset.y);
+
+                let item_total_h = self.item_height + self.item_space;
+                let first_offset = -(-self.offset.y - self.display.start as f32 * item_total_h);
+
+                ui.draw_rect.set_y_min(previous_rect.dy().min + first_offset);
                 for item in self.items.iter_mut() {
-                    // if self.height + item.height() < self.offset.y.abs() {
-                    //     self.height += item.height() + self.item_space;
-                    //     continue;
-                    // }
                     let resp = item.update(ui);
-                    if width < resp.size.dw { width = resp.size.dw; }
-                    height += resp.size.dh + self.item_space;
                     ui.draw_rect.add_min_y(resp.size.dh + self.item_space)
-                    // match self.direction {
-                    //     LayoutDirection::Min => ui.draw_rect.add_min_y(resp.height + self.item_space),
-                    //     LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.height - self.item_space),
-                    // }
                 }
-                height -= self.item_space;
+                // for di in self.display.clone() {
+                //     let resp = self.items[di].update(ui);
+                //     ui.draw_rect.add_min_y(resp.size.dh + self.item_space)
+                // }
             }
         }
         ui.draw_rect = previous_rect;
-        let (dw, dh) = self.size_mode.size(width, height);
-        Response::new(&self.id,WidgetSize{
-            dw,
-            dh,
-            rw: width,
-            rh: height,
-        })
-
-        //
-        // match self.size_mode {
-        //     SizeMode::Auto => Response::new(&self.id, self.width, self.height),
-        //     SizeMode::FixWidth(w) => Response::new(&self.id, w, self.height),
-        //     SizeMode::FixHeight(h) => Response::new(&self.id, self.width, h),
-        //     SizeMode::Fix(w, h) => Response::new(&self.id, w, h),
-        // }
+        Response::new(&self.id, self.size.clone())
     }
     fn items(&self) -> &Map<String, LayoutItem> {
         &self.items
@@ -153,8 +147,17 @@ impl Layout for RecycleLayout {
         &mut self.items
     }
 
+    fn add_item(&mut self, item: LayoutItem) {
+        self.total_count += 1;
+        self.size.rh += self.item_height + self.item_space;
+        if self.items.len() < self.draw_count {
+            self.items.insert(item.id().to_string(), item);
+        }
+    }
+
     fn set_offset(&mut self, offset: Offset) {
         self.offset = offset;
+        self.update_display();
     }
 
     fn set_size(&mut self, w: f32, h: f32) {

@@ -106,7 +106,7 @@ pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute};
 pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout, recycle::RecycleLayout};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
-pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView};
+pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget};
 // pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
 //                   checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
 //                   circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,

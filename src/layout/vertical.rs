@@ -58,7 +58,6 @@ impl VerticalLayout {
     }
 
 
-
     pub fn with_width(mut self, w: f32) -> Self {
         self.set_width(w);
         self
@@ -250,6 +249,10 @@ impl Layout for VerticalLayout {
 
     fn items_mut(&mut self) -> &mut Map<String, LayoutItem> {
         &mut self.items
+    }
+
+    fn add_item(&mut self, item: LayoutItem) {
+        self.items.insert(item.id().to_string(), item);
     }
 
     fn set_offset(&mut self, offset: Offset) {

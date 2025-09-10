@@ -1,10 +1,11 @@
+use std::any::Any;
 use std::fmt::Display;
-use xlui::frame::context::UpdateType;
 use xlui::frame::App;
-use xlui::{HorizontalLayout, Label, ListView, Padding, ScrollWidget, VerticalLayout};
+use xlui::response::Response;
 // use xlui::{Button, CheckBox, ComboBox, Image, Label, ListView, Slider, SpinBox, TextEdit, Widget};
 // use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
+use xlui::{HorizontalLayout, Label, ListView, ScrollWidget, VerticalLayout, Widget};
 
 struct TD {
     name: String,
@@ -23,6 +24,31 @@ impl Display for TD {
 }
 
 
+pub struct ListItem {
+    label: Label,
+
+}
+
+impl ListItem {
+    fn init(&mut self, ui: &mut Ui) {}
+}
+
+
+impl Widget for ListItem {
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.label.redraw(ui);
+    }
+
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
+        self.label.update(ui)
+    }
+    fn restore(&mut self, datum: &dyn Any) {
+        let datum = datum.downcast_ref::<TD>().unwrap();
+        self.label.set_text(datum.name.as_str());
+    }
+}
+
+
 fn main() {
     XlUiApp::new().run();
 }
@@ -30,14 +56,14 @@ fn main() {
 struct XlUiApp {
     // label: Label,
     count: i32,
-    list_view: ListView<TD>,
+    list_view: ListView<String>,
 }
 
 impl XlUiApp {
     pub fn new() -> Self {
         let mut data = vec![];
-        for i in 0..100 {
-            data.push(TD::new(i + 1));
+        for i in 0..1000 {
+            data.push((i + 1).to_string());
         }
         Self {
             // label: Label::new("hello".to_string()).width(200.0),
@@ -145,9 +171,9 @@ impl App for XlUiApp {
                             ui.label(i);
                         }
                     });
-                    self.list_view.set_item_widget(|ui,datum|{
-                       ui.label("34");
-                    });
+                    // self.list_view.set_item_widget(|ui, datum| {
+                    //     ui.label("34");
+                    // });
                     self.list_view.show(ui);
                 });
                 ui.label("sdfdsf");
@@ -238,10 +264,10 @@ impl App for XlUiApp {
 
     fn update(&mut self, ui: &mut Ui) {
         // self.label.update(ui);
-        // self.list_view.update(ui);
+        self.list_view.update(ui);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        // self.label.redraw(ui);
+        self.list_view.update(ui);
     }
 }

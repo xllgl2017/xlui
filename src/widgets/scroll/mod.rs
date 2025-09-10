@@ -257,7 +257,7 @@ impl Widget for ScrollWidget {
         //背景
         ui.context.render.rectangle.render(&self.fill_render, pass);
         let clip = self.fill_render.param.rect.clone_add_padding(&self.padding);
-        println!("{:?}", clip);
+        // println!("{:?}", clip);
         pass.set_scissor_rect(clip.dx().min as u32, clip.dy().min as u32, clip.width() as u32, clip.height() as u32);
         let resp = if ui.widget_changed.contains(WidgetChange::Position) {
             self.context_rect = ui.draw_rect.clone();
