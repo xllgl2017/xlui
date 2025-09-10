@@ -33,8 +33,17 @@ impl SizeMode {
 
     pub fn is_fixed_width(&self) -> bool {
         match self {
-            SizeMode::FixWidth(_) | SizeMode::Fix(_,_) => true,
+            SizeMode::FixWidth(_) | SizeMode::Fix(_, _) => true,
             _ => false,
+        }
+    }
+
+    pub fn size(&self, w: f32, h: f32) -> (f32, f32) {
+        match self {
+            SizeMode::Auto => (w, h),
+            SizeMode::FixWidth(w) => (*w, h),
+            SizeMode::FixHeight(h) => (w, *h),
+            SizeMode::Fix(w, h) => (*w, *h)
         }
     }
 }

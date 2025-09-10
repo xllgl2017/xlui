@@ -26,7 +26,7 @@ use crate::text::rich::RichText;
 use crate::text::buffer::TextBuffer;
 use crate::text::TextWrap;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange};
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct Label {
     id: String,
@@ -124,6 +124,6 @@ impl Widget for Label {
             UpdateType::Draw => self.redraw(ui),
             _ => {}
         }
-        Response::new(&self.id, self.buffer.rect.width(), self.buffer.rect.height())
+        Response::new(&self.id, WidgetSize::same(self.buffer.rect.width(),self.buffer.rect.height()))
     }
 }

@@ -6,6 +6,7 @@ use crate::{Offset, Padding, Pos};
 use crate::response::Response;
 use crate::size::SizeMode;
 use crate::ui::Ui;
+use crate::widgets::WidgetSize;
 
 pub struct VerticalLayout {
     id: String,
@@ -13,8 +14,8 @@ pub struct VerticalLayout {
     display: Map<String, usize>,
     // pub(crate) max_rect: Rect,
     // pub(crate) available_rect: Rect,
-    width: f32,
-    height: f32,
+    // width: f32,
+    // height: f32,
     item_space: f32, //item之间的间隔
     // widget_offset: Offset,
     // offset_changed: bool,
@@ -31,8 +32,8 @@ impl VerticalLayout {
             items: Map::new(),
             // max_rect: Rect::new().with_y_direction(direction),
             // available_rect: Rect::new().with_y_direction(direction),
-            width: 0.0,
-            height: 0.0,
+            // width: 0.0,
+            // height: 0.0,
             item_space: 5.0,
             // widget_offset: Offset::new(Pos::new()),
             // offset_changed: false,
@@ -56,10 +57,7 @@ impl VerticalLayout {
         self.with_width(w).with_height(h)
     }
 
-    pub fn set_size(&mut self, w: f32, h: f32) {
-        self.set_width(w);
-        self.set_height(h);
-    }
+
 
     pub fn with_width(mut self, w: f32) -> Self {
         self.set_width(w);
@@ -101,17 +99,13 @@ impl VerticalLayout {
         self.item_space
     }
 
-    pub fn width(&self) -> f32 {
-        self.width
-    }
-
-    pub fn height(&self) -> f32 {
-        self.height
-    }
-
-    pub fn set_offset(&mut self, offset: Offset) {
-        self.offset = offset;
-    }
+    // pub fn width(&self) -> f32 {
+    //     self.width
+    // }
+    //
+    // pub fn height(&self) -> f32 {
+    //     self.height
+    // }
 
     // pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
     //     self.max_rect = rect;
@@ -143,13 +137,13 @@ impl VerticalLayout {
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         let previous_rect = mem::take(&mut ui.draw_rect);
-        self.width = 0.0;
-        self.height = 0.0;
+        let mut width = 0.0;
+        let mut height = 0.0;
         match ui.update_type {
             UpdateType::Init => {
                 for item in self.items.iter() {
-                    if self.width < item.width() { self.width = item.width(); }
-                    self.height += item.height() + self.item_space;
+                    if width < item.width() { width = item.width(); }
+                    height += item.height() + self.item_space;
                 }
             }
             _ => {
@@ -166,25 +160,32 @@ impl Layout for VerticalLayout {
                     //     continue;
                     // }
                     let resp = item.update(ui);
-                    if self.width < resp.width { self.width = resp.width; }
-                    self.height += resp.height + self.item_space;
+                    if width < resp.size.dw { width = resp.size.dw; }
+                    height += resp.size.dh + self.item_space;
                     match self.direction {
-                        LayoutDirection::Min => ui.draw_rect.add_min_y(resp.height + self.item_space),
-                        LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.height - self.item_space),
+                        LayoutDirection::Min => ui.draw_rect.add_min_y(resp.size.dh + self.item_space),
+                        LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
                     }
                 }
-                self.height -= self.item_space;
+                height -= self.item_space;
             }
         }
         ui.draw_rect = previous_rect;
 
+        let (dw, dh) = self.size_mode.size(width, height);
+        Response::new(&self.id, WidgetSize {
+            dw,
+            dh,
+            rw: width,
+            rh: height,
+        })
 
-        match self.size_mode {
-            SizeMode::Auto => Response::new(&self.id, self.width, self.height),
-            SizeMode::FixWidth(w) => Response::new(&self.id, w, self.height),
-            SizeMode::FixHeight(h) => Response::new(&self.id, self.width, h),
-            SizeMode::Fix(w, h) => Response::new(&self.id, w, h),
-        }
+        // match self.size_mode {
+        //     SizeMode::Auto => Response::new(&self.id, self.width, self.height),
+        //     SizeMode::FixWidth(w) => Response::new(&self.id, w, self.height),
+        //     SizeMode::FixHeight(h) => Response::new(&self.id, self.width, h),
+        //     SizeMode::Fix(w, h) => Response::new(&self.id, w, h),
+        // }
 
         // for child in self.items.iter_mut() {
         //     child.update(ui);
@@ -235,6 +236,9 @@ impl Layout for VerticalLayout {
         //     }
         // }
     }
+    fn items(&self) -> &Map<String, LayoutItem> {
+        &self.items
+    }
 
     // fn add_item(&mut self, id: String, item: LayoutItem) {
     //     self.items.insert(id, item);
@@ -244,12 +248,17 @@ impl Layout for VerticalLayout {
     //     self.items.get(id)
     // }
 
-    fn items(&self) -> &Map<String, LayoutItem> {
-        &self.items
-    }
-
     fn items_mut(&mut self) -> &mut Map<String, LayoutItem> {
         &mut self.items
+    }
+
+    fn set_offset(&mut self, offset: Offset) {
+        self.offset = offset;
+    }
+
+    fn set_size(&mut self, w: f32, h: f32) {
+        self.set_width(w);
+        self.set_height(h);
     }
 
     // fn redraw(&mut self, ui: &mut Ui) {

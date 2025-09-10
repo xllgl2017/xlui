@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use xlui::frame::context::UpdateType;
 use xlui::frame::App;
-use xlui::{HorizontalLayout, Label, Padding, ScrollWidget, VerticalLayout};
+use xlui::{HorizontalLayout, Label, ListView, Padding, ScrollWidget, VerticalLayout};
 // use xlui::{Button, CheckBox, ComboBox, Image, Label, ListView, Slider, SpinBox, TextEdit, Widget};
 // use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
@@ -30,7 +30,7 @@ fn main() {
 struct XlUiApp {
     // label: Label,
     count: i32,
-    // list_view: ListView<TD>,
+    list_view: ListView<TD>,
 }
 
 impl XlUiApp {
@@ -42,7 +42,7 @@ impl XlUiApp {
         Self {
             // label: Label::new("hello".to_string()).width(200.0),
             count: 0,
-            // list_view: ListView::new(data).with_size(300.0, 400.0),
+            list_view: ListView::new(data).with_size(250.0, 300.0),
         }
     }
 
@@ -130,20 +130,25 @@ impl App for XlUiApp {
                 ui.label("7");
                 ui.label("8");
                 ui.label("9");
-                let area = ScrollWidget::new().with_size(400.0, 300.0)
-                    .padding(Padding::same(2.0));
-                area.show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("1");
-                        ui.label("2");
-                        ui.label("3");
+                ui.horizontal(|ui| {
+                    let area = ScrollWidget::vertical().enable_hscroll().with_size(400.0, 300.0);
+                    area.show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("1");
+                            ui.label("2");
+                            ui.label("3");
+                            for i in 0..100 {
+                                ui.label(i);
+                            }
+                        });
                         for i in 0..100 {
                             ui.label(i);
                         }
                     });
-                    for i in 0..100 {
-                        ui.label(i);
-                    }
+                    self.list_view.set_item_widget(|ui,datum|{
+                       ui.label("34");
+                    });
+                    self.list_view.show(ui);
                 });
                 ui.label("sdfdsf");
                 let layout = HorizontalLayout::right_to_left();

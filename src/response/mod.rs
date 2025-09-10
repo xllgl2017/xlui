@@ -3,6 +3,7 @@ use std::any::Any;
 use std::ops::DerefMut;
 use crate::frame::App;
 use crate::size::rect::Rect;
+use crate::widgets::WidgetSize;
 // use crate::widgets::button::Button;
 // use crate::window::inner::InnerWindow;
 
@@ -82,21 +83,18 @@ impl Callback {
 
 pub struct Response<'a> {
     pub id: &'a String,
-    pub width: f32,
-    pub height: f32,
+    pub(crate) size: WidgetSize,
 }
 
 impl<'a> Response<'a> {
-    pub fn new(id: &'a String, w: f32, h: f32) -> Self {
+    pub fn new(id: &'a String, size: WidgetSize) -> Self {
         Response {
             id,
-            width: w,
-            height: h,
+            size,
         }
     }
 
     pub fn id(&self) -> &str {
         &self.id
     }
-
 }

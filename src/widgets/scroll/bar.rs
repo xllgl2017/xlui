@@ -6,7 +6,7 @@ use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange};
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::{Offset, OffsetDirection, Pos};
 use crate::response::Response;
 use crate::size::radius::Radius;
@@ -255,6 +255,6 @@ impl Widget for ScrollBar {
                 }
             }
         }
-        Response::new(&self.id, self.fill_render.param.rect.width(), self.fill_render.param.rect.height())
+        Response::new(&self.id,WidgetSize::same(self.fill_render.param.rect.width(),self.fill_render.param.rect.height()))
     }
 }

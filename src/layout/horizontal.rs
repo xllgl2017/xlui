@@ -6,21 +6,23 @@ use crate::ui::Ui;
 use crate::{Offset, OffsetDirection, Padding, Pos, Rect};
 use crate::response::Response;
 use crate::size::SizeMode;
+use crate::widgets::WidgetSize;
 
 pub struct HorizontalLayout {
     id: String,
     items: Map<String, LayoutItem>,
     // pub(crate) max_rect: Rect,
     // pub(crate) available_rect: Rect,
-    width: f32,
-    height: f32,
+    // width: f32,
+    // height: f32,
     item_space: f32, //item之间的间隔
     offset_changed: bool,
-    widget_offset: Offset,
+    // widget_offset: Offset,
     display: Map<String, usize>,
     size_mode: SizeMode,
     direction: LayoutDirection,
     padding: Padding,
+    offset: Offset
 }
 
 impl HorizontalLayout {
@@ -31,15 +33,16 @@ impl HorizontalLayout {
             // widgets: Map::new(),
             // max_rect: Rect::new().with_x_direction(direction.clone()),
             // available_rect: Rect::new().with_x_direction(direction.clone()),
-            width: 0.0,
-            height: 0.0,
+            // width: 0.0,
+            // height: 0.0,
             item_space: 5.0,
             offset_changed: false,
-            widget_offset: Offset::new(Pos::new()),
+            // widget_offset: Offset::new(Pos::new()),
             display: Map::new(),
             size_mode: SizeMode::Auto,
             direction,
             padding: Padding::same(0.0),
+            offset: Offset::new(Pos::new())
         }
     }
 
@@ -75,11 +78,6 @@ impl HorizontalLayout {
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
-    }
-
-    pub fn set_size(&mut self, w: f32, h: f32) {
-        self.set_width(w);
-        self.set_height(h);
     }
 
     pub fn with_width(mut self, w: f32) -> Self {
@@ -122,27 +120,27 @@ impl HorizontalLayout {
         self.item_space
     }
 
-    pub fn width(&self) -> f32 {
-        self.width
-    }
-
-    pub fn height(&self) -> f32 {
-        self.height
-    }
+    // pub fn width(&self) -> f32 {
+    //     self.width
+    // }
+    //
+    // pub fn height(&self) -> f32 {
+    //     self.height
+    // }
 }
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         let previous_rect = mem::take(&mut ui.draw_rect);
-        self.width = 0.0;
-        self.height = 0.0;
+        let mut width = 0.0;
+        let mut height = 0.0;
         match ui.update_type {
             UpdateType::Init => {
                 for item in self.items.iter() {
-                    if self.height < item.height() { self.height = item.height(); }
-                    self.width += item.width() + self.item_space;
+                    if height < item.height() { height = item.height(); }
+                    width += item.width() + self.item_space;
                 }
-                self.width -= self.item_space;
+                width -= self.item_space;
             }
             _ => {
                 ui.draw_rect.set_x_min(previous_rect.dx().min + self.padding.left);
@@ -152,24 +150,31 @@ impl Layout for HorizontalLayout {
                 ui.draw_rect.set_x_direction(self.direction);
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);
-                    if self.height < resp.height { self.height = resp.height; }
-                    self.width += resp.width + self.item_space;
+                    if height < resp.size.dh { height = resp.size.dh; }
+                    width += resp.size.dw + self.item_space;
                     match self.direction {
-                        LayoutDirection::Min => ui.draw_rect.add_min_x(resp.width + self.item_space),
-                        LayoutDirection::Max => ui.draw_rect.add_max_x(-resp.width - self.item_space),
+                        LayoutDirection::Min => ui.draw_rect.add_min_x(resp.size.dw + self.item_space),
+                        LayoutDirection::Max => ui.draw_rect.add_max_x(-resp.size.dw - self.item_space),
                     }
                 }
-                self.width -= self.item_space;
+                width -= self.item_space;
             }
         }
         ui.draw_rect = previous_rect;
+        let (dw, dh) = self.size_mode.size(width, height);
+        Response::new(&self.id,WidgetSize{
+            dw,
+            dh,
+            rw: width,
+            rh: height,
+        })
 
-        match self.size_mode {
-            SizeMode::Auto => Response::new(&self.id, self.width, self.height),
-            SizeMode::FixWidth(w) => Response::new(&self.id, w, self.height),
-            SizeMode::FixHeight(h) => Response::new(&self.id, self.width, h),
-            SizeMode::Fix(w, h) => Response::new(&self.id, w, h),
-        }
+        // match self.size_mode {
+        //     SizeMode::Auto => Response::new(&self.id, self.width, self.height),
+        //     SizeMode::FixWidth(w) => Response::new(&self.id, w, self.height),
+        //     SizeMode::FixHeight(h) => Response::new(&self.id, self.width, h),
+        //     SizeMode::Fix(w, h) => Response::new(&self.id, w, h),
+        // }
 
         // for child in self.items.iter_mut() {
         //     child.update(ui);
@@ -190,6 +195,12 @@ impl Layout for HorizontalLayout {
         //     }
         // }
     }
+    fn items(&self) -> &Map<String, LayoutItem> {
+        &self.items
+    }
+    fn items_mut(&mut self) -> &mut Map<String, LayoutItem> {
+        &mut self.items
+    }
 
     // fn redraw(&mut self, ui: &mut Ui) {
     //     ui.can_offset = self.offset_changed;
@@ -203,11 +214,12 @@ impl Layout for HorizontalLayout {
     //     }
     // }
 
-    fn items(&self) -> &Map<String, LayoutItem> {
-        &self.items
+    fn set_offset(&mut self, offset: Offset) {
+        self.offset = offset;
     }
 
-    fn items_mut(&mut self) -> &mut Map<String, LayoutItem> {
-        &mut self.items
-    }
+    fn set_size(&mut self, w: f32, h: f32) {
+       self.set_width(w);
+       self.set_height(h);
+   }
 }

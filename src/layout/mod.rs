@@ -2,6 +2,7 @@
 // pub mod popup;
 pub mod horizontal;
 pub mod vertical;
+pub mod recycle;
 
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
@@ -14,15 +15,15 @@ use crate::size::padding::Padding;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetKind};
+use crate::widgets::{Widget, WidgetKind, WidgetSize};
 use crate::Offset;
 
 pub trait Layout: Any {
     fn update(&mut self, ui: &mut Ui) -> Response<'_>;
     fn items(&self) -> &Map<String, LayoutItem>;
     fn items_mut(&mut self) -> &mut Map<String, LayoutItem>;
-
-    // fn redraw(&mut self, ui: &mut Ui);
+    fn set_offset(&mut self, offset: Offset);
+    fn set_size(&mut self, w: f32, h: f32);
 }
 
 pub enum LayoutItem {
@@ -47,14 +48,14 @@ impl LayoutItem {
 
     pub fn width(&self) -> f32 {
         match self {
-            LayoutItem::Layout(v) => v.width,
+            LayoutItem::Layout(v) => v.size.dw,
             LayoutItem::Widget(v) => v.width(),
         }
     }
 
     pub fn height(&self) -> f32 {
         match self {
-            LayoutItem::Layout(v) => v.height,
+            LayoutItem::Layout(v) => v.size.dh,
             LayoutItem::Widget(v) => v.height(),
         }
     }
@@ -63,8 +64,7 @@ impl LayoutItem {
 pub struct LayoutKind {
     layout: Box<dyn Layout>,
     id: String,
-    width: f32,
-    height: f32,
+    size: WidgetSize,
 }
 
 impl LayoutKind {
@@ -72,16 +72,19 @@ impl LayoutKind {
         LayoutKind {
             layout: Box::new(layout),
             id: crate::gen_unique_id(),
-            width: 0.0,
-            height: 0.0,
+            size: WidgetSize {
+                dw: 0.0,
+                dh: 0.0,
+                rw: 0.0,
+                rh: 0.0,
+            },
         }
     }
     pub fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         let resp = self.layout.update(ui);
-        if resp.width != self.width || resp.height != self.height {
+        if resp.size != self.size {
             self.id = resp.id.to_string();
-            self.width = resp.width;
-            self.height = resp.height;
+            self.size = resp.size.clone();
         }
         resp
     }
@@ -98,6 +101,14 @@ impl LayoutKind {
     pub fn as_<T: Layout>(&self) -> Option<&T> {
         let layout = self.layout.deref() as &dyn Any;
         layout.downcast_ref()
+    }
+
+    pub fn set_offset(&mut self, offset: Offset) {
+        self.layout.set_offset(offset);
+    }
+
+    pub fn set_size(&mut self, w: f32, h: f32) {
+        self.layout.set_size(w, h);
     }
 
 
@@ -373,13 +384,13 @@ impl LayoutKind {
         &self.id
     }
 
-    pub fn width(&self) -> f32 {
-        self.width
-    }
-
-    pub fn height(&self) -> f32 {
-        self.height
-    }
+    // pub fn width(&self) -> f32 {
+    //     self.width
+    // }
+    //
+    // pub fn height(&self) -> f32 {
+    //     self.height
+    // }
 }
 
 // impl From<HorizontalLayout> for LayoutKind {

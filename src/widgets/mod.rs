@@ -17,8 +17,8 @@ pub mod scroll;
 // pub mod combobox;
 // pub mod select;
 // pub mod rectangle;
-// pub(crate) mod item;
-// pub mod listview;
+pub(crate) mod item;
+pub mod listview;
 // pub mod processbar;
 // pub mod triangle;
 // pub mod circle;
@@ -96,8 +96,8 @@ impl WidgetKind {
         let resp = widget.update(ui);
         WidgetKind {
             id: resp.id.to_string(),
-            width: resp.width,
-            height: resp.height,
+            width: resp.size.dw,
+            height: resp.size.dh,
             widget: Box::new(widget),
             change: WidgetChange::None,
         }
@@ -110,10 +110,10 @@ impl WidgetKind {
     pub fn update(&mut self, ui: &mut Ui) -> Response {
         ui.widget_changed = WidgetChange::Position;
         let resp = self.widget.update(ui);
-        if resp.width != self.width || resp.height != self.height {
+        if resp.size.dw != self.width || resp.size.dh != self.height {
             self.id = resp.id.to_string();
-            self.width = resp.width;
-            self.height = resp.height;
+            self.width = resp.size.dw;
+            self.height = resp.size.dh;
             self.change = WidgetChange::Position;
         } else {
             self.change = WidgetChange::None;
@@ -146,5 +146,24 @@ impl WidgetKind {
 
     pub fn height(&self) -> f32 {
         self.height
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub(crate) struct WidgetSize {
+    pub(crate) dw: f32, //绘制宽度
+    pub(crate) dh: f32, //绘制高度
+    pub(crate) rw: f32, //真实宽度
+    pub(crate) rh: f32, //真实高度
+}
+
+impl WidgetSize {
+    pub fn same(w: f32, h: f32) -> WidgetSize {
+        WidgetSize {
+            dw: w,
+            dh: h,
+            rw: w,
+            rh: h,
+        }
     }
 }
