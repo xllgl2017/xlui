@@ -73,6 +73,7 @@ impl ContextUpdate {
 
 #[derive(Clone)]
 pub enum UpdateType {
+    Draw,
     None,
     Init,
     ReInit,
@@ -113,13 +114,15 @@ impl Debug for UpdateType {
             UpdateType::Drop => f.write_str("Drop"),
             UpdateType::IME(_) => f.write_str("IME"),
             UpdateType::CreateWindow => f.write_str("CreateWindow"),
-            UpdateType::Clipboard(_)=>f.write_str("Clipboard"),
-            UpdateType::KeyPress(_)=>f.write_str("KeyPress"),
+            UpdateType::Clipboard(_) => f.write_str("Clipboard"),
+            UpdateType::KeyPress(_) => f.write_str("KeyPress"),
+            UpdateType::Draw => f.write_str("Draw"),
         }
     }
 }
 
 pub struct Context {
+    #[deprecated="use Device::surface_config"]
     pub size: Size,
     pub viewport: Viewport,
     pub window: Arc<WindowType>,

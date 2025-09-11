@@ -67,12 +67,12 @@ impl TextBuffer {
 
     pub fn init(&mut self, ui: &mut Ui) {
         if self.text.size.is_none() { self.text.size = Some(ui.context.font.size()) }
-        if self.text.family.is_none() { self.text.family=Some(ui.context.font.family().to_string()) }
+        if self.text.family.is_none() { self.text.family = Some(ui.context.font.family().to_string()) }
         self.text.height = ui.context.font.line_height(self.text.font_size());
         let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
-        if let SizeMode::Fix = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(self.rect.width()), Some(self.rect.height())) }
-        if let SizeMode::FixWidth = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(self.rect.width()), None) }
-        if let SizeMode::FixHeight = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, None, Some(self.rect.height())) }
+        if let SizeMode::Fix(w, h) = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(w), Some(h)) }
+        if let SizeMode::FixWidth(w) = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, Some(w), None) }
+        if let SizeMode::FixHeight(h) = self.size_mode { buffer.set_size(&mut ui.context.render.text.font_system, None, Some(h)) }
         buffer.set_wrap(&mut ui.context.render.text.font_system, self.text.wrap.as_gamma());
         buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &self.text.font_family(), Shaping::Advanced);
         let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
@@ -83,13 +83,15 @@ impl TextBuffer {
         self.render = Some(render);
         self.buffer = Some(buffer);
         self.reset();
-        match self.size_mode {
-            SizeMode::Auto => self.rect.set_size(self.text.width, self.text.height),
-            SizeMode::FixWidth => self.rect.set_height(self.text.height),
-            SizeMode::FixHeight => self.rect.set_width(self.text.width),
-            _ => {}
-        }
-        if let SizeMode::Auto = self.size_mode { return; }
+        let (w, h) = self.size_mode.size(self.text.width, self.text.height);
+        self.rect.set_size(w, h);
+        // match self.size_mode {
+        //     SizeMode::Auto => self.rect.set_size(self.text.width, self.text.height),
+        //     SizeMode::FixWidth(w) => self.rect.set_size(w, self.text.height),
+        //     SizeMode::FixHeight(h) => self.rect.set_size(self.text.width, h),
+        //     _ => {}
+        // }
+        // if let SizeMode::Auto = self.size_mode { return; }
         let ox = self.rect.width() - self.text.width;
         let oy = self.rect.height() - self.text.height;
         match self.align {
@@ -162,8 +164,13 @@ impl TextBuffer {
     }
 
     pub fn set_text(&mut self, text: String) {
+        self.change = self.text.text == text;
         self.text.text = text;
-        self.change = true;
+    }
+
+    pub fn with_align(mut self, align: Align) -> Self {
+        self.align = align;
+        self
     }
 
     pub fn update_buffer_text(&mut self, ui: &mut Ui, text: &str) {
@@ -198,11 +205,11 @@ impl TextBuffer {
 
     pub fn set_width(&mut self, width: f32) {
         self.rect.set_width(width);
-        self.size_mode.fix_width();
+        self.size_mode.fix_width(width);
     }
 
     pub fn set_height(&mut self, height: f32) {
         self.rect.set_height(height);
-        self.size_mode.fix_height();
+        self.size_mode.fix_height(height);
     }
 }

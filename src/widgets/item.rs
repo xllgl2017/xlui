@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -6,9 +7,10 @@ use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::Widget;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use std::sync::{Arc, RwLock};
 use crate::frame::context::UpdateType;
+use crate::Label;
 
 pub struct ItemWidget {
     pub(crate) id: String,
@@ -37,10 +39,10 @@ impl ItemWidget {
         }
     }
 
-    pub fn with_size(mut self, w: f32, h: f32) -> Self {
-        self.fill_render.param.rect.set_size(w, h);
-        self
-    }
+    // pub fn with_size(mut self, w: f32, h: f32) -> Self {
+    //     self.fill_render.param.rect.set_size(w, h);
+    //     self
+    // }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
         self.fill_render.param.style = style;
@@ -48,15 +50,19 @@ impl ItemWidget {
     }
 
     pub fn show(mut self, ui: &mut Ui, mut context: impl FnMut(&mut Ui)) {
-        self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
-        self.layout.as_mut().unwrap().set_rect(self.fill_render.param.rect.clone(), &self.padding);
+        // self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
+        // let layout: &mut LayoutKind = self.layout.as_mut().unwrap().as_mut_().unwrap();
+        // self.layout.as_mut().unwrap().set_rect(self.fill_render.param.rect.clone(), &self.padding);
         let previous_layout = ui.layout.replace(self.layout.take().unwrap()).unwrap();
-        if let UpdateType::Init = ui.update_type {
-            println!("init", );
-        }
+        // if let UpdateType::Init = ui.update_type {
+        //     println!("init", );
+        // }
 
         context(ui);
         self.layout = ui.layout.replace(previous_layout);
+        let resp = self.layout.as_mut().unwrap().update(ui);
+        // println!("{}", resp.height);
+        self.fill_render.param.rect.set_size(resp.size.dw, resp.size.dh);
         ui.add(self);
     }
 
@@ -84,16 +90,25 @@ impl ItemWidget {
         if current.as_ref() != Some(&self.id) && self.selected {
             drop(current);
             self.selected = false;
-            self.changed = true;
+            ui.widget_changed |= WidgetChange::Value;
         }
-        if !self.changed && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.changed = false;
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+        }
+
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+        }
         // println!("{} {:?}", ui.can_offset, ui.offset);
-        let layout = self.layout.as_mut().unwrap();
-        ui.update_type = UpdateType::Offset(ui.offset.clone());
-        layout.update(ui);
-        ui.update_type = UpdateType::None;
-        self.fill_render.param.rect.offset(&ui.offset);
-        self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+        // let layout = self.layout.as_mut().unwrap();
+        // ui.update_type = UpdateType::Offset(ui.offset.clone());
+        // layout.update(ui);
+        // ui.update_type = UpdateType::None;
+        // self.fill_render.param.rect.offset(&ui.offset);
+        // self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
     }
 }
 
@@ -102,12 +117,13 @@ impl Widget for ItemWidget {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.layout.as_mut().unwrap().redraw(ui);
+        self.layout.as_mut().unwrap().update(ui);
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         // self.layout.as_mut().unwrap().update(ui);注意这里不能直接调widgets的update
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => {
                 self.init(ui);
@@ -130,17 +146,26 @@ impl Widget for ItemWidget {
                     }
                     self.changed = true;
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, &self.fill_render.param.rect);
+                    return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                 }
             }
             UpdateType::Offset(_) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
+                if !ui.can_offset { return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height())); }
                 self.changed = true;
                 ui.context.window.request_redraw();
                 self.layout.as_mut().unwrap().update(ui);
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_render.param.rect)
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+    fn restore(&mut self, datum: &dyn Any) {
+        let datum: &String = datum.downcast_ref().unwrap();
+        let layout = self.layout.as_mut().unwrap();
+        let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
+        println!("4444444444444={}", datum);
+        label.set_text(datum);
+        self.hovered = false;
+        self.selected = false;
     }
 }

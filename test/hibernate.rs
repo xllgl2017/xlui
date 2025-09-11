@@ -1,8 +1,7 @@
 use std::sync::Arc;
 use xlui::frame::App;
-use xlui::layout::scroll_area::ScrollArea;
 use xlui::ui::Ui;
-use xlui::{Button, ComboBox, Font, Label, RichTextExt, TextEdit, TextWrap, WindowAttribute};
+use xlui::{Button, ComboBox, Font, Label, RichTextExt, ScrollWidget, TextEdit, TextWrap, WindowAttribute};
 
 fn main() {
     XlUi {}.run();
@@ -32,7 +31,7 @@ impl App for XlUi {
             ui.button("btn1");
         });
 
-        let area = ScrollArea::new().with_size(100.0, 100.0);
+        let area = ScrollWidget::vertical().with_size(100.0, 100.0);
         area.show(ui, |ui| {
             ui.label("sd");
             ui.button("btn2");

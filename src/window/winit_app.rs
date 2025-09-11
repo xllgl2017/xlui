@@ -183,7 +183,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                     Key::Unidentified(_) => return,
                     Key::Dead(_) => return,
                 };
-                window.app_ctx.key_input(UpdateType::KeyRelease(key), &mut window.app);
+                window.app_ctx.update(UpdateType::KeyRelease(key), &mut window.app);
                 window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::Ime(ime) => {

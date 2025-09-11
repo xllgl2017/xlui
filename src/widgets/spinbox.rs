@@ -1,3 +1,22 @@
+use crate::frame::context::{ContextUpdate, UpdateType};
+use crate::frame::App;
+use crate::render::triangle::param::TriangleParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::response::{Callback, Response};
+use crate::size::border::Border;
+use crate::size::rect::Rect;
+use crate::size::SizeMode;
+use crate::style::color::Color;
+use crate::style::{BorderStyle, ClickStyle};
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::NumCastExt;
+use std::fmt::Display;
+use std::ops::{AddAssign, Range, SubAssign};
+use crate::key::Key;
+use crate::size::pos::Pos;
+use crate::widgets::textedit::TextEdit;
+use crate::window::UserEvent;
 /// ### Slider的示例用法
 /// ```
 /// use xlui::frame::App;
@@ -23,26 +42,6 @@
 ///     ui.add(spinbox);
 /// }
 /// ```
-use crate::frame::context::{ContextUpdate, UpdateType};
-use crate::frame::App;
-use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::response::{Callback, Response};
-use crate::size::border::Border;
-use crate::size::rect::Rect;
-use crate::size::SizeMode;
-use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle};
-use crate::ui::Ui;
-use crate::widgets::Widget;
-use crate::NumCastExt;
-use std::fmt::Display;
-use std::ops::{AddAssign, Range, SubAssign};
-use crate::key::Key;
-use crate::size::pos::Pos;
-use crate::widgets::textedit::TextEdit;
-use crate::window::UserEvent;
-
 pub struct SpinBox<T> {
     pub(crate) id: String,
     edit: TextEdit,
@@ -76,7 +75,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         SpinBox {
             id: crate::gen_unique_id(),
             edit: TextEdit::single_edit(format!("{:.*}", 2, v)),
-            rect: Rect::new(),
+            rect: Rect::new().with_size(100.0, 25.0),
             size_mode: SizeMode::Auto,
             value: v,
             gap: g,
@@ -100,15 +99,18 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     pub fn reset_size(&mut self) {
-        match self.size_mode {
-            SizeMode::Auto => self.rect.set_size(100.0, 25.0),
-            SizeMode::FixWidth => self.rect.set_height(25.0),
-            SizeMode::FixHeight => self.rect.set_width(80.0),
-            SizeMode::Fix => {}
-        }
+        let (w, h) = self.size_mode.size(self.rect.width(), self.rect.height());
+        self.rect.set_size(w, h);
+        // match self.size_mode {
+        //     SizeMode::Auto => self.rect.set_size(100.0, 25.0),
+        //     SizeMode::FixWidth => self.rect.set_height(25.0),
+        //     SizeMode::FixHeight => self.rect.set_width(80.0),
+        //     SizeMode::Fix => {}
+        // }
         let mut edit_rect = self.rect.clone();
         edit_rect.set_x_max(edit_rect.dx().max - 18.0);
-        self.edit.set_rect(edit_rect);
+        self.edit.set_width(edit_rect.width())
+        // self.edit.set_rect(edit_rect);
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, T)) -> Self {
@@ -131,16 +133,16 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        self.init = true;
-        self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
+        // self.init = true;
+        // self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size();
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         self.edit.update(ui);
-        let mut rect = self.rect.clone();
-        rect.set_width(18.0);
+        // let mut rect = self.rect.clone();
+        // rect.set_width(18.0);
         self.up_rect.set_x_min(self.rect.dx().max - 14.0);
         self.up_rect.set_x_max(self.rect.dx().max);
         self.up_rect.set_y_min(self.rect.dy().min + 1.0);
@@ -238,17 +240,66 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.context.resize && !ui.can_offset { return; }
+        // if !self.changed && !ui.context.resize && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
-        if ui.can_offset {
-            self.down_rect.offset(&ui.offset);
-            self.up_rect.offset(&ui.offset);
-            self.down_render.param.offset(&ui.offset);
-            self.up_render.param.offset(&ui.offset);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.rect.offset_to_rect(&ui.draw_rect);
+
+
+            // self.up_rect = self.rect.clone();
+            // self.up_rect.set_width(18.0);
+            self.up_rect.set_x_min(self.rect.dx().max - 14.0);
+            self.up_rect.set_x_max(self.rect.dx().max);
+            self.up_rect.set_y_min(self.rect.dy().min + 1.0);
+            self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
+            let mut p0 = Pos::new();
+            p0.x = self.up_rect.dx().min + self.up_rect.width() / 2.0;
+            p0.y = self.up_rect.dy().min;
+            self.up_render.param.p0 = p0;
+            let mut p1 = Pos::new();
+            p1.x = self.up_rect.dx().min;
+            p1.y = self.up_rect.dy().max;
+            self.up_render.param.p1 = p1;
+            let mut p2 = Pos::new();
+            p2.x = self.rect.dx().max;
+            p2.y = self.up_rect.dy().max;
+            self.up_render.param.p2 = p2;
+            self.up_render.update(ui, false, false);
+
+            self.down_rect.set_x_min(self.rect.dx().max - 14.0);
+            self.down_rect.set_x_max(self.rect.dx().max);
+            self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
+            self.down_rect.set_y_max(self.rect.dy().max - 2.0);
+            let mut p0 = Pos::new();
+            p0.x = self.down_rect.dx().min + self.down_rect.width() / 2.0;
+            p0.y = self.down_rect.dy().max;
+            self.down_render.param.p0 = p0;
+            let mut p1 = Pos::new();
+            p1.x = self.rect.dx().max - 14.0;
+            p1.y = self.down_rect.dy().min;
+            self.down_render.param.p1 = p1;
+            let mut p2 = Pos::new();
+            p2.x = self.rect.dx().max;
+            p2.y = self.down_rect.dy().min;
+            self.down_render.param.p2 = p2;
+            self.down_render.update(ui, false, false);
+
+
+            // self.down_rect = self.rect.clone();
+            // self.down_rect.add_min_x(self.rect.dx().max - 14.0);
         }
-        self.down_render.update(ui, self.value <= self.range.start, false);
-        self.up_render.update(ui, self.value >= self.range.end, false);
-        self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+        // if ui.can_offset {
+        //     self.down_rect.offset(&ui.offset);
+        //     self.up_rect.offset(&ui.offset);
+        //     self.down_render.param.offset(&ui.offset);
+        //     self.up_render.param.offset(&ui.offset);
+        // }
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.down_render.update(ui, self.value <= self.range.start, false);
+            self.up_render.update(ui, self.value >= self.range.end, false);
+            self.edit.update_text(ui, format!("{:.*}", 2, self.value));
+        }
     }
 
     fn update_from_edit(&mut self, ui: &mut Ui, focused: bool) {
@@ -266,6 +317,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            let mut edit_rect = self.rect.clone();
+            edit_rect.set_x_max(edit_rect.dx().max - 18.0);
+            ui.draw_rect = edit_rect;
+        }
         self.edit.redraw(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.triangle.render(&self.down_render, pass);
@@ -274,17 +330,16 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MousePress => {
                 if ui.device.device_input.pressed_at(&self.down_rect) {
-                    println!("press down");
                     self.edit.focused = false;
                     self.press_down = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
                 } else if ui.device.device_input.pressed_at(&self.up_rect) {
-                    println!("press up");
                     self.edit.focused = false;
                     self.press_up = true;
                     self.press_time = crate::time_ms();
@@ -297,7 +352,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.edit.update(ui);
                     self.update_from_edit(ui, focused);
                 }
-                return Response::new(&self.id, &self.rect);
+                return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));
             }
             UpdateType::MouseRelease => {
                 self.press_up = false;
@@ -308,10 +363,10 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 } else if ui.device.device_input.click_at(&self.down_rect) {
                     self.click_down(ui);
                 }
-                return Response::new(&self.id, &self.rect);
+                return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));
             }
             UpdateType::KeyRelease(ref key) => {
-                if !self.edit.focused { return Response::new(&self.id, &self.rect); }
+                if !self.edit.focused { return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height())); }
                 if let Key::Enter = key {
                     self.edit.focused = false;
                     self.update_from_edit(ui, true);
@@ -320,7 +375,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 }
 
 
-                return Response::new(&self.id, &self.rect);
+                return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));
             }
             UpdateType::None => {
                 if self.press_up && crate::time_ms() - self.press_time >= 500 {
@@ -343,12 +398,12 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             UpdateType::Drop => {}
             _ => {}
         }
-        self.edit.update(ui);
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_t(&mut self.value);
-            self.changed = true;
-            ui.context.window.request_redraw();
-        }
-        Response::new(&self.id, &self.rect)
+        // self.edit.update(ui);
+        // if let Some(v) = ui.context.updates.remove(&self.id) {
+        //     v.update_t(&mut self.value);
+        //     self.changed = true;
+        //     ui.context.window.request_redraw();
+        // }
+        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
     }
 }

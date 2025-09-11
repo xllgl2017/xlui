@@ -1,6 +1,13 @@
+use crate::frame::context::UpdateType;
+use crate::render::rectangle::param::RectParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::response::Response;
+use crate::size::rect::Rect;
+use crate::style::{ClickStyle, Shadow};
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 /// ### Rectangle的示例用法
-/// ```
-/// use xlui::layout::popup::Popup;
+/// ```rust
 /// use xlui::style::color::Color;
 /// use xlui::style::Shadow;
 /// use xlui::ui::Ui;
@@ -13,29 +20,12 @@
 ///         spread: 10.0,
 ///         color: Color::rgba(0, 0, 0, 30),
 ///     };
-///     //获取当前可用矩形
-///     let mut rect =ui.available_rect().clone();
-///     rect.set_size(300.0,300.0);
-///     rect.add_min_x(10.0);
-///     rect.add_max_x(10.0);
-///     rect.add_min_y(10.0);
-///     rect.add_max_y(10.0);
-///     let rectangle=Rectangle::new(rect, Popup::popup_style())
+///     let rectangle=Rectangle::new(Popup::popup_style(),300.0,300.0)
 ///         //设置阴影
 ///         .with_shadow(shadow);
 ///     ui.add(rectangle);
 /// }
 /// ```
-
-use crate::frame::context::UpdateType;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::response::Response;
-use crate::size::rect::Rect;
-use crate::style::{ClickStyle, Shadow};
-use crate::ui::Ui;
-use crate::widgets::Widget;
-
 pub struct Rectangle {
     id: String,
     fill_render: RenderParam<RectParam>,
@@ -44,10 +34,10 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    pub fn new(rect: Rect, style: ClickStyle) -> Self {
+    pub fn new(style: ClickStyle, width: f32, height: f32) -> Self {
         Rectangle {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(rect, style)),
+            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(width, height), style)),
             hovered: false,
             changed: false,
         }
@@ -55,6 +45,11 @@ impl Rectangle {
 
     fn init(&mut self, ui: &mut Ui) {
         self.fill_render.init_rectangle(ui, false, false);
+    }
+
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
     }
 
     pub fn with_rect(mut self, rect: Rect) -> Self {
@@ -76,21 +71,35 @@ impl Rectangle {
         &mut self.fill_render.param.style
     }
 
-    pub fn offset_x(&mut self, v: f32) {
-        self.changed = true;
+    pub fn set_offset_x(&mut self, v: f32) {
+        println!("{}-{}-{}", self.fill_render.param.shadow.offset[0] == v, self.fill_render.param.shadow.offset[0], v);
+        self.changed = self.fill_render.param.shadow.offset[0] == v;
         self.fill_render.param.shadow.offset[0] = v;
     }
 
-    pub fn offset_y(&mut self, v: f32) {
-        self.changed = true;
+    pub fn set_offset_y(&mut self, v: f32) {
+        self.changed = self.fill_render.param.shadow.offset[1] == v;
         self.fill_render.param.shadow.offset[1] = v;
     }
 
+    pub fn set_border_width(&mut self, v: f32) {
+        self.changed = self.fill_render.param.style.border.inactive.width == v;
+        self.fill_render.param.style.border.inactive.width = v;
+    }
+
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.can_offset { return; }
+        // if !self.changed && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
-        if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
-        self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        }
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        }
+        // if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
+
     }
 }
 
@@ -103,6 +112,7 @@ impl Widget for Rectangle {
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
@@ -118,6 +128,6 @@ impl Widget for Rectangle {
             // }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_render.param.rect)
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
 }

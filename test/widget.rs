@@ -1,10 +1,12 @@
 use std::fmt::{Display, Formatter};
+#[cfg(all(not(feature = "winit"), target_os = "windows"))]
 use std::process::exit;
+use std::sync::{Arc, RwLock};
 use xlui::frame::App;
 use xlui::ui::Ui;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 use xlui::Tray;
-use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, RichText, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
+use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, RichText, RichTextExt, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
 
 #[allow(dead_code)]
 fn main() {
@@ -12,7 +14,7 @@ fn main() {
 }
 
 pub struct TestWidget {
-    label: Label,
+    status: String,
     count: i32,
     change_image: bool,
 }
@@ -20,7 +22,7 @@ pub struct TestWidget {
 impl TestWidget {
     pub fn new() -> Self {
         Self {
-            label: Label::new("这里是Label".to_string()).width(100.0),
+            status: "".to_string(),
             count: 0,
             change_image: false,
         }
@@ -28,39 +30,32 @@ impl TestWidget {
 
     fn add(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count += 1;
-        self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ui);
+        self.status = format!("count: {}", self.count);
     }
 
     fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count -= 1;
-        self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ui);
+        self.status = format!("count: {}", self.count);
     }
 
     fn slider(&mut self, ui: &mut Ui, value: f32) {
-        self.label.set_text(format!("slider: {}", value));
-        self.label.update(ui);
+        self.status = format!("slider: {}", value);
     }
 
     fn check(&mut self, ui: &mut Ui, checked: bool) {
-        self.label.set_text(format!("check: {}", checked));
-        self.label.update(ui);
+        self.status = format!("check: {}", checked);
     }
 
     fn spinbox_i32(&mut self, ui: &mut Ui, value: i32) {
-        self.label.set_text(format!("spinbox: {}", value));
-        self.label.update(ui);
+        self.status = format!("spinbox: {}", value);
     }
 
     fn spinbox_f32(&mut self, ui: &mut Ui, value: f32) {
-        self.label.set_text(format!("spinbox: {}", value));
-        self.label.update(ui);
+        self.status = format!("spinbox: {}", value);
     }
 
     fn radio(&mut self, ui: &mut Ui, checked: bool) {
-        self.label.set_text(format!("radio: {}", checked));
-        self.label.update(ui);
+        self.status = format!("radio: {}", checked);
     }
 
     // fn edit_changed(&mut self, ui: &mut Ui, value: String) {
@@ -69,16 +64,14 @@ impl TestWidget {
     // }
 
     fn image_button_click(&mut self, btn: &mut Button, ui: &mut Ui) {
-        self.label.set_text(format!("image button: {}", self.count));
-        self.label.update(ui);
+        self.status = format!("image button: {}", self.count);
         self.change_image = true;
         btn.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png");
         btn.update(ui);
     }
 
     fn combo_changed(&mut self, ui: &mut Ui, data: &SV) {
-        self.label.set_text(format!("combo: {}", data));
-        self.label.update(ui);
+        self.status = format!("combo: {}", data);
     }
 }
 
@@ -114,17 +107,17 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "Label");
             ui.add_space(50.0);
-            ui.add_mut(&mut self.label);
+            ui.add(Label::new("这里是Label+").with_id("status").width(100.0));
             ui.add_space(190.0);
             ui.checkbox(true, "文本更新");
             ui.checkbox(true, "多样文本");
         });
 
         ui.horizontal(|ui| {
-            ui.add(RadioButton::new(true, "Button"));
+            ui.radio(true, "Button");
             ui.add_space(43.0);
-            ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
-            ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
+            ui.add(Button::new("+").width(30.0).height(30.0).connect(Self::add));
+            ui.add(Button::new("-").width(30.0).height(30.0).connect(Self::reduce));
             ui.add_space(225.0);
             ui.checkbox(true, "回调事件");
             ui.checkbox(true, "文本对齐");
@@ -133,7 +126,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "Slider");
             ui.add_space(43.0);
-            ui.add(Slider::new(50.0).id("s").contact("sb").contact("pbr").with_range(0.0..100.0).connect(Self::slider));
+            ui.add(Slider::new(50.0).id("s").contact("sb").contact("pbr").contact("status").with_range(0.0..100.0).connect(Self::slider));
             ui.slider(30.0, 0.0..100.0).set_callback(Self::slider);
             ui.add_space(24.0);
             ui.checkbox(true, "变动监测");
@@ -167,18 +160,19 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
-            ui.add(TextEdit::single_edit("abcdefghi👁jkl●m•nopqrstuvwsyz1234567890".to_string()).with_rows(1));
+            ui.add(TextEdit::single_edit("abcdefghi👁jkl●m•nopqrstuvwsyz1234567890".to_string()));
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");
             ui.checkbox(true, "多行");
             ui.checkbox(true, "滚动");
-            ui.checkbox(false, "复制");
-            ui.checkbox(false, "粘贴");
+            ui.checkbox(true, "复制");
+            ui.checkbox(true, "粘贴");
             ui.checkbox(true, "密码");
         });
         let cb = ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4, SV::Item5, SV::Item6]).with_popup_height(150.0).connect(Self::combo_changed);
         let p = cb.parent();
+        // let p = Arc::new(RwLock::new(None));
         ui.horizontal(|ui| {
             ui.radio(true, "ComboBox");
             ui.add_space(30.0);
@@ -198,7 +192,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "ImageButton");
             ui.add_space(10.0);
-            ui.add(Button::image_and_text("logo.jpg", "Image").width(50.0).height(40.0).connect(Self::image_button_click));
+            ui.add(Button::image_and_text("logo.jpg", "Image").width(100.0).height(40.0).connect(Self::image_button_click));
         });
         ui.horizontal(|ui| {
             ui.radio(true, "SelectValue");
@@ -224,17 +218,22 @@ impl App for TestWidget {
     }
 
     fn update(&mut self, ui: &mut Ui) {
+        // let status: &mut Label = ui.get_widget("status").unwrap();
+        // status.set_text(&self.status);
+        // let status: &mut Label = ui.get_widget("status").unwrap();
+        // status.set_text(&self.status);
         if self.change_image {
             self.change_image = false;
             let image: &mut Image = ui.get_widget("test_image").unwrap();
             image.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png");
         }
-        self.label.update(ui);
+        // self.label.update(ui);
     }
 
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.label.redraw(ui);
-    }
+    // fn redraw(&mut self, ui: &mut Ui) {
+    //     // let status: &mut Label = ui.get_widget("status").unwrap();
+    //     // status.set_text(&self.status);
+    // }
 
     fn window_attributes(&self) -> WindowAttribute {
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]

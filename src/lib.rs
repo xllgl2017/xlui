@@ -17,7 +17,7 @@
 //! }
 //!
 //! struct XlUiApp {
-//!     label: Label,
+//!     status:String,
 //!     count: i32,
 //! }
 //!
@@ -25,40 +25,36 @@
 //! impl XlUiApp {
 //!     fn new()->XlUiApp{
 //!         XlUiApp{
-//!             label: Label::new("hello").width(100.0),
 //!             count: 0,
+//!             status:"".to_string()
 //!         }
 //!     }
 //!     fn add(&mut self,_:&mut Button,ui: &mut Ui){
 //!         self.count += 1;
-//!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(ui);
+//!         self.status=format!("count: {}", self.count);
 //!     }
 //!
 //!     fn reduce(&mut self,_:&mut Button,ui: &mut Ui){
 //!         self.count-=1;
-//!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(ui);
+//!         self.status=format!("count: {}", self.count);
 //!     }
 //! }
 //!
 //! //实现App trait
 //! impl App for XlUiApp {
 //!     fn draw(&mut self, ui: &mut Ui) {
-//!         ui.add_mut(&mut self.label);
+//!         ui.add(Label::new("hello").width(100.0).with_id("status"));
 //!         ui.horizontal(|ui| {
-//!             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
-//!             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
+//!             ui.add(Button::new("+").width(30.0).height(30.0).connect(Self::add));
+//!             ui.add(Button::new("-").width(30.0).height(30.0).connect(Self::reduce));
 //!         });
 //!      }
 //!
 //!     fn update(&mut self, ui: &mut Ui) {
-//!         self.label.update(ui);
+//!         let status:&mut Label=ui.get_widget("status").unwrap();
+//!         status.set_text(&self.status);
 //!      }
 //!
-//!     fn redraw(&mut self, ui: &mut Ui) {
-//!         self.label.redraw(ui);
-//!     }
 //!
 //!     fn window_attributes(&self) -> WindowAttribute {
 //!         WindowAttribute{
@@ -87,7 +83,7 @@ use crate::ui::Ui;
 mod widgets;
 pub mod align;
 pub mod vertex;
-pub mod layout;
+mod layout;
 mod text;
 mod size;
 pub mod frame;
@@ -104,11 +100,13 @@ mod error;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout, recycle::RecycleLayout,
+                 popup::Popup};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
-pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
-                  checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
-                  circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,
-                  Widget, triangle::Triangle};
+pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
+                  image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
+                  select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combobox::ComboBox,
+                  rectangle::Rectangle, circle::Circle, triangle::Triangle};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 
 pub trait NumCastExt: Sized {

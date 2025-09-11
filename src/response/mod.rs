@@ -2,14 +2,13 @@ use crate::ui::Ui;
 use std::any::Any;
 use std::ops::DerefMut;
 use crate::frame::App;
-use crate::size::rect::Rect;
+use crate::InnerWindow;
+use crate::widgets::WidgetSize;
 use crate::widgets::button::Button;
-use crate::window::inner::InnerWindow;
 
 pub struct Callback;
 
 impl Callback {
-
     pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)> {
         Box::new(move |box_app, btn, uim| {
             let app = box_app.deref_mut() as &mut dyn Any;
@@ -32,7 +31,6 @@ impl Callback {
             let t = app.downcast_mut::<A>().unwrap();
             f(t, window, ui)
         })
-
     }
 
     pub(crate) fn create_check<A: 'static>(f: fn(&mut A, &mut Ui, bool)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)> {
@@ -84,19 +82,18 @@ impl Callback {
 
 pub struct Response<'a> {
     pub id: &'a String,
-    pub rect: &'a Rect,
+    pub(crate) size: WidgetSize,
 }
 
 impl<'a> Response<'a> {
-    pub fn new(id: &'a String, rect: &'a Rect) -> Self {
-        Response { id, rect }
+    pub fn new(id: &'a String, size: WidgetSize) -> Self {
+        Response {
+            id,
+            size,
+        }
     }
 
     pub fn id(&self) -> &str {
         &self.id
-    }
-
-    pub fn rect(&self) -> &Rect {
-        &self.rect
     }
 }

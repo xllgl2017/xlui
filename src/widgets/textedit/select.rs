@@ -242,4 +242,12 @@ impl EditSelection {
 
         self.changed = true;
     }
+
+    pub fn update_position(&mut self, ui: &mut Ui, mut rect: Rect) {
+        for render in self.renders.iter_mut() {
+            render.param.rect.offset_y_to(rect.dy().min);
+            render.update(ui, false, false);
+            rect.add_min_y(render.param.rect.height());
+        }
+    }
 }

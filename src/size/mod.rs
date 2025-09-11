@@ -8,24 +8,28 @@ pub mod font;
 #[derive(Clone, Copy)]
 pub enum SizeMode {
     Auto,
-    FixWidth,
-    FixHeight,
-    Fix,
+    FixWidth(f32),
+    FixHeight(f32),
+    Fix(f32, f32),
 }
 
 impl SizeMode {
-    pub fn fix_width(&mut self) {
+    pub fn fix_width(&mut self, w: f32) {
         match self {
-            SizeMode::Auto => *self = SizeMode::FixWidth,
-            SizeMode::FixHeight => *self = SizeMode::Fix,
+            SizeMode::Auto => *self = SizeMode::FixWidth(w),
+            SizeMode::FixHeight(h) => *self = SizeMode::Fix(w, *h),
+            SizeMode::FixWidth(fw) => *fw = w,
+            SizeMode::Fix(fw, _) => *fw = w,
             _ => {}
         }
     }
 
-    pub fn fix_height(&mut self) {
+    pub fn fix_height(&mut self, h: f32) {
         match self {
-            SizeMode::Auto => *self = SizeMode::FixHeight,
-            SizeMode::FixWidth => *self = SizeMode::Fix,
+            SizeMode::Auto => *self = SizeMode::FixHeight(h),
+            SizeMode::FixWidth(w) => *self = SizeMode::Fix(*w, h),
+            SizeMode::FixHeight(fh) => *fh = h,
+            SizeMode::Fix(_, fh) => *fh = h,
             _ => {}
         }
     }
@@ -33,8 +37,26 @@ impl SizeMode {
 
     pub fn is_fixed_width(&self) -> bool {
         match self {
-            SizeMode::FixWidth | SizeMode::Fix => true,
+            SizeMode::FixWidth(_) | SizeMode::Fix(_, _) => true,
             _ => false,
+        }
+    }
+
+    pub fn size(&self, w: f32, h: f32) -> (f32, f32) {
+        match self {
+            SizeMode::Auto => (w, h),
+            SizeMode::FixWidth(w) => (*w, h),
+            SizeMode::FixHeight(h) => (w, *h),
+            SizeMode::Fix(w, h) => (*w, *h)
+        }
+    }
+
+    pub fn width(&self, w: f32) -> f32 {
+        match self {
+            SizeMode::Auto => w,
+            SizeMode::FixWidth(w) => *w,
+            SizeMode::FixHeight(_) => w,
+            SizeMode::Fix(w, _) => *w,
         }
     }
 }
