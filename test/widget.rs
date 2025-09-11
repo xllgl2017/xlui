@@ -230,10 +230,10 @@ impl App for TestWidget {
         // self.label.update(ui);
     }
 
-    fn redraw(&mut self, ui: &mut Ui) {
-        // let status: &mut Label = ui.get_widget("status").unwrap();
-        // status.set_text(&self.status);
-    }
+    // fn redraw(&mut self, ui: &mut Ui) {
+    //     // let status: &mut Label = ui.get_widget("status").unwrap();
+    //     // status.set_text(&self.status);
+    // }
 
     fn window_attributes(&self) -> WindowAttribute {
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]

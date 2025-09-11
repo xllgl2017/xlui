@@ -235,7 +235,7 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
         };
-        app.redraw(&mut ui);
+        app.update(&mut ui);
         ui.app = Some(app);
         self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);

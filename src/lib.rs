@@ -109,7 +109,8 @@ pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout, recycle
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
                   image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
-                  select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combobox::ComboBox};
+                  select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combobox::ComboBox,
+                  rectangle::Rectangle, circle::Circle, triangle::Triangle};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 
 pub trait NumCastExt: Sized {

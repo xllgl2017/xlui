@@ -104,10 +104,6 @@ impl LayoutKind {
         resp
     }
 
-    // pub fn layout_mut(&mut self) -> &mut Box<dyn Layout> {
-    //     &mut self.layout
-    // }
-
     pub fn as_mut_<T: Layout>(&mut self) -> Option<&mut T> {
         let layout = self.layout.deref_mut() as &mut dyn Any;
         layout.downcast_mut()
@@ -132,6 +128,10 @@ impl LayoutKind {
 
     pub fn get_item_mut(&mut self, id: &String) -> Option<&mut LayoutItem> {
         self.layout.items_mut().get_mut(id)
+    }
+
+    pub fn items(&self) -> &Map<String, LayoutItem> {
+        self.layout.items()
     }
 
 

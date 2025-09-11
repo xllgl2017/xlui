@@ -55,6 +55,11 @@ impl Rectangle {
         self.fill_render.init_rectangle(ui, false, false);
     }
 
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
     pub fn with_rect(mut self, rect: Rect) -> Self {
         self.fill_render.param.rect = rect;
         self
@@ -74,14 +79,20 @@ impl Rectangle {
         &mut self.fill_render.param.style
     }
 
-    pub fn offset_x(&mut self, v: f32) {
-        self.changed = true;
+    pub fn set_offset_x(&mut self, v: f32) {
+        println!("{}-{}-{}", self.fill_render.param.shadow.offset[0] == v, self.fill_render.param.shadow.offset[0], v);
+        self.changed = self.fill_render.param.shadow.offset[0] == v;
         self.fill_render.param.shadow.offset[0] = v;
     }
 
-    pub fn offset_y(&mut self, v: f32) {
-        self.changed = true;
+    pub fn set_offset_y(&mut self, v: f32) {
+        self.changed = self.fill_render.param.shadow.offset[1] == v;
         self.fill_render.param.shadow.offset[1] = v;
+    }
+
+    pub fn set_border_width(&mut self, v: f32) {
+        self.changed = self.fill_render.param.style.border.inactive.width == v;
+        self.fill_render.param.style.border.inactive.width = v;
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -90,6 +101,7 @@ impl Rectangle {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
@@ -108,6 +120,7 @@ impl Widget for Rectangle {
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
@@ -123,6 +136,6 @@ impl Widget for Rectangle {
             // }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(),self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
 }

@@ -1,7 +1,7 @@
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
-use crate::layout::{LayoutItem, LayoutKind};
+use crate::layout::{Layout, LayoutItem, LayoutKind};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -138,19 +138,50 @@ impl InnerWindow {
         self.layout.as_mut().unwrap().add_item(LayoutItem::Layout(title_layout));
     }
 
-    fn draw_context(&mut self, ui: &mut Ui) {
+    fn draw_context(&mut self, oui: &mut Ui) {
         // let context_rect = self.layout.as_ref().unwrap().available_rect().clone();
         let mut context_layout = VerticalLayout::top_to_bottom();
         // context_layout.max_rect = context_rect;
         // context_layout.available_rect = context_layout.max_rect.clone();
-        let previous_layout = ui.layout.replace(LayoutKind::new(context_layout));
-        ui.update_type = UpdateType::Init;
-        self.w.draw(ui);
-        let context_layout = ui.layout.take().unwrap();
-        ui.update_type = UpdateType::None;
-        ui.layout = previous_layout;
+        // let previous_layout = ui.layout.replace(LayoutKind::new(context_layout));
+        let mut nui = Ui {
+            device: oui.device,
+            context: oui.context,
+            app: None,
+            pass: None,
+            layout: Some(LayoutKind::new(context_layout)),
+            popups: self.popups.take(),
+            current_rect: Rect::new(),
+            update_type: UpdateType::Init,
+            can_offset: false,
+            inner_windows: None,
+            request_update: None,
+            offset: Offset::new(Pos::new()),
+            draw_rect: self.fill_render.param.rect.clone(),
+            widget_changed: WidgetChange::None,
+        };
+
+
+        nui.update_type = UpdateType::Init;
+        self.w.draw(&mut nui);
+        // let layout = nui.layout.as_ref().unwrap();
+        // self.check_item(layout);
+        let context_layout = nui.layout.take().unwrap();
+        nui.update_type = UpdateType::None;
+        self.popups = nui.popups.take();
         self.layout.as_mut().unwrap().add_item(LayoutItem::Layout(context_layout));
     }
+
+    // fn check_item(&self, layout: &LayoutKind) {
+    //     for item in layout.items().iter() {
+    //         match item {
+    //             LayoutItem::Layout(ll) => self.check_item(ll),
+    //             LayoutItem::Widget(w) => {
+    //                 println!("{}-{}-{}", w.id(), w.width(), w.height())
+    //             }
+    //         }
+    //     }
+    // }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         // if !self.changed { return; }
@@ -210,19 +241,40 @@ impl InnerWindow {
         self.on_close = Some(Callback::create_inner_close(f));
     }
 
-    pub fn redraw(&mut self, ui: &mut Ui) {
-        self.update_buffer(ui);
-        let previous_rect = ui.draw_rect.clone();
-        let mut rect = self.fill_render.param.rect.clone();
-        self.title_rect.offset_to_rect(&rect);
-        ui.draw_rect = rect;
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.layout.as_mut().unwrap().update(ui);
-        self.w.redraw(ui);
+    pub fn redraw(&mut self, oui: &mut Ui) {
+        let mut nui = Ui {
+            device: oui.device,
+            context: oui.context,
+            app: None,
+            pass: oui.pass.take(),
+            layout: self.layout.take(),
+            popups: self.popups.take(),
+            current_rect: Rect::new(),
+            update_type: UpdateType::Draw,
+            can_offset: false,
+            inner_windows: None,
+            request_update: None,
+            offset: Offset::new(Pos::new()),
+            draw_rect: self.fill_render.param.rect.clone(),
+            widget_changed: WidgetChange::None,
+        };
+
+
+        self.update_buffer(&mut nui);
+        // let previous_rect = ui.draw_rect.clone();
+        // let mut rect = self.fill_render.param.rect.clone();
+        self.title_rect.offset_to_rect(&nui.draw_rect);
+        // ui.draw_rect = rect;
+        let pass = nui.pass.as_mut().unwrap();
+        nui.context.render.rectangle.render(&self.fill_render, pass);
+        self.w.update(&mut nui);
+        self.layout = nui.layout.take();
+        self.layout.as_mut().unwrap().update(&mut nui);
         self.offset.x = 0.0;
         self.offset.y = 0.0;
-        ui.draw_rect = previous_rect;
+        self.popups = nui.popups.take();
+
+        // ui.draw_rect = previous_rect;
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
