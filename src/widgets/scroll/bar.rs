@@ -1,15 +1,15 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
+use crate::response::Response;
 use crate::size::border::Border;
+use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
-use crate::{Offset, OffsetDirection, Pos};
-use crate::response::Response;
-use crate::size::radius::Radius;
+use crate::{Offset, Pos};
 
 pub struct ScrollBar {
     id: String,
@@ -90,10 +90,10 @@ impl ScrollBar {
         self.context_offset_x(-rox)
     }
 
-    pub fn set_size(&mut self, w: f32, h: f32) {
-        self.set_width(w);
-        self.set_height(h);
-    }
+    // pub fn set_size(&mut self, w: f32, h: f32) {
+    //     self.set_width(w);
+    //     self.set_height(h);
+    // }
 
     pub fn set_width(&mut self, w: f32) {
         self.fill_render.param.rect.set_width(w);
@@ -186,8 +186,8 @@ impl ScrollBar {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         if ui.widget_changed.contains(WidgetChange::Position) {
-            let offset = self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
-            self.slider_render.param.rect.offset(&offset);
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.slider_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
             self.slider_render.update(ui, false, false);
         }
@@ -232,22 +232,22 @@ impl Widget for ScrollBar {
                 }
             }
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_render.param.rect),
-            UpdateType::Offset(ref o) => {
-                // let oy = self.slider_offset_y(o.y);
-                // let roy = self.slider_render.param.rect.offset_y_limit(self.offset + oy, self.fill_render.param.rect.dy());
-                // let mut offset = Offset::new(o.pos).with_y(self.context_offset_y(-roy));
-                // if self.offset < roy {
-                //     offset.direction = OffsetDirection::Down
-                // } else {
-                //     offset.direction = OffsetDirection::Up;
-                // }
-                // self.offset = roy;
-                //
-                // let ut = UpdateType::Offset(offset);
-                // ui.update_type = UpdateType::None;
-                // self.slider_render.update(ui, true, true);
-                // ui.request_update(ut);
-            }
+            // UpdateType::Offset(ref o) => {
+            //     // let oy = self.slider_offset_y(o.y);
+            //     // let roy = self.slider_render.param.rect.offset_y_limit(self.offset + oy, self.fill_render.param.rect.dy());
+            //     // let mut offset = Offset::new(o.pos).with_y(self.context_offset_y(-roy));
+            //     // if self.offset < roy {
+            //     //     offset.direction = OffsetDirection::Down
+            //     // } else {
+            //     //     offset.direction = OffsetDirection::Up;
+            //     // }
+            //     // self.offset = roy;
+            //     //
+            //     // let ut = UpdateType::Offset(offset);
+            //     // ui.update_type = UpdateType::None;
+            //     // self.slider_render.update(ui, true, true);
+            //     // ui.request_update(ut);
+            // }
             _ => {
                 if self.changed {
                     self.changed = false;
@@ -255,6 +255,6 @@ impl Widget for ScrollBar {
                 }
             }
         }
-        Response::new(&self.id,WidgetSize::same(self.fill_render.param.rect.width(),self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
 }

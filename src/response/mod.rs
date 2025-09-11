@@ -4,19 +4,19 @@ use std::ops::DerefMut;
 use crate::frame::App;
 use crate::size::rect::Rect;
 use crate::widgets::WidgetSize;
-// use crate::widgets::button::Button;
+use crate::widgets::button::Button;
 // use crate::window::inner::InnerWindow;
 
 pub struct Callback;
 
 impl Callback {
-    // pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)> {
-    //     Box::new(move |box_app, btn, uim| {
-    //         let app = box_app.deref_mut() as &mut dyn Any;
-    //         let t = app.downcast_mut::<A>().unwrap();
-    //         f(t, btn, uim);
-    //     })
-    // }
+    pub(crate) fn create_click<A: 'static>(mut f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)> {
+        Box::new(move |box_app, btn, uim| {
+            let app = box_app.deref_mut() as &mut dyn Any;
+            let t = app.downcast_mut::<A>().unwrap();
+            f(t, btn, uim);
+        })
+    }
 
     pub(crate) fn create_slider<A: 'static>(f: fn(&mut A, &mut Ui, f32)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)> {
         Box::new(move |box_app, uim, value| {

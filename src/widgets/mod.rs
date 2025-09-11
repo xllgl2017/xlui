@@ -1,23 +1,25 @@
 use crate::response::Response;
 use crate::ui::Ui;
-use std::any::Any;
-use std::ops::{BitAnd, BitOr, BitOrAssign, DerefMut};
+use std::any::{Any, TypeId};
+use std::ops::{BitAnd, BitOr, BitOrAssign, Deref, DerefMut};
+use crate::widgets::space::Space;
 
 pub mod label;
-// pub mod button;
-// pub mod image;
-// pub mod textedit;
+pub mod button;
+pub mod image;
+pub mod textedit;
 pub mod scroll;
-// pub mod spinbox;
-// pub mod slider;
-// pub mod checkbox;
-// pub mod radio;
-// pub mod combobox;
-// pub mod select;
+pub mod spinbox;
+pub mod slider;
+pub mod checkbox;
+pub mod radio;
+pub mod combobox;
+pub mod select;
 // pub mod rectangle;
 pub(crate) mod item;
 pub mod listview;
-// pub mod processbar;
+pub mod space;
+pub mod processbar;
 // pub mod triangle;
 // pub mod circle;
 
@@ -144,6 +146,11 @@ impl WidgetKind {
 
     pub fn height(&self) -> f32 {
         self.height
+    }
+
+    pub fn is_space(&self) -> bool {
+        let widget = self.widget.deref() as &dyn Any;
+        widget.type_id() == TypeId::of::<Space>()
     }
 }
 

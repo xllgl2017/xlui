@@ -88,8 +88,7 @@ impl Label {
     fn update_before_draw(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_str(&mut self.buffer.text.text);
-            ui.widget_changed |= WidgetChange::Value;
-            // self.buffer.change = true;
+            self.buffer.change = true;
         }
         if self.buffer.change {
             ui.widget_changed |= WidgetChange::Value;

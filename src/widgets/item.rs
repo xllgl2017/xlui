@@ -92,6 +92,8 @@ impl ItemWidget {
             self.selected = false;
             ui.widget_changed |= WidgetChange::Value;
         }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);

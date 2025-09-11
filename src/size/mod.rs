@@ -18,6 +18,8 @@ impl SizeMode {
         match self {
             SizeMode::Auto => *self = SizeMode::FixWidth(w),
             SizeMode::FixHeight(h) => *self = SizeMode::Fix(w, *h),
+            SizeMode::FixWidth(fw) => *fw = w,
+            SizeMode::Fix(fw, _) => *fw = w,
             _ => {}
         }
     }
@@ -26,6 +28,8 @@ impl SizeMode {
         match self {
             SizeMode::Auto => *self = SizeMode::FixHeight(h),
             SizeMode::FixWidth(w) => *self = SizeMode::Fix(*w, h),
+            SizeMode::FixHeight(fh) => *fh = h,
+            SizeMode::Fix(_, fh) => *fh = h,
             _ => {}
         }
     }
@@ -44,6 +48,15 @@ impl SizeMode {
             SizeMode::FixWidth(w) => (*w, h),
             SizeMode::FixHeight(h) => (w, *h),
             SizeMode::Fix(w, h) => (*w, *h)
+        }
+    }
+
+    pub fn width(&self, w: f32) -> f32 {
+        match self {
+            SizeMode::Auto => w,
+            SizeMode::FixWidth(w) => *w,
+            SizeMode::FixHeight(_) => w,
+            SizeMode::Fix(w, _) => *w,
         }
     }
 }

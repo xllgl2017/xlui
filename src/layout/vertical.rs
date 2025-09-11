@@ -2,10 +2,11 @@ use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
-use crate::{Offset, Padding, Pos};
+use crate::{Offset, Padding, Pos, Widget};
 use crate::response::Response;
 use crate::size::SizeMode;
 use crate::ui::Ui;
+use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
 
 pub struct VerticalLayout {
@@ -251,7 +252,10 @@ impl Layout for VerticalLayout {
         &mut self.items
     }
 
-    fn add_item(&mut self, item: LayoutItem) {
+    fn add_item(&mut self, mut item: LayoutItem) {
+        if let Some(space) = item.widget::<Space>() {
+            space.set_width(0.0);
+        }
         self.items.insert(item.id().to_string(), item);
     }
 

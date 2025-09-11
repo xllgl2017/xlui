@@ -1,31 +1,31 @@
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
-// use crate::layout::popup::Popup;
+use crate::layout::horizontal::HorizontalLayout;
 use crate::layout::vertical::VerticalLayout;
 use crate::layout::{Layout, LayoutItem, LayoutKind};
-use crate::map::Map;
+use crate::render::image::ImageSource;
 use crate::size::padding::Padding;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::style::Style;
 use crate::text::rich::RichText;
+use crate::widgets::checkbox::CheckBox;
+use crate::widgets::space::Space;
 use crate::widgets::{Widget, WidgetChange, WidgetKind};
-// use crate::window::inner::InnerWindow;
 use crate::window::{UserEvent, WindowId};
-use crate::{Device, Label, Offset, SAMPLE_COUNT};
-use std::any::Any;
+use crate::{Button, Device, Image, Label, NumCastExt, Offset, RadioButton, SelectItem, Slider, SpinBox, SAMPLE_COUNT};
 use std::fmt::Display;
-use std::ops::DerefMut;
-use std::sync::atomic::Ordering;
+use std::ops::{AddAssign, Range, SubAssign};
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
-use crate::layout::horizontal::HorizontalLayout;
+use crate::layout::popup::Popup;
+use crate::map::Map;
 
 pub struct AppContext {
     pub(crate) device: Device,
     pub(crate) layout: Option<LayoutKind>,
-    // pub(crate) popups: Option<Map<String, Popup>>,
+    pub(crate) popups: Option<Map<String, Popup>>,
     // pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) style: Style,
     pub(crate) context: Context,
@@ -41,7 +41,7 @@ impl AppContext {
         AppContext {
             device,
             layout: Some(LayoutKind::new(layout)),
-            // popups: Some(Map::new()),
+            popups: Some(Map::new()),
             // inner_windows: Some(Map::new()),
             style: Style::light_style(),
             context,
@@ -58,7 +58,7 @@ impl AppContext {
             app: None,
             pass: None,
             layout: Some(self.layout.take().unwrap()),
-            // popups: self.popups.take(),
+            popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::Init,
             can_offset: false,
@@ -71,7 +71,7 @@ impl AppContext {
         app.draw(&mut ui);
         self.layout = ui.layout.take();
         // self.layout.as_mut().unwrap().update(&mut ui);
-        // self.popups = ui.popups.take();
+        self.popups = ui.popups.take();
     }
 
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
@@ -82,7 +82,7 @@ impl AppContext {
             app: None,
             pass: None,
             layout: self.layout.take(),
-            // popups: None,
+            popups: None,
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
@@ -152,13 +152,13 @@ impl AppContext {
         // ui.inner_windows = self.inner_windows.take();
 
 
-        // for popup in self.popups.as_mut().unwrap().iter_mut() {
-        //     popup.update(&mut ui)
-        // }
-        // ui.popups = self.popups.take();
+        for popup in self.popups.as_mut().unwrap().iter_mut() {
+            popup.update(&mut ui);
+        }
+        ui.popups = self.popups.take();
         self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);
-        // self.popups = ui.popups.take();
+        self.popups = ui.popups.take();
         // if let Some(u) = ui.request_update.take() {
         //     ui.context.user_update = u;
         //     ui.context.window.request_update(UserEvent::ReqUpdate);
@@ -225,7 +225,7 @@ impl AppContext {
             app: None,
             pass: Some(pass),
             layout: self.layout.take(),
-            // popups: self.popups.take(),
+            popups: self.popups.take(),
             current_rect: Rect::new(),
             update_type: UpdateType::Draw,
             can_offset: false,
@@ -239,14 +239,15 @@ impl AppContext {
         ui.app = Some(app);
         self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);
-        // self.popups = ui.popups.take();
-        // for popup in self.popups.as_mut().unwrap().iter_mut() {
-        //     popup.redraw(&mut ui);
-        // }
-        // if let Some(u) = ui.request_update.take() {
-        //     ui.context.user_update = u;
-        //     ui.context.window.request_update(UserEvent::ReqUpdate);
-        // }
+        self.popups = ui.popups.take();
+        for popup in self.popups.as_mut().unwrap().iter_mut() {
+            popup.redraw(&mut ui);
+            if popup.open && self.device.device_input.hovered_at(popup.rect()) { ui.update_type = UpdateType::None; }
+        }
+        if let Some(u) = ui.request_update.take() {
+            ui.context.user_update = u;
+            ui.context.window.request_update(UserEvent::ReqUpdate);
+        }
         // self.inner_windows.as_mut().unwrap().sort_by_key(|x| x.value().top);
         // for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
         //     inner_window.redraw(&mut ui);
@@ -296,7 +297,7 @@ pub struct Ui<'a> {
     pub(crate) app: Option<&'a mut Box<dyn App>>,
     pub(crate) pass: Option<wgpu::RenderPass<'a>>,
     pub(crate) layout: Option<LayoutKind>,
-    // pub(crate) popups: Option<Map<String, Popup>>,
+    pub(crate) popups: Option<Map<String, Popup>>,
     #[deprecated = "use Ui::draw_rect"]
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
@@ -322,9 +323,10 @@ impl<'a> Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    // pub fn add_space(&mut self, space: f32) {
-    //     self.layout().add_space(space);
-    // }
+    pub fn add_space(&mut self, space: f32) {
+        let space = Space::new(space);
+        self.add(space);
+    }
 
     pub fn add<T: Widget>(&mut self, widget: T) -> Option<&mut T> {
         let widget = WidgetKind::new(self, widget);
@@ -347,7 +349,7 @@ impl<'a> Ui<'a> {
 
     pub fn get_widget<T: Widget>(&mut self, id: impl ToString) -> Option<&mut T> {
         let layout = self.layout.as_mut()?;
-        layout.get_item_mut(&id.to_string()).unwrap().widget()
+        layout.get_widget(&id.to_string())
         // let items = layout.layout_mut().items_mut();
         // Some(items.get_mut(&id.to_string())?.widget())
         // let widget = self.layout().get_widget(&id.to_string())?;
@@ -434,38 +436,38 @@ impl<'a> Ui<'a> {
         self.add(label);
     }
 
-    // pub fn button(&mut self, text: impl Into<RichText>) -> &mut Button {
-    //     let btn = Button::new(text);
-    //     self.add(btn)
-    // }
-    //
-    // pub fn radio(&mut self, v: bool, l: impl Into<RichText>) -> &mut RadioButton {
-    //     let radio = RadioButton::new(v, l);
-    //     self.add(radio)
-    // }
-    //
-    // pub fn checkbox(&mut self, v: bool, l: impl Into<RichText>) -> &mut CheckBox {
-    //     let checkbox = CheckBox::new(v, l);
-    //     self.add(checkbox)
-    // }
-    //
-    // pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut Slider {
-    //     let slider = Slider::new(v).with_range(r);
-    //     self.add(slider)
-    // }
-    //
-    // pub fn image(&mut self, source: impl Into<ImageSource>, size: (f32, f32)) -> &mut Image {
-    //     let image = Image::new(source).with_size(size.0, size.1);
-    //     self.add(image)
-    // }
-    //
-    // pub fn spinbox<T: Display + NumCastExt + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
-    //     let spinbox = SpinBox::new(v, g, r);
-    //     self.add(spinbox)
-    // }
-    //
-    // pub fn select_value<T: Display + PartialEq + 'static>(&mut self, t: T) -> &mut SelectItem<T> {
-    //     let select_value = SelectItem::new(t);
-    //     self.add(select_value)
-    // }
+    pub fn button(&mut self, text: impl Into<RichText>) -> &mut Button {
+        let btn = Button::new(text);
+        self.add(btn).unwrap()
+    }
+
+    pub fn radio(&mut self, v: bool, l: impl Into<RichText>) -> &mut RadioButton {
+        let radio = RadioButton::new(v, l);
+        self.add(radio).unwrap()
+    }
+
+    pub fn checkbox(&mut self, v: bool, l: impl Into<RichText>) -> &mut CheckBox {
+        let checkbox = CheckBox::new(v, l);
+        self.add(checkbox).unwrap()
+    }
+
+    pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut Slider {
+        let slider = Slider::new(v).with_range(r);
+        self.add(slider).unwrap()
+    }
+
+    pub fn image(&mut self, source: impl Into<ImageSource>, size: (f32, f32)) -> &mut Image {
+        let image = Image::new(source).with_size(size.0, size.1);
+        self.add(image).unwrap()
+    }
+
+    pub fn spinbox<T: Display + NumCastExt + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
+        let spinbox = SpinBox::new(v, g, r);
+        self.add(spinbox).unwrap()
+    }
+
+    pub fn select_value<T: Display + PartialEq + 'static>(&mut self, t: T) -> &mut SelectItem<T> {
+        let select_value = SelectItem::new(t);
+        self.add(select_value).unwrap()
+    }
 }

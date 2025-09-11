@@ -47,6 +47,11 @@ impl Rect {
         self.set_height(height);
     }
 
+    pub fn with_height(mut self,height:f32)->Self{
+        self.set_height(height);
+        self
+    }
+
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.set_size(width, height);
         self
@@ -253,20 +258,17 @@ impl Rect {
         self.offset_y_to(ty);
     }
 
-    pub fn offset_to_rect(&mut self, rect: &Rect) -> Offset {
-        let mut offset = Offset::new(Pos::new()).delete_offset();
+    pub fn offset_to_rect(&mut self, rect: &Rect) {
         match rect.x_direction {
             LayoutDirection::Min => {
                 let ox = rect.dx.min - self.ox.min;
                 self.dx = self.ox + ox;
                 self.ox += ox;
-                offset.x = ox;
             }
             LayoutDirection::Max => {
                 let ox = rect.dx.max - self.ox.max;
                 self.dx = self.ox + ox;
                 self.ox += ox;
-                offset.x = ox;
             }
         }
 
@@ -275,16 +277,13 @@ impl Rect {
                 let oy = rect.dy.min - self.oy.min;
                 self.dy = self.oy + oy;
                 self.oy += oy;
-                offset.y=oy;
             }
             LayoutDirection::Max => {
                 let oy = rect.dy.max - self.oy.max;
                 self.dy = self.oy + oy;
                 self.oy += oy;
-                offset.y=oy;
             }
         }
-        offset
     }
 
     pub fn get_ox(&self) -> f32 {

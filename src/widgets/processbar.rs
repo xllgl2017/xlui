@@ -9,7 +9,7 @@ use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::style::color::Color;
 use crate::ui::Ui;
-use crate::widgets::Widget;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct ProcessBar {
     id: String,
@@ -42,7 +42,7 @@ impl ProcessBar {
         ProcessBar {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 10.0), fill_style)),
-            process_render: RenderParam::new(RectParam::new(Rect::new(), process_style)),
+            process_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 10.0), process_style)),
             value: v,
             range: 0.0..100.0,
             change: false,
@@ -51,10 +51,10 @@ impl ProcessBar {
 
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
-        if init {
-            self.fill_render.param.rect = ui.available_rect().clone_with_size(&self.fill_render.param.rect);
-            self.process_render.param.rect = self.fill_render.param.rect.clone();
-        }
+        // if init {
+        //     // self.fill_render.param.rect = ui.available_rect().clone_with_size(&self.fill_render.param.rect);
+        //     // self.process_render.param.rect = self.fill_render.param.rect.clone();
+        // }
         let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.process_render.param.rect.set_width(w);
         //
@@ -79,16 +79,32 @@ impl ProcessBar {
     }
 
     pub fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.change && !ui.can_offset { return; }
-        self.change = false;
-        if ui.can_offset {
-            self.fill_render.param.rect.offset(&ui.offset);
-            self.process_render.param.rect.offset(&ui.offset);
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_f32(&mut self.value);
+            ui.widget_changed |= WidgetChange::Value;
         }
-        let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
-        self.process_render.param.rect.set_width(w);
-        self.process_render.update(ui, false, false);
-        self.fill_render.update(ui, false, false);
+        if self.change { ui.widget_changed |= WidgetChange::Value; }
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, false, false);
+            self.process_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.process_render.update(ui, false, false);
+        }
+
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
+            self.process_render.param.rect.set_width(w);
+            self.process_render.update(ui, false, false);
+            self.fill_render.update(ui, false, false);
+        }
+
+        // if !self.change && !ui.can_offset { return; }
+        // self.change = false;
+        // if ui.can_offset {
+        //     self.fill_render.param.rect.offset(&ui.offset);
+        //     self.process_render.param.rect.offset(&ui.offset);
+        // }
+
     }
 }
 
@@ -102,15 +118,12 @@ impl Widget for ProcessBar {
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
-        if let Some(v) = ui.context.updates.remove(&self.id) {
-            v.update_f32(&mut self.value);
-            self.change = true;
-        }
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             _ => {}
         }
-        Response::new(&self.id, &self.fill_render.param.rect)
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
 }

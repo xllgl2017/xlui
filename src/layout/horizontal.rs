@@ -1,23 +1,19 @@
-use std::mem;
 use crate::frame::context::UpdateType;
-use crate::layout::{Layout, LayoutDirection, LayoutItem, LayoutKind};
+use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
-use crate::ui::Ui;
-use crate::{Offset, OffsetDirection, Padding, Pos, Rect};
 use crate::response::Response;
 use crate::size::SizeMode;
+use crate::ui::Ui;
+use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
+use crate::{Offset, Padding, Pos};
+use std::mem;
 
 pub struct HorizontalLayout {
     id: String,
     items: Map<String, LayoutItem>,
-    // pub(crate) max_rect: Rect,
-    // pub(crate) available_rect: Rect,
-    // width: f32,
-    // height: f32,
     item_space: f32, //item之间的间隔
     offset_changed: bool,
-    // widget_offset: Offset,
     display: Map<String, usize>,
     size_mode: SizeMode,
     direction: LayoutDirection,
@@ -30,14 +26,8 @@ impl HorizontalLayout {
         HorizontalLayout {
             id: crate::gen_unique_id(),
             items: Map::new(),
-            // widgets: Map::new(),
-            // max_rect: Rect::new().with_x_direction(direction.clone()),
-            // available_rect: Rect::new().with_x_direction(direction.clone()),
-            // width: 0.0,
-            // height: 0.0,
             item_space: 5.0,
             offset_changed: false,
-            // widget_offset: Offset::new(Pos::new()),
             display: Map::new(),
             size_mode: SizeMode::Auto,
             direction,
@@ -202,21 +192,12 @@ impl Layout for HorizontalLayout {
         &mut self.items
     }
 
-    fn add_item(&mut self, item: LayoutItem) {
+    fn add_item(&mut self, mut item: LayoutItem) {
+        if let Some(space) = item.widget::<Space>() {
+            space.set_height(0.0);
+        }
         self.items.insert(item.id().to_string(), item);
     }
-
-    // fn redraw(&mut self, ui: &mut Ui) {
-    //     ui.can_offset = self.offset_changed;
-    //     ui.offset = self.widget_offset.clone();
-    //     self.offset_changed = false;
-    //     for di in self.display.iter() {
-    //         self.widgets[*di].redraw(ui);
-    //     }
-    //     for child in self.items.iter_mut() {
-    //         child.redraw(ui);
-    //     }
-    // }
 
     fn set_offset(&mut self, offset: Offset) {
         self.offset = offset;

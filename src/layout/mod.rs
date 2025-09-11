@@ -1,5 +1,5 @@
 // pub mod scroll_area;
-// pub mod popup;
+pub mod popup;
 pub mod horizontal;
 pub mod vertical;
 pub mod recycle;
@@ -42,7 +42,7 @@ impl LayoutItem {
 
     pub fn widget<T: Widget>(&mut self) -> Option<&mut T> {
         match self {
-            LayoutItem::Layout(_) => panic!("仅可返回widget"),
+            LayoutItem::Layout(_) => None,
             LayoutItem::Widget(widget) => widget.as_mut_()
         }
     }
@@ -65,6 +65,13 @@ impl LayoutItem {
         match self {
             LayoutItem::Layout(layout) => &layout.id,
             LayoutItem::Widget(widget) => widget.id()
+        }
+    }
+
+    pub fn is_space(&self) -> bool {
+        match self {
+            LayoutItem::Layout(_) => false,
+            LayoutItem::Widget(widget) => widget.is_space()
         }
     }
 }
