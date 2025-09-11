@@ -6,8 +6,12 @@ use crate::size::SizeMode;
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Offset, Padding, Pos};
+use crate::{Border, Offset, Padding, Pos, Radius, Rect};
 use std::mem;
+use crate::render::rectangle::param::RectParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::style::{BorderStyle, ClickStyle, FillStyle};
+use crate::style::color::Color;
 
 pub struct HorizontalLayout {
     id: String,
@@ -19,6 +23,7 @@ pub struct HorizontalLayout {
     direction: LayoutDirection,
     padding: Padding,
     offset: Offset,
+    fill_render: Option<RenderParam<RectParam>>,
 }
 
 impl HorizontalLayout {
@@ -33,6 +38,7 @@ impl HorizontalLayout {
             direction,
             padding: Padding::same(0.0),
             offset: Offset::new(Pos::new()),
+            fill_render: None,
         }
     }
 
@@ -46,29 +52,20 @@ impl HorizontalLayout {
         layout
     }
 
-    // pub(crate) fn max_rect(mut self, rect: Rect, padding: Padding) -> Self {
-    //     self.max_rect = rect.with_x_direction(self.max_rect.x_direction());
-    //     self.available_rect = self.max_rect.clone_add_padding(&padding);
-    //     match self.max_rect.x_direction() {
-    //         LayoutDirection::Min => self.available_rect.set_x_max(f32::INFINITY),
-    //         LayoutDirection::Max => self.available_rect.set_x_min(-f32::INFINITY),
-    //     }
-    //     self
-    // }
-    //
-    // pub(crate) fn alloc_rect(&mut self, rect: &Rect) {
-    //     match self.max_rect.x_direction() {
-    //         LayoutDirection::Min => self.available_rect.add_min_x(rect.width() + self.item_space),
-    //         LayoutDirection::Max => self.available_rect.add_max_x(-rect.width() - self.item_space),
-    //     }
-    //     self.width += rect.width() + if self.width == 0.0 { 0.0 } else { self.item_space };
-    //     println!("alloc rect  {} {} {:?}", self.height, rect.height(), rect);
-    //     if self.height < rect.height() { self.height = rect.height(); }
-    // }
-
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
+
+
+    pub fn with_fill(mut self, color: Color) -> Self {
+        let mut style = ClickStyle::new();
+        style.fill = FillStyle::same(color);
+        style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+        let fill_render = RenderParam::new(RectParam::new(Rect::new(), style));
+        self.fill_render = Some(fill_render);
+        self
+    }
+
 
     pub fn with_width(mut self, w: f32) -> Self {
         self.set_width(w);
@@ -109,19 +106,11 @@ impl HorizontalLayout {
     pub fn item_space(&self) -> f32 {
         self.item_space
     }
-
-    // pub fn width(&self) -> f32 {
-    //     self.width
-    // }
-    //
-    // pub fn height(&self) -> f32 {
-    //     self.height
-    // }
 }
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
-        let previous_rect = mem::take(&mut ui.draw_rect);
+        let previous_rect = ui.draw_rect.clone();
         let mut width = 0.0;
         let mut height = 0.0;
         match ui.update_type {
@@ -131,12 +120,31 @@ impl Layout for HorizontalLayout {
                     width += item.width() + self.item_space;
                 }
                 width -= self.item_space;
+                if let Some(ref mut render) = self.fill_render {
+                    let (dw, dh) = self.size_mode.size(width, height);
+                    render.param.rect.set_size(dw, dh);
+                    render.init_rectangle(ui, false, false);
+                }
             }
             _ => {
-                ui.draw_rect.set_x_min(previous_rect.dx().min + self.padding.left);
-                ui.draw_rect.set_x_max(previous_rect.dx().max - self.padding.right);
-                ui.draw_rect.set_y_min(previous_rect.dy().min + self.padding.top);
-                ui.draw_rect.set_y_max(previous_rect.dy().max - self.padding.bottom);
+                if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
+                    render.param.rect.offset_to_rect(&previous_rect);
+                    render.update(ui, false, false);
+                    println!("{:?}", render.param.rect);
+                    let pass = ui.pass.as_mut().unwrap();
+                    ui.context.render.rectangle.render(&render, pass);
+                }
+                let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
+                ui.draw_rect.set_size(w, h);
+                //设置布局padding
+                ui.draw_rect.add_min_x(self.padding.left);
+                ui.draw_rect.add_min_y(self.padding.top);
+                ui.draw_rect.add_max_x(-self.padding.right);
+                ui.draw_rect.add_max_y(-self.padding.bottom);
+                // ui.draw_rect.set_x_min(previous_rect.dx().min + self.padding.left);
+                // ui.draw_rect.set_x_max(previous_rect.dx().max - self.padding.right);
+                // ui.draw_rect.set_y_min(previous_rect.dy().min + self.padding.top);
+                // ui.draw_rect.set_y_max(previous_rect.dy().max - self.padding.bottom);
                 ui.draw_rect.set_x_direction(self.direction);
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);
@@ -158,32 +166,6 @@ impl Layout for HorizontalLayout {
             rw: width,
             rh: height,
         })
-
-        // match self.size_mode {
-        //     SizeMode::Auto => Response::new(&self.id, self.width, self.height),
-        //     SizeMode::FixWidth(w) => Response::new(&self.id, w, self.height),
-        //     SizeMode::FixHeight(h) => Response::new(&self.id, self.width, h),
-        //     SizeMode::Fix(w, h) => Response::new(&self.id, w, h),
-        // }
-
-        // for child in self.items.iter_mut() {
-        //     child.update(ui);
-        // }
-        // if let UpdateType::Offset(ref o) = ui.update_type {
-        //     if !ui.can_offset { return; }
-        //     self.widget_offset = o.clone();
-        //     match o.direction {
-        //         OffsetDirection::Down => {}
-        //         OffsetDirection::Left => {}
-        //         OffsetDirection::Right => {}
-        //         OffsetDirection::Up => {}
-        //     }
-        //     self.offset_changed = true;
-        // } else {
-        //     for di in self.display.iter() {
-        //         self.widgets[*di].update(ui);
-        //     }
-        // }
     }
     fn items(&self) -> &Map<String, LayoutItem> {
         &self.items

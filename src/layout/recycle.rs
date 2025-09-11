@@ -105,7 +105,7 @@ impl RecycleLayout {
 
 impl Layout for RecycleLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
-        let previous_rect = mem::take(&mut ui.draw_rect);
+        let previous_rect = ui.draw_rect.clone();
         match ui.update_type {
             UpdateType::Init => {
                 // self.size.rw = 0.0;

@@ -166,8 +166,8 @@ impl App for TestWidget {
             ui.checkbox(true, "选择");
             ui.checkbox(true, "多行");
             ui.checkbox(true, "滚动");
-            ui.checkbox(false, "复制");
-            ui.checkbox(false, "粘贴");
+            ui.checkbox(true, "复制");
+            ui.checkbox(true, "粘贴");
             ui.checkbox(true, "密码");
         });
         let cb = ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4, SV::Item5, SV::Item6]).with_popup_height(150.0).connect(Self::combo_changed);

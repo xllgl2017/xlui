@@ -267,7 +267,7 @@ impl App for XlUiApp {
         self.list_view.update(ui);
     }
 
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.list_view.update(ui);
-    }
+    // fn redraw(&mut self, ui: &mut Ui) {
+    //     self.list_view.update(ui);
+    // }
 }

@@ -1,21 +1,12 @@
 use xlui::frame::App;
 use xlui::style::color::Color;
-use xlui::style::ClickStyle;
 use xlui::ui::Ui;
-use xlui::{Border, HorizontalLayout, ScrollWidget};
+use xlui::{HorizontalLayout, Padding, ScrollWidget, VerticalLayout};
 
 pub struct TestLayout {}
 
 impl App for TestLayout {
     fn draw(&mut self, ui: &mut Ui) {
-        // ui.add_layout(HorizontalLayout::right_to_left(), |ui| {
-        //     ui.label("hhh1");
-        //     ui.label("hhhh2");
-        // });
-        // ui.add_layout(VerticalLayout::bottom_to_top(), |ui| {
-        //     ui.label("hhh1");
-        //     ui.label("hhhh2");
-        // });
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
@@ -32,18 +23,9 @@ impl App for TestLayout {
                             ui.label("a8");
                         });
                     });
-                    ui.horizontal(|ui| {
-                        let mut rect = ui.available_rect().clone();
-                        rect.set_size(200.0, 150.0);
-                        let mut style = ClickStyle::new();
-                        style.fill.inactive = Color::rgba(170, 218, 234, 128);
-                        style.fill.hovered = Color::rgba(170, 218, 234, 128);
-                        style.fill.clicked = Color::rgba(170, 218, 234, 128);
-                        style.border.inactive = Border::new(0.0);
-                        style.border.hovered = Border::new(0.0);
-                        style.border.clicked = Border::new(0.0);
-                        ui.paint_rect(rect, style);
-                        ui.add_space(10.0);
+                    let layout = HorizontalLayout::left_to_right().with_size(200.0, 150.0)
+                        .with_fill(Color::rgba(170, 218, 234, 128)).with_padding(Padding::same(5.0));
+                    ui.add_layout(layout, |ui| {
                         ui.label("Horizontal");
                         ui.vertical(|ui| {
                             ui.label("v1");
@@ -53,20 +35,15 @@ impl App for TestLayout {
                         ui.label("h1");
                         ui.label("h2");
                         ui.label("h3");
-                        ui.add_space(50.0);
+                        ui.add_layout(VerticalLayout::bottom_to_top(), |ui| {
+                            ui.label("b1");
+                            ui.label("b2");
+                            ui.label("b3");
+                        });
                     });
-                    ui.vertical(|ui| {
-                        let mut rect = ui.available_rect().clone();
-                        rect.set_size(200.0, 150.0);
-                        let mut style = ClickStyle::new();
-                        style.fill.inactive = Color::rgba(190, 140, 209, 128);
-                        style.fill.hovered = Color::rgba(190, 140, 209, 128);
-                        style.fill.clicked = Color::rgba(190, 140, 209, 128);
-                        style.border.inactive = Border::new(0.0);
-                        style.border.hovered = Border::new(0.0);
-                        style.border.clicked = Border::new(0.0);
-                        ui.paint_rect(rect, style);
-                        ui.add_space(10.0);
+                    let layout = VerticalLayout::top_to_bottom().with_size(200.0, 150.0)
+                        .with_fill(Color::rgba(190, 140, 209, 128)).with_padding(Padding::same(5.0));
+                    ui.add_layout(layout, |ui| {
                         ui.label("Vertical");
                         ui.horizontal(|ui| {
                             ui.label("v1");
@@ -76,6 +53,11 @@ impl App for TestLayout {
                         ui.label("h1");
                         ui.label("h2");
                         ui.label("h3");
+                        ui.add_layout(HorizontalLayout::right_to_left(), |ui| {
+                            ui.label("r1");
+                            ui.label("r2");
+                            ui.label("r3");
+                        });
                     });
                     ui.label("right_left");
                     ui.add_layout(HorizontalLayout::right_to_left(), |ui| {

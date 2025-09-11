@@ -7,8 +7,7 @@ use crate::style::{ClickStyle, Shadow};
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 /// ### Rectangle的示例用法
-/// ```
-/// use xlui::layout::popup::Popup;
+/// ```rust
 /// use xlui::style::color::Color;
 /// use xlui::style::Shadow;
 /// use xlui::ui::Ui;
@@ -21,14 +20,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 ///         spread: 10.0,
 ///         color: Color::rgba(0, 0, 0, 30),
 ///     };
-///     //获取当前可用矩形
-///     let mut rect =ui.available_rect().clone();
-///     rect.set_size(300.0,300.0);
-///     rect.add_min_x(10.0);
-///     rect.add_max_x(10.0);
-///     rect.add_min_y(10.0);
-///     rect.add_max_y(10.0);
-///     let rectangle=Rectangle::new(rect, Popup::popup_style())
+///     let rectangle=Rectangle::new(Popup::popup_style(),300.0,300.0)
 ///         //设置阴影
 ///         .with_shadow(shadow);
 ///     ui.add(rectangle);

@@ -417,9 +417,8 @@ impl LayoutKind {
 //     }
 // }
 
-#[derive(Clone, Debug, Copy, Default)]
+#[derive(Clone, Debug, Copy)]
 pub enum LayoutDirection {
-    #[default]
     Min,
     Max,
 }

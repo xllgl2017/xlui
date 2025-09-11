@@ -3,7 +3,7 @@ use crate::Offset;
 use crate::size::padding::Padding;
 use crate::size::pos::{Axis, Pos};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Rect {
     dx: Axis,
     ox: Axis,

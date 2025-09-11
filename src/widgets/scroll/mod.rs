@@ -1,6 +1,5 @@
 pub mod bar;
 
-use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutKind};
 use crate::render::rectangle::param::RectParam;
@@ -269,7 +268,7 @@ impl Widget for ScrollWidget {
             // self.context_rect.add_max_x(-self.v_bar.width() - self.padding.right);
             // self.context_rect.add_min_y(self.padding.left);
             // self.context_rect.add_max_y(-self.h_bar.height() - self.padding.bottom);
-            let previous_rect = mem::take(&mut ui.draw_rect);
+            let previous_rect = ui.draw_rect.clone();
             ui.draw_rect = self.context_rect.clone();
             let resp = self.layout.as_mut().unwrap().update(ui);
             ui.draw_rect = previous_rect;
