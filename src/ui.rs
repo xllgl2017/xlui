@@ -16,17 +16,19 @@ use crate::window::{UserEvent, WindowId};
 use crate::{Button, Device, Image, Label, NumCastExt, Offset, RadioButton, SelectItem, Slider, SpinBox, SAMPLE_COUNT};
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use std::sync::atomic::Ordering;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 use crate::layout::popup::Popup;
 use crate::map::Map;
+use crate::window::inner::InnerWindow;
 
 pub struct AppContext {
     pub(crate) device: Device,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
-    // pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
+    pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) style: Style,
     pub(crate) context: Context,
     previous_time: u128,
@@ -42,7 +44,7 @@ impl AppContext {
             device,
             layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
-            // inner_windows: Some(Map::new()),
+            inner_windows: Some(Map::new()),
             style: Style::light_style(),
             context,
             previous_time: 0,
@@ -62,7 +64,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: UpdateType::Init,
             can_offset: false,
-            // inner_windows: None,
+            inner_windows: None,
             request_update: None,
             offset: Offset::new(Pos::new()),
             draw_rect,
@@ -86,7 +88,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
-            // inner_windows: None,
+            inner_windows: None,
             request_update: None,
             offset: Offset::new(Pos::new()),
 
@@ -109,31 +111,31 @@ impl AppContext {
         //     }
         // }
         ui.app = Some(app);
-        // let mut event_win = None;
-        // let inner_windows = self.inner_windows.as_ref().unwrap();
-        // for i in 0..inner_windows.len() {
-        //     let win = &inner_windows[inner_windows.len() - i - 1];
-        //     if self.device.device_input.hovered_at(&win.fill_render.param.rect) || win.press_title {
-        //         event_win = Some(win.id);
-        //         break;
-        //     }
-        // }
+        let mut event_win = None;
+        let inner_windows = self.inner_windows.as_ref().unwrap();
+        for i in 0..inner_windows.len() {
+            let win = &inner_windows[inner_windows.len() - i - 1];
+            if self.device.device_input.hovered_at(&win.fill_render.param.rect) || win.press_title {
+                event_win = Some(win.id);
+                break;
+            }
+        }
 
-        // if let Some(wid) = event_win {
-        //     let inner_win = &mut self.inner_windows.as_mut().unwrap()[&wid];
-        //     inner_win.update(&mut ui);
-        //     if inner_win.top {
-        //         let win = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
-        //         if win.request_close.load(Ordering::SeqCst) {
-        //             if let Some(win) = self.inner_windows.as_mut().unwrap().last_mut() {
-        //                 win.top = true;
-        //             }
-        //         } else {
-        //             self.inner_windows.as_mut().unwrap().iter_mut().for_each(|x| x.top = false);
-        //             self.inner_windows.as_mut().unwrap().insert(win.id, win);
-        //         }
-        //     }
-        // };
+        if let Some(wid) = event_win {
+            let inner_win = &mut self.inner_windows.as_mut().unwrap()[&wid];
+            inner_win.update(&mut ui);
+            if inner_win.top {
+                let win = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
+                if win.request_close.load(Ordering::SeqCst) {
+                    if let Some(win) = self.inner_windows.as_mut().unwrap().last_mut() {
+                        win.top = true;
+                    }
+                } else {
+                    self.inner_windows.as_mut().unwrap().iter_mut().for_each(|x| x.top = false);
+                    self.inner_windows.as_mut().unwrap().insert(win.id, win);
+                }
+            }
+        };
 
         // let inner_windows = self.inner_windows.as_mut().unwrap();
         // inner_windows.sort_by_key(|x| x.value().top);
@@ -149,9 +151,7 @@ impl AppContext {
         //     }
         //     break;
         // }
-        // ui.inner_windows = self.inner_windows.take();
-
-
+        ui.inner_windows = self.inner_windows.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui);
         }
@@ -163,7 +163,7 @@ impl AppContext {
         //     ui.context.user_update = u;
         //     ui.context.window.request_update(UserEvent::ReqUpdate);
         // }
-        // self.inner_windows = ui.inner_windows.take();
+        self.inner_windows = ui.inner_windows.take();
     }
 
     pub fn redraw(&mut self, app: &mut Box<dyn App>) {
@@ -229,7 +229,7 @@ impl AppContext {
             current_rect: Rect::new(),
             update_type: UpdateType::Draw,
             can_offset: false,
-            // inner_windows: None,
+            inner_windows: None,
             request_update: None,
             offset: Offset::new(Pos::new()),
             draw_rect,
@@ -248,10 +248,10 @@ impl AppContext {
             ui.context.user_update = u;
             ui.context.window.request_update(UserEvent::ReqUpdate);
         }
-        // self.inner_windows.as_mut().unwrap().sort_by_key(|x| x.value().top);
-        // for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
-        //     inner_window.redraw(&mut ui);
-        // }
+        self.inner_windows.as_mut().unwrap().sort_by_key(|x| x.value().top);
+        for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
+            inner_window.redraw(&mut ui);
+        }
         drop(ui);
         self.device.queue.submit([encoder.finish()]);
         surface_texture.present();
@@ -302,7 +302,7 @@ pub struct Ui<'a> {
     pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
     pub(crate) can_offset: bool,
-    // pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
+    pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
     pub(crate) offset: Offset,
     pub(crate) draw_rect: Rect,
@@ -404,14 +404,14 @@ impl<'a> Ui<'a> {
         // self.layout().add_child(current_layout);
     }
 
-    // pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {
-    //     let mut inner_window = InnerWindow::new(w, self);
-    //     inner_window.top = true;
-    //     self.inner_windows.as_mut().unwrap().iter_mut().for_each(|x| x.top = false);
-    //     let id = inner_window.id.clone();
-    //     self.inner_windows.as_mut().unwrap().insert(inner_window.id.clone(), inner_window);
-    //     self.inner_windows.as_mut().unwrap().get_mut(&id).unwrap()
-    // }
+    pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {
+        let mut inner_window = InnerWindow::new(w, self);
+        inner_window.top = true;
+        self.inner_windows.as_mut().unwrap().iter_mut().for_each(|x| x.top = false);
+        let id = inner_window.id.clone();
+        self.inner_windows.as_mut().unwrap().insert(inner_window.id.clone(), inner_window);
+        self.inner_windows.as_mut().unwrap().get_mut(&id).unwrap()
+    }
 
     pub fn create_window<W: App>(&mut self, w: W) {
         let attr = w.window_attributes();

@@ -15,7 +15,7 @@ pub mod checkbox;
 pub mod radio;
 pub mod combobox;
 pub mod select;
-// pub mod rectangle;
+pub mod rectangle;
 pub(crate) mod item;
 pub mod listview;
 pub mod space;

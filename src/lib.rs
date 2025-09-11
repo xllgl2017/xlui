@@ -103,8 +103,9 @@ mod error;
 
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 pub use window::win32::tray::{Tray, TrayMenu};
-pub use window::{attribute::WindowAttribute};
-pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout, recycle::RecycleLayout};
+pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout, recycle::RecycleLayout,
+                 popup::Popup};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
                   image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,

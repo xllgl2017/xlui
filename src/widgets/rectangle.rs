@@ -1,3 +1,11 @@
+use crate::frame::context::UpdateType;
+use crate::render::rectangle::param::RectParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::response::Response;
+use crate::size::rect::Rect;
+use crate::style::{ClickStyle, Shadow};
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 /// ### Rectangle的示例用法
 /// ```
 /// use xlui::layout::popup::Popup;
@@ -26,16 +34,6 @@
 ///     ui.add(rectangle);
 /// }
 /// ```
-
-use crate::frame::context::UpdateType;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::response::Response;
-use crate::size::rect::Rect;
-use crate::style::{ClickStyle, Shadow};
-use crate::ui::Ui;
-use crate::widgets::Widget;
-
 pub struct Rectangle {
     id: String,
     fill_render: RenderParam<RectParam>,
@@ -44,10 +42,10 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    pub fn new(rect: Rect, style: ClickStyle) -> Self {
+    pub fn new(style: ClickStyle, width: f32, height: f32) -> Self {
         Rectangle {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(rect, style)),
+            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(width, height), style)),
             hovered: false,
             changed: false,
         }
@@ -87,10 +85,17 @@ impl Rectangle {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.can_offset { return; }
+        // if !self.changed && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
-        if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
-        self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+        }
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        }
+        // if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
+
     }
 }
 
@@ -118,6 +123,6 @@ impl Widget for Rectangle {
             // }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_render.param.rect)
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(),self.fill_render.param.rect.height()))
     }
 }
