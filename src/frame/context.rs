@@ -1,18 +1,17 @@
+use crate::frame::App;
+use crate::key::Key;
 use crate::map::Map;
 use crate::render::circle::CircleRender;
 use crate::render::image::ImageRender;
 use crate::render::rectangle::RectangleRender;
 use crate::render::triangle::TriangleRender;
-use crate::size::Size;
 use crate::text::render::TextRender;
+use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
 use crate::{Device, Font, NumCastExt, Offset, WindowAttribute};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
-use crate::frame::App;
-use crate::key::Key;
-use crate::window::ime::IMEData;
 
 #[derive(Clone)]
 pub enum ContextUpdate {
@@ -83,6 +82,7 @@ pub enum UpdateType {
     MouseWheel,
     KeyPress(Key),
     KeyRelease(Key),
+    #[deprecated]
     Offset(Offset),
     Drop,
     IME(IMEData),
@@ -91,6 +91,7 @@ pub enum UpdateType {
 }
 
 impl UpdateType {
+    #[deprecated]
     pub(crate) fn is_offset(&self) -> Option<&Offset> {
         match self {
             UpdateType::Offset(o) => Some(o),
@@ -122,8 +123,6 @@ impl Debug for UpdateType {
 }
 
 pub struct Context {
-    #[deprecated="use Device::surface_config"]
-    pub size: Size,
     pub viewport: Viewport,
     pub window: Arc<WindowType>,
     pub font: Arc<Font>,

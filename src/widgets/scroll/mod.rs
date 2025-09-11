@@ -277,7 +277,7 @@ impl Widget for ScrollWidget {
             self.layout.as_mut().unwrap().update(ui)
         };
         let pass = ui.pass.as_mut().unwrap();
-        pass.set_scissor_rect(0, 0, ui.context.size.width, ui.context.size.height);
+        pass.set_scissor_rect(0, 0,ui.device.surface_config.width,ui.device.surface_config.height);
         // let resp = self.layout.as_mut().unwrap().update(ui);
 
         if self.vert_scrollable {

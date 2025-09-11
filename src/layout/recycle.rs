@@ -5,7 +5,6 @@ use crate::response::Response;
 use crate::ui::Ui;
 use crate::widgets::WidgetSize;
 use crate::{Offset, Padding, Pos};
-use std::mem;
 use std::ops::Range;
 
 pub struct RecycleLayout {
@@ -37,7 +36,7 @@ impl RecycleLayout {
         }
     }
 
-    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+    pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
 
@@ -71,10 +70,6 @@ impl RecycleLayout {
 
     pub fn set_padding(&mut self, p: Padding) {
         self.padding = p;
-    }
-
-    pub(crate) fn padding(&self) -> &Padding {
-        &self.padding
     }
 
     pub fn item_space(&self) -> f32 {

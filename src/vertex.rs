@@ -52,7 +52,7 @@ impl ImageVertex {
     //     }
     // }
 
-    pub fn new_coord(pos: [f32; 2], coord: [f32; 2], screen: &Size) -> ImageVertex {
+    pub fn new_coord(pos: [f32; 2], coord: [f32; 2], screen: Size) -> ImageVertex {
         ImageVertex {
             position: pos,
             tex_coords: coord,

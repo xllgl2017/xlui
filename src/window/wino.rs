@@ -24,7 +24,6 @@ impl LoopWindow {
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
-            size: attr.inner_size,
             font: attr.font.clone(),
             viewport,
             window: wt,
@@ -112,7 +111,6 @@ impl EventLoopHandle for LoopWindow {
             }
             WindowEvent::Reinit => {}
             WindowEvent::Resize(size) => {
-                self.app_ctx.context.size = size;
                 self.app_ctx.device.surface_config.width = size.width;
                 self.app_ctx.device.surface_config.height = size.height;
                 let device = &self.app_ctx.device.device;

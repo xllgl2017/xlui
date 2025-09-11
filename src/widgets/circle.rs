@@ -18,8 +18,6 @@ impl Circle {
         let mut rect = Rect::new();
         rect.set_height(r * 2.0);
         rect.set_width(r * 2.0);
-        // rect.set_x_max(rect.dx().min + r * 2.0);
-        // rect.set_y_max(rect.dx().max);
         Circle {
             id: crate::gen_unique_id(),
             render: RenderParam::new(CircleParam::new(rect, ClickStyle::new())),
@@ -43,7 +41,6 @@ impl Circle {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        // if !self.changed && !ui.can_offset { return; }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
@@ -53,14 +50,9 @@ impl Circle {
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.render.update(ui, false, false);
         }
-        // if ui.can_offset { self.render.param.rect.offset(&ui.offset); }
-        // self.render.update(ui, false, false);
     }
 
-    fn init(&mut self, ui: &mut Ui, init: bool) {
-        // if init {
-        //     // self.render.param.rect = ui.available_rect().clone_with_size(&self.render.param.rect);
-        // }
+    fn init(&mut self, ui: &mut Ui) {
         self.render.init_circle(ui, false, false);
         self.changed = false;
     }
@@ -76,8 +68,8 @@ impl Widget for Circle {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui, true),
-            UpdateType::ReInit => self.init(ui, false),
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.init(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.render.param.rect.width(), self.render.param.rect.height()))

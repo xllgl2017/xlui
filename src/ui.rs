@@ -37,7 +37,7 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new(device: Device, context: Context) -> AppContext {
-        let layout = VerticalLayout::top_to_bottom().with_size(context.size.width as f32, context.size.height as f32)
+        let layout = VerticalLayout::top_to_bottom().with_size(device.surface_config.width as f32, device.surface_config.height as f32)
             .with_space(5.0).with_padding(Padding::same(5.0));
         AppContext {
             device,

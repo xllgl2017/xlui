@@ -1,19 +1,18 @@
+use crate::error::UiResult;
 use crate::key::Key;
 use crate::window::event::WindowEvent;
 use crate::window::ime::{IMEData, IME};
+use crate::window::x11::clipboard::X11ClipBoard;
+use crate::window::x11::handle::X11WindowHandle;
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
 use std::ffi::CString;
+use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
-use std::os::raw::c_uint;
-use std::ptr::null_mut;
 use x11::xlib;
 use x11::xlib::{XCloseDisplay, XLookupString};
-use crate::error::UiResult;
-use crate::window::x11::clipboard::X11ClipBoard;
-use crate::window::x11::handle::X11WindowHandle;
 
 pub mod ime;
 pub mod handle;

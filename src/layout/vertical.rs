@@ -1,17 +1,16 @@
-use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
-use crate::{Border, Offset, Padding, Pos, Radius, Rect, Widget};
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::SizeMode;
-use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::style::color::Color;
+use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
+use crate::{Border, Offset, Padding, Pos, Radius, Rect, Widget};
 
 pub struct VerticalLayout {
     id: String,
@@ -48,7 +47,7 @@ impl VerticalLayout {
         VerticalLayout::new(LayoutDirection::Max)
     }
 
-    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+    pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
 
@@ -92,10 +91,6 @@ impl VerticalLayout {
 
     pub fn set_padding(&mut self, p: Padding) {
         self.padding = p;
-    }
-
-    pub(crate) fn padding(&self) -> &Padding {
-        &self.padding
     }
 
     pub fn item_space(&self) -> f32 {

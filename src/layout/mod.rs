@@ -4,19 +4,13 @@ pub mod horizontal;
 pub mod vertical;
 pub mod recycle;
 
-use std::any::Any;
-use std::ops::{Deref, DerefMut};
-use crate::frame::context::UpdateType;
-// use crate::layout::horizontal::HorizontalLayout;
-use crate::layout::vertical::VerticalLayout;
 use crate::map::Map;
 use crate::response::Response;
-use crate::size::padding::Padding;
-use crate::size::pos::Pos;
-use crate::size::rect::Rect;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetKind, WidgetSize};
 use crate::Offset;
+use std::any::Any;
+use std::ops::{Deref, DerefMut};
 
 pub trait Layout: Any {
     fn update(&mut self, ui: &mut Ui) -> Response<'_>;

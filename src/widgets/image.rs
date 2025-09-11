@@ -1,13 +1,13 @@
+use crate::frame::context::UpdateType;
+use crate::render::image::ImageSource;
+use crate::response::Response;
 use crate::size::rect::Rect;
 use crate::size::SizeMode;
 use crate::ui::Ui;
 use crate::vertex::ImageVertex;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
-use wgpu::util::DeviceExt;
-use crate::frame::context::UpdateType;
-use crate::render::image::ImageSource;
-use crate::response::Response;
 use crate::Size;
+use wgpu::util::DeviceExt;
 
 /// ### Image的示例用法
 ///```
@@ -109,10 +109,10 @@ impl Image {
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         self.vertices = vec![
-            ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], &ui.context.size),
-            ImageVertex::new_coord(self.rect.left_bottom(), [0.0, 1.0], &ui.context.size),
-            ImageVertex::new_coord(self.rect.right_bottom(), [1.0, 1.0], &ui.context.size),
-            ImageVertex::new_coord(self.rect.right_top(), [1.0, 0.0], &ui.context.size)
+            ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(self.rect.left_bottom(), [0.0, 1.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(self.rect.right_bottom(), [1.0, 1.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(self.rect.right_top(), [1.0, 0.0], Size::from(&ui.device.surface_config))
         ];
         let vertex_buffer = ui.device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),

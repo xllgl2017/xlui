@@ -20,7 +20,6 @@ impl SizeMode {
             SizeMode::FixHeight(h) => *self = SizeMode::Fix(w, *h),
             SizeMode::FixWidth(fw) => *fw = w,
             SizeMode::Fix(fw, _) => *fw = w,
-            _ => {}
         }
     }
 
@@ -30,7 +29,6 @@ impl SizeMode {
             SizeMode::FixWidth(w) => *self = SizeMode::Fix(*w, h),
             SizeMode::FixHeight(fh) => *fh = h,
             SizeMode::Fix(_, fh) => *fh = h,
-            _ => {}
         }
     }
 
@@ -83,6 +81,15 @@ impl From<(u32, u32)> for Size {
         Size {
             width: value.0,
             height: value.1,
+        }
+    }
+}
+
+impl From<&wgpu::SurfaceConfiguration> for Size {
+    fn from(value: &wgpu::SurfaceConfiguration) -> Self {
+        Size {
+            width: value.width,
+            height: value.height,
         }
     }
 }

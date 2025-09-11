@@ -74,7 +74,6 @@ pub enum ListUpdate<T> {
 /// }
 /// ```
 
-
 pub struct ListView<T> {
     lid: String,
     data: Vec<T>,
@@ -237,7 +236,7 @@ impl<T: 'static> ListView<T> {
                     let item: &mut ItemWidget = item.widget().unwrap();
                     item.restore(&self.data[start]);
                     start += 1;
-                    if start >= end { break; };
+                    if start == self.data.len() { break; }
                 }
                 self.previous_display = recycle_layout.display_range().clone();
             }

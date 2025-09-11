@@ -1,24 +1,21 @@
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
+use crate::render::rectangle::param::RectParam;
+use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::SizeMode;
+use crate::style::color::Color;
+use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
 use crate::{Border, Offset, Padding, Pos, Radius, Rect};
-use std::mem;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::style::{BorderStyle, ClickStyle, FillStyle};
-use crate::style::color::Color;
 
 pub struct HorizontalLayout {
     id: String,
     items: Map<String, LayoutItem>,
     item_space: f32, //item之间的间隔
-    offset_changed: bool,
-    display: Map<String, usize>,
     size_mode: SizeMode,
     direction: LayoutDirection,
     padding: Padding,
@@ -32,8 +29,6 @@ impl HorizontalLayout {
             id: crate::gen_unique_id(),
             items: Map::new(),
             item_space: 5.0,
-            offset_changed: false,
-            display: Map::new(),
             size_mode: SizeMode::Auto,
             direction,
             padding: Padding::same(0.0),
@@ -52,7 +47,7 @@ impl HorizontalLayout {
         layout
     }
 
-    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+    pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
 
@@ -97,10 +92,6 @@ impl HorizontalLayout {
 
     pub fn set_padding(&mut self, p: Padding) {
         self.padding = p;
-    }
-
-    pub(crate) fn padding(&self) -> &Padding {
-        &self.padding
     }
 
     pub fn item_space(&self) -> f32 {
