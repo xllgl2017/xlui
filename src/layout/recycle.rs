@@ -103,13 +103,6 @@ impl Layout for RecycleLayout {
         let previous_rect = ui.draw_rect.clone();
         match ui.update_type {
             UpdateType::Init => {
-                // self.size.rw = 0.0;
-                // self.size.rh = 0.0;
-                // for item in self.items.iter() {
-                //     if self.size.rw < item.width() { self.size.rw = item.width(); }
-                //     self.size.rh += item.height() + self.item_space;
-                // }
-                // self.total_count = self.items.len();
                 self.update_display();
             }
             _ => {
@@ -126,10 +119,6 @@ impl Layout for RecycleLayout {
                     let resp = item.update(ui);
                     ui.draw_rect.add_min_y(resp.size.dh + self.item_space)
                 }
-                // for di in self.display.clone() {
-                //     let resp = self.items[di].update(ui);
-                //     ui.draw_rect.add_min_y(resp.size.dh + self.item_space)
-                // }
             }
         }
         ui.draw_rect = previous_rect;

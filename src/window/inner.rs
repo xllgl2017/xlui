@@ -66,7 +66,7 @@ impl InnerWindow {
             layout: Some(layout),
             popups: Some(Map::new()),
             title_rect: Rect::new().with_size(attr.inner_width_f32(), 22.0),
-            offset: Offset::new(Pos::new()).delete_offset(),
+            offset: Offset::new(Pos::new()).covered(),
             press_title: false,
             changed: false,
             on_close: None,
@@ -201,7 +201,7 @@ impl InnerWindow {
             UpdateType::MouseMove => {
                 if self.press_title && ui.device.device_input.mouse.pressed {
                     let (ox, oy) = ui.device.device_input.mouse.offset();
-                    self.fill_render.param.rect.offset(&Offset::new(Pos::new()).with_x(ox).with_y(oy).delete_offset());
+                    self.fill_render.param.rect.offset(&Offset::new(Pos::new()).with_x(ox).with_y(oy).covered());
                     self.offset.x += ox;
                     self.offset.y += oy;
                     self.offset.pos = ui.device.device_input.mouse.lastest;

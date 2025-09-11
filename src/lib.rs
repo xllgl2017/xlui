@@ -152,8 +152,8 @@ pub struct Offset {
     x: f32,
     y: f32,
     covered: bool,
-    direction: OffsetDirection,
-    target_id: String,
+    // direction: OffsetDirection,
+    // target_id: String,
 }
 
 impl Offset {
@@ -163,8 +163,8 @@ impl Offset {
             x: 0.0,
             y: 0.0,
             covered: false,
-            direction: OffsetDirection::Down,
-            target_id: "".to_string(),
+            // direction: OffsetDirection::Down,
+            // target_id: "".to_string(),
         }
     }
 
@@ -183,7 +183,7 @@ impl Offset {
         self
     }
 
-    pub fn delete_offset(mut self) -> Offset {
+    pub fn covered(mut self) -> Offset {
         self.covered = true;
         self
     }

@@ -10,12 +10,11 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Offset, Padding, Pos, Radius, Rect, Widget};
+use crate::{Border, Offset, Padding, Pos, Radius, Rect};
 
 pub struct VerticalLayout {
     id: String,
     items: Map<String, LayoutItem>,
-    display: Map<String, usize>,
     item_space: f32, //item之间的间隔
     offset: Offset,
     size_mode: SizeMode,
@@ -30,7 +29,6 @@ impl VerticalLayout {
             id: crate::gen_unique_id(),
             items: Map::new(),
             item_space: 5.0,
-            display: Map::new(),
             size_mode: SizeMode::Auto,
             padding: Padding::same(0.0),
             direction,
@@ -129,10 +127,6 @@ impl Layout for VerticalLayout {
                 ui.draw_rect.add_min_y(self.padding.top);
                 ui.draw_rect.add_max_x(-self.padding.right);
                 ui.draw_rect.add_max_y(-self.padding.bottom);
-                // ui.draw_rect.set_x_min(previous_rect.dx().min + self.padding.left);
-                // ui.draw_rect.set_x_max(previous_rect.dx().max - self.padding.right);
-                // ui.draw_rect.set_y_min(previous_rect.dy().min + self.padding.top);
-                // ui.draw_rect.set_y_max(previous_rect.dy().max - self.padding.bottom);
                 ui.draw_rect.set_y_direction(self.direction);
                 ui.draw_rect.set_x_min(ui.draw_rect.dx().min + self.offset.x);
                 ui.draw_rect.set_y_min(ui.draw_rect.dy().min + self.offset.y);

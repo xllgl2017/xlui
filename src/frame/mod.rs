@@ -15,7 +15,6 @@ pub mod context;
 pub trait App: Any + 'static {
     fn draw(&mut self, ui: &mut Ui);
     fn update(&mut self, _: &mut Ui) {}
-    // fn redraw(&mut self, _: &mut Ui) {}
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute::default()

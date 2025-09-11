@@ -6,7 +6,7 @@ use xlui::frame::App;
 use xlui::ui::Ui;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 use xlui::Tray;
-use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, RichText, RichTextExt, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
+use xlui::{Button, CheckBox, ComboBox, Image, Label, ProcessBar, RadioButton, RichText, SelectItem, Slider, SpinBox, TextEdit, Widget, WindowAttribute};
 
 #[allow(dead_code)]
 fn main() {

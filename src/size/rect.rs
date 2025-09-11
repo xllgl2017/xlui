@@ -168,10 +168,10 @@ impl Rect {
         res
     }
 
-    pub(crate) fn out_of_rect(&self, other: &Rect) -> bool {
-        other.dx.min > self.dx.max || other.dx.max < self.dx.min ||
-            other.dy.min > self.dy.max || other.dy.max < self.dy.min
-    }
+    // pub(crate) fn out_of_rect(&self, other: &Rect) -> bool {
+    //     other.dx.min > self.dx.max || other.dx.max < self.dx.min ||
+    //         other.dy.min > self.dy.max || other.dy.max < self.dy.min
+    // }
 
     pub fn x_direction(&self) -> LayoutDirection {
         self.x_direction
@@ -259,7 +259,7 @@ impl Rect {
     }
 
     pub fn offset_to_rect(&mut self, rect: &Rect) -> Offset {
-        let mut offset = Offset::new(Pos::new()).delete_offset();
+        let mut offset = Offset::new(Pos::new()).covered();
         match rect.x_direction {
             LayoutDirection::Min => {
                 let ox = rect.dx.min - self.ox.min;

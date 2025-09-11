@@ -316,8 +316,8 @@ impl Widget for TextEdit {
                     self.changed = true;
                 }
             }
+            #[cfg(not(feature = "winit"))]
             UpdateType::KeyPress(ref mut key) => {
-                #[cfg(not(feature = "winit"))]
                 if self.focused {
                     match key {
                         Key::CtrlC => ui.context.window.set_clipboard(ClipboardData::Text(self.char_layout.select_text())),

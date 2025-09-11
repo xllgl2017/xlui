@@ -181,7 +181,7 @@ impl<T: Display + 'static> ComboBox<T> {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
             self.popup_rect.offset_to_rect(&ui.draw_rect);
-            self.popup_rect.offset_y(&Offset::new(Pos::new()).delete_offset().with_y(self.fill_render.param.rect.height() + 5.0));
+            self.popup_rect.offset_y(&Offset::new(Pos::new()).covered().with_y(self.fill_render.param.rect.height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut text_rect = self.fill_render.param.rect.clone();
             text_rect.add_min_x(2.0);

@@ -132,10 +132,6 @@ impl Layout for HorizontalLayout {
                 ui.draw_rect.add_min_y(self.padding.top);
                 ui.draw_rect.add_max_x(-self.padding.right);
                 ui.draw_rect.add_max_y(-self.padding.bottom);
-                // ui.draw_rect.set_x_min(previous_rect.dx().min + self.padding.left);
-                // ui.draw_rect.set_x_max(previous_rect.dx().max - self.padding.right);
-                // ui.draw_rect.set_y_min(previous_rect.dy().min + self.padding.top);
-                // ui.draw_rect.set_y_max(previous_rect.dy().max - self.padding.bottom);
                 ui.draw_rect.set_x_direction(self.direction);
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);

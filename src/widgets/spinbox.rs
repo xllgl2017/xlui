@@ -55,7 +55,6 @@ pub struct SpinBox<T> {
     down_render: RenderParam<TriangleParam>,
     up_rect: Rect,
     down_rect: Rect,
-    init: bool,
     changed: bool,
     contact_ids: Vec<String>,
 
@@ -85,7 +84,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             down_render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style)),
             up_rect: Rect::new(),
             down_rect: Rect::new(),
-            init: false,
             changed: false,
             contact_ids: vec![],
             press_up: false,

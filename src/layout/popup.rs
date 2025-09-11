@@ -1,5 +1,4 @@
 use crate::frame::context::UpdateType;
-use crate::layout::Layout;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::{ScrollWidget, Widget};
@@ -34,12 +33,7 @@ impl Popup {
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);
-        let mut area = ScrollWidget::vertical().with_size(width, height).padding(Padding::same(5.0));
-        // let mut area_style = ClickStyle::new();
-        // area_style.fill = FillStyle::same(Color::TRANSPARENT);
-        // area_style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
-        // area.set_style(area_style);
-        // area.set_rect(rect);
+        let area = ScrollWidget::vertical().with_size(width, height).padding(Padding::same(5.0));
         Popup {
             id: crate::gen_unique_id(),
             scroll_area: area,

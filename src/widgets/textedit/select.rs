@@ -45,7 +45,7 @@ impl EditSelection {
                 let mut rect = rect.clone();
                 rect.set_x_max(rect.dx().min);
                 rect.set_height(line_height);
-                rect.offset(&Offset::new(Pos::new()).with_y(row as f32 * line_height).delete_offset());
+                rect.offset(&Offset::new(Pos::new()).with_y(row as f32 * line_height).covered());
                 let render = RenderParam::new(RectParam::new(rect, select_style.clone()));
                 self.renders.push(render);
             }
