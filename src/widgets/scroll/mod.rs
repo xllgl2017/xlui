@@ -191,10 +191,22 @@ impl Widget for ScrollWidget {
                     // self.v_bar.update(ui);
                     return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                 }
+                let mut offset = Offset::new(Pos::new());
+                if self.vert_scrollable {
+                    self.v_bar.update(ui);
+                    offset.y = self.v_bar.offset();
+                }
+                if self.horiz_scrollable {
+                    self.h_bar.update(ui);
+                    offset.x = self.h_bar.offset();
+                }
+                self.layout.as_mut().unwrap().set_offset(offset);
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MousePress => {
                 self.layout.as_mut().unwrap().update(ui);
+                if self.vert_scrollable { self.v_bar.update(ui); }
+                if self.horiz_scrollable { self.h_bar.update(ui); }
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
@@ -277,7 +289,7 @@ impl Widget for ScrollWidget {
             self.layout.as_mut().unwrap().update(ui)
         };
         let pass = ui.pass.as_mut().unwrap();
-        pass.set_scissor_rect(0, 0,ui.device.surface_config.width,ui.device.surface_config.height);
+        pass.set_scissor_rect(0, 0, ui.device.surface_config.width, ui.device.surface_config.height);
         // let resp = self.layout.as_mut().unwrap().update(ui);
 
         if self.vert_scrollable {

@@ -62,7 +62,7 @@ struct XlUiApp {
 impl XlUiApp {
     pub fn new() -> Self {
         let mut data = vec![];
-        for i in 0..1000 {
+        for i in 0..10000 {
             data.push((i + 1).to_string());
         }
         Self {

@@ -100,6 +100,7 @@ impl Label {
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.buffer.update_buffer(ui);
         }
+        self.buffer.change = false;
         // if ui.widget_changed == WidgetChange::None as u32 { return; }
         // match ui.widget_changed {
         //     WidgetChange::None => {}

@@ -164,7 +164,7 @@ impl TextBuffer {
     }
 
     pub fn set_text(&mut self, text: String) {
-        self.change = self.text.text == text;
+        self.change = self.text.text != text;
         self.text.text = text;
     }
 

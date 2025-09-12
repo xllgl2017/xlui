@@ -90,6 +90,14 @@ impl ScrollBar {
         self.context_offset_x(-rox)
     }
 
+    pub fn offset(&mut self)->f32{
+        if self.height() > self.width() { //垂直滚动条
+            self.context_offset_y(-self.offset.y)
+        } else { //水平滚动条
+            self.context_offset_x(-self.offset.x)
+        }
+    }
+
     // pub fn set_size(&mut self, w: f32, h: f32) {
     //     self.set_width(w);
     //     self.set_height(h);
@@ -189,6 +197,7 @@ impl ScrollBar {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.slider_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
+            self.slider_render.param.rect.offset(&self.offset);
             self.slider_render.update(ui, false, false);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
@@ -214,15 +223,24 @@ impl Widget for ScrollBar {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
-                    let oy = ui.device.device_input.mouse.offset_y();
-                    let roy = self.slider_render.param.rect.offset_y_limit(self.offset.y + oy, self.fill_render.param.rect.dy());
+                    println!("bar move {}", self.offset.y);
+                    if self.height() > self.width() { //垂直滚动条
+                        let oy = ui.device.device_input.mouse.offset_y();
+                        let roy = self.slider_render.param.rect.offset_y_limit(self.offset.y + oy, self.fill_render.param.rect.dy());
+                        self.offset.y = roy;
+                    } else { //水平滚动条
+                        let ox = ui.device.device_input.mouse.offset_x();
+                        let rox = self.slider_render.param.rect.offset_x_limit(self.offset.x + ox, self.fill_render.param.rect.dx());
+                        self.offset.x = rox;
+                    }
+                    ui.context.window.request_redraw();
                     // let mut offset = Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(self.context_offset_y(-roy));
                     // if self.offset < roy {
                     //     offset.direction = OffsetDirection::Down
                     // } else {
                     //     offset.direction = OffsetDirection::Up;
                     // }
-                    self.offset.y = roy;
+
                     self.changed = true;
                     // let ut = UpdateType::Offset(offset);
                     // ui.update_type = UpdateType::None;

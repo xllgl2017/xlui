@@ -225,7 +225,6 @@ impl<T: 'static> ListView<T> {
     pub fn update(&mut self, ui: &mut Ui) {
         match ui.update_type {
             UpdateType::Draw => {
-                println!("333333333333333");
                 let area: &mut ScrollWidget = ui.layout().get_widget(&self.lid).unwrap();
                 let recycle_layout: &mut RecycleLayout = area.layout.as_mut().unwrap().as_mut_().unwrap();
                 let mut display = recycle_layout.display_range();

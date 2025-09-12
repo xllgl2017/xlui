@@ -115,9 +115,12 @@ impl Layout for RecycleLayout {
                 let first_offset = -(-self.offset.y - self.display.start as f32 * item_total_h);
 
                 ui.draw_rect.set_y_min(previous_rect.dy().min + first_offset);
+                let mut start = self.display.start;
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);
-                    ui.draw_rect.add_min_y(resp.size.dh + self.item_space)
+                    ui.draw_rect.add_min_y(resp.size.dh + self.item_space);
+                    start += 1;
+                    if start >= self.total_count { break; }
                 }
             }
         }

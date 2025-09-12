@@ -163,7 +163,6 @@ impl Widget for ItemWidget {
         let datum: &String = datum.downcast_ref().unwrap();
         let layout = self.layout.as_mut().unwrap();
         let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
-        println!("4444444444444={}", datum);
         label.set_text(datum);
         self.hovered = false;
         self.selected = false;
