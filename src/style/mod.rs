@@ -1,27 +1,3 @@
-//!
-//! ### 控件样式
-//! ```
-//! use xlui::{Size,Border,Radius};
-//! use xlui::style::ClickStyle;
-//! use xlui::style::color::Color;
-//! use xlui::ui::Ui;
-//!
-//! fn draw(ui:&mut Ui){
-//!     let mut style=ClickStyle::new();
-//!     //未活跃的状态
-//!     style.fill.inactive=Color::GRAY;
-//!     style.border.inactive=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
-//!     //滑动状态
-//!     style.fill.hovered=Color::GRAY;
-//!     style.border.hovered=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
-//!     //活跃状态
-//!     style.fill.clicked=Color::GRAY;
-//!     style.border.clicked=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
-//! }
-//! ```
-//!
-//!
-
 pub mod color;
 use crate::size::border::Border;
 use crate::size::rect::Rect;
@@ -33,6 +9,30 @@ pub struct Frame {
     pub shadow: Color,
 
 }
+
+///
+/// ### 控件样式
+/// ```
+/// use xlui::{Size,Border,Radius};
+/// use xlui::style::ClickStyle;
+/// use xlui::style::color::Color;
+/// use xlui::ui::Ui;
+///
+/// fn draw(ui:&mut Ui){
+///     let mut style=ClickStyle::new();
+///     //未活跃的状态
+///     style.fill.inactive=Color::GRAY;
+///     style.border.inactive=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     //滑动状态
+///     style.fill.hovered=Color::GRAY;
+///     style.border.hovered=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     //活跃状态
+///     style.fill.clicked=Color::GRAY;
+///     style.border.clicked=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+/// }
+/// ```
+///
+///
 #[derive(Clone)]
 pub struct FillStyle {
     pub inactive: Color,
@@ -61,13 +61,10 @@ impl BorderStyle {
     pub fn same(c: Border) -> Self {
         BorderStyle {
             inactive: c.clone(),
-            hovered: c.clone(
-),
+            hovered: c.clone(),
             clicked: c,
         }
     }
-
-
 }
 
 #[derive(Clone)]

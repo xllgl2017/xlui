@@ -1,3 +1,16 @@
+/// ### 颜色
+/// ```rust
+/// use xlui::style::color::Color;
+/// use xlui::ui::Ui;
+///
+/// fn draw(ui:&mut Ui){
+///     let color=Color::WHITE;//白色
+///     let color=Color::rgb(255,0,0);//红色
+///     let color=Color::rgba(255,255,255,100);//支持透明
+/// }
+/// ```
+///
+
 #[derive(Clone)]
 pub struct Color {
     r: u8,
