@@ -185,7 +185,7 @@ impl App for TestLayout {
     }
 }
 
-
+#[test]
 fn main() {
     TestLayout {}.run().unwrap();
 }

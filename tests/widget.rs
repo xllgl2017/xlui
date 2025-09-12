@@ -25,33 +25,33 @@ impl TestWidget {
         }
     }
 
-    fn add(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn add(&mut self, _: &mut Button, _: &mut Ui) {
         self.count += 1;
         self.status = format!("count: {}", self.count);
     }
 
-    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn reduce(&mut self, _: &mut Button, _: &mut Ui) {
         self.count -= 1;
         self.status = format!("count: {}", self.count);
     }
 
-    fn slider(&mut self, ui: &mut Ui, value: f32) {
+    fn slider(&mut self, _: &mut Ui, value: f32) {
         self.status = format!("slider: {}", value);
     }
 
-    fn check(&mut self, ui: &mut Ui, checked: bool) {
+    fn check(&mut self, _: &mut Ui, checked: bool) {
         self.status = format!("check: {}", checked);
     }
 
-    fn spinbox_i32(&mut self, ui: &mut Ui, value: i32) {
+    fn spinbox_i32(&mut self, _: &mut Ui, value: i32) {
         self.status = format!("spinbox: {}", value);
     }
 
-    fn spinbox_f32(&mut self, ui: &mut Ui, value: f32) {
+    fn spinbox_f32(&mut self, _: &mut Ui, value: f32) {
         self.status = format!("spinbox: {}", value);
     }
 
-    fn radio(&mut self, ui: &mut Ui, checked: bool) {
+    fn radio(&mut self, _: &mut Ui, checked: bool) {
         self.status = format!("radio: {}", checked);
     }
 
@@ -67,7 +67,7 @@ impl TestWidget {
         btn.update(ui);
     }
 
-    fn combo_changed(&mut self, ui: &mut Ui, data: &SV) {
+    fn combo_changed(&mut self, _: &mut Ui, data: &SV) {
         self.status = format!("combo: {}", data);
     }
 }

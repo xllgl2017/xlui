@@ -265,6 +265,7 @@ pub struct Ui<'a, 'p> {
     pub(crate) can_offset: bool,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
+    #[deprecated]
     pub(crate) offset: Offset,
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
