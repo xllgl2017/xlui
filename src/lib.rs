@@ -4,11 +4,10 @@
 //! ### 目前的控件工作状态如下图
 //! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img_1.png?raw=true)
 //! ### 下面是xlui的最小运行示例
-//! ```
+//! ```rust
 //! use xlui::frame::App;
 //! use xlui::*;
 //! use xlui::ui::Ui;
-//! use xlui::frame::context::Context;
 //!
 //! fn main() {
 //!     let app=XlUiApp::new();
@@ -26,7 +25,7 @@
 //!     fn new()->XlUiApp{
 //!         XlUiApp{
 //!             count: 0,
-//!             status:"".to_string()
+//!             status:"这里是Label".to_string()
 //!         }
 //!     }
 //!     fn add(&mut self,_:&mut Button,ui: &mut Ui){
@@ -43,7 +42,7 @@
 //! //实现App trait
 //! impl App for XlUiApp {
 //!     fn draw(&mut self, ui: &mut Ui) {
-//!         ui.add(Label::new("hello").width(100.0).with_id("status"));
+//!         ui.add(Label::new("hello").with_id("status"));
 //!         ui.horizontal(|ui| {
 //!             ui.add(Button::new("+").width(30.0).height(30.0).connect(Self::add));
 //!             ui.add(Button::new("-").width(30.0).height(30.0).connect(Self::reduce));

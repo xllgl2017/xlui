@@ -238,15 +238,14 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        // if !self.changed && !ui.context.resize && !ui.can_offset { return; }
+        if let Some(v) = ui.context.updates.remove(&self.id) {
+            v.update_t(&mut self.value);
+            self.changed = true;
+        }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.rect.offset_to_rect(&ui.draw_rect);
-
-
-            // self.up_rect = self.rect.clone();
-            // self.up_rect.set_width(18.0);
             self.up_rect.set_x_min(self.rect.dx().max - 14.0);
             self.up_rect.set_x_max(self.rect.dx().max);
             self.up_rect.set_y_min(self.rect.dy().min + 1.0);
@@ -282,17 +281,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             p2.y = self.down_rect.dy().min;
             self.down_render.param.p2 = p2;
             self.down_render.update(ui, false, false);
-
-
-            // self.down_rect = self.rect.clone();
-            // self.down_rect.add_min_x(self.rect.dx().max - 14.0);
         }
-        // if ui.can_offset {
-        //     self.down_rect.offset(&ui.offset);
-        //     self.up_rect.offset(&ui.offset);
-        //     self.down_render.param.offset(&ui.offset);
-        //     self.up_render.param.offset(&ui.offset);
-        // }
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.down_render.update(ui, self.value <= self.range.start, false);
             self.up_render.update(ui, self.value >= self.range.end, false);
@@ -384,24 +373,10 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.listen_input(ui, 100);
                 }
             }
-            // UpdateType::Offset(ref o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.rect); }
-            //     self.rect.offset(o);
-            //     self.up_rect.offset(o);
-            //     self.down_rect.offset(o);
-            //     self.up_render.param.offset(o);
-            //     self.down_render.param.offset(o);
-            //     self.changed = true;
-            // }
             UpdateType::Drop => {}
             _ => {}
         }
-        // self.edit.update(ui);
-        // if let Some(v) = ui.context.updates.remove(&self.id) {
-        //     v.update_t(&mut self.value);
-        //     self.changed = true;
-        //     ui.context.window.request_redraw();
-        // }
+        self.edit.update(ui);
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
     }
 }
