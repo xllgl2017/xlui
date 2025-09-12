@@ -28,9 +28,7 @@ GUI库。目标是利用Rust语言原生构建GUI、最小第三方依赖,体积
 ### xlui的最小运行示例
 
 ```rust
-use xlui::frame::App;
 use xlui::*;
-use xlui::ui::Ui;
 
 fn main() {
     let app=XlUiApp::new();
