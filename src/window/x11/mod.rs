@@ -163,6 +163,7 @@ impl X11Window {
                         return match xclient.data.get_long(0) {
                             0 => (window.id, WindowEvent::ReqUpdate),
                             1 => (window.id, WindowEvent::CreateChild),
+                            2 => (window.id, WindowEvent::ReInit),
                             _ => (window.id, WindowEvent::None)
                         };
                     } else if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
