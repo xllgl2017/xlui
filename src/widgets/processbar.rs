@@ -50,16 +50,10 @@ impl ProcessBar {
     }
 
 
-    fn init(&mut self, ui: &mut Ui, init: bool) {
-        // if init {
-        //     // self.fill_render.param.rect = ui.available_rect().clone_with_size(&self.fill_render.param.rect);
-        //     // self.process_render.param.rect = self.fill_render.param.rect.clone();
-        // }
+    fn init(&mut self, ui: &mut Ui) {
         let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.process_render.param.rect.set_width(w);
-        //
         self.fill_render.init_rectangle(ui, false, false);
-        //
         self.process_render.init_rectangle(ui, false, false);
     }
 
@@ -120,8 +114,8 @@ impl Widget for ProcessBar {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui, true),
-            UpdateType::ReInit => self.init(ui, false),
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.init(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))

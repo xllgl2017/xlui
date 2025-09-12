@@ -61,10 +61,13 @@ impl BorderStyle {
     pub fn same(c: Border) -> Self {
         BorderStyle {
             inactive: c.clone(),
-            hovered: c.clone(),
+            hovered: c.clone(
+),
             clicked: c,
         }
     }
+
+
 }
 
 #[derive(Clone)]

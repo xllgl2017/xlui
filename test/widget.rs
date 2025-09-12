@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 use std::process::exit;
-use std::sync::{Arc, RwLock};
 use xlui::frame::App;
 use xlui::ui::Ui;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]

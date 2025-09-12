@@ -60,7 +60,6 @@ impl AppContext {
             pass: None,
             layout: Some(self.layout.take().unwrap()),
             popups: self.popups.take(),
-            current_rect: Rect::new(),
             update_type: UpdateType::Init,
             can_offset: false,
             inner_windows: None,
@@ -71,7 +70,6 @@ impl AppContext {
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
-        // self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
     }
 
@@ -84,7 +82,6 @@ impl AppContext {
             pass: None,
             layout: self.layout.take(),
             popups: None,
-            current_rect: Rect::new(),
             update_type: ut,
             can_offset: false,
             inner_windows: None,
@@ -225,7 +222,6 @@ impl AppContext {
             pass: Some(pass),
             layout: self.layout.take(),
             popups: self.popups.take(),
-            current_rect: Rect::new(),
             update_type: UpdateType::Draw,
             can_offset: false,
             inner_windows: None,
@@ -256,38 +252,6 @@ impl AppContext {
         surface_texture.present();
         self.previous_time = crate::time_ms();
     }
-
-    // #[deprecated = "use AppContext::update"]
-    // pub fn key_input(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
-    //     let mut ui = Ui {
-    //         device: &self.device,
-    //         context: &mut self.context,
-    //         app: Some(app),
-    //         pass: None,
-    //         layout: None,
-    //         popups: self.popups.take(),
-    //         current_rect: Rect::new(),
-    //         update_type: ut,
-    //         can_offset: false,
-    //         inner_windows: None,
-    //         request_update: None,
-    //         offset: Offset::new(Pos::new()),
-    //     };
-    //     for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
-    //         inner_window.update(&mut ui);
-    //     }
-    //     ui.inner_windows = self.inner_windows.take();
-    //     self.layout.as_mut().unwrap().update(&mut ui);
-    //     self.popups = ui.popups.take();
-    //     for popup in self.popups.as_mut().unwrap().iter_mut() {
-    //         popup.update(&mut ui)
-    //     }
-    //     self.inner_windows = ui.inner_windows.take();
-    //     if let Some(u) = ui.request_update.take() {
-    //         ui.context.user_update = u;
-    //         ui.context.window.request_update(UserEvent::ReqUpdate);
-    //     }
-    // }
 }
 
 pub struct Ui<'a> {
@@ -297,8 +261,6 @@ pub struct Ui<'a> {
     pub(crate) pass: Option<wgpu::RenderPass<'a>>,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
-    #[deprecated = "use Ui::draw_rect"]
-    pub(crate) current_rect: Rect,
     pub(crate) update_type: UpdateType,
     pub(crate) can_offset: bool,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
@@ -333,33 +295,12 @@ impl<'a> Ui<'a> {
         let layout = self.layout.as_mut()?;
         layout.add_item(LayoutItem::Widget(widget));
         layout.get_item_mut(&wid)?.widget()
-
-        // let items = layout.layout_mut().items_mut();
-        // items.insert(wid.clone(), LayoutItem::Widget(widget));
-        // items.get_mut(&wid).unwrap().widget()
-        // self.layout().alloc_rect(&widget.rect);
-        // self.layout().add_widget(widget.id.clone(), widget);
-        // let items = self.layout.as_mut().unwrap().layout_mut().items_mut();
-        // let widget = self.layout().layout_mut().get_item(&wid).unwrap();
-        // widget.widget()
-        // let widget = widget.deref_mut() as &mut dyn Any;
-        // widget.downcast_mut::<T>().unwrap()
     }
 
     pub fn get_widget<T: Widget>(&mut self, id: impl ToString) -> Option<&mut T> {
         let layout = self.layout.as_mut()?;
         layout.get_widget(&id.to_string())
-        // let items = layout.layout_mut().items_mut();
-        // Some(items.get_mut(&id.to_string())?.widget())
-        // let widget = self.layout().get_widget(&id.to_string())?;
-        // let widget = widget.deref_mut() as &mut dyn Any;
-        // widget.downcast_mut::<T>()
     }
-
-    // pub fn add_mut(&mut self, widget: &mut impl Widget) {
-    //     let resp = widget.update(self);
-    //     self.layout().alloc_rect(&resp.rect);
-    // }
 
     pub fn request_update(&mut self, ut: UpdateType) {
         let wid = self.context.window.id();
@@ -367,18 +308,12 @@ impl<'a> Ui<'a> {
     }
 
     pub fn add_layout(&mut self, layout: impl Layout + 'static, context: impl FnOnce(&mut Ui)) {
-        let mut layout = LayoutKind::new(layout);
-        // let x_direction = layout.max_rect().x_direction();
-        // let y_direction = layout.max_rect().y_direction();
-        // layout.set_rect(self.layout().available_rect().with_x_direction(x_direction).with_y_direction(y_direction), &Padding::same(0.0));
-        // println!("add layout={:?}", layout.max_rect());
-
+        let layout = LayoutKind::new(layout);
         let previous_layout = self.layout.replace(layout).unwrap();
         context(self);
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
         current_layout.update(self);
         self.layout().add_item(LayoutItem::Layout(current_layout));
-        // self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
     }
 
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
@@ -388,8 +323,6 @@ impl<'a> Ui<'a> {
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
         current_layout.update(self);
         self.layout().add_item(LayoutItem::Layout(current_layout));
-        // self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
-        // self.layout().add_child(current_layout);
     }
 
     pub fn vertical(&mut self, mut context: impl FnMut(&mut Ui)) {
@@ -399,8 +332,6 @@ impl<'a> Ui<'a> {
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
         current_layout.update(self);
         self.layout().add_item(LayoutItem::Layout(current_layout));
-        // self.layout().layout_mut().items_mut().insert(current_layout.id().to_string(), LayoutItem::Layout(current_layout));
-        // self.layout().add_child(current_layout);
     }
 
     pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {
@@ -418,17 +349,6 @@ impl<'a> Ui<'a> {
         self.context.new_window = Some((app, attr));
         self.context.window.request_update(UserEvent::CreateChild);
     }
-
-
-    // pub fn available_rect(&self) -> Rect {
-    //     self.layout.as_ref().unwrap().available_rect()
-    // }
-
-    // pub fn paint_rect(&mut self, rect: Rect, style: ClickStyle) {
-    //     let paint_rect = Rectangle::new(rect, style);
-    //     let widget = WidgetKind::new(paint_rect);
-    //     self.layout().add_widget(widget.id.clone(), widget);
-    // }
 
     pub fn label(&mut self, text: impl Into<RichText>) {
         let label = Label::new(text);

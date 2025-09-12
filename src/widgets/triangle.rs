@@ -70,15 +70,11 @@ impl Triangle {
         self.render.param.style = style;
     }
 
-    fn init(&mut self, ui: &mut Ui, init: bool) {
-        // if init {
-        //     self.rect = ui.available_rect().clone_with_size(&self.rect);
-        // }
+    fn init(&mut self, ui: &mut Ui) {
         self.render.init_triangle(ui, false, false);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        // if !self.changed && !ui.can_offset { return; }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
@@ -92,12 +88,6 @@ impl Triangle {
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.render.update(ui, false, false);
         }
-
-        // if ui.can_offset {
-        //     self.render.param.offset(&ui.offset);
-        //     self.rect.offset(&ui.offset);
-        // }
-        // self.render.update(ui, false, false);
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
@@ -117,8 +107,8 @@ impl Widget for Triangle {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui, true),
-            UpdateType::ReInit => self.init(ui, false),
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.init(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))

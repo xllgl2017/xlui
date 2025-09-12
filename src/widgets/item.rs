@@ -149,12 +149,12 @@ impl Widget for ItemWidget {
                     return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                 }
             }
-            UpdateType::Offset(_) => {
-                if !ui.can_offset { return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height())); }
-                self.changed = true;
-                ui.context.window.request_redraw();
-                self.layout.as_mut().unwrap().update(ui);
-            }
+            // UpdateType::Offset(_) => {
+            //     if !ui.can_offset { return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height())); }
+            //     self.changed = true;
+            //     ui.context.window.request_redraw();
+            //     self.layout.as_mut().unwrap().update(ui);
+            // }
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))

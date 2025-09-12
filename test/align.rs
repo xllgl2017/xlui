@@ -3,7 +3,7 @@ use xlui::frame::App;
 use xlui::style::color::Color;
 use xlui::style::{ClickStyle, FillStyle};
 use xlui::ui::Ui;
-use xlui::{Button, Label, RichTextExt, WindowAttribute};
+use xlui::{Button, Label, WindowAttribute};
 
 pub struct TestAlign {}
 

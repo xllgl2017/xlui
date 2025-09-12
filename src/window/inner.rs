@@ -1,7 +1,7 @@
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
-use crate::layout::{Layout, LayoutItem, LayoutKind};
+use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -129,7 +129,6 @@ impl InnerWindow {
             pass: None,
             layout: Some(LayoutKind::new(context_layout)),
             popups: self.popups.take(),
-            current_rect: Rect::new(),
             update_type: UpdateType::Init,
             can_offset: false,
             inner_windows: None,
@@ -203,7 +202,6 @@ impl InnerWindow {
             pass: oui.pass.take(),
             layout: self.layout.take(),
             popups: self.popups.take(),
-            current_rect: Rect::new(),
             update_type: UpdateType::Draw,
             can_offset: false,
             inner_windows: None,
@@ -241,7 +239,6 @@ impl InnerWindow {
             pass: None,
             layout: self.layout.take(),
             popups: self.popups.take(),
-            current_rect: self.fill_render.param.rect.clone(),
             update_type: oui.update_type.clone(),
             can_offset: oui.can_offset,
             inner_windows: self.inner_windows.take(),
