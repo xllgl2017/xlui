@@ -84,7 +84,7 @@ impl ScrollBar {
     pub fn set_hbar_value_by_offset(&mut self, offset: f32) -> f32 {
         let ox = self.slider_offset_x(offset);
         let rox = self.slider_render.param.rect.offset_x_limit(self.offset.x + ox, self.fill_render.param.rect.dx());
-        println!("{} {}", rox, self.context_offset_x(-rox));
+        // println!("{} {}", rox, self.context_offset_x(-rox));
         self.offset.x = rox;
         self.changed = true;
         self.context_offset_x(-rox)
@@ -226,7 +226,7 @@ impl Widget for ScrollBar {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
-                    println!("bar move {}", self.offset.y);
+                    // println!("bar move {}", self.offset.y);
                     if self.height() > self.width() { //垂直滚动条
                         let oy = ui.device.device_input.mouse.offset_y();
                         let roy = self.slider_render.param.rect.offset_y_limit(self.offset.y + oy, self.fill_render.param.rect.dy());

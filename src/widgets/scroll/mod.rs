@@ -217,9 +217,17 @@ impl Widget for ScrollWidget {
             }
             UpdateType::MouseWheel => {
                 if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
-                    ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y(-ui.device.device_input.mouse.delta_y() * 10.0));
-                    self.v_bar.update(ui);
-                    return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
+                    let oy = ui.device.device_input.mouse.delta_y() * 10.0;
+                    let roy = self.v_bar.set_vbar_value_by_offset(-oy);
+                    let rox = self.h_bar.offset();
+                    let offset = Offset::new(Pos::new())
+                        .with_x(if self.horiz_scrollable { rox } else { 0.0 })
+                        .with_y(if self.vert_scrollable { roy } else { 0.0 });
+                    self.layout.as_mut().unwrap().set_offset(offset);
+                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y());
+                    // self.v_bar.update(ui);
+                    // return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
+                    ui.context.window.request_redraw();
                 }
             }
             // UpdateType::Offset(ref mut o) => {

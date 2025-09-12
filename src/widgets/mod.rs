@@ -24,6 +24,7 @@ pub mod triangle;
 pub mod circle;
 
 pub trait Widget: Any {
+    #[deprecated="use Widget::update"]
     fn redraw(&mut self, ui: &mut Ui); //绘制调用
     fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
     #[allow(unused_attributes)]
