@@ -12,7 +12,7 @@ use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle, Shadow};
+use crate::style::{BorderStyle, ClickStyle, FrameStyle, Shadow};
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::WidgetChange;
@@ -79,9 +79,14 @@ impl InnerWindow {
     }
 
     fn draw_title(&mut self, ui: &mut Ui) {
-        let mut style = ClickStyle::new();
-        style.fill = FillStyle::same(Color::rgb(210, 210, 210));
-        style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0).with_left_top(1).with_right_top(1)));
+        let style = FrameStyle {
+            fill: Color::rgb(210, 210, 210),
+            radius: Radius::same(0).with_left_top(1).with_right_top(1),
+            shadow: Shadow::new(),
+        };
+        // let mut style = ClickStyle::new();
+        // style.fill = FillStyle::same();
+        // style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0).with_left_top(1).with_right_top(1)));
         let mut title_layout = HorizontalLayout::left_to_right()
             .with_size(self.fill_render.param.rect.width(), 22.0)
             .with_padding(Padding::ZERO.top(1.0).left(1.0));
@@ -227,6 +232,8 @@ impl InnerWindow {
         self.popups = nui.popups.take();
 
         // ui.draw_rect = previous_rect;
+        let pass = nui.pass.take();
+        oui.pass = pass;
     }
 
     pub fn update(&mut self, oui: &mut Ui) {

@@ -254,11 +254,11 @@ impl AppContext {
     }
 }
 
-pub struct Ui<'a> {
+pub struct Ui<'a, 'p> {
     pub(crate) device: &'a Device,
     pub(crate) context: &'a mut Context,
     pub(crate) app: Option<&'a mut Box<dyn App>>,
-    pub(crate) pass: Option<wgpu::RenderPass<'a>>,
+    pub(crate) pass: Option<wgpu::RenderPass<'p>>,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
     pub(crate) update_type: UpdateType,
@@ -271,7 +271,7 @@ pub struct Ui<'a> {
 }
 
 
-impl<'a> Ui<'a> {
+impl<'a, 'p> Ui<'a, 'p> {
     pub(crate) fn layout(&mut self) -> &mut LayoutKind {
         self.layout.as_mut().expect("仅能在App::update中调用")
     }
@@ -283,7 +283,7 @@ impl<'a> Ui<'a> {
     }
 }
 
-impl<'a> Ui<'a> {
+impl<'a, 'p> Ui<'a, 'p> {
     pub fn add_space(&mut self, space: f32) {
         let space = Space::new(space);
         self.add(space);

@@ -1,12 +1,13 @@
 pub mod color;
-use crate::size::border::Border;
-use crate::size::rect::Rect;
-use crate::style::color::Color;
 
-pub struct Frame {
-    pub rect: Rect,
+use crate::size::border::Border;
+use crate::style::color::Color;
+use crate::Radius;
+
+pub struct FrameStyle {
     pub fill: Color,
-    pub shadow: Color,
+    pub radius: Radius,
+    pub shadow: Shadow,
 
 }
 
@@ -121,7 +122,7 @@ impl Shadow {
 
 
 pub struct Style {
-    pub window: Frame,
+    pub window: FrameStyle,
     pub widget: WidgetStyle,
 }
 
@@ -129,10 +130,10 @@ pub struct Style {
 impl Style {
     pub fn light_style() -> Style {
         Style {
-            window: Frame {
-                rect: Rect::new(),
+            window: FrameStyle {
+                radius: Radius::same(0),
                 fill: Color::rgb(240, 240, 240),
-                shadow: Color::rgb(0, 0, 0),
+                shadow: Shadow::new(),
             },
 
             widget: WidgetStyle {

@@ -9,6 +9,10 @@ description = "Rust GUI库"
 readme = "README.md"
 #https://docs.rs/crate/xlui/latest
 
+#[[bin]]
+#name = "test_all"
+#path = "tests/all.rs"
+
 [lib]
 name = "xlui"
 crate-type = ['cdylib', 'rlib']

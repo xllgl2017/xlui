@@ -6,7 +6,7 @@ use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::SizeMode;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle};
+use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
@@ -90,13 +90,13 @@ impl HorizontalLayout {
     }
 
     ///设置背景的样式
-    pub fn set_style(&mut self,style:ClickStyle){
+    pub fn set_style(&mut self, style: FrameStyle) {
         match self.fill_render {
             None => {
-                let fill_render = RenderParam::new(RectParam::new(Rect::new(), style));
+                let fill_render = RenderParam::new(RectParam::new_frame(Rect::new(), style));
                 self.fill_render = Some(fill_render);
             }
-            Some(ref mut render) => render.param.style=style,
+            Some(ref mut render) => render.param.set_frame(style),
         }
     }
 

@@ -96,7 +96,7 @@ mod error;
 pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
 pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout,
-                 popup::Popup, LayoutKind};
+                 popup::Popup, LayoutKind, recycle::RecycleLayout};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
                   image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
@@ -319,5 +319,3 @@ pub fn gen_unique_id() -> String {
     let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
     format!("{:x}", t)
 }
-
-pub fn _run_test(_: fn(&mut Ui)) {}
