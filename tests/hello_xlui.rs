@@ -24,7 +24,7 @@ impl Display for TD {
 }
 
 
-
+#[test]
 fn main() {
     XlUiApp::new().run().unwrap();
 }
@@ -154,7 +154,7 @@ impl App for XlUiApp {
                 self.list_view.set_callback(Self::list_changed);
                 self.list_view.on_scrolling(TD::on_scroll);
                 self.list_view.set_item_widget(|ui, datum| {
-                    // ui.image("logo.jpg", (30.0, 30.0));
+                    ui.image("logo.jpg", (30.0, 30.0));
                     ui.vertical(|ui| {
                         ui.add(Label::new(datum.to_string()).with_id("item_id"));
                         ui.horizontal(|ui| {
