@@ -163,6 +163,15 @@ impl ScrollWidget {
         // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
         // self.v_bar.set_context_height(layout.height() + layout.item_space());
     }
+
+    fn bar_offset(&mut self, ui: &mut Ui, ox: f32, oy: f32) {
+        let roy = self.v_bar.set_vbar_value_by_offset(-oy);
+        let rox = self.h_bar.set_hbar_value_by_offset(-ox);
+        let offset = Offset::new(Pos::new())
+            .with_x(if self.horiz_scrollable { rox } else { 0.0 })
+            .with_y(if self.vert_scrollable { roy } else { 0.0 });
+        self.layout.as_mut().unwrap().set_offset(offset);
+    }
 }
 
 impl Widget for ScrollWidget {
@@ -177,13 +186,9 @@ impl Widget for ScrollWidget {
             UpdateType::MouseMove => {
                 if ui.device.device_input.pressed_at(&self.context_rect) {
                     let oy = ui.device.device_input.mouse.offset_y();
-                    let roy = self.v_bar.set_vbar_value_by_offset(-oy);
                     let ox = ui.device.device_input.mouse.offset_x();
-                    let rox = self.h_bar.set_hbar_value_by_offset(-ox);
-                    let offset = Offset::new(Pos::new())
-                        .with_x(if self.horiz_scrollable { rox } else { 0.0 })
-                        .with_y(if self.vert_scrollable { roy } else { 0.0 });
-                    self.layout.as_mut().unwrap().set_offset(offset);
+                    self.bar_offset(ui, ox, oy);
+
                     // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
                     // layout.set_offset(offset);
                     ui.context.window.request_redraw();
@@ -218,12 +223,13 @@ impl Widget for ScrollWidget {
             UpdateType::MouseWheel => {
                 if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
                     let oy = ui.device.device_input.mouse.delta_y() * 10.0;
-                    let roy = self.v_bar.set_vbar_value_by_offset(-oy);
-                    let rox = self.h_bar.offset();
-                    let offset = Offset::new(Pos::new())
-                        .with_x(if self.horiz_scrollable { rox } else { 0.0 })
-                        .with_y(if self.vert_scrollable { roy } else { 0.0 });
-                    self.layout.as_mut().unwrap().set_offset(offset);
+                    self.bar_offset(ui, 0.0, oy);
+                    // let roy = self.v_bar.set_vbar_value_by_offset(-oy);
+                    // let rox = self.h_bar.offset();
+                    // let offset = Offset::new(Pos::new())
+                    //     .with_x(if self.horiz_scrollable { rox } else { 0.0 })
+                    //     .with_y(if self.vert_scrollable { roy } else { 0.0 });
+                    // self.layout.as_mut().unwrap().set_offset(offset);
                     // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y());
                     // self.v_bar.update(ui);
                     // return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
@@ -251,22 +257,24 @@ impl Widget for ScrollWidget {
 
     fn redraw(&mut self, ui: &mut Ui) {
         // println!("{:?}-{:?}-{}", ui.update_type, ui.draw_rect, ui.widget_changed as u32);
-        // if self.a != 0.0 {
-        //     let oy = self.a * 10.0 * 10.0;
-        //     let mut pos = Pos::new();
-        //     pos.x = self.fill_render.param.rect.dx().center();
-        //     pos.y = self.fill_render.param.rect.dy().center();
-        //     ui.update_type = UpdateType::Offset(Offset::new(pos).with_y(-oy));
-        //     if self.a.abs() - 0.001 < 0.0 {
-        //         self.a = 0.0;
-        //     } else if self.a > 0.0 {
-        //         self.a -= 0.001;
-        //     } else if self.a < 0.0 {
-        //         self.a += 0.001;
-        //     }
-        //     self.v_bar.update(ui);
-        //     if !self.v_bar.scrolling() { self.a = 0.0; }
-        // }
+        if self.a != 0.0 {
+            let oy = self.a * 10.0 * 10.0;
+            let mut pos = Pos::new();
+            pos.x = self.fill_render.param.rect.dx().center();
+            pos.y = self.fill_render.param.rect.dy().center();
+            // ui.update_type = UpdateType::Offset(Offset::new(pos).with_y(-oy));
+            if self.a.abs() - 0.001 < 0.0 {
+                self.a = 0.0;
+            } else if self.a > 0.0 {
+                self.a -= 0.001;
+            } else if self.a < 0.0 {
+                self.a += 0.001;
+            }
+            self.bar_offset(ui, 0.0, oy);
+            // self.v_bar.update(ui);
+            // if !self.v_bar.scrolling() { self.a = 0.0; }
+            ui.context.window.request_redraw();
+        }
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
