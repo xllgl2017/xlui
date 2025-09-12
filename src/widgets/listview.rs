@@ -182,6 +182,14 @@ impl<T: 'static> ListView<T> {
         let area: &mut ScrollWidget = ui.layout().get_widget(&self.lid).unwrap();
         let recycle: &mut RecycleLayout = area.layout.as_mut().unwrap().as_mut_().unwrap();
         recycle.remove_item();
+        recycle.items_mut().iter_mut().for_each(|x| {
+            let item: &mut ItemWidget = x.widget_mut().unwrap();
+            item.restore_status(false, false, 0.to_string());
+        });
+        self.previous_display = 0..0;
+        self.current.write().unwrap().take();
+        self.hovered.take();
+        self.selected.take();
 
         // let mut layout = ui.layout.take().expect("应在App::update中调用");
         // let area = layout.get_layout(&self.lid).expect("找不到ListView");
@@ -194,8 +202,6 @@ impl<T: 'static> ListView<T> {
 
     pub fn remove(&mut self, index: usize) -> T {
         let datum = self.data.remove(index);
-        if self.selected == Some(index) { self.selected = None; }
-        if self.hovered == Some(index) { self.hovered = None; }
         self.updates.push(ListUpdate::Remove);
         // let (wid, t) = self.items.remove_map_by_index(index);
         // let mut current = self.current.write().unwrap();

@@ -37,7 +37,7 @@ struct XlUiApp {
 impl XlUiApp {
     pub fn new() -> Self {
         let mut data = vec![];
-        for i in 0..100 {
+        for i in 0..5 {
             data.push(TD::new((i + 1).to_string()));
         }
         Self {

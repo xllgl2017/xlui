@@ -1,12 +1,12 @@
 mod shape;
 mod widget;
 mod align;
-// mod layout;
+mod layout;
 
 use std::fmt::{Display, Formatter};
 use xlui::*;
 use crate::align::TestAlign;
-// use crate::layout::TestLayout;
+use crate::layout::TestLayout;
 use crate::shape::TestShape;
 use crate::widget::TestWidget;
 
@@ -31,6 +31,7 @@ impl Display for TestKind {
     }
 }
 
+#[test]
 fn main() {
     XlUi::new().run().unwrap_or_else(|e| println!("{}", e.to_string()));
 }
@@ -64,9 +65,9 @@ impl XlUi {
         ui.create_window(TestShape::new());
     }
 
-    // fn open_test_layout(&mut self, _: &mut Button, ui: &mut Ui) {
-    //     ui.create_inner_window(TestLayout {});
-    // }
+    fn open_test_layout(&mut self, _: &mut Button, ui: &mut Ui) {
+        ui.create_inner_window(TestLayout {});
+    }
 }
 
 impl App for XlUi {
@@ -76,7 +77,7 @@ impl App for XlUi {
             ui.button(TestKind::Widgets).set_callback(Self::open_test_widgets);
             ui.button(TestKind::Align).set_callback(Self::open_test_align);
             ui.button(TestKind::ChildWindow).set_callback(Self::open_child_window);
-            // ui.button(TestKind::Layout).set_callback(Self::open_test_layout);
+            ui.button(TestKind::Layout).set_callback(Self::open_test_layout);
         });
     }
     fn window_attributes(&self) -> WindowAttribute {

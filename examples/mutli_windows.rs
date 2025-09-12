@@ -42,18 +42,15 @@ impl XlUi {
         let _window: Window = window.to_();
     }
 
-
+    //在当前视图内创建一个窗口
     fn open_inner_window(&mut self, _: &mut Button, ui: &mut Ui) {
         ui.create_inner_window(Window::new("InnerWindow")).on_close(Self::on_rect_close);
     }
 
+    //创建独立窗口
     fn open_child_window(&mut self, _: &mut Button, ui: &mut Ui) {
         ui.create_window(Window::new("ChildWindow"));
     }
-
-    // fn open_test_layout(&mut self, _: &mut Button, ui: &mut Ui) {
-    //     ui.create_inner_window(TestLayout {});
-    // }
 }
 
 impl App for XlUi {
