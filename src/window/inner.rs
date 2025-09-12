@@ -12,7 +12,7 @@ use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, Shadow};
+use crate::style::{BorderStyle, ClickStyle, FillStyle, Shadow};
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::WidgetChange;
@@ -54,11 +54,8 @@ impl InnerWindow {
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);
-        let mut padding = Padding::same(5.0);
-        padding.top = 0.0;
-        let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height()).with_padding(padding);
-        // layout.max_rect = rect;
-        // layout.available_rect = layout.max_rect.clone_add_padding(&padding);
+        let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height())
+            .with_padding(Padding::ZERO);
         let layout = LayoutKind::new(layout);
         let mut window = InnerWindow {
             id: WindowId::unique_id(),
@@ -82,23 +79,16 @@ impl InnerWindow {
     }
 
     fn draw_title(&mut self, ui: &mut Ui) {
+        let mut style = ClickStyle::new();
+        style.fill = FillStyle::same(Color::rgb(210, 210, 210));
+        style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0).with_left_top(1).with_right_top(1)));
         let mut title_layout = HorizontalLayout::left_to_right()
-            .with_size(self.fill_render.param.rect.width() - 2.0, 22.0);
-        // let title_rect = self.fill_render.param.rect.clone();
-        // title_layout.max_rect.contract(1.0, 1.0); //向内缩小1像素
-        // title_layout.max_rect.set_height(22.0);
-        // title_layout.width = title_layout.max_rect.width();
-        // title_layout.height = 22.0;
-        // title_layout.available_rect = title_layout.max_rect.clone_add_padding(&Padding::same(2.0));
-        // self.title_rect = title_layout.max_rect.clone();
+            .with_size(self.fill_render.param.rect.width(), 22.0)
+            .with_padding(Padding::ZERO.top(1.0).left(1.0));
+        title_layout.set_style(style);
         let title_layout = LayoutKind::new(title_layout);
         let previous_layout = ui.layout.replace(title_layout);
         ui.update_type = UpdateType::Init;
-        // let title_style = ClickStyle {
-        //     fill: FillStyle::same(Color::rgb(210, 210, 210)),
-        //     border: BorderStyle::same(Border::new(0.0)),
-        // };
-        // // ui.paint_rect(self.title_rect.clone(), title_style);
         ui.image("logo.jpg", (16.0, 16.0));
         ui.label(self.attr.title.as_str());
         ui.add_layout(HorizontalLayout::right_to_left(), |ui| {
@@ -121,29 +111,17 @@ impl InnerWindow {
             style.fill.clicked = Color::rgba(160, 160, 160, 150);
             btn.set_style(style.clone());
             ui.add(btn);
-            // let title_close_layout = ui.layout.take().unwrap();
         });
 
         let mut title_layout = ui.layout.take().unwrap(); //防止crash
-        // let mut rect = title_layout.available_rect().clone();
-        // rect.set_x_max(title_layout.max_rect().dx().max);
-        // let mut title_close_layout = HorizontalLayout::right_to_left().max_rect(title_layout.available_rect().clone(), Padding::ZERO);
-        // title_close_layout.item_space = 0.0;
-        // ui.layout = Some(LayoutKind::Horizontal(title_close_layout));
-
-
+        title_layout.update(ui);
         ui.update_type = UpdateType::None;
         ui.layout = previous_layout;
-        // title_layout.add_child(title_close_layout);
         self.layout.as_mut().unwrap().add_item(LayoutItem::Layout(title_layout));
     }
 
     fn draw_context(&mut self, oui: &mut Ui) {
-        // let context_rect = self.layout.as_ref().unwrap().available_rect().clone();
-        let mut context_layout = VerticalLayout::top_to_bottom();
-        // context_layout.max_rect = context_rect;
-        // context_layout.available_rect = context_layout.max_rect.clone();
-        // let previous_layout = ui.layout.replace(LayoutKind::new(context_layout));
+        let context_layout = VerticalLayout::top_to_bottom().with_padding(Padding::same(5.0));
         let mut nui = Ui {
             device: oui.device,
             context: oui.context,
@@ -164,35 +142,18 @@ impl InnerWindow {
 
         nui.update_type = UpdateType::Init;
         self.w.draw(&mut nui);
-        // let layout = nui.layout.as_ref().unwrap();
-        // self.check_item(layout);
         let context_layout = nui.layout.take().unwrap();
         nui.update_type = UpdateType::None;
         self.popups = nui.popups.take();
         self.layout.as_mut().unwrap().add_item(LayoutItem::Layout(context_layout));
     }
 
-    // fn check_item(&self, layout: &LayoutKind) {
-    //     for item in layout.items().iter() {
-    //         match item {
-    //             LayoutItem::Layout(ll) => self.check_item(ll),
-    //             LayoutItem::Widget(w) => {
-    //                 println!("{}-{}-{}", w.id(), w.width(), w.height())
-    //             }
-    //         }
-    //     }
-    // }
-
     fn update_buffer(&mut self, ui: &mut Ui) {
-        // if !self.changed { return; }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.fill_render.update(ui, false, false);
         }
-        // self.title_rect.offset(&self.offset);
-        // self.fill_render.param.rect.offset(&self.offset);
-
     }
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {
@@ -218,14 +179,7 @@ impl InnerWindow {
                 ui.context.window.request_redraw();
                 if self.press_title { return false; }
             }
-            UpdateType::MouseRelease => {
-                self.press_title = false;
-                // if ui.device.device_input.pressed_at(&self.fill_render.param.rect) {
-                //     self.top = true;
-                //     ui.context.window.request_redraw();
-                // }
-                // if ui.device.device_input.hovered_at(&self.title_rect) { return false; }
-            }
+            UpdateType::MouseRelease => self.press_title = false,
             _ => {}
         }
         false

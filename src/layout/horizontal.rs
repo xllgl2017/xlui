@@ -61,6 +61,16 @@ impl HorizontalLayout {
         self
     }
 
+    pub fn set_style(&mut self,style:ClickStyle){
+        match self.fill_render {
+            None => {
+                let fill_render = RenderParam::new(RectParam::new(Rect::new(), style));
+                self.fill_render = Some(fill_render);
+            }
+            Some(ref mut render) => render.param.style=style,
+        }
+    }
+
 
     pub fn with_width(mut self, w: f32) -> Self {
         self.set_width(w);
