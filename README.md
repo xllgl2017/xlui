@@ -92,5 +92,6 @@ impl App for XlUiApp {
 
 * [控件使用🦖](https://github.com/xllgl2017/xlui/wiki/%E6%8E%A7%E4%BB%B6)
 * [布局使用🦖](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)
+* [窗口设置🦖](https://github.com/xllgl2017/xlui/wiki/%E7%AA%97%E5%8F%A3)
 
-[//]:  # (❌⬜️)  
+[//]:  # (❌⬜️)
