@@ -60,9 +60,7 @@
 //     }
 // }
 
-use xlui::frame::App;
 use xlui::*;
-use xlui::ui::Ui;
 
 fn main() {
     let app=XlUiApp::new();

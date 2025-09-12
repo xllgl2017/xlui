@@ -16,9 +16,6 @@ use crate::Offset;
 use std::ops::Range;
 /// ### Slider的示例用法
 /// ```
-///
-/// use xlui::frame::App;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn slider_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){

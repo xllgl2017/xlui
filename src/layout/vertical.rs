@@ -11,7 +11,33 @@ use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
 use crate::{Border, Offset, Padding, Pos, Radius, Rect};
-
+///### 垂直布局的使用
+///```rust
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///    //快速创建一个上到下的水平布局
+///    ui.vertical(|ui|{
+///        //添加布局内容
+///    });
+///    //创建一个从下到上的布局
+///    let layout=VerticalLayout::bottom_to_top()
+///        //设置两个item之间的间隔
+///        .with_space(10.0)
+///        //设置当前布局的高度
+///        .with_height(100.0)
+///        //设置当前布局的宽度
+///        .with_width(100.0)
+///        //设置布局内的边距
+///        .with_padding(Padding::same(1.0))
+///        //设置背景颜色
+///        .with_fill(Color::GREEN);
+///    ui.add_layout(layout,|ui|{
+///        //添加布局内容
+///    });
+///
+/// }
+/// ```
 pub struct VerticalLayout {
     id: String,
     items: Map<String, LayoutItem>,

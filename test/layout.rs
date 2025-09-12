@@ -1,7 +1,5 @@
-use xlui::frame::App;
-use xlui::style::color::Color;
-use xlui::ui::Ui;
-use xlui::{HorizontalLayout, Padding, ScrollWidget, VerticalLayout};
+
+use xlui::*;
 
 pub struct TestLayout {}
 

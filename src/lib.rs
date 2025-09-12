@@ -5,9 +5,7 @@
 //! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img_1.png?raw=true)
 //! ### 下面是xlui的最小运行示例
 //! ```rust
-//! use xlui::frame::App;
 //! use xlui::*;
-//! use xlui::ui::Ui;
 //!
 //! fn main() {
 //!     let app=XlUiApp::new();
@@ -66,7 +64,6 @@
 //! * xlui可以在App.update中获取Widget的可变引用，以便修改控件
 //! * update函数是后台接收到系统事件时才会调用，这里不应该直接修改，应根据条件修改。
 //!```
-//! use xlui::ui::Ui;
 //! use xlui::*;
 //!
 //! fn update(ui:&mut Ui){
@@ -77,18 +74,17 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
-use crate::ui::Ui;
 
 mod widgets;
-pub mod align;
-pub mod vertex;
+mod align;
+mod vertex;
 mod layout;
 mod text;
 mod size;
-pub mod frame;
-pub mod ui;
+mod frame;
+mod ui;
 
-pub mod style;
+mod style;
 mod render;
 pub mod response;
 pub mod map;
@@ -99,7 +95,7 @@ mod error;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
-pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout, recycle::RecycleLayout,
+pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout,
                  popup::Popup, LayoutKind};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
 pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
@@ -107,6 +103,10 @@ pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget
                   select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combobox::ComboBox,
                   rectangle::Rectangle, circle::Circle, triangle::Triangle};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
+pub use ui::Ui;
+pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow};
+pub use frame::{App};
+pub use align::Align;
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

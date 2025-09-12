@@ -1,8 +1,4 @@
-use xlui::frame::App;
-use xlui::style::color::Color;
-use xlui::style::{BorderStyle, ClickStyle, Shadow};
-use xlui::ui::Ui;
-use xlui::{Border, Circle, Popup, Pos, Radius, Rect, Rectangle, Slider, SpinBox, Triangle, Widget, WindowAttribute};
+use xlui::*;
 
 pub struct TestShape {
     // rectangle: Rectangle,

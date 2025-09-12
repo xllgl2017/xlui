@@ -8,9 +8,6 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 /// ### Rectangle的示例用法
 /// ```rust
-/// use xlui::style::color::Color;
-/// use xlui::style::Shadow;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){

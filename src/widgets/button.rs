@@ -17,10 +17,6 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 /// ### Button的示例用法
 /// ```
-/// use xlui::frame::App;
-/// use xlui::Padding;
-/// use xlui::style::ClickStyle;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn clicked<A:App>(_:&mut A,btn:&mut Button,ui:&mut Ui){

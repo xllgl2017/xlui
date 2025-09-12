@@ -1,6 +1,5 @@
 /// ### Label的示例用法
 /// ```
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){

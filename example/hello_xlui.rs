@@ -1,7 +1,5 @@
 use std::fmt::Display;
-use xlui::frame::App;
-use xlui::ui::Ui;
-use xlui::{Button, CheckBox, ComboBox, Image, Label, LayoutKind, ListView, ScrollWidget, Slider, SpinBox, TextEdit, Widget};
+use xlui::*;
 
 struct TD {
     name: String,

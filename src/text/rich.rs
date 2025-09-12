@@ -1,8 +1,6 @@
 /// ### RichText的示例用法
 /// ```
-/// use xlui::{RichText, RichTextExt, TextWrap};
-/// use xlui::style::color::Color;
-/// use xlui::ui::Ui;
+/// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
 ///     //此处需要导入RichTextExt，对已实现Display的类型进行转换

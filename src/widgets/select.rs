@@ -18,8 +18,6 @@ use crate::align::Align;
 
 /// ### SelectItem的示例用法
 /// ```
-/// use xlui::Padding;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){

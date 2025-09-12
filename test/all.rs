@@ -4,9 +4,7 @@ mod align;
 // mod layout;
 
 use std::fmt::{Display, Formatter};
-use xlui::frame::App;
-use xlui::{Button, InnerWindow, WindowAttribute};
-use xlui::ui::Ui;
+use xlui::*;
 use crate::align::TestAlign;
 // use crate::layout::TestLayout;
 use crate::shape::TestShape;

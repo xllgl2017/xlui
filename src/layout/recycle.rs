@@ -7,7 +7,7 @@ use crate::widgets::WidgetSize;
 use crate::{Offset, Padding, Pos};
 use std::ops::Range;
 
-pub struct RecycleLayout {
+pub(crate) struct RecycleLayout {
     id: String,
     items: Map<String, LayoutItem>,
     padding: Padding,

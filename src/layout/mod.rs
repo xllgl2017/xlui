@@ -12,14 +12,21 @@ use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
 pub trait Layout: Any {
+    ///更新布局
     fn update(&mut self, ui: &mut Ui) -> Response<'_>;
+    ///获取布局下所有的item
     fn items(&self) -> &Map<String, LayoutItem>;
+    ///获取布局下所有的可变item
     fn items_mut(&mut self) -> &mut Map<String, LayoutItem>;
+    ///添加item到布局内
     fn add_item(&mut self, item: LayoutItem);
+    ///设置布局的位移
     fn set_offset(&mut self, offset: Offset);
+    ///设置布局的大小
     fn set_size(&mut self, w: f32, h: f32);
 }
 
+///布局Item，包含布局和控件
 pub enum LayoutItem {
     Layout(LayoutKind),
     Widget(WidgetKind),
@@ -40,7 +47,7 @@ impl LayoutItem {
         }
     }
 
-    pub fn widget<T:Widget>(&self) -> Option<&T> {
+    pub fn widget<T: Widget>(&self) -> Option<&T> {
         match self {
             LayoutItem::Layout(_) => None,
             LayoutItem::Widget(widget) => widget.as_()

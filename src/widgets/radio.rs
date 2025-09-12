@@ -15,8 +15,6 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 /// ### RadioButton的示例用法
 /// ```
-/// use xlui::frame::App;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn checked<A:App>(_:&mut A,_:&mut Ui,checked:bool){

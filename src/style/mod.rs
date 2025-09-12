@@ -13,10 +13,7 @@ pub struct Frame {
 ///
 /// ### 控件样式
 /// ```
-/// use xlui::{Size,Border,Radius};
-/// use xlui::style::ClickStyle;
-/// use xlui::style::color::Color;
-/// use xlui::ui::Ui;
+/// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
 ///     let mut style=ClickStyle::new();

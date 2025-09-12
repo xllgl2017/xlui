@@ -12,6 +12,34 @@ use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
 use crate::{Border, Offset, Padding, Pos, Radius, Rect};
 
+///### 水平布局的使用
+///```rust
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///    //快速创建一个左到右的水平布局
+///    ui.horizontal(|ui|{
+///        //添加布局内容
+///    });
+///    //创建一个从右到左的布局
+///    let layout=HorizontalLayout::right_to_left()
+///        //设置两个item之间的间隔
+///        .with_space(10.0)
+///        //设置当前布局的高度
+///        .with_height(100.0)
+///        //设置当前布局的宽度
+///        .with_width(100.0)
+///        //设置布局内的边距
+///        .with_padding(Padding::same(1.0))
+///        //设置背景颜色
+///        .with_fill(Color::GREEN);
+///    ui.add_layout(layout,|ui|{
+///        //添加布局内容
+///    });
+///
+/// }
+/// ```
+
 pub struct HorizontalLayout {
     id: String,
     items: Map<String, LayoutItem>,
@@ -61,6 +89,7 @@ impl HorizontalLayout {
         self
     }
 
+    ///设置背景的样式
     pub fn set_style(&mut self,style:ClickStyle){
         match self.fill_render {
             None => {
@@ -76,7 +105,7 @@ impl HorizontalLayout {
         self.set_width(w);
         self
     }
-
+    ///设置布局的宽度
     pub fn set_width(&mut self, w: f32) {
         self.size_mode.fix_width(w);
     }
@@ -86,6 +115,7 @@ impl HorizontalLayout {
         self
     }
 
+    ///设置布局的高度
     pub fn set_height(&mut self, h: f32) {
         self.size_mode.fix_height(h);
     }

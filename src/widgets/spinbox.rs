@@ -19,8 +19,6 @@ use crate::widgets::textedit::TextEdit;
 use crate::window::UserEvent;
 /// ### Slider的示例用法
 /// ```
-/// use xlui::frame::App;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn spinbox_changed<A:App>(_:&mut A,_:&mut Ui,v:f32){

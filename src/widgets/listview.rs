@@ -9,9 +9,10 @@ use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::item::ItemWidget;
-use crate::{HorizontalLayout, Label, Padding, RecycleLayout, ScrollWidget};
+use crate::{HorizontalLayout, Label, Padding, ScrollWidget};
 use std::ops::Range;
 use std::sync::{Arc, RwLock};
+use crate::layout::recycle::RecycleLayout;
 use crate::widgets::WidgetKind;
 
 pub enum ListUpdate<T> {
@@ -21,8 +22,6 @@ pub enum ListUpdate<T> {
 
 /// # ListView的是使用示例
 /// ```
-/// use xlui::frame::App;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// struct XlUi{

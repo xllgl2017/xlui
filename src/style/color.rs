@@ -1,7 +1,6 @@
 /// ### 颜色
 /// ```rust
-/// use xlui::style::color::Color;
-/// use xlui::ui::Ui;
+/// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
 ///     let color=Color::WHITE;//白色
