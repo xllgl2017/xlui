@@ -164,6 +164,7 @@ impl X11Window {
                             0 => (window.id, WindowEvent::ReqUpdate),
                             1 => (window.id, WindowEvent::CreateChild),
                             2 => (window.id, WindowEvent::ReInit),
+                            3 => (window.id, WindowEvent::UserUpdate),
                             _ => (window.id, WindowEvent::None)
                         };
                     } else if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {

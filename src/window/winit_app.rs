@@ -88,7 +88,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                     Window::rebuild_device(&window.app_ctx.context.window, |device| {
                         device.on_uncaptured_error(Box::new(move |err| {
                             println!("Error: {:#?}", err);
-                            w.request_update(UserEvent::ReInit);
+                            w.request_update_event(UserEvent::ReInit);
                         }))
                     }).await
                 }).unwrap();

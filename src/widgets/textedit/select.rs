@@ -160,7 +160,7 @@ impl EditSelection {
                     let window = ui.context.window.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        window.request_update(UserEvent::ReqUpdate);
+                        window.request_update_event(UserEvent::ReqUpdate);
                     });
                     // #[cfg(feature = "winit")]
                     // {
@@ -185,7 +185,7 @@ impl EditSelection {
                     let window = ui.context.window.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        window.request_update(UserEvent::ReqUpdate);
+                        window.request_update_event(UserEvent::ReqUpdate);
                     });
                     // #[cfg(feature = "winit")]
                     // {

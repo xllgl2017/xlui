@@ -20,4 +20,5 @@ pub enum WindowEvent {
     IME(IMEData),
     CreateChild,
     Clipboard(ClipboardData),
+    UserUpdate,
 }

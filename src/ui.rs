@@ -12,10 +12,11 @@ use crate::text::rich::RichText;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::space::Space;
 use crate::widgets::{Widget, WidgetChange, WidgetKind};
-use crate::window::{UserEvent, WindowId};
+use crate::window::{UserEvent, WindowId, WindowType};
 use crate::{Button, Device, Image, Label, NumCastExt, Offset, RadioButton, SelectItem, Slider, SpinBox, SAMPLE_COUNT};
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
@@ -71,6 +72,27 @@ impl AppContext {
         app.draw(&mut ui);
         self.layout = ui.layout.take();
         self.popups = ui.popups.take();
+    }
+
+    pub fn user_update(&mut self, app: &mut Box<dyn App>) {
+        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let mut ui = Ui {
+            device: &self.device,
+            context: &mut self.context,
+            app: None,
+            pass: None,
+            layout: self.layout.take(),
+            popups: None,
+            update_type: UpdateType::None,
+            can_offset: false,
+            inner_windows: None,
+            request_update: None,
+            offset: Offset::new(Pos::new()),
+
+            draw_rect,
+            widget_changed: WidgetChange::None,
+        };
+        app.update(&mut ui);
     }
 
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
@@ -241,7 +263,7 @@ impl AppContext {
         }
         if let Some(u) = ui.request_update.take() {
             ui.context.user_update = u;
-            ui.context.window.request_update(UserEvent::ReqUpdate);
+            ui.context.window.request_update_event(UserEvent::ReqUpdate);
         }
         self.inner_windows.as_mut().unwrap().sort_by_key(|x| x.value().top);
         for inner_window in self.inner_windows.as_mut().unwrap().iter_mut() {
@@ -285,6 +307,9 @@ impl<'a, 'p> Ui<'a, 'p> {
 }
 
 impl<'a, 'p> Ui<'a, 'p> {
+    pub fn window(&self) -> Arc<WindowType> {
+        self.context.window.clone()
+    }
     pub fn add_space(&mut self, space: f32) {
         let space = Space::new(space);
         self.add(space);
@@ -303,10 +328,10 @@ impl<'a, 'p> Ui<'a, 'p> {
         layout.get_widget(&id.to_string())
     }
 
-    pub fn request_update(&mut self, ut: UpdateType) {
-        let wid = self.context.window.id();
-        self.request_update = Some((wid, ut));
-    }
+    // pub fn request_update(&mut self, ut: UpdateType) {
+    //     let wid = self.context.window.id();
+    //     self.request_update = Some((wid, ut));
+    // }
 
     pub fn add_layout(&mut self, layout: impl Layout + 'static, context: impl FnOnce(&mut Ui)) {
         let layout = LayoutKind::new(layout);
@@ -348,7 +373,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         let attr = w.window_attributes();
         let app = Box::new(w);
         self.context.new_window = Some((app, attr));
-        self.context.window.request_update(UserEvent::CreateChild);
+        self.context.window.request_update_event(UserEvent::CreateChild);
     }
 
     pub fn label(&mut self, text: impl Into<RichText>) {

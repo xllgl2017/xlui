@@ -24,7 +24,18 @@
 
 ## 控件
 
-### TextEdit支持复制和粘贴(仅原生窗口支持)
+### Label
+
+* ✅文本对齐
+* ✅富文本
+ 
+<img width="293" height="204" alt="image" src="https://github.com/user-attachments/assets/efa51ba0-cbb5-4f63-aa9d-2d2d50f83a28" />
+
+### TextEdit
+
+* ✅多行文本
+* ✅密码文本
+* ✅复制和粘贴(仅原生窗口支持)
 
 ### ScrollWidget
 
@@ -44,10 +55,12 @@
 ### 系统托盘（Windows）
 
 ### 自定义字体和全局字号
+
 <img width="176" height="98" alt="image" src="https://github.com/user-attachments/assets/8eff6962-a808-4718-a149-26983d154238" />
 <img width="286" height="51" alt="image" src="https://github.com/user-attachments/assets/5574cd15-4e12-480c-8046-29f21f01c320" />
 
 ### 子窗口
+
    <img width="949" height="595" alt="image" src="https://github.com/user-attachments/assets/4f02f660-8344-4760-9c86-2d0dc5ea97c0" />
 
 ## 0.1.0 - 2025-08-20 [#1](https://github.com/xllgl2017/xlui/issues/1)

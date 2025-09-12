@@ -60,7 +60,7 @@ impl LoopWindow {
         };
         let w = window.clone();
         device.on_uncaptured_error(Box::new(move |err: wgpu::Error| {
-            w.request_update(UserEvent::ReInit);
+            w.request_update_event(UserEvent::ReInit);
             println!("Error: {:#?}", err);
             println!("{}", err.to_string());
         }));
@@ -121,6 +121,7 @@ impl EventLoopHandle for LoopWindow {
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
             WindowEvent::IME(data) => self.app_ctx.update(UpdateType::IME(data), &mut self.app),
             WindowEvent::Clipboard(data) => self.app_ctx.update(UpdateType::Clipboard(data), &mut self.app),
+            WindowEvent::UserUpdate => self.app_ctx.user_update(&mut self.app),
             _ => {}
         }
     }

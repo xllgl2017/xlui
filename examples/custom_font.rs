@@ -25,7 +25,7 @@ impl XlUiApp {
         self.status = format!("count: {}", self.count);
     }
 
-    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn reduce(&mut self, _: &mut Button, _: &mut Ui) {
         self.count -= 1;
         self.status = format!("count: {}", self.count);
     }

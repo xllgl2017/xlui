@@ -21,7 +21,7 @@ impl Window {
         let w = window.clone();
         let device = Self::rebuild_device(&window, |device| {
             device.on_uncaptured_error(Box::new(move |err| {
-                w.request_update(UserEvent::ReInit);
+                w.request_update_event(UserEvent::ReInit);
                 println!("Error: {:?}", err);
             }));
         }).await?;
