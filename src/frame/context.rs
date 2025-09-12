@@ -8,7 +8,7 @@ use crate::render::triangle::TriangleRender;
 use crate::text::render::TextRender;
 use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
-use crate::{Device, Font, NumCastExt, Offset, WindowAttribute};
+use crate::{Device, Font, NumCastExt, WindowAttribute};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -82,23 +82,23 @@ pub enum UpdateType {
     MouseWheel,
     KeyPress(Key),
     KeyRelease(Key),
-    #[deprecated]
-    Offset(Offset),
+    // #[deprecated]
+    // Offset(Offset),
     Drop,
     IME(IMEData),
     CreateWindow,
     Clipboard(ClipboardData),
 }
 
-impl UpdateType {
-    #[deprecated]
-    pub(crate) fn is_offset(&self) -> Option<&Offset> {
-        match self {
-            UpdateType::Offset(o) => Some(o),
-            _ => None,
-        }
-    }
-}
+// impl UpdateType {
+//     // #[deprecated]
+//     // pub(crate) fn is_offset(&self) -> Option<&Offset> {
+//     //     match self {
+//     //         UpdateType::Offset(o) => Some(o),
+//     //         _ => None,
+//     //     }
+//     // }
+// }
 
 impl Debug for UpdateType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -111,7 +111,7 @@ impl Debug for UpdateType {
             UpdateType::MouseRelease => f.write_str("MouseRelease"),
             UpdateType::MouseWheel => f.write_str("MouseWheel"),
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
-            UpdateType::Offset(_) => f.write_str("Offset"),
+            // UpdateType::Offset(_) => f.write_str("Offset"),
             UpdateType::Drop => f.write_str("Drop"),
             UpdateType::IME(_) => f.write_str("IME"),
             UpdateType::CreateWindow => f.write_str("CreateWindow"),

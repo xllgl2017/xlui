@@ -56,14 +56,15 @@ impl Circle {
         self.render.init_circle(ui, false, false);
         self.changed = false;
     }
-}
-
-impl Widget for Circle {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.circle.render(&self.render, pass);
     }
+
+}
+
+impl Widget for Circle {
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

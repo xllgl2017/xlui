@@ -24,11 +24,11 @@ pub mod triangle;
 pub mod circle;
 
 pub trait Widget: Any {
-    #[deprecated="use Widget::update"]
-    fn redraw(&mut self, ui: &mut Ui); //绘制调用
+    // #[deprecated="use Widget::update"]
+    // fn redraw(&mut self, ui: &mut Ui); //绘制调用
     fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
-    #[allow(unused_attributes)]
-    fn store(&mut self, datum: &dyn Any) {}
+    // #[allow(unused_attributes)]
+    // fn store(&mut self, datum: &dyn Any) {}
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -123,8 +123,9 @@ impl WidgetKind {
         resp
     }
 
+    #[deprecated = "use update"]
     pub fn redraw(&mut self, ui: &mut Ui) {
-        self.widget.redraw(ui);
+        self.widget.update(ui);
     }
 
     // pub fn change_position(&mut self, x: f32, y: f32) {
@@ -162,7 +163,7 @@ impl WidgetKind {
 }
 
 #[derive(PartialEq, Clone)]
-pub(crate) struct WidgetSize {
+pub struct WidgetSize {
     pub(crate) dw: f32, //绘制宽度
     pub(crate) dh: f32, //绘制高度
     pub(crate) rw: f32, //真实宽度

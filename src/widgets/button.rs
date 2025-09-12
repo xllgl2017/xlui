@@ -243,10 +243,6 @@ impl Button {
         // }
         // self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
-}
-
-
-impl Widget for Button {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
@@ -269,6 +265,11 @@ impl Widget for Button {
         }
         if let Some(ref mut image) = self.image { image.redraw(ui); }
     }
+}
+
+
+impl Widget for Button {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         if let Some(ref mut image) = self.image {

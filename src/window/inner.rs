@@ -165,8 +165,8 @@ impl InnerWindow {
                     self.offset.x += ox;
                     self.offset.y += oy;
                     self.offset.pos = ui.device.device_input.mouse.lastest;
-                    ui.update_type = UpdateType::Offset(self.offset.clone());
-                    ui.can_offset = true;
+                    // ui.update_type = UpdateType::Offset(self.offset.clone());
+                    // ui.can_offset = true;
                     self.changed = true;
                     ui.context.window.request_redraw();
                     return false;

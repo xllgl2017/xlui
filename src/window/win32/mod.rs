@@ -199,7 +199,7 @@ impl Win32Window {
                 CREATE_CHILD => (window.id, WindowEvent::CreateChild),
                 RE_INIT => {
                     println!("re_init");
-                    (window.id, WindowEvent::Reinit)
+                    (window.id, WindowEvent::ReInit)
                 }
                 IME => {
                     // let himc = window.win32().himc.read().unwrap();

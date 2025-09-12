@@ -296,10 +296,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             ui.context.window.request_redraw();
         }
     }
-}
-
-
-impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         if ui.widget_changed.contains(WidgetChange::Position) {
@@ -312,6 +308,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         ui.context.render.triangle.render(&self.down_render, pass);
         ui.context.render.triangle.render(&self.up_render, pass);
     }
+}
+
+
+impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> Widget for SpinBox<T> {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

@@ -130,9 +130,9 @@ impl IME {
         res
     }
 
-    pub fn len(&self) -> usize {
-        self.chars.read().unwrap().len()
-    }
+    // pub fn len(&self) -> usize {
+    //     self.chars.read().unwrap().len()
+    // }
 
     pub fn is_working(&self) -> bool {
         self.working.load(Ordering::SeqCst)

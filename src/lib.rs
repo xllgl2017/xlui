@@ -137,6 +137,7 @@ impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 const SAMPLE_COUNT: u32 = 4;
 
+#[deprecated]
 #[derive(Clone, Debug)]
 enum OffsetDirection {
     Down,

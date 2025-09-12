@@ -182,9 +182,7 @@ impl CheckBox {
         // }
         // self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
-}
 
-impl Widget for CheckBox {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
@@ -192,6 +190,10 @@ impl Widget for CheckBox {
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }
+}
+
+impl Widget for CheckBox {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

@@ -8,7 +8,6 @@ use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
-use std::any::Any;
 use std::mem;
 use std::sync::{Arc, RwLock};
 
@@ -112,15 +111,17 @@ impl ItemWidget {
         self.data_str = data_str;
         self.changed = hovered || selected
     }
-}
 
-impl Widget for ItemWidget {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().update(ui);
     }
+}
+
+impl Widget for ItemWidget {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         // self.layout.as_mut().unwrap().update(ui);注意这里不能直接调widgets的update
@@ -155,12 +156,12 @@ impl Widget for ItemWidget {
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
-    fn store(&mut self, datum: &dyn Any) {
-        // let datum: &String = datum.downcast_ref().unwrap();
-        // let layout = self.layout.as_mut().unwrap();
-        // let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
-        // label.set_text(datum);
-        // self.hovered = false;
-        // self.selected = false;
-    }
+    // fn store(&mut self, datum: &dyn Any) {
+    //     // let datum: &String = datum.downcast_ref().unwrap();
+    //     // let layout = self.layout.as_mut().unwrap();
+    //     // let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
+    //     // label.set_text(datum);
+    //     // self.hovered = false;
+    //     // self.selected = false;
+    // }
 }

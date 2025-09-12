@@ -5,7 +5,7 @@ use std::process::exit;
 use xlui::Tray;
 use xlui::*;
 
-#[allow(dead_code)]
+#[test]
 fn main() {
     TestWidget::new().run().unwrap();
 }

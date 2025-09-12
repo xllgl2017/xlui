@@ -29,8 +29,6 @@ impl Space {
 
 
 impl Widget for Space {
-    fn redraw(&mut self, _: &mut Ui) {}
-
     fn update(&mut self, _: &mut Ui) -> Response<'_> {
         Response::new(&self.id, self.size.clone())
     }

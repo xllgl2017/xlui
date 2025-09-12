@@ -114,16 +114,14 @@ impl Label {
         // if ui.can_offset { self.buffer.rect.offset(&ui.offset); }
         // self.buffer.update_buffer(ui);
     }
-}
-
-
-impl Widget for Label {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_before_draw(ui);
         self.buffer.redraw(ui);
     }
+}
 
 
+impl Widget for Label {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> { //处理鼠标键盘时间
         match &ui.update_type {
             UpdateType::Init => self.init(ui),

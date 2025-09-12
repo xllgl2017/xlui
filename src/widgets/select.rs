@@ -172,15 +172,17 @@ impl<T: Display> SelectItem<T> {
         //     self.text.rect.offset(&ui.offset);
         // }
     }
-}
 
-impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.text.redraw(ui);
     }
+}
+
+impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

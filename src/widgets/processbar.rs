@@ -100,16 +100,18 @@ impl ProcessBar {
         // }
 
     }
-}
 
-
-impl Widget for ProcessBar {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
         ui.context.render.rectangle.render(&self.process_render, pass);
     }
+}
+
+
+impl Widget for ProcessBar {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

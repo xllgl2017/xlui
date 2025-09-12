@@ -148,10 +148,7 @@ impl Image {
             ui.context.render.image.insert_image(&ui.device, &self.source);
         }
     }
-}
-
-impl Widget for Image {
-    fn redraw(&mut self, ui: &mut Ui) {
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.image.render(
@@ -161,6 +158,10 @@ impl Widget for Image {
             pass,
         );
     }
+}
+
+impl Widget for Image {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

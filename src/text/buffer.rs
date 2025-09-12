@@ -177,7 +177,7 @@ impl TextBuffer {
     pub fn update_buffer_text(&mut self, ui: &mut Ui, text: &str) {
         match self.buffer {
             None => self.set_text(text.to_string()),
-            Some(ref mut buffer) => {
+            Some(_) => {
                 self.change = self.text.text != text;
                 self.text.text = text.to_string();
                 self.update_buffer(ui);

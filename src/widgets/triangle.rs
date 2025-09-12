@@ -94,15 +94,17 @@ impl Triangle {
         self.changed = true;
         &mut self.render.param.style
     }
-}
 
-
-impl Widget for Triangle {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.triangle.render(&self.render, pass);
     }
+}
+
+
+impl Widget for Triangle {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

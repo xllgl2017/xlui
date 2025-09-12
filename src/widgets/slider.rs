@@ -184,9 +184,7 @@ impl Slider {
         }
 
     }
-}
 
-impl Widget for Slider {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
@@ -194,6 +192,10 @@ impl Widget for Slider {
         ui.context.render.rectangle.render(&self.slided_render, pass);
         ui.context.render.circle.render(&self.slider_render, pass);
     }
+}
+
+impl Widget for Slider {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

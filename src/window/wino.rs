@@ -109,7 +109,7 @@ impl EventLoopHandle for LoopWindow {
                 });
                 self.app_ctx.redraw(&mut self.app)
             }
-            WindowEvent::Reinit => self.app_ctx.update(UpdateType::ReInit, &mut self.app),
+            WindowEvent::ReInit => self.app_ctx.update(UpdateType::ReInit, &mut self.app),
             WindowEvent::Resize(size) => {
                 self.app_ctx.device.surface_config.width = size.width;
                 self.app_ctx.device.surface_config.height = size.height;

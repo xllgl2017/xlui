@@ -82,7 +82,7 @@ impl Callback {
 
 pub struct Response<'a> {
     pub id: &'a String,
-    pub(crate) size: WidgetSize,
+    pub size: WidgetSize,
 }
 
 impl<'a> Response<'a> {

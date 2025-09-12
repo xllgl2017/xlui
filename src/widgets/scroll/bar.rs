@@ -204,11 +204,7 @@ impl ScrollBar {
             self.slider_render.update(ui, false, false);
         }
     }
-}
-
-
-impl Widget for ScrollBar {
-    fn redraw(&mut self, ui: &mut Ui) {
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         if self.context_size > self.fill_render.param.rect.height() && self.height() > self.width() {//垂直
@@ -220,6 +216,11 @@ impl Widget for ScrollBar {
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
     }
+}
+
+
+impl Widget for ScrollBar {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

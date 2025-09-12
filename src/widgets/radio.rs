@@ -188,10 +188,7 @@ impl RadioButton {
         // self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
         // self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
     }
-}
 
-
-impl Widget for RadioButton {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
@@ -199,6 +196,11 @@ impl Widget for RadioButton {
         ui.context.render.circle.render(&self.inner_render, pass);
         self.text.redraw(ui);
     }
+}
+
+
+impl Widget for RadioButton {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {

@@ -13,7 +13,7 @@ pub enum WindowEvent {
     MousePress(Pos),
     MouseRelease(Pos),
     Redraw,
-    Reinit,
+    ReInit,
     Resize(Size),
     ReqClose,
     ReqUpdate,

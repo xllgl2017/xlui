@@ -164,7 +164,7 @@ impl ScrollWidget {
         // self.v_bar.set_context_height(layout.height() + layout.item_space());
     }
 
-    fn bar_offset(&mut self, ui: &mut Ui, ox: f32, oy: f32) {
+    fn bar_offset(&mut self, ox: f32, oy: f32) {
         let roy = self.v_bar.set_vbar_value_by_offset(-oy);
         let rox = self.h_bar.set_hbar_value_by_offset(-ox);
         let offset = Offset::new(Pos::new())
@@ -172,90 +172,8 @@ impl ScrollWidget {
             .with_y(if self.vert_scrollable { roy } else { 0.0 });
         self.layout.as_mut().unwrap().set_offset(offset);
     }
-}
 
-impl Widget for ScrollWidget {
-    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
-        match ui.update_type {
-            UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.re_init(ui),
-            UpdateType::ReInit => {
-                self.re_init(ui);
-                self.layout.as_mut().unwrap().update(ui);
-            }
-            UpdateType::MouseMove => {
-                if ui.device.device_input.pressed_at(&self.context_rect) {
-                    let oy = ui.device.device_input.mouse.offset_y();
-                    let ox = ui.device.device_input.mouse.offset_x();
-                    self.bar_offset(ui, ox, oy);
-
-                    // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
-                    // layout.set_offset(offset);
-                    ui.context.window.request_redraw();
-                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(-oy));
-                    // ui.current_rect = self.fill_render.param.rect.clone();
-                    // self.v_bar.update(ui);
-                    return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
-                }
-                let mut offset = Offset::new(Pos::new());
-                if self.vert_scrollable {
-                    self.v_bar.update(ui);
-                    offset.y = self.v_bar.offset();
-                }
-                if self.horiz_scrollable {
-                    self.h_bar.update(ui);
-                    offset.x = self.h_bar.offset();
-                }
-                self.layout.as_mut().unwrap().set_offset(offset);
-                self.layout.as_mut().unwrap().update(ui);
-            }
-            UpdateType::MousePress => {
-                self.layout.as_mut().unwrap().update(ui);
-                if self.vert_scrollable { self.v_bar.update(ui); }
-                if self.horiz_scrollable { self.h_bar.update(ui); }
-            }
-            UpdateType::MouseRelease => {
-                if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
-                    self.a = ui.device.device_input.mouse.a;
-                }
-                self.layout.as_mut().unwrap().update(ui);
-            }
-            UpdateType::MouseWheel => {
-                if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
-                    let oy = ui.device.device_input.mouse.delta_y() * 10.0;
-                    self.bar_offset(ui, 0.0, oy);
-                    // let roy = self.v_bar.set_vbar_value_by_offset(-oy);
-                    // let rox = self.h_bar.offset();
-                    // let offset = Offset::new(Pos::new())
-                    //     .with_x(if self.horiz_scrollable { rox } else { 0.0 })
-                    //     .with_y(if self.vert_scrollable { roy } else { 0.0 });
-                    // self.layout.as_mut().unwrap().set_offset(offset);
-                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y());
-                    // self.v_bar.update(ui);
-                    // return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
-                    ui.context.window.request_redraw();
-                }
-            }
-            // UpdateType::Offset(ref mut o) => {
-            //     if !self.fill_render.param.rect.has_position(o.pos) { return; }
-            //     ui.can_offset = true;
-            //     o.target_id = self.layout.as_ref().unwrap().id.to_string();
-            //     self.layout.as_mut().unwrap().update(ui);
-            //     ui.update_type = UpdateType::None;
-            //     ui.can_offset = false;
-            // }
-            _ => {}
-        }
-        // ui.current_rect = self.context_rect.clone();
-        // self.v_bar.update(ui);
-        // if let Some(o) = ui.update_type.is_offset() {
-        //     if o.y == 0.0 { self.a = 0.0; }
-        //     ui.update_type = UpdateType::None;
-        // }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         // println!("{:?}-{:?}-{}", ui.update_type, ui.draw_rect, ui.widget_changed as u32);
         if self.a != 0.0 {
             let oy = self.a * 10.0 * 10.0;
@@ -270,7 +188,7 @@ impl Widget for ScrollWidget {
             } else if self.a < 0.0 {
                 self.a += 0.001;
             }
-            self.bar_offset(ui, 0.0, oy);
+            self.bar_offset(0.0, oy);
             // self.v_bar.update(ui);
             // if !self.v_bar.scrolling() { self.a = 0.0; }
             ui.context.window.request_redraw();
@@ -349,4 +267,88 @@ impl Widget for ScrollWidget {
         // self.layout.as_mut().unwrap().redraw(ui);
 
     }
+}
+
+impl Widget for ScrollWidget {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
+        match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
+            UpdateType::Init => self.re_init(ui),
+            UpdateType::ReInit => {
+                self.re_init(ui);
+                self.layout.as_mut().unwrap().update(ui);
+            }
+            UpdateType::MouseMove => {
+                if ui.device.device_input.pressed_at(&self.context_rect) {
+                    let oy = ui.device.device_input.mouse.offset_y();
+                    let ox = ui.device.device_input.mouse.offset_x();
+                    self.bar_offset(ox, oy);
+
+                    // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
+                    // layout.set_offset(offset);
+                    ui.context.window.request_redraw();
+                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(-oy));
+                    // ui.current_rect = self.fill_render.param.rect.clone();
+                    // self.v_bar.update(ui);
+                    return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
+                }
+                let mut offset = Offset::new(Pos::new());
+                if self.vert_scrollable {
+                    self.v_bar.update(ui);
+                    offset.y = self.v_bar.offset();
+                }
+                if self.horiz_scrollable {
+                    self.h_bar.update(ui);
+                    offset.x = self.h_bar.offset();
+                }
+                self.layout.as_mut().unwrap().set_offset(offset);
+                self.layout.as_mut().unwrap().update(ui);
+            }
+            UpdateType::MousePress => {
+                self.layout.as_mut().unwrap().update(ui);
+                if self.vert_scrollable { self.v_bar.update(ui); }
+                if self.horiz_scrollable { self.h_bar.update(ui); }
+            }
+            UpdateType::MouseRelease => {
+                if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
+                    self.a = ui.device.device_input.mouse.a;
+                }
+                self.layout.as_mut().unwrap().update(ui);
+            }
+            UpdateType::MouseWheel => {
+                if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
+                    let oy = ui.device.device_input.mouse.delta_y() * 10.0;
+                    self.bar_offset(0.0, oy);
+                    // let roy = self.v_bar.set_vbar_value_by_offset(-oy);
+                    // let rox = self.h_bar.offset();
+                    // let offset = Offset::new(Pos::new())
+                    //     .with_x(if self.horiz_scrollable { rox } else { 0.0 })
+                    //     .with_y(if self.vert_scrollable { roy } else { 0.0 });
+                    // self.layout.as_mut().unwrap().set_offset(offset);
+                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y());
+                    // self.v_bar.update(ui);
+                    // return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
+                    ui.context.window.request_redraw();
+                }
+            }
+            // UpdateType::Offset(ref mut o) => {
+            //     if !self.fill_render.param.rect.has_position(o.pos) { return; }
+            //     ui.can_offset = true;
+            //     o.target_id = self.layout.as_ref().unwrap().id.to_string();
+            //     self.layout.as_mut().unwrap().update(ui);
+            //     ui.update_type = UpdateType::None;
+            //     ui.can_offset = false;
+            // }
+            _ => {}
+        }
+        // ui.current_rect = self.context_rect.clone();
+        // self.v_bar.update(ui);
+        // if let Some(o) = ui.update_type.is_offset() {
+        //     if o.y == 0.0 { self.a = 0.0; }
+        //     ui.update_type = UpdateType::None;
+        // }
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+
 }

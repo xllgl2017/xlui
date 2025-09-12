@@ -298,7 +298,7 @@ impl<T: 'static> ListView<T> {
             UpdateType::Draw => {
                 let area: &mut ScrollWidget = ui.layout().get_widget(&self.lid).unwrap();
                 let recycle_layout: &mut RecycleLayout = area.layout.as_mut().unwrap().as_mut_().unwrap();
-                let mut display = recycle_layout.display_range();
+                let display = recycle_layout.display_range();
                 if display == &self.previous_display { return; }
                 let mut start = self.previous_display.start;
                 recycle_layout.items_mut().iter_mut().for_each(|x| {
@@ -308,7 +308,7 @@ impl<T: 'static> ListView<T> {
                     if selected { self.selected = Some(start); }
                     start += 1;
                 });
-                let mut display = recycle_layout.display_range();
+                let display = recycle_layout.display_range();
                 let mut start = display.start;
                 for item in recycle_layout.items_mut().iter_mut() {
                     let item: &mut ItemWidget = item.widget_mut().unwrap();

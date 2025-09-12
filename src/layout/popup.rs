@@ -94,9 +94,7 @@ impl Popup {
             self.fill_render.update(ui, false, false);
         }
     }
-}
 
-impl Widget for Popup {
     fn redraw(&mut self, ui: &mut Ui) {
         if !self.open { return; }
         let pass = ui.pass.as_mut().unwrap();
@@ -106,9 +104,12 @@ impl Widget for Popup {
         self.scroll_area.redraw(ui);
         ui.draw_rect = previous_rect;
     }
+}
 
+impl Widget for Popup {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init | UpdateType::ReInit => { self.scroll_area.update(ui); }
             _ => if self.open {
                 self.scroll_area.update(ui);

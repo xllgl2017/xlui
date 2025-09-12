@@ -259,10 +259,8 @@ impl TextEdit {
         // ui.send_updates(&self.contact_ids, ContextUpdate::String(self.char_layout.text()));
         ui.context.window.request_redraw();
     }
-}
 
-impl Widget for TextEdit {
-    fn redraw(&mut self, ui: &mut Ui) {
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
@@ -273,6 +271,10 @@ impl Widget for TextEdit {
             self.psd_buffer.redraw(ui);
         }
     }
+}
+
+impl Widget for TextEdit {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
