@@ -33,10 +33,17 @@ impl LayoutItem {
         }
     }
 
-    pub fn widget<T: Widget>(&mut self) -> Option<&mut T> {
+    pub fn widget_mut<T: Widget>(&mut self) -> Option<&mut T> {
         match self {
             LayoutItem::Layout(_) => None,
             LayoutItem::Widget(widget) => widget.as_mut_()
+        }
+    }
+
+    pub fn widget<T:Widget>(&self) -> Option<&T> {
+        match self {
+            LayoutItem::Layout(_) => None,
+            LayoutItem::Widget(widget) => widget.as_()
         }
     }
 

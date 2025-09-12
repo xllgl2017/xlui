@@ -1,4 +1,4 @@
-use std::any::Any;
+use crate::frame::context::UpdateType;
 use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -8,16 +8,17 @@ use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use std::any::Any;
+use std::mem;
 use std::sync::{Arc, RwLock};
-use crate::frame::context::UpdateType;
-use crate::Label;
 
 pub struct ItemWidget {
-    pub(crate) id: String,
+    id: String,
     fill_render: RenderParam<RectParam>,
     hovered: bool,
     layout: Option<LayoutKind>,
     padding: Padding,
+    data_str: String,
     current: Arc<RwLock<Option<String>>>,
     callback: Option<Box<dyn Fn(&String, &mut Ui)>>,
     selected: bool,
@@ -25,13 +26,14 @@ pub struct ItemWidget {
 }
 
 impl ItemWidget {
-    pub fn new(layout: LayoutKind) -> Self {
+    pub fn new(layout: LayoutKind, data_str: String) -> Self {
         ItemWidget {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
             hovered: false,
             layout: Some(layout),
             padding: Padding::same(2.0),
+            data_str,
             current: Arc::new(RwLock::new(None)),
             callback: None,
             selected: false,
@@ -49,21 +51,13 @@ impl ItemWidget {
         self
     }
 
-    pub fn show(mut self, ui: &mut Ui, mut context: impl FnMut(&mut Ui)) {
-        // self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
-        // let layout: &mut LayoutKind = self.layout.as_mut().unwrap().as_mut_().unwrap();
-        // self.layout.as_mut().unwrap().set_rect(self.fill_render.param.rect.clone(), &self.padding);
+    pub fn show(&mut self, ui: &mut Ui, mut context: impl FnMut(&mut Ui)) {
         let previous_layout = ui.layout.replace(self.layout.take().unwrap()).unwrap();
-        // if let UpdateType::Init = ui.update_type {
-        //     println!("init", );
-        // }
-
         context(ui);
         self.layout = ui.layout.replace(previous_layout);
         let resp = self.layout.as_mut().unwrap().update(ui);
-        // println!("{}", resp.height);
         self.fill_render.param.rect.set_size(resp.size.dw, resp.size.dh);
-        ui.add(self);
+        // ui.add(self);
     }
 
     // fn update_rect(&mut self, ui: &mut Ui) {
@@ -87,7 +81,7 @@ impl ItemWidget {
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         let current = self.current.read().unwrap();
-        if current.as_ref() != Some(&self.id) && self.selected {
+        if current.as_ref() != Some(&self.data_str) && self.selected {
             drop(current);
             self.selected = false;
             ui.widget_changed |= WidgetChange::Value;
@@ -102,13 +96,21 @@ impl ItemWidget {
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
         }
-        // println!("{} {:?}", ui.can_offset, ui.offset);
-        // let layout = self.layout.as_mut().unwrap();
-        // ui.update_type = UpdateType::Offset(ui.offset.clone());
-        // layout.update(ui);
-        // ui.update_type = UpdateType::None;
-        // self.fill_render.param.rect.offset(&ui.offset);
-        // self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
+    }
+
+    pub fn layout(&mut self) -> &mut LayoutKind {
+        self.layout.as_mut().unwrap()
+    }
+
+    pub fn store_and_reset(&mut self) -> (bool, bool) {
+        (mem::take(&mut self.hovered), mem::take(&mut self.selected))
+    }
+
+    pub fn restore_status(&mut self, hovered: bool, selected: bool, data_str: String) {
+        self.hovered = hovered;
+        self.selected = selected;
+        self.data_str = data_str;
+        self.changed = hovered || selected
     }
 }
 
@@ -142,29 +144,23 @@ impl Widget for ItemWidget {
                 if ui.device.device_input.click_at(&self.fill_render.param.rect) {
                     self.selected = true;
                     if let Some(ref mut callback) = self.callback {
-                        callback(&self.id, ui);
+                        callback(&self.data_str, ui);
                     }
                     self.changed = true;
                     ui.context.window.request_redraw();
                     return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                 }
             }
-            // UpdateType::Offset(_) => {
-            //     if !ui.can_offset { return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height())); }
-            //     self.changed = true;
-            //     ui.context.window.request_redraw();
-            //     self.layout.as_mut().unwrap().update(ui);
-            // }
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
-    fn restore(&mut self, datum: &dyn Any) {
-        let datum: &String = datum.downcast_ref().unwrap();
-        let layout = self.layout.as_mut().unwrap();
-        let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
-        label.set_text(datum);
-        self.hovered = false;
-        self.selected = false;
+    fn store(&mut self, datum: &dyn Any) {
+        // let datum: &String = datum.downcast_ref().unwrap();
+        // let layout = self.layout.as_mut().unwrap();
+        // let label: &mut Label = layout.get_widget(&"list_item".to_string()).unwrap();
+        // label.set_text(datum);
+        // self.hovered = false;
+        // self.selected = false;
     }
 }

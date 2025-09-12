@@ -294,7 +294,7 @@ impl<'a> Ui<'a> {
         let wid = widget.id().to_owned();
         let layout = self.layout.as_mut()?;
         layout.add_item(LayoutItem::Widget(widget));
-        layout.get_item_mut(&wid)?.widget()
+        layout.get_item_mut(&wid)?.widget_mut()
     }
 
     pub fn get_widget<T: Widget>(&mut self, id: impl ToString) -> Option<&mut T> {

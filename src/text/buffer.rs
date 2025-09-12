@@ -165,6 +165,7 @@ impl TextBuffer {
 
     pub fn set_text(&mut self, text: String) {
         self.change = self.text.text != text;
+        println!("{} {}", self.change, text);
         self.text.text = text;
     }
 
@@ -177,9 +178,12 @@ impl TextBuffer {
         match self.buffer {
             None => self.set_text(text.to_string()),
             Some(ref mut buffer) => {
-                buffer.set_text(&mut ui.context.render.text.font_system,
-                                text, &self.text.font_family(), Shaping::Advanced);
-                self.reset();
+                self.change = self.text.text != text;
+                self.text.text = text.to_string();
+                self.update_buffer(ui);
+                // buffer.set_text(&mut ui.context.render.text.font_system,
+                //                 text, &self.text.font_family(), Shaping::Advanced);
+                // self.reset();
             }
         }
     }
@@ -196,6 +200,7 @@ impl TextBuffer {
             &mut ui.context.render.text.font_system, self.text.text.as_str(),
             &self.text.font_family(), Shaping::Advanced);
         self.reset();
+        if self.size_mode.is_auto_width() { self.rect.set_width(self.lines[0].width); }
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {

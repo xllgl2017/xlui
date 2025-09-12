@@ -27,7 +27,7 @@ pub trait Widget: Any {
     fn redraw(&mut self, ui: &mut Ui); //绘制调用
     fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
     #[allow(unused_attributes)]
-    fn restore(&mut self, datum: &dyn Any) {}
+    fn store(&mut self, datum: &dyn Any) {}
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -139,6 +139,11 @@ impl WidgetKind {
     pub fn as_mut_<T: Widget>(&mut self) -> Option<&mut T> {
         let widget = self.widget.deref_mut() as &mut dyn Any;
         widget.downcast_mut::<T>()
+    }
+
+    pub fn as_<T: Widget>(&self) -> Option<&T> {
+        let widget = self.widget.deref() as &dyn Any;
+        widget.downcast_ref::<T>()
     }
 
     pub fn width(&self) -> f32 {

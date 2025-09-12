@@ -90,7 +90,7 @@ impl ScrollBar {
         self.context_offset_x(-rox)
     }
 
-    pub fn offset(&mut self)->f32{
+    pub fn offset(&mut self) -> f32 {
         if self.height() > self.width() { //垂直滚动条
             self.context_offset_y(-self.offset.y)
         } else { //水平滚动条
@@ -211,11 +211,14 @@ impl Widget for ScrollBar {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        // if self.context_height > self.fill_render.param.rect.height() {
-        //
-        // }
-        ui.context.render.rectangle.render(&self.slider_render, pass);
+        if self.context_size > self.fill_render.param.rect.height() && self.height() > self.width() {//垂直
+            ui.context.render.rectangle.render(&self.fill_render, pass);
+            ui.context.render.rectangle.render(&self.slider_render, pass);
+        }
+        if self.context_size > self.fill_render.param.rect.width() && self.width() > self.height() {//垂直
+            ui.context.render.rectangle.render(&self.fill_render, pass);
+            ui.context.render.rectangle.render(&self.slider_render, pass);
+        }
     }
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {

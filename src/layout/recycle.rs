@@ -45,6 +45,12 @@ impl RecycleLayout {
         self
     }
 
+    pub fn with_item_height(mut self, h: f32) -> Self {
+        self.item_height = h;
+        self.draw_count = (self.size.dh * 1.5 / (self.item_height + self.item_space)).ceil() as usize;
+        self
+    }
+
     pub fn set_width(&mut self, w: f32) {
         self.size.dw = w;
     }
@@ -56,6 +62,7 @@ impl RecycleLayout {
 
     pub fn set_height(&mut self, h: f32) {
         self.size.dh = h;
+        self.draw_count = (self.size.dh * 1.5 / (self.item_height + self.item_space)).ceil() as usize;
     }
 
     pub fn with_space(mut self, s: f32) -> Self {
@@ -90,11 +97,33 @@ impl RecycleLayout {
         }
 
         self.display = start..end;
-        println!("recycle display: {:#?} {} {} {} {}", self.display, self.item_height, self.item_space, self.offset.y, self.size.dh);
+        // println!("recycle display: {:#?} {} {} {} {}", self.display, self.item_height, self.item_space, self.offset.y, self.size.dh);
     }
 
     pub fn display_range(&self) -> &Range<usize> {
         &self.display
+    }
+
+    pub fn add_item_empty(&mut self) {
+        self.total_count += 1;
+        self.size.rh += self.item_height + self.item_space;
+    }
+
+    pub fn remove_item(&mut self) {
+        self.total_count -= 1;
+        self.size.rh -= self.item_height + self.item_space;
+        if self.total_count < self.draw_count {
+            self.items.remove_map_by_index(0);
+        }
+        self.update_display();
+    }
+
+    pub fn draw_count(&self) -> usize {
+        self.draw_count
+    }
+
+    pub fn size(&self) -> &WidgetSize {
+        &self.size
     }
 }
 

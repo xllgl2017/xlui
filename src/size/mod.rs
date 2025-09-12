@@ -40,6 +40,14 @@ impl SizeMode {
         }
     }
 
+    pub fn is_auto_width(&self) -> bool {
+        match self {
+            SizeMode::Auto => true,
+            SizeMode::FixHeight(_) => true,
+            _=> false,
+        }
+    }
+
     pub fn size(&self, w: f32, h: f32) -> (f32, f32) {
         match self {
             SizeMode::Auto => (w, h),

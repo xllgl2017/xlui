@@ -158,10 +158,11 @@ impl ScrollWidget {
         ui.add(self);
     }
 
-    // pub fn reset_context_height(&mut self) {
-    //     let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
-    //     self.v_bar.set_context_height(layout.height() + layout.item_space());
-    // }
+    pub fn reset_context_height(&mut self, h: f32) {
+        self.v_bar.set_context_height(h);
+        // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
+        // self.v_bar.set_context_height(layout.height() + layout.item_space());
+    }
 }
 
 impl Widget for ScrollWidget {
