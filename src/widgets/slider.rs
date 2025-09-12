@@ -129,23 +129,17 @@ impl Slider {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        // self.rect = ui.layout().available_rect().clone();
-        // self.rect.set_size(130.0, 16.0);
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         //背景
-        // self.fill_render.param.rect = self.rect.clone();
-        // self.fill_render.param.rect.contract(8.0, 5.0);
         self.fill_render.init_rectangle(ui, false, false);
         //已滑动背景
-        // self.slided_render.param.rect = self.fill_render.param.rect.clone();
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_render.param.rect.set_width(self.slided_render.param.rect.width() * scale);
         self.slided_render.init_rectangle(ui, false, false);
         //滑块
-        // self.slider_render.param.rect = self.rect.clone();
         self.slider_render.param.rect.set_width(self.rect.height());
         self.offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.slider_render.param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
@@ -156,16 +150,7 @@ impl Slider {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
             ui.widget_changed |= WidgetChange::Value;
-            // self.slider_render.param.rect = self.rect.clone();
-            // self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
-            // self.slider_render.param.rect.set_width(self.rect.height());
-            // let offset = self.value * self.rect.width() / (self.range.end - self.range.start);
-            // let mut lx = self.fill_render.param.rect.dx().clone();
-            // lx.extend(self.slider_render.param.rect.width() / 2.0);
-            // self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.rect.dx());
-            // self.changed = true;
         }
-        // if !self.changed && !ui.can_offset { return; }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
@@ -194,20 +179,12 @@ impl Slider {
             self.slided_render.param.rect.set_width(self.fill_render.param.rect.width() * scale);
             self.slided_render.update(ui, false, false);
             self.slider_render.param.rect = self.rect.clone();
-            // self.slider_render.param.rect.add_min_x(-self.rect.height() / 2.0);
             self.slider_render.param.rect.set_width(self.rect.height());
             let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
             self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.rect.dx());
             self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
             self.fill_render.update(ui, false, false);
         }
-
-        // if ui.can_offset {
-        //     self.rect.offset(&ui.offset);
-        //     self.slider_render.param.rect.offset(&ui.offset);
-        //     self.slided_render.param.rect.offset(&ui.offset);
-        //     self.fill_render.param.rect.offset(&ui.offset);
-        // }
 
     }
 }
@@ -228,9 +205,15 @@ impl Widget for Slider {
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
-                    let ox = ui.device.device_input.mouse.offset_x();
-                    self.offset = self.slider_render.param.rect.offset_x_limit(self.offset + ox, self.rect.dx());
-                    let cl = (self.slider_render.param.rect.width() / 2.0 + self.slider_render.param.rect.dx().min - self.fill_render.param.rect.dx().min) / self.fill_render.param.rect.width();
+                    let ox = ui.device.device_input.mouse.lastest.x - self.fill_render.param.rect.dx().min;
+                    let mut cl = ox / self.fill_render.param.rect.width();
+                    if cl >= 1.0 {
+                        self.offset = self.fill_render.param.rect.width();
+                        cl = 1.0;
+                    } else if cl <= 0.0 {
+                        self.offset = 0.0;
+                        cl = 0.0;
+                    }
                     let cv = (self.range.end - self.range.start) * cl;
                     self.value = self.range.start + cv;
                     self.changed = true;
@@ -265,14 +248,6 @@ impl Widget for Slider {
                     ui.context.window.request_redraw();
                 }
             }
-            // UpdateType::Offset(ref o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.rect); }
-            //     self.rect.offset(o);
-            //     self.slider_render.param.rect.offset(o);
-            //     self.slided_render.param.rect.offset(o);
-            //     self.fill_render.param.rect.offset(o);
-            //     self.changed = true;
-            // }
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
