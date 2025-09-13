@@ -2,7 +2,7 @@
 //! xlui是一个Rust的2D GUI库。目标是利用Rust语言原生构建GUI、体积小(最小第三方依赖)，简单易用，
 //! 在保证性能的前提下尽量减少CPU的开销。
 //! ### 目前的控件工作状态如下图
-//! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img_1.png?raw=true)
+//! ![控件状态](https://github.com/xllgl2017/xlui/blob/0.2.0/res/img/doc/img_1.png?raw=true)
 //! ### 下面是xlui的最小运行示例
 //! ```rust
 //! use xlui::*;
