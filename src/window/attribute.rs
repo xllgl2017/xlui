@@ -7,11 +7,14 @@ use crate::size::Size;
 use crate::window::win32::tray::Tray;
 
 pub struct WindowAttribute {
+    ///窗口大小，默认800x600
     pub inner_size: Size,
     pub min_inner_size: Size,
     pub max_inner_size: Size,
+    ///窗口位置，默认100,100
     pub position: [i32; 2],
     pub resizable: bool,
+    ///窗口标题
     pub title: String,
     pub maximized: bool,
     pub visible: bool,
@@ -21,6 +24,7 @@ pub struct WindowAttribute {
     pub window_icon: Arc<Vec<u8>>,
     #[cfg(feature = "winit")]
     pub window_level: WindowLevel,
+    ///全局字体
     pub font: Arc<Font>,
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub tray: Option<Tray>,

@@ -13,9 +13,15 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn default() -> Font {
+    ///根据字体名称调用系统字体
+    pub fn from_family(family: &str) -> Font {
         let mut font_system = glyphon::FontSystem::new();
-        let face = font_system.db().faces().find(|x| x.families[0].0.contains("FangSong")).unwrap(); //FangSong
+        let face = font_system.db().faces().find(|x| {
+            for (font_family, _) in &x.families {
+                if font_family.contains(family) { return true; };
+            }
+            false
+        }).unwrap();
         let family = face.families[0].0.clone();
         let font = font_system.get_font(face.id).unwrap();
         let font_data = Arc::new(font.data().to_vec());
@@ -29,11 +35,18 @@ impl Font {
         }
     }
 
+    ///默认字体-仿宋
+    pub fn default() -> Font {
+        Font::from_family("FangSong")
+    }
+
+    ///使用自定义字体文件
     pub fn from_file(fp: impl AsRef<Path>) -> Font {
         let data = fs::read(fp).unwrap();
         Font::from_vec(data)
     }
 
+    ///使用字体字节集
     pub fn from_vec(data: Vec<u8>) -> Font {
         let mut res = Font::default();
         res.data = Arc::new(data);
@@ -67,8 +80,7 @@ impl Font {
 
     pub(crate) fn family(&self) -> &str { &self.family }
 
-
-    pub fn size(&self) -> f32 {
+    pub(crate) fn size(&self) -> f32 {
         self.size
     }
 }

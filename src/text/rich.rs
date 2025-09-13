@@ -1,3 +1,7 @@
+use crate::style::color::Color;
+use crate::text::TextWrap;
+use std::fmt::Display;
+
 /// ### RichText的示例用法
 /// ```
 /// use xlui::*;
@@ -17,11 +21,6 @@
 ///     ui.label(RichText::new("Rich").color(Color::YELLOW));
 /// }
 /// ```
-
-use crate::style::color::Color;
-use crate::text::TextWrap;
-use std::fmt::Display;
-
 
 pub struct RichText {
     pub(crate) text: String,
