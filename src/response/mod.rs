@@ -57,12 +57,6 @@ impl Callback {
         })
     }
 
-    // pub fn textedit(f: Option<Box<dyn FnMut(&mut dyn Any, &mut Context, &str)>>) -> Self {
-    //     let mut res = Callback::new();
-    //     res.textedit = f;
-    //     res
-    // }
-
     pub(crate) fn create_combobox<A: 'static, T: 'static>(f: fn(&mut A, &mut Ui, &T)) -> Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)> {
         Box::new(move |box_app, uim, value| {
             let app = box_app.deref_mut() as &mut dyn Any;

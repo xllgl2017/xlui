@@ -64,7 +64,6 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            // offset: Offset::new(Pos::new()),
             draw_rect,
             widget_changed: WidgetChange::None,
         };
@@ -86,8 +85,6 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            // offset: Offset::new(Pos::new()),
-
             draw_rect,
             widget_changed: WidgetChange::None,
         };
@@ -108,26 +105,11 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            // offset: Offset::new(Pos::new()),
 
             draw_rect,
             widget_changed: WidgetChange::None,
         };
         app.update(&mut ui);
-
-        // self.inner_windows = ui.inner_windows.take();
-        // for i in 0..self.inner_windows.as_ref().unwrap().len() {
-        //     let inner_widget = &mut self.inner_windows.as_mut().unwrap()[i];
-        //     inner_widget.update(&mut ui);
-        //     let closed = inner_widget.request_close.load(Ordering::SeqCst);
-        //     if !closed { continue; }
-        //     let wid = inner_widget.id.clone();
-        //     let mut inner_window = self.inner_windows.as_mut().unwrap().remove(&wid).unwrap();
-        //     let callback = inner_window.on_close.take();
-        //     if let Some(mut callback) = callback {
-        //         callback(app, inner_window, &mut ui);
-        //     }
-        // }
         ui.app = Some(app);
         let mut event_win = None;
         let inner_windows = self.inner_windows.as_ref().unwrap();
@@ -155,20 +137,6 @@ impl AppContext {
             }
         };
 
-        // let inner_windows = self.inner_windows.as_mut().unwrap();
-        // inner_windows.sort_by_key(|x| x.value().top);
-        // for i in 0..inner_windows.len() {
-        //     let inner_window = &mut inner_windows[i];
-        //     inner_window.update(&mut ui);
-        //     if !inner_window.top { continue; }
-        //     inner_windows.iter_mut().for_each(|x| x.top = false);
-        //     inner_windows[i].top = true;
-        //     if i != inner_windows.len() - 1 {
-        //         println!("requst redraw for inner window");
-        //         ui.context.window.request_redraw();
-        //     }
-        //     break;
-        // }
         ui.inner_windows = self.inner_windows.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
             popup.update(&mut ui);
@@ -177,10 +145,6 @@ impl AppContext {
         self.layout = ui.layout.take();
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
-        // if let Some(u) = ui.request_update.take() {
-        //     ui.context.user_update = u;
-        //     ui.context.window.request_update(UserEvent::ReqUpdate);
-        // }
         self.inner_windows = ui.inner_windows.take();
     }
 
@@ -287,8 +251,6 @@ pub struct Ui<'a, 'p> {
     pub(crate) can_offset: bool,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
-    // #[deprecated]
-    // pub(crate) offset: Offset,
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
 }

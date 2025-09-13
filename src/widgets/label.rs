@@ -1,3 +1,11 @@
+use crate::align::Align;
+use crate::frame::context::UpdateType;
+use crate::response::Response;
+use crate::text::rich::RichText;
+use crate::text::buffer::TextBuffer;
+use crate::text::TextWrap;
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 /// ### Label的示例用法
 /// ```
 /// use xlui::*;
@@ -17,16 +25,6 @@
 ///     ui.add(label);
 /// }
 /// ```
-
-use crate::align::Align;
-use crate::frame::context::UpdateType;
-use crate::response::Response;
-use crate::text::rich::RichText;
-use crate::text::buffer::TextBuffer;
-use crate::text::TextWrap;
-use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
-
 pub struct Label {
     id: String,
     buffer: TextBuffer,
@@ -80,7 +78,6 @@ impl Label {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        // self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
         self.buffer.init(ui);
     }
 
@@ -100,19 +97,6 @@ impl Label {
             self.buffer.update_buffer(ui);
         }
         self.buffer.change = false;
-        // if ui.widget_changed == WidgetChange::None as u32 { return; }
-        // match ui.widget_changed {
-        //     WidgetChange::None => {}
-        //     WidgetChange::Position => self.update_position(ui),
-        //     WidgetChange::Value => self.buffer.update_buffer(ui),
-        //     WidgetChange::PositionAndValue => {
-        //         self.update_position(ui);
-        //         self.buffer.update_buffer(ui);
-        //     }
-        // }
-        // if !self.buffer.change { return; }
-        // if ui.can_offset { self.buffer.rect.offset(&ui.offset); }
-        // self.buffer.update_buffer(ui);
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_before_draw(ui);

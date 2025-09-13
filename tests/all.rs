@@ -11,7 +11,7 @@ use crate::shape::TestShape;
 #[derive(PartialEq)]
 enum TestKind {
     Shape,
-    Widgets,
+    // Widgets,
     Align,
     ChildWindow,
     Layout,
@@ -21,7 +21,7 @@ impl Display for TestKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TestKind::Shape => f.write_str("Shape"),
-            TestKind::Widgets => f.write_str("Widgets"),
+            // TestKind::Widgets => f.write_str("Widgets"),
             TestKind::Align => f.write_str("Align"),
             TestKind::ChildWindow => f.write_str("ChildWindow"),
             TestKind::Layout => f.write_str("Layout"),

@@ -16,28 +16,28 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub enum ContextUpdate {
     String(String),
-    I32(i32),
+    // I32(i32),
     F32(f32),
-    U8(u8),
+    // U8(u8),
     Bool(bool),
 }
 
 impl ContextUpdate {
-    pub fn update_i32(&self, value: &mut i32) {
-        match self {
-            ContextUpdate::String(v) => *value = v.parse::<i32>().unwrap_or(*value),
-            ContextUpdate::I32(v) => *value = *v,
-            ContextUpdate::F32(v) => *value = *v as i32,
-            ContextUpdate::U8(v) => *value = *v as i32,
-            _ => {}
-        }
-    }
+    // pub fn update_i32(&self, value: &mut i32) {
+    //     match self {
+    //         ContextUpdate::String(v) => *value = v.parse::<i32>().unwrap_or(*value),
+    //         // ContextUpdate::I32(v) => *value = *v,
+    //         ContextUpdate::F32(v) => *value = *v as i32,
+    //         // ContextUpdate::U8(v) => *value = *v as i32,
+    //         _ => {}
+    //     }
+    // }
     pub fn update_f32(&self, value: &mut f32) {
         match self {
             ContextUpdate::String(v) => *value = v.parse::<f32>().unwrap_or(*value),
-            ContextUpdate::I32(v) => *value = *v as f32,
+            // ContextUpdate::I32(v) => *value = *v as f32,
             ContextUpdate::F32(v) => *value = *v,
-            ContextUpdate::U8(v) => *value = *v as f32,
+            // ContextUpdate::U8(v) => *value = *v as f32,
             _ => {}
         }
     }
@@ -45,9 +45,9 @@ impl ContextUpdate {
     pub fn update_t<T: NumCastExt>(&self, value: &mut T) {
         match self {
             ContextUpdate::String(v) => *value = T::from_num(v.parse::<f64>().unwrap_or(value.as_f32() as f64)),
-            ContextUpdate::I32(v) => *value = T::from_num(*v as f64),
+            // ContextUpdate::I32(v) => *value = T::from_num(*v as f64),
             ContextUpdate::F32(v) => *value = T::from_num(*v as f64),
-            ContextUpdate::U8(v) => *value = T::from_num(*v as f64),
+            // ContextUpdate::U8(v) => *value = T::from_num(*v as f64),
             _ => {}
         }
     }
@@ -62,9 +62,9 @@ impl ContextUpdate {
     pub fn update_str(self, value: &mut String) {
         match self {
             ContextUpdate::String(v) => *value = v,
-            ContextUpdate::I32(v) => *value = v.to_string(),
+            // ContextUpdate::I32(v) => *value = v.to_string(),
             ContextUpdate::F32(v) => *value = v.to_string(),
-            ContextUpdate::U8(v) => *value = v.to_string(),
+            // ContextUpdate::U8(v) => *value = v.to_string(),
             ContextUpdate::Bool(v) => *value = v.to_string(),
         }
     }
@@ -82,23 +82,11 @@ pub enum UpdateType {
     MouseWheel,
     KeyPress(Key),
     KeyRelease(Key),
-    // #[deprecated]
-    // Offset(Offset),
-    // Drop,
     IME(IMEData),
     CreateWindow,
     Clipboard(ClipboardData),
 }
 
-// impl UpdateType {
-//     // #[deprecated]
-//     // pub(crate) fn is_offset(&self) -> Option<&Offset> {
-//     //     match self {
-//     //         UpdateType::Offset(o) => Some(o),
-//     //         _ => None,
-//     //     }
-//     // }
-// }
 
 impl Debug for UpdateType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -111,8 +99,6 @@ impl Debug for UpdateType {
             UpdateType::MouseRelease => f.write_str("MouseRelease"),
             UpdateType::MouseWheel => f.write_str("MouseWheel"),
             UpdateType::KeyRelease(_) => f.write_str("KeyRelease"),
-            // UpdateType::Offset(_) => f.write_str("Offset"),
-            // UpdateType::Drop => f.write_str("Drop"),
             UpdateType::IME(_) => f.write_str("IME"),
             UpdateType::CreateWindow => f.write_str("CreateWindow"),
             UpdateType::Clipboard(_) => f.write_str("Clipboard"),
@@ -126,20 +112,11 @@ pub struct Context {
     pub viewport: Viewport,
     pub window: Arc<WindowType>,
     pub font: Arc<Font>,
-    pub resize: bool,
     pub render: Render,
     pub updates: Map<String, ContextUpdate>,
     pub user_update: (WindowId, UpdateType),
     pub new_window: Option<(Box<dyn App>, WindowAttribute)>,
 }
-
-impl Context {
-    pub fn send_update(&mut self, id: String, update: ContextUpdate) {
-        self.updates.insert(id, update);
-        self.window.request_redraw(); //更新ui
-    }
-}
-
 
 pub struct Render {
     pub(crate) rectangle: RectangleRender,

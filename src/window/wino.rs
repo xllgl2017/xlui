@@ -27,7 +27,6 @@ impl LoopWindow {
             font: attr.font.clone(),
             viewport,
             window: wt,
-            resize: false,
             render: Render::new(&device),
             updates: Map::new(),
             user_update: (WindowId(crate::unique_id_u32()), UpdateType::None),
@@ -126,6 +125,3 @@ impl EventLoopHandle for LoopWindow {
         }
     }
 }
-
-// unsafe impl Send for LoopWindow {}
-// unsafe impl Sync for LoopWindow {}
