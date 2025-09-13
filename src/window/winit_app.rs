@@ -78,6 +78,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                 window.app_ctx.update(window.app_ctx.context.user_update.1.clone(), &mut window.app)
             }
             UserEvent::CreateChild => {}
+            UserEvent::UserUpdate => {}
             UserEvent::ReInit => {
                 self.rebuilding = true;
                 println!("sleep start");
@@ -193,6 +194,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                     _ => {}
                 }
             }
+
             _ => (),
         }
     }

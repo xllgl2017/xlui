@@ -34,6 +34,7 @@ impl XlUiApp {
 //实现App trait
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
+        ui.window().request_update();
         ui.add(Label::new("hello").with_id("status"));
         ui.horizontal(|ui| {
             ui.add(Button::new("+").width(30.0).height(30.0).connect(Self::add));

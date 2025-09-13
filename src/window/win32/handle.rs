@@ -1,5 +1,5 @@
 use crate::error::UiResult;
-use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT};
+use crate::window::win32::{CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 use crate::window::UserEvent;
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 use std::num::NonZeroIsize;
@@ -27,7 +27,8 @@ impl Win32WindowHandle {
         let event = match event {
             UserEvent::ReqUpdate => REQ_UPDATE,
             UserEvent::CreateChild => CREATE_CHILD,
-            UserEvent::ReInit => RE_INIT
+            UserEvent::ReInit => RE_INIT,
+            UserEvent::UserUpdate => USER_UPDATE,
         };
         unsafe { PostMessageW(Some(self.hwnd), event, WPARAM(0), LPARAM(0)).unwrap() }
     }

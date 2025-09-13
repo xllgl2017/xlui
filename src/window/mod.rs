@@ -155,7 +155,7 @@ impl WindowType {
             WindowKind::Win32(ref window) => window.send_update(event),
         }
     }
-
+    ///仅调用当前window下的App::update
     pub fn request_update(&self) {
         self.request_update_event(UserEvent::UserUpdate);
     }

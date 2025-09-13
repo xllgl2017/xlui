@@ -29,6 +29,7 @@ const CREATE_CHILD: u32 = WM_USER + 3;
 const RE_INIT: u32 = WM_USER + 4;
 const IME: u32 = WM_USER + 5;
 const REQ_CLOSE: u32 = WM_USER + 6;
+const USER_UPDATE: u32 = WM_USER + 7;
 
 
 pub struct Win32Window {
