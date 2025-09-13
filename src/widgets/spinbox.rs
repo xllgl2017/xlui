@@ -372,7 +372,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.listen_input(ui, 100);
                 }
             }
-            UpdateType::Drop => {}
+            // UpdateType::Drop => {}
             _ => {}
         }
         self.edit.update(ui);

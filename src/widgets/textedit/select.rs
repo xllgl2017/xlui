@@ -76,10 +76,10 @@ impl EditSelection {
         }
     }
 
-    pub fn offset(&mut self, offset: &Offset) {
-        self.renders.iter_mut().for_each(|x| x.param.rect.offset(offset));
-        self.changed = true;
-    }
+    // pub fn offset(&mut self, offset: &Offset) {
+    //     self.renders.iter_mut().for_each(|x| x.param.rect.offset(offset));
+    //     self.changed = true;
+    // }
 
     pub fn render(&mut self, ui: &mut Ui, rows: usize) {
         let pass = ui.pass.as_mut().unwrap();

@@ -69,22 +69,22 @@ impl EditCursor {
         self.render.update(ui, false, false);
     }
 
-    pub fn offset(&mut self, offset: &Offset) {
-        self.min_pos.x += offset.x;
-        self.min_pos.y += offset.y;
-        self.render.param.rect.offset(offset);
-        self.changed = true;
-    }
+    // pub fn offset(&mut self, offset: &Offset) {
+    //     self.min_pos.x += offset.x;
+    //     self.min_pos.y += offset.y;
+    //     self.render.param.rect.offset(offset);
+    //     self.changed = true;
+    // }
 
     pub fn render(&mut self, ui: &mut Ui) {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.render, pass);
     }
 
-    pub fn set_rect(&mut self, rect: Rect) {
-        self.render.param.rect = rect;
-        self.changed = true;
-    }
+    // pub fn set_rect(&mut self, rect: Rect) {
+    //     self.render.param.rect = rect;
+    //     self.changed = true;
+    // }
 
     pub fn update_position(&mut self, ui: &mut Ui, rect: Rect, cchar: &CharBuffer) {
         self.render.param.rect = rect;
