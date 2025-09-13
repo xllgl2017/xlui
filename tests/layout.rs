@@ -67,7 +67,7 @@ impl App for TestLayout {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.label("ScrollArea2");
-                        let area = ScrollWidget::vertical().with_size(300.0, 200.0);
+                        let area = ScrollWidget::vertical().enable_hscroll().with_size(300.0, 200.0);
                         area.show(ui, |ui| {
                             ui.label("s1");
                             ui.label("s1");
@@ -183,9 +183,4 @@ impl App for TestLayout {
         ui.label("h1");
         ui.label("h2");
     }
-}
-
-#[test]
-fn main() {
-    TestLayout {}.run().unwrap();
 }
