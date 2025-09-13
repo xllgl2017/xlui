@@ -156,8 +156,8 @@ impl CharBuffer {
         line.chars.insert(cursor.horiz, cchar);
         self.rebuild_text(ui);
         let line = &mut self.buffer.lines[cursor.vert];
-        let width = line.chars[cursor.horiz - 1].width;
-        println!("insert before-{}-{}", line.chars.len(), cursor.horiz + 1);
+        println!("insert before-{}-{}", line.chars.len(), cursor.horiz);
+        let width = line.chars[if cursor.horiz == 0 { 0 } else { cursor.horiz - 1 }].width;
         let horiz = if cursor.horiz + 1 >= line.chars.len() { line.chars.len() } else { cursor.horiz + 1 };
         if cursor.min_pos.x + line.get_width_in_char(horiz) > cursor.max_pos.x {
             self.offset.x -= width;
@@ -181,8 +181,7 @@ impl CharBuffer {
         self.buffer.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)
     }
 
-    pub fn select_text(&self)->String{
-
+    pub fn select_text(&self) -> String {
         "test clipboard".to_string()
     }
 }

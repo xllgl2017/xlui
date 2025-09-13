@@ -3,7 +3,6 @@ use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
-use crate::size::padding::Padding;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
@@ -16,7 +15,6 @@ pub struct ItemWidget {
     fill_render: RenderParam<RectParam>,
     hovered: bool,
     layout: Option<LayoutKind>,
-    padding: Padding,
     data_str: String,
     current: Arc<RwLock<Option<String>>>,
     callback: Option<Box<dyn Fn(&String, &mut Ui)>>,
@@ -31,7 +29,6 @@ impl ItemWidget {
             fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
             hovered: false,
             layout: Some(layout),
-            padding: Padding::same(2.0),
             data_str,
             current: Arc::new(RwLock::new(None)),
             callback: None,
