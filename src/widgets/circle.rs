@@ -5,7 +5,7 @@ use crate::response::Response;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::Widget;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct Circle {
     id: String,
@@ -16,13 +16,18 @@ pub struct Circle {
 impl Circle {
     pub fn new(r: f32) -> Self {
         let mut rect = Rect::new();
-        rect.set_x_max(rect.dx().min + r * 2.0);
-        rect.set_y_max(rect.dx().max);
+        rect.set_height(r * 2.0);
+        rect.set_width(r * 2.0);
         Circle {
             id: crate::gen_unique_id(),
             render: RenderParam::new(CircleParam::new(rect, ClickStyle::new())),
             changed: false,
         }
+    }
+
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id= id.to_string();
+        self
     }
 
     pub fn set_style(&mut self, style: ClickStyle) {
@@ -36,34 +41,38 @@ impl Circle {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
-        if ui.can_offset { self.render.param.rect.offset(&ui.offset); }
-        self.render.update(ui, false, false);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.render.update(ui, false, false);
+        }
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.render.update(ui, false, false);
+        }
     }
 
-    fn init(&mut self, ui: &mut Ui, init: bool) {
-        if init {
-            self.render.param.rect = ui.available_rect().clone_with_size(&self.render.param.rect);
-        }
+    fn init(&mut self, ui: &mut Ui) {
         self.render.init_circle(ui, false, false);
         self.changed = false;
     }
-}
-
-impl Widget for Circle {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.circle.render(&self.render, pass);
     }
 
+}
+
+impl Widget for Circle {
+
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
-            UpdateType::Init => self.init(ui, true),
-            UpdateType::ReInit => self.init(ui, false),
+            UpdateType::Draw => self.redraw(ui),
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, &self.render.param.rect)
+        Response::new(&self.id, WidgetSize::same(self.render.param.rect.width(), self.render.param.rect.height()))
     }
 }

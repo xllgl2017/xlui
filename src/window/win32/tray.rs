@@ -57,4 +57,8 @@ impl TrayMenu {
         });
         self.children.last_mut().unwrap()
     }
+
+    pub fn set_icon(&mut self, icon: impl ToString) {
+        self.icon=Some(icon.to_string());
+    }
 }

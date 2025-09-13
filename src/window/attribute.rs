@@ -7,11 +7,14 @@ use crate::size::Size;
 use crate::window::win32::tray::Tray;
 
 pub struct WindowAttribute {
+    ///窗口大小，默认800x600
     pub inner_size: Size,
     pub min_inner_size: Size,
     pub max_inner_size: Size,
+    ///窗口位置，默认100,100
     pub position: [i32; 2],
     pub resizable: bool,
+    ///窗口标题
     pub title: String,
     pub maximized: bool,
     pub visible: bool,
@@ -21,6 +24,7 @@ pub struct WindowAttribute {
     pub window_icon: Arc<Vec<u8>>,
     #[cfg(feature = "winit")]
     pub window_level: WindowLevel,
+    ///全局字体
     pub font: Arc<Font>,
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub tray: Option<Tray>,
@@ -31,9 +35,6 @@ impl WindowAttribute {
     pub fn as_winit_attributes(&self) -> winit::window::WindowAttributes {
         let attr = winit::window::WindowAttributes::default();
         let (rgba, size) = super::super::render::image::load_image_bytes(self.window_icon.as_ref()).unwrap();
-        println!("{} {:?}", rgba.len(), size);
-        // let img = image::load_from_memory(self.window_icon.as_ref()).unwrap();
-        // let rgb8 = img.to_rgba8();
         let icon = Icon::from_rgba(rgba, size.width, size.height).unwrap();
         attr.with_inner_size(self.inner_size.as_physical_size())
             .with_min_inner_size(self.min_inner_size.as_physical_size())

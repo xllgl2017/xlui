@@ -1,6 +1,13 @@
+use crate::align::Align;
+use crate::frame::context::UpdateType;
+use crate::response::Response;
+use crate::text::rich::RichText;
+use crate::text::buffer::TextBuffer;
+use crate::text::TextWrap;
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
 /// ### Label的示例用法
 /// ```
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
@@ -18,16 +25,6 @@
 ///     ui.add(label);
 /// }
 /// ```
-
-use crate::align::Align;
-use crate::frame::context::UpdateType;
-use crate::response::Response;
-use crate::text::rich::RichText;
-use crate::text::buffer::TextBuffer;
-use crate::text::TextWrap;
-use crate::ui::Ui;
-use crate::widgets::Widget;
-
 pub struct Label {
     id: String,
     buffer: TextBuffer,
@@ -75,8 +72,12 @@ impl Label {
         &self.id
     }
 
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
+        self
+    }
+
     fn init(&mut self, ui: &mut Ui) {
-        self.buffer.rect = ui.layout().available_rect().clone_with_size(&self.buffer.rect);
         self.buffer.init(ui);
     }
 
@@ -85,26 +86,33 @@ impl Label {
             v.update_str(&mut self.buffer.text.text);
             self.buffer.change = true;
         }
-        if !self.buffer.change && !ui.can_offset { return; }
-        if ui.can_offset { self.buffer.rect.offset(&ui.offset); }
-        self.buffer.update_buffer(ui);
+        if self.buffer.change {
+            ui.widget_changed |= WidgetChange::Value;
+        }
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.buffer.rect.offset_to_rect(&ui.draw_rect);
+        }
+
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.buffer.update_buffer(ui);
+        }
+        self.buffer.change = false;
+    }
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.update_before_draw(ui);
+        self.buffer.redraw(ui);
     }
 }
 
 
 impl Widget for Label {
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.update_before_draw(ui);
-        self.buffer.redraw(ui);
-    }
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> { //处理鼠标键盘时间
         match &ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.buffer.init(ui),
+            UpdateType::Draw => self.redraw(ui),
             _ => {}
         }
-        Response::new(&self.id, &self.buffer.rect)
+        Response::new(&self.id, WidgetSize::same(self.buffer.rect.width(), self.buffer.rect.height()))
     }
 }

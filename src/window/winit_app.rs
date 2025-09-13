@@ -78,6 +78,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                 window.app_ctx.update(window.app_ctx.context.user_update.1.clone(), &mut window.app)
             }
             UserEvent::CreateChild => {}
+            UserEvent::UserUpdate => {}
             UserEvent::ReInit => {
                 self.rebuilding = true;
                 println!("sleep start");
@@ -88,7 +89,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                     Window::rebuild_device(&window.app_ctx.context.window, |device| {
                         device.on_uncaptured_error(Box::new(move |err| {
                             println!("Error: {:#?}", err);
-                            w.request_update(UserEvent::ReInit);
+                            w.request_update_event(UserEvent::ReInit);
                         }))
                     }).await
                 }).unwrap();
@@ -128,7 +129,6 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                 }
                 println!("11");
                 window.render();
-                window.app_ctx.context.resize = false;
             }
             WindowEvent::Resized(size) => {
                 window.resize(Size { width: size.width, height: size.height });
@@ -183,7 +183,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                     Key::Unidentified(_) => return,
                     Key::Dead(_) => return,
                 };
-                window.app_ctx.key_input(UpdateType::KeyRelease(key), &mut window.app);
+                window.app_ctx.update(UpdateType::KeyRelease(key), &mut window.app);
                 window.app_ctx.context.window.request_redraw();
             }
             WindowEvent::Ime(ime) => {
@@ -193,6 +193,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                     _ => {}
                 }
             }
+
             _ => (),
         }
     }

@@ -1,9 +1,5 @@
 use std::fmt::Display;
-use xlui::frame::context::UpdateType;
-use xlui::frame::App;
-use xlui::{Button, CheckBox, ComboBox, Image, Label, ListView, Slider, SpinBox, TextEdit, Widget};
-use xlui::layout::scroll_area::ScrollArea;
-use xlui::ui::Ui;
+use xlui::*;
 
 struct TD {
     name: String,
@@ -12,6 +8,12 @@ struct TD {
 impl TD {
     fn new(name: impl ToString) -> TD {
         TD { name: name.to_string() }
+    }
+
+    fn on_scroll(&self, layout: &mut LayoutKind) {
+        println!("{}  {}", "onscroll", self.name);
+        let name: &mut Label = layout.get_widget(&"item_id".to_string()).unwrap();
+        name.set_text(&self.name);
     }
 }
 
@@ -22,111 +24,88 @@ impl Display for TD {
 }
 
 
+#[test]
 fn main() {
-    XlUiApp::new().run();
+    XlUiApp::new().run().unwrap();
 }
 
 struct XlUiApp {
-    label: Label,
+    status: String,
     count: i32,
     list_view: ListView<TD>,
 }
 
 impl XlUiApp {
     pub fn new() -> Self {
-        // let data = vec![
-        //     TD::new("1"),
-        //     TD::new("2"),
-        //     TD::new("3"),
-        //     TD::new("4"),
-        //     TD::new("5"),
-        //     TD::new("6"),
-        //     TD::new("7"),
-        //     TD::new("8"),
-        //     TD::new("9"),
-        //     TD::new("10"),
-        //     TD::new("11"),
-        //     TD::new("12"),
-        //     TD::new("13"),
-        //     TD::new("14"),
-        //     TD::new("15")
-        // ];
         let mut data = vec![];
-        for i in 0..1000 {
-            data.push(TD::new(i + 1));
+        for i in 0..5 {
+            data.push(TD::new((i + 1).to_string()));
         }
         Self {
-            label: Label::new("hello".to_string()).width(200.0),
+            status: "".to_string(),
             count: 0,
-            list_view: ListView::new(data).with_size(300.0, 400.0),
+            list_view: ListView::new(data).with_size(280.0, 300.0).with_item_height(38.0),
         }
     }
 
-    pub fn click1(&mut self, _: &mut Button, _ui: &mut Ui) {
+    pub fn click1(&mut self, _: &mut Button, _: &mut Ui) {
         self.count += 1;
         println!("count: {}", self.count);
     }
 
-    pub fn click2(&mut self, _: &mut Button, _ui: &mut Ui) {
+    pub fn click2(&mut self, _: &mut Button, _: &mut Ui) {
         self.count += 2;
         println!("count2: {}", self.count);
     }
 
-    pub fn add(&mut self, btn: &mut Button, ui: &mut Ui) {
+    pub fn add(&mut self, btn: &mut Button, _: &mut Ui) {
         self.count += 1;
-        self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ui);
-        btn.set_text(self.label.text());
+        self.status = format!("count: {}", self.count);
+        btn.set_text(&self.status);
     }
 
-    pub fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
+    pub fn reduce(&mut self, _: &mut Button, _: &mut Ui) {
         self.count -= 1;
-        self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ui);
+        self.status = format!("count: {}", self.count);
     }
 
-    pub fn slider(&mut self, ui: &mut Ui, value: f32) {
-        self.label.set_text(format!("slider: {}", value));
-        self.label.update(ui);
+    pub fn slider(&mut self, _: &mut Ui, value: f32) {
+        self.status = format!("slider: {}", value);
     }
 
-    pub fn check(&mut self, ui: &mut Ui, checked: bool) {
-        self.label.set_text(format!("check: {}", checked));
-        self.label.update(ui);
+    pub fn check(&mut self, _: &mut Ui, checked: bool) {
+        self.status = format!("check: {}", checked);
     }
 
-    pub fn edit_changed(&mut self, ui: &mut Ui, text: String) {
-        self.label.set_text(format!("textedit: {}", text));
-        self.label.update(ui);
+    pub fn edit_changed(&mut self, _: &mut Ui, text: String) {
+        self.status = format!("textedit: {}", text);
     }
 
 
-    fn combo_changed(&mut self, ctx: &mut Ui, item: &&str) {
-        self.label.set_text(format!("combo: {}", item));
-        self.label.update(ctx);
+    fn combo_changed(&mut self, _: &mut Ui, item: &&str) {
+        self.status = format!("combo: {}", item);
     }
 
-    fn list_changed(&mut self, ui: &mut Ui) {
-        self.label.set_text(format!("list: {}", self.list_view.current().as_ref().unwrap()));
-        self.label.update(ui);
+    fn list_changed(&mut self, _: &mut Ui) {
+        // self.label.set_text(format!("list: {}", self.list_view.current().as_ref().unwrap()));
+        // self.label.update(ui);
     }
 
-    fn list_add(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn list_add(&mut self, _: &mut Button, _: &mut Ui) {
+        println!("add list item");
         self.list_view.push(TD::new(self.count));
         self.count += 1;
-        ui.request_update(UpdateType::None);
     }
 
-    fn list_delete(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn list_delete(&mut self, _: &mut Button, _: &mut Ui) {
         let current = self.list_view.current_index().unwrap();
         self.list_view.remove(current);
-        ui.request_update(UpdateType::None);
+        // ui.request_update(UpdateType::None);
     }
 }
 
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
-        ui.add_mut(&mut self.label);
         ui.horizontal(|ui| {
             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
@@ -145,7 +124,7 @@ impl App for XlUiApp {
             ui.label("h1");
             ui.label("h1");
             ui.label("h1");
-            let area = ScrollArea::new().with_size(300.0, 400.0);
+            let area = ScrollWidget::vertical().enable_hscroll().with_size(300.0, 400.0);
             area.show(ui, |ui| {
                 ui.label("start");
                 ui.vertical(|ui| {
@@ -157,6 +136,9 @@ impl App for XlUiApp {
                     ui.label("sh1");
                     ui.label("sh2");
                     ui.button("sh3").set_callback(Self::click2);
+                    for i in 0..1000 {
+                        ui.label(format!("h{}", i));
+                    }
                 });
                 for i in 0..1000 {
                     ui.label(format!("i{}", i));
@@ -170,10 +152,11 @@ impl App for XlUiApp {
                     ui.button("删除").set_callback(Self::list_delete);
                 });
                 self.list_view.set_callback(Self::list_changed);
+                self.list_view.on_scrolling(TD::on_scroll);
                 self.list_view.set_item_widget(|ui, datum| {
                     ui.image("logo.jpg", (30.0, 30.0));
                     ui.vertical(|ui| {
-                        ui.label(datum.to_string());
+                        ui.add(Label::new(datum.to_string()).with_id("item_id"));
                         ui.horizontal(|ui| {
                             ui.label("00:00");
                             ui.label("200");
@@ -193,11 +176,6 @@ impl App for XlUiApp {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        self.label.update(ui);
         self.list_view.update(ui);
-    }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.label.redraw(ui);
     }
 }

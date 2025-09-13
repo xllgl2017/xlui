@@ -1,3 +1,6 @@
+#[cfg(not(feature = "winit"))]
+use std::ops::Range;
+
 #[derive(Debug)]
 pub(crate) struct CChar {
     pub(crate) cchar: char,
@@ -41,6 +44,13 @@ impl LineChar {
         let mut width = 0.0;
         self.chars[..index].iter().for_each(|x| width += x.width);
         width
+    }
+
+    #[cfg(not(feature = "winit"))]
+    pub fn get_text_by_range(&self, r: Range<usize>) -> String {
+        let mut res: String = self.chars[r.clone()].iter().map(|x| x.cchar.to_string()).collect();
+        if !self.auto_wrap && r.end == self.len() { res += "\n"; }
+        res
     }
 
     pub fn len(&self) -> usize { self.chars.len() }

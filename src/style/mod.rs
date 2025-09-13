@@ -1,38 +1,36 @@
-//!
-//! ### 控件样式
-//! ```
-//! use xlui::{Size,Border,Radius};
-//! use xlui::style::ClickStyle;
-//! use xlui::style::color::Color;
-//! use xlui::ui::Ui;
-//!
-//! fn draw(ui:&mut Ui){
-//!     let mut style=ClickStyle::new();
-//!     //未活跃的状态
-//!     style.fill.inactive=Color::GRAY;
-//!     style.border.inactive=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
-//!     //滑动状态
-//!     style.fill.hovered=Color::GRAY;
-//!     style.border.hovered=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
-//!     //活跃状态
-//!     style.fill.clicked=Color::GRAY;
-//!     style.border.clicked=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
-//! }
-//! ```
-//!
-//!
-
 pub mod color;
-use crate::size::border::Border;
-use crate::size::rect::Rect;
-use crate::style::color::Color;
 
-pub struct Frame {
-    pub rect: Rect,
+use crate::size::border::Border;
+use crate::style::color::Color;
+use crate::Radius;
+
+pub struct FrameStyle {
     pub fill: Color,
-    pub shadow: Color,
+    pub radius: Radius,
+    pub shadow: Shadow,
 
 }
+
+///
+/// ### 控件样式
+/// ```
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///     let mut style=ClickStyle::new();
+///     //未活跃的状态
+///     style.fill.inactive=Color::GRAY;
+///     style.border.inactive=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     //滑动状态
+///     style.fill.hovered=Color::GRAY;
+///     style.border.hovered=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     //活跃状态
+///     style.fill.clicked=Color::GRAY;
+///     style.border.clicked=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+/// }
+/// ```
+///
+///
 #[derive(Clone)]
 pub struct FillStyle {
     pub inactive: Color,
@@ -124,7 +122,7 @@ impl Shadow {
 
 
 pub struct Style {
-    pub window: Frame,
+    pub window: FrameStyle,
     pub widget: WidgetStyle,
 }
 
@@ -132,10 +130,10 @@ pub struct Style {
 impl Style {
     pub fn light_style() -> Style {
         Style {
-            window: Frame {
-                rect: Rect::new(),
+            window: FrameStyle {
+                radius: Radius::same(0),
                 fill: Color::rgb(240, 240, 240),
-                shadow: Color::rgb(0, 0, 0),
+                shadow: Shadow::new(),
             },
 
             widget: WidgetStyle {

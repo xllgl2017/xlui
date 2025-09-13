@@ -82,6 +82,7 @@ pub enum UserEvent {
     ReqUpdate = 0,
     CreateChild = 1,
     ReInit = 2,
+    UserUpdate = 3,
 }
 
 pub struct WindowType {
@@ -94,31 +95,32 @@ pub struct WindowType {
 
 
 impl WindowType {
-    pub const ROOT: u32 = 0;
-    pub const CHILD: u32 = 1;
+    pub(crate) const ROOT: u32 = 0;
+    #[cfg(not(feature = "winit"))]
+    pub(crate) const CHILD: u32 = 1;
 
     #[cfg(all(target_os = "linux", not(feature = "winit")))]
-    pub fn x11(&self) -> &X11WindowHandle {
+    pub(crate) fn x11(&self) -> &X11WindowHandle {
         match self.kind {
             WindowKind::X11(ref window) => window,
         }
     }
 
     #[cfg(feature = "winit")]
-    pub fn winit(&self) -> &WInitWindowHandle {
+    pub(crate) fn winit(&self) -> &WInitWindowHandle {
         match self.kind {
             WindowKind::Winit(ref window) => window,
         }
     }
 
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-    pub fn win32(&self) -> &win32::handle::Win32WindowHandle {
+    pub(crate) fn win32(&self) -> &win32::handle::Win32WindowHandle {
         match self.kind {
             WindowKind::Win32(ref window) => window
         }
     }
 
-    pub fn set_ime_position(&self, x: f32, y: f32, cursor_height: f32) {
+    pub(crate) fn set_ime_position(&self, x: f32, y: f32, cursor_height: f32) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.set_ime_position(&self.ime, x, y + cursor_height),
@@ -129,11 +131,11 @@ impl WindowType {
         }
     }
 
-    pub fn id(&self) -> WindowId {
+    pub(crate) fn id(&self) -> WindowId {
         self.id
     }
 
-    pub fn request_redraw(&self) {
+    pub(crate) fn request_redraw(&self) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.request_redraw(),
@@ -144,7 +146,7 @@ impl WindowType {
         }
     }
 
-    pub fn request_update(&self, event: UserEvent) {
+    pub(crate) fn request_update_event(&self, event: UserEvent) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.send_update(event),
@@ -154,30 +156,34 @@ impl WindowType {
             WindowKind::Win32(ref window) => window.send_update(event),
         }
     }
+    ///仅调用当前window下的App::update
+    pub fn request_update(&self) {
+        self.request_update_event(UserEvent::UserUpdate);
+    }
 
-    pub fn ime(&self) -> &Arc<IME> {
+    pub(crate) fn ime(&self) -> &Arc<IME> {
         &self.ime
     }
 
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-    pub fn set_visible(&self, visible: bool) {
+    pub(crate) fn set_visible(&self, visible: bool) {
         match self.kind {
             WindowKind::Win32(ref window) => window.set_visible(visible).unwrap(),
         }
     }
 
     #[cfg(not(feature = "winit"))]
-    pub fn request_clipboard(&self, clipboard: ClipboardData) {
+    pub(crate) fn request_clipboard(&self, clipboard: ClipboardData) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.request_clipboard(clipboard),
             #[cfg(all(target_os = "windows", not(feature = "winit")))]
-            WindowKind::Win32(ref window) => {}
+            WindowKind::Win32(_) => {}
         }
     }
 
     #[cfg(not(feature = "winit"))]
-    pub fn set_clipboard(&self, clipboard: ClipboardData) {
+    pub(crate) fn set_clipboard(&self, clipboard: ClipboardData) {
         match self.kind {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.set_clipboard(clipboard),

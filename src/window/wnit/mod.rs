@@ -21,21 +21,16 @@ impl Window {
         let w = window.clone();
         let device = Self::rebuild_device(&window, |device| {
             device.on_uncaptured_error(Box::new(move |err| {
-                w.request_update(UserEvent::ReInit);
+                w.request_update_event(UserEvent::ReInit);
                 println!("Error: {:?}", err);
             }));
         }).await?;
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
-            size: Size {
-                width: window.winit().inner_size().width,
-                height: window.winit().inner_size().height,
-            },
             font: attr.font.clone(),
             user_update: (window.id, UpdateType::None),
             viewport,
             window,
-            resize: false,
             render: Render::new(&device),
             updates: Map::new(),
             new_window: None,
@@ -89,16 +84,13 @@ impl Window {
     pub(crate) fn render(&mut self) {
         // Create texture view
         self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
-            width: self.app_ctx.context.size.width,
-            height: self.app_ctx.context.size.height,
+            width: self.app_ctx.device.surface_config.width,
+            height: self.app_ctx.device.surface_config.height,
         });
         self.app_ctx.redraw(&mut self.app);
     }
 
     pub(crate) fn resize(&mut self, new_size: Size) {
-        self.app_ctx.context.resize = true;
-        self.app_ctx.context.size.width = new_size.width;
-        self.app_ctx.context.size.height = new_size.height;
         self.app_ctx.device.surface_config.width = new_size.width;
         self.app_ctx.device.surface_config.height = new_size.height;
         self.configure_surface();

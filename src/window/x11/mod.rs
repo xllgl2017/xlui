@@ -1,18 +1,18 @@
+use crate::error::UiResult;
 use crate::key::Key;
 use crate::window::event::WindowEvent;
 use crate::window::ime::{IMEData, IME};
+use crate::window::x11::clipboard::X11ClipBoard;
+use crate::window::x11::handle::X11WindowHandle;
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
 use std::ffi::CString;
+use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
-use std::ptr::null_mut;
 use x11::xlib;
 use x11::xlib::{XCloseDisplay, XLookupString};
-use crate::error::UiResult;
-use crate::window::x11::clipboard::X11ClipBoard;
-use crate::window::x11::handle::X11WindowHandle;
 
 pub mod ime;
 pub mod handle;
@@ -163,6 +163,8 @@ impl X11Window {
                         return match xclient.data.get_long(0) {
                             0 => (window.id, WindowEvent::ReqUpdate),
                             1 => (window.id, WindowEvent::CreateChild),
+                            2 => (window.id, WindowEvent::ReInit),
+                            3 => (window.id, WindowEvent::UserUpdate),
                             _ => (window.id, WindowEvent::None)
                         };
                     } else if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
@@ -209,6 +211,8 @@ impl X11Window {
                             return (window.id, WindowEvent::None);
                         } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
                             return (window.id, WindowEvent::None);
+                        } else if ctrl_press {
+                            return (window.id, WindowEvent::None);
                         }
                         return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])));
                     }
@@ -216,11 +220,21 @@ impl X11Window {
                 xlib::ButtonRelease => {
                     // window.x11().clipboard.request_get_clipboard(window.x11().window, window.x11().clipboard.utf8_atom);
                     let xb: xlib::XButtonEvent = event.button;
-                    return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 }));
+                    match xb.button {
+                        1 => return (window.id, WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 })),
+                        2 => {} //鼠标中间键
+                        3 => {} //鼠标右键
+                        4 => return (window.id, WindowEvent::MouseWheel(1.0)), //向上滚动
+                        5 => return (window.id, WindowEvent::MouseWheel(-1.0)), //向下动
+                        _ => {}
+                    }
                 }
                 xlib::ButtonPress => {
                     let xb: xlib::XButtonEvent = event.button;
-                    return (window.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 }));
+                    match xb.button {
+                        1 => return (window.id, WindowEvent::MousePress(Pos { x: xb.x as f32, y: xb.y as f32 })),
+                        _ => {}
+                    }
                 }
                 xlib::MotionNotify => {
                     let xm: xlib::XMotionEvent = event.motion;

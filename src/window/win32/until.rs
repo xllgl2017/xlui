@@ -1,5 +1,5 @@
 use crate::error::UiResult;
-use crate::window::win32::{Win32Window, IME, REQ_CLOSE, TRAY_ICON};
+use crate::window::win32::{Win32Window, IME, REQ_CLOSE, RESIZE, TRAY_ICON};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, HBITMAP, HGDIOBJ};
@@ -47,11 +47,15 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
 }
 
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-    // println!("ime2-----------{}", msg);
     match msg {
         WM_CLOSE => {
             println!("req quit-{:?}", hwnd);
             unsafe { PostMessageW(Some(hwnd), REQ_CLOSE, WPARAM(0), LPARAM(0)).unwrap() };
+            LRESULT(0)
+        }
+        WM_SIZE => {
+            println!("resize");
+            unsafe { PostMessageW(Some(hwnd), RESIZE, WPARAM(msg as usize), lparam).unwrap() };
             LRESULT(0)
         }
         TRAY_ICON => {
@@ -67,20 +71,11 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         WM_COMMAND => {
             let app: &Win32Window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window).as_ref() }.unwrap();
             if let Some(ref tray) = app.tray {
-                let menu = tray.menus.iter().find(|x| x.id == wparam.0 as u32 );
+                let menu = tray.menus.iter().find(|x| x.id == wparam.0 as u32);
                 if let Some(menu) = menu { (menu.callback)() }
             }
             LRESULT(0)
         }
-        // WM_KEYDOWN => {
-        //     println!("KeyDown VK={}", wparam.0);
-        //     LRESULT(0)
-        // }
-        // WM_CHAR => {
-        //     let ch = std::char::from_u32(wparam.0 as u32).unwrap_or('\0');
-        //     println!("Char input: {}", ch);
-        //     LRESULT(0)
-        // }
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
             unsafe { PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap() };
             LRESULT(0)

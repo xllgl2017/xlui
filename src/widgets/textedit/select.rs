@@ -45,7 +45,7 @@ impl EditSelection {
                 let mut rect = rect.clone();
                 rect.set_x_max(rect.dx().min);
                 rect.set_height(line_height);
-                rect.offset(&Offset::new(Pos::new()).with_y(row as f32 * line_height).delete_offset());
+                rect.offset(&Offset::new(Pos::new()).with_y(row as f32 * line_height).covered());
                 let render = RenderParam::new(RectParam::new(rect, select_style.clone()));
                 self.renders.push(render);
             }
@@ -76,10 +76,10 @@ impl EditSelection {
         }
     }
 
-    pub fn offset(&mut self, offset: &Offset) {
-        self.renders.iter_mut().for_each(|x| x.param.rect.offset(offset));
-        self.changed = true;
-    }
+    // pub fn offset(&mut self, offset: &Offset) {
+    //     self.renders.iter_mut().for_each(|x| x.param.rect.offset(offset));
+    //     self.changed = true;
+    // }
 
     pub fn render(&mut self, ui: &mut Ui, rows: usize) {
         let pass = ui.pass.as_mut().unwrap();
@@ -160,7 +160,7 @@ impl EditSelection {
                     let window = ui.context.window.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        window.request_update(UserEvent::ReqUpdate);
+                        window.request_update_event(UserEvent::ReqUpdate);
                     });
                     // #[cfg(feature = "winit")]
                     // {
@@ -185,7 +185,7 @@ impl EditSelection {
                     let window = ui.context.window.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        window.request_update(UserEvent::ReqUpdate);
+                        window.request_update_event(UserEvent::ReqUpdate);
                     });
                     // #[cfg(feature = "winit")]
                     // {
@@ -241,5 +241,13 @@ impl EditSelection {
 
 
         self.changed = true;
+    }
+
+    pub fn update_position(&mut self, ui: &mut Ui, mut rect: Rect) {
+        for render in self.renders.iter_mut() {
+            render.param.rect.offset_y_to(rect.dy().min);
+            render.update(ui, false, false);
+            rect.add_min_y(render.param.rect.height());
+        }
     }
 }

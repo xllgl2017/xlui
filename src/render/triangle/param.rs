@@ -1,4 +1,3 @@
-use crate::Offset;
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
@@ -47,14 +46,14 @@ impl TriangleParam {
         }
     }
 
-    pub fn offset(&mut self, o: &Offset) {
-        self.p0.x += o.x;
-        self.p0.y += o.y;
-        self.p1.x += o.x;
-        self.p1.y += o.y;
-        self.p2.x += o.x;
-        self.p2.y += o.y;
-    }
+    // pub fn offset(&mut self, o: &Offset) {
+    //     self.p0.x += o.x;
+    //     self.p0.y += o.y;
+    //     self.p1.x += o.x;
+    //     self.p1.y += o.y;
+    //     self.p2.x += o.x;
+    //     self.p2.y += o.y;
+    // }
 }
 
 impl WrcParam for TriangleParam {

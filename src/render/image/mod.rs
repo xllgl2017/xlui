@@ -189,7 +189,6 @@ impl ImageRender {
 
 #[cfg(target_os = "windows")]
 pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
-    // let fp = fp.as_ref().to_str().ok_or("图片路径错误")?;
     unsafe { CoInitialize(None).ok()?; }
     let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
     let decoder = match source {

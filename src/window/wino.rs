@@ -24,11 +24,9 @@ impl LoopWindow {
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
-            size: attr.inner_size,
             font: attr.font.clone(),
             viewport,
             window: wt,
-            resize: false,
             render: Render::new(&device),
             updates: Map::new(),
             user_update: (WindowId(crate::unique_id_u32()), UpdateType::None),
@@ -61,7 +59,7 @@ impl LoopWindow {
         };
         let w = window.clone();
         device.on_uncaptured_error(Box::new(move |err: wgpu::Error| {
-            w.request_update(UserEvent::ReInit);
+            w.request_update_event(UserEvent::ReInit);
             println!("Error: {:#?}", err);
             println!("{}", err.to_string());
         }));
@@ -79,23 +77,26 @@ impl LoopWindow {
 
 impl EventLoopHandle for LoopWindow {
     fn event(&mut self, event: WindowEvent) {
-        println!("{:?}", event);
         match event {
             WindowEvent::None => {}
-            WindowEvent::KeyPress(key) => self.app_ctx.key_input(UpdateType::KeyPress(key), &mut self.app),
-            WindowEvent::KeyRelease(key) => self.app_ctx.key_input(UpdateType::KeyRelease(key), &mut self.app),
+            WindowEvent::KeyPress(key) => self.app_ctx.update(UpdateType::KeyPress(key), &mut self.app),
+            WindowEvent::KeyRelease(key) => self.app_ctx.update(UpdateType::KeyRelease(key), &mut self.app),
             WindowEvent::MouseMove(pos) => {
                 self.app_ctx.device.device_input.mouse.update(pos);
                 self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
             }
-            WindowEvent::MouseWheel => {}
+            WindowEvent::MouseWheel(y) => {
+                self.app_ctx.device.device_input.mouse.delta = (0.0, y);
+                self.app_ctx.update(UpdateType::MouseWheel, &mut self.app);
+                self.app_ctx.device.device_input.mouse.delta = (0.0, 0.0);
+            }
             WindowEvent::MousePress(pos) => {
-                self.app_ctx.device.device_input.mouse.update(pos);
+                self.app_ctx.device.device_input.mouse.lastest = pos;
                 self.app_ctx.device.device_input.mouse.mouse_press();
                 self.app_ctx.update(UpdateType::MousePress, &mut self.app);
             }
             WindowEvent::MouseRelease(pos) => {
-                self.app_ctx.device.device_input.mouse.update(pos);
+                self.app_ctx.device.device_input.mouse.lastest = pos;
                 self.app_ctx.device.device_input.mouse.mouse_release();
                 self.app_ctx.update(UpdateType::MouseRelease, &mut self.app);
                 self.app_ctx.device.device_input.mouse.a = 0.0;
@@ -107,9 +108,8 @@ impl EventLoopHandle for LoopWindow {
                 });
                 self.app_ctx.redraw(&mut self.app)
             }
-            WindowEvent::Reinit => {}
+            WindowEvent::ReInit => self.app_ctx.update(UpdateType::ReInit, &mut self.app),
             WindowEvent::Resize(size) => {
-                self.app_ctx.context.size = size;
                 self.app_ctx.device.surface_config.width = size.width;
                 self.app_ctx.device.surface_config.height = size.height;
                 let device = &self.app_ctx.device.device;
@@ -120,10 +120,8 @@ impl EventLoopHandle for LoopWindow {
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
             WindowEvent::IME(data) => self.app_ctx.update(UpdateType::IME(data), &mut self.app),
             WindowEvent::Clipboard(data) => self.app_ctx.update(UpdateType::Clipboard(data), &mut self.app),
+            WindowEvent::UserUpdate => self.app_ctx.user_update(&mut self.app),
             _ => {}
         }
     }
 }
-
-// unsafe impl Send for LoopWindow {}
-// unsafe impl Sync for LoopWindow {}

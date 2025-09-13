@@ -156,8 +156,8 @@ impl CharBuffer {
         line.chars.insert(cursor.horiz, cchar);
         self.rebuild_text(ui);
         let line = &mut self.buffer.lines[cursor.vert];
-        let width = line.chars[cursor.horiz - 1].width;
-        println!("insert before-{}-{}", line.chars.len(), cursor.horiz + 1);
+        println!("insert before-{}-{}", line.chars.len(), cursor.horiz);
+        let width = if line.len() == 0 { 0.0 } else { line.chars[if cursor.horiz == 0 { 0 } else { cursor.horiz - 1 }].width };
         let horiz = if cursor.horiz + 1 >= line.chars.len() { line.chars.len() } else { cursor.horiz + 1 };
         if cursor.min_pos.x + line.get_width_in_char(horiz) > cursor.max_pos.x {
             self.offset.x -= width;
@@ -181,8 +181,31 @@ impl CharBuffer {
         self.buffer.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)
     }
 
-    pub fn select_text(&self)->String{
-
-        "test clipboard".to_string()
+    #[cfg(not(feature = "winit"))]
+    pub fn select_text(&self, select: &EditSelection, cursor: &EditCursor) -> String {
+        if !select.has_selected { return "".to_string(); }
+        let mut chars = vec![];
+        if select.start_vert != cursor.vert {
+            let (start_vert, start_horiz, end_vert, end_horiz) = if select.start_vert < cursor.vert {
+                (select.start_vert, select.start_horiz, cursor.vert, cursor.horiz)
+            } else {
+                (cursor.vert, cursor.horiz, select.start_vert, select.start_horiz)
+            };
+            let start_line = &self.buffer.lines[start_vert];
+            chars.push(start_line.get_text_by_range(start_horiz..start_line.len()));
+            for i in start_vert + 1..end_vert {
+                chars.push(self.buffer.lines[i].raw_text());
+            }
+            let end_line = &self.buffer.lines[end_vert];
+            chars.push(end_line.get_text_by_range(0..end_horiz));
+        } else {
+            let (start_horiz, end_horiz) = if select.start_horiz < cursor.horiz {
+                (select.start_horiz, cursor.horiz)
+            } else {
+                (cursor.horiz, select.start_horiz)
+            };
+            chars.push(self.buffer.lines[select.start_vert].get_text_by_range(start_horiz..end_horiz))
+        }
+        chars.join("")
     }
 }

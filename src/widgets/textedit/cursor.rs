@@ -46,10 +46,10 @@ impl EditCursor {
 
     pub fn init(&mut self, cchar: &CharBuffer, ui: &mut Ui, init: bool) {
         if init {
-            self.min_pos.x = cchar.buffer.rect.dx().min;
-            self.min_pos.y = cchar.buffer.rect.dy().min;
-            self.max_pos.x = cchar.buffer.rect.dx().max;
-            self.max_pos.y = cchar.buffer.rect.dy().max;
+            // self.min_pos.x = cchar.buffer.rect.dx().min;
+            // self.min_pos.y = cchar.buffer.rect.dy().min;
+            // self.max_pos.x = cchar.buffer.rect.dx().max;
+            // self.max_pos.y = cchar.buffer.rect.dy().max;
             self.line_height = cchar.buffer.text.height;
             self.vert = cchar.buffer.lines.len();
             self.horiz = cchar.buffer.lines.last().unwrap().len();
@@ -69,20 +69,31 @@ impl EditCursor {
         self.render.update(ui, false, false);
     }
 
-    pub fn offset(&mut self, offset: &Offset) {
-        self.min_pos.x += offset.x;
-        self.min_pos.y += offset.y;
-        self.render.param.rect.offset(offset);
-        self.changed = true;
-    }
+    // pub fn offset(&mut self, offset: &Offset) {
+    //     self.min_pos.x += offset.x;
+    //     self.min_pos.y += offset.y;
+    //     self.render.param.rect.offset(offset);
+    //     self.changed = true;
+    // }
 
     pub fn render(&mut self, ui: &mut Ui) {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.render, pass);
     }
 
-    pub fn set_rect(&mut self, rect: Rect) {
+    // pub fn set_rect(&mut self, rect: Rect) {
+    //     self.render.param.rect = rect;
+    //     self.changed = true;
+    // }
+
+    pub fn update_position(&mut self, ui: &mut Ui, rect: Rect, cchar: &CharBuffer) {
         self.render.param.rect = rect;
+        self.render.param.rect.offset(&self.offset);
+        self.render.update(ui, false, false);
+        self.min_pos.x = cchar.buffer.rect.dx().min;
+        self.min_pos.y = cchar.buffer.rect.dy().min;
+        self.max_pos.x = cchar.buffer.rect.dx().max;
+        self.max_pos.y = cchar.buffer.rect.dy().max;
     }
 
     pub fn move_left(&mut self, cchar: &CharBuffer) {

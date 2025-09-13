@@ -4,11 +4,8 @@
 //! ### 目前的控件工作状态如下图
 //! ![控件状态](https://github.com/xllgl2017/xlui/blob/main/res/img/doc/img_1.png?raw=true)
 //! ### 下面是xlui的最小运行示例
-//! ```
-//! use xlui::frame::App;
+//! ```rust
 //! use xlui::*;
-//! use xlui::ui::Ui;
-//! use xlui::frame::context::Context;
 //!
 //! fn main() {
 //!     let app=XlUiApp::new();
@@ -17,7 +14,7 @@
 //! }
 //!
 //! struct XlUiApp {
-//!     label: Label,
+//!     status:String,
 //!     count: i32,
 //! }
 //!
@@ -25,40 +22,36 @@
 //! impl XlUiApp {
 //!     fn new()->XlUiApp{
 //!         XlUiApp{
-//!             label: Label::new("hello").width(100.0),
 //!             count: 0,
+//!             status:"这里是Label".to_string()
 //!         }
 //!     }
 //!     fn add(&mut self,_:&mut Button,ui: &mut Ui){
 //!         self.count += 1;
-//!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(ui);
+//!         self.status=format!("count: {}", self.count);
 //!     }
 //!
 //!     fn reduce(&mut self,_:&mut Button,ui: &mut Ui){
 //!         self.count-=1;
-//!         self.label.set_text(format!("count: {}", self.count));
-//!         self.label.update(ui);
+//!         self.status=format!("count: {}", self.count);
 //!     }
 //! }
 //!
 //! //实现App trait
 //! impl App for XlUiApp {
 //!     fn draw(&mut self, ui: &mut Ui) {
-//!         ui.add_mut(&mut self.label);
+//!         ui.add(Label::new("hello").with_id("status"));
 //!         ui.horizontal(|ui| {
-//!             ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
-//!             ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
+//!             ui.add(Button::new("+").width(30.0).height(30.0).connect(Self::add));
+//!             ui.add(Button::new("-").width(30.0).height(30.0).connect(Self::reduce));
 //!         });
 //!      }
 //!
 //!     fn update(&mut self, ui: &mut Ui) {
-//!         self.label.update(ui);
+//!         let status:&mut Label=ui.get_widget("status").unwrap();
+//!         status.set_text(&self.status);
 //!      }
 //!
-//!     fn redraw(&mut self, ui: &mut Ui) {
-//!         self.label.redraw(ui);
-//!     }
 //!
 //!     fn window_attributes(&self) -> WindowAttribute {
 //!         WindowAttribute{
@@ -71,7 +64,6 @@
 //! * xlui可以在App.update中获取Widget的可变引用，以便修改控件
 //! * update函数是后台接收到系统事件时才会调用，这里不应该直接修改，应根据条件修改。
 //!```
-//! use xlui::ui::Ui;
 //! use xlui::*;
 //!
 //! fn update(ui:&mut Ui){
@@ -82,18 +74,17 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
-use crate::ui::Ui;
 
 mod widgets;
-pub mod align;
-pub mod vertex;
-pub mod layout;
+mod align;
+mod vertex;
+mod layout;
 mod text;
 mod size;
-pub mod frame;
-pub mod ui;
+mod frame;
+mod ui;
 
-pub mod style;
+mod style;
 mod render;
 pub mod response;
 pub mod map;
@@ -104,12 +95,18 @@ mod error;
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
+pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout,
+                 popup::Popup, LayoutKind, recycle::RecycleLayout};
 pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size};
-pub use widgets::{button::Button, spinbox::SpinBox, select::SelectItem, listview::ListView, slider::Slider,
-                  checkbox::CheckBox, radio::RadioButton, processbar::ProcessBar, rectangle::Rectangle,
-                  circle::Circle, textedit::TextEdit, label::Label, combobox::ComboBox, image::Image,
-                  Widget, triangle::Triangle};
+pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
+                  image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
+                  select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combobox::ComboBox,
+                  rectangle::Rectangle, circle::Circle, triangle::Triangle};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
+pub use ui::Ui;
+pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow};
+pub use frame::{App, context::UpdateType};
+pub use align::Align;
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;
@@ -140,13 +137,14 @@ impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 const SAMPLE_COUNT: u32 = 4;
 
-#[derive(Clone, Debug)]
-enum OffsetDirection {
-    Down,
-    Left,
-    Right,
-    Up,
-}
+// #[deprecated]
+// #[derive(Clone, Debug)]
+// enum OffsetDirection {
+//     Down,
+//     Left,
+//     Right,
+//     Up,
+// }
 
 #[derive(Clone, Debug)]
 pub struct Offset {
@@ -154,8 +152,8 @@ pub struct Offset {
     x: f32,
     y: f32,
     covered: bool,
-    direction: OffsetDirection,
-    target_id: String,
+    // direction: OffsetDirection,
+    // target_id: String,
 }
 
 impl Offset {
@@ -165,8 +163,8 @@ impl Offset {
             x: 0.0,
             y: 0.0,
             covered: false,
-            direction: OffsetDirection::Down,
-            target_id: "".to_string(),
+            // direction: OffsetDirection::Down,
+            // target_id: "".to_string(),
         }
     }
 
@@ -185,7 +183,7 @@ impl Offset {
         self
     }
 
-    pub fn delete_offset(mut self) -> Offset {
+    pub fn covered(mut self) -> Offset {
         self.covered = true;
         self
     }
@@ -264,7 +262,6 @@ impl MouseInput {
         println!("{} m/s2", self.a);
         self.clicked.store(true, Ordering::SeqCst);
         self.pressed = false;
-        // self.pressed_pos.clear()
     }
 }
 
@@ -315,7 +312,6 @@ pub(crate) fn time_ms() -> u128 {
 
 pub fn unique_id_u32() -> u32 {
     let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
-    println!("unique {}", t.to_string()[10..].to_string());
     t.to_string()[10..].to_string().parse::<u32>().unwrap()
 }
 
@@ -323,5 +319,3 @@ pub fn gen_unique_id() -> String {
     let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
     format!("{:x}", t)
 }
-
-pub fn _run_test(_: fn(&mut Ui)) {}

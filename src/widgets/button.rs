@@ -1,9 +1,22 @@
+use crate::align::Align;
+use crate::frame::context::UpdateType;
+use crate::frame::App;
+use crate::render::rectangle::param::RectParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::render::image::ImageSource;
+use crate::response::{Callback, Response};
+use crate::size::padding::Padding;
+use crate::size::rect::Rect;
+use crate::size::SizeMode;
+use crate::style::ClickStyle;
+use crate::text::rich::RichText;
+use crate::text::buffer::TextBuffer;
+use crate::ui::Ui;
+use crate::widgets::image::Image;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
+
 /// ### Button的示例用法
 /// ```
-/// use xlui::frame::App;
-/// use xlui::Padding;
-/// use xlui::style::ClickStyle;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn clicked<A:App>(_:&mut A,btn:&mut Button,ui:&mut Ui){
@@ -42,24 +55,6 @@
 ///    ui.add(image_btn);
 /// }
 /// ```
-
-use crate::align::Align;
-use crate::frame::context::UpdateType;
-use crate::frame::App;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::render::image::ImageSource;
-use crate::response::{Callback, Response};
-use crate::size::padding::Padding;
-use crate::size::rect::Rect;
-use crate::size::SizeMode;
-use crate::style::ClickStyle;
-use crate::text::rich::RichText;
-use crate::text::buffer::TextBuffer;
-use crate::ui::Ui;
-use crate::widgets::image::Image;
-use crate::widgets::Widget;
-
 pub struct Button {
     pub(crate) id: String,
     pub(crate) text_buffer: TextBuffer,
@@ -69,7 +64,6 @@ pub struct Button {
     inner_callback: Option<Box<dyn FnMut()>>,
     fill_render: RenderParam<RectParam>,
     image: Option<Image>,
-    image_rect: Rect,
     hovered: bool,
     changed: bool,
 }
@@ -78,17 +72,16 @@ pub struct Button {
 impl Button {
     pub fn new(text: impl Into<RichText>) -> Self {
         let padding = Padding::same(2.0);
-        let mut text_buffer = TextBuffer::new(text);
-        text_buffer.align = Align::Center;
+        // let mut text_buffer = TextBuffer::new(text);
+        // text_buffer.align = Align::Center;
         Button {
             id: crate::gen_unique_id(),
-            text_buffer,
+            text_buffer:TextBuffer::new(text).with_align(Align::Center),
             padding,
             size_mode: SizeMode::Auto,
             callback: None,
             inner_callback: None,
             image: None,
-            image_rect: Rect::new(),
             hovered: false,
             changed: false,
             fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
@@ -104,50 +97,57 @@ impl Button {
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text_buffer.size_mode = self.size_mode;
         self.text_buffer.init(ui);
-        match self.size_mode {
-            SizeMode::Auto => {
-                let width = self.text_buffer.rect.width() + self.padding.horizontal();
-                let height = self.text_buffer.rect.height() + self.padding.vertical();
-                self.fill_render.param.rect.set_size(width, height);
-            }
-            SizeMode::FixWidth => self.fill_render.param.rect.set_height(self.text_buffer.rect.height()),
-            SizeMode::FixHeight => self.fill_render.param.rect.set_width(self.text_buffer.rect.width()),
-            SizeMode::Fix => {
-                self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
-                println!("text {:?}", self.text_buffer.rect);
-            }
+        let (w, h) = self.size_mode.size(self.text_buffer.rect.width(), self.text_buffer.rect.height());
+        self.fill_render.param.rect.set_size(w, h);
+        if let Some(ref mut image) = self.image {
+            let ih = self.fill_render.param.rect.height() - self.padding.vertical() - 2.0;
+            image.set_size(ih, ih);
+            self.text_buffer.set_width(self.text_buffer.rect.width() - ih);
+            self.text_buffer.init(ui);
         }
-        self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
-        if self.image.is_some() {
-            self.fill_render.param.rect.set_width(self.fill_render.param.rect.width() + self.fill_render.param.rect.height());
-            self.text_buffer.rect.add_min_x(self.fill_render.param.rect.height());
-            self.text_buffer.rect.add_max_x(self.fill_render.param.rect.height());
-            self.image_rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
-            self.image_rect.add_min_x(self.padding.left);
-            self.image_rect.add_max_x(self.padding.left);
-            self.image_rect.add_min_y(self.padding.top);
-            self.image_rect.add_max_y(self.padding.top);
-            self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
-            self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
-        }
-        self.text_buffer.init(ui);
+
+        // self.text_buffer.rect.set_size(self.text_buffer.text.width, self.text_buffer.text.height);
+        // match self.size_mode {
+        //     SizeMode::Auto => {
+        //         let width = self.text_buffer.rect.width() + self.padding.horizontal();
+        //         let height = self.text_buffer.rect.height() + self.padding.vertical();
+        //         self.fill_render.param.rect.set_size(width, height);
+        //     }
+        //     SizeMode::FixWidth => self.fill_render.param.rect.set_height(self.text_buffer.rect.height()),
+        //     SizeMode::FixHeight => self.fill_render.param.rect.set_width(self.text_buffer.rect.width()),
+        //     SizeMode::Fix => {
+        //         self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
+        //         println!("text {:?}", self.text_buffer.rect);
+        //     }
+        // }
+        // self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
+        // if self.image.is_some() {
+        //     self.fill_render.param.rect.set_width(self.fill_render.param.rect.width() + self.fill_render.param.rect.height());
+        //     // self.text_buffer.rect.add_min_x(self.fill_render.param.rect.height());
+        //     // self.text_buffer.rect.add_max_x(self.fill_render.param.rect.height());
+        //     // self.image_rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
+        //     // self.image_rect.add_min_x(self.padding.left);
+        //     // self.image_rect.add_max_x(self.padding.left);
+        //     // self.image_rect.add_min_y(self.padding.top);
+        //     // self.image_rect.add_max_y(self.padding.top);
+        //     // self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
+        //     // self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
+        // }
+        // self.text_buffer.init(ui);
     }
 
 
     pub fn set_width(&mut self, width: f32) {
-        self.fill_render.param.rect.set_width(width);
-        self.size_mode.fix_width();
+        self.size_mode.fix_width(width);
     }
 
     pub fn set_height(&mut self, height: f32) {
-        self.fill_render.param.rect.set_height(height);
-        self.size_mode.fix_height();
+        self.size_mode.fix_height(height);
     }
 
 
     pub fn set_size(&mut self, width: f32, height: f32) {
-        self.fill_render.param.rect.set_size(width, height);
-        self.size_mode = SizeMode::Fix;
+        self.size_mode = SizeMode::Fix(width, height);
     }
 
     ///仅作用于draw
@@ -207,46 +207,76 @@ impl Button {
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
         if init {
-            self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
+            // self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
             self.reset_size(ui);
         }
         //按钮矩形
         self.fill_render.init_rectangle(ui, false, false);
+
         if let Some(ref mut image) = self.image {
             image.update(ui);
-            image.rect = self.image_rect.clone();
-            image.changed = true
+            // image.rect = self.image_rect.clone();
+            // image.changed = true
         }
         //按钮文本
         // self.text_buffer.draw(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
-        if ui.can_offset {
-            self.fill_render.param.rect.offset(&ui.offset);
-            self.text_buffer.rect.offset(&ui.offset);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+            self.text_buffer.rect.offset_to_rect(&ui.draw_rect);
         }
-        self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+            self.text_buffer.update_buffer(ui);
+        }
+        // if !self.changed && !ui.can_offset { return; }
+        // self.changed = false;
+        // if ui.can_offset {
+        //     self.fill_render.param.rect.offset(&ui.offset);
+        //     self.text_buffer.rect.offset(&ui.offset);
+        // }
+        // self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+    }
+    fn redraw(&mut self, ui: &mut Ui) {
+        self.update_buffer(ui);
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(&self.fill_render, pass);
+        match self.image {
+            None => self.text_buffer.redraw(ui),
+            Some(ref mut image) => {
+                if ui.widget_changed.contains(WidgetChange::Position) {
+                    let mut text_rect = ui.draw_rect.clone();
+                    text_rect.add_min_x(image.rect.width());
+                    self.text_buffer.rect.offset_to_rect(&text_rect);
+                    self.text_buffer.redraw(ui);
+                }
+                let mut image_rect = ui.draw_rect.clone_with_size(&image.rect);
+                image_rect.add_min_x(self.padding.left + 1.0);
+                image_rect.add_min_y(self.padding.top + 1.0);
+                ui.draw_rect = image_rect;
+                image.redraw(ui);
+            }
+        }
+        if let Some(ref mut image) = self.image { image.redraw(ui); }
     }
 }
 
 
 impl Widget for Button {
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.update_buffer(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.text_buffer.redraw(ui);
-        if let Some(ref mut image) = self.image { image.redraw(ui); }
-    }
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }
         match &mut ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
@@ -258,10 +288,13 @@ impl Widget for Button {
                 }
             }
             UpdateType::MousePress => {
-                if !ui.device.device_input.pressed_at(&self.fill_render.param.rect) { return Response::new(&self.id, &self.fill_render.param.rect); }
-                self.hovered = true;
-                self.changed = true;
-                ui.context.window.request_redraw();
+                if ui.device.device_input.pressed_at(&self.fill_render.param.rect) {
+                    self.hovered = true;
+                    self.changed = true;
+                    ui.context.window.request_redraw();
+                }
+                // if !ui.device.device_input.pressed_at(&self.fill_render.param.rect) { return Response::new(&self.id, &self.fill_render.param.rect); }
+
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.fill_render.param.rect) {
@@ -282,6 +315,6 @@ impl Widget for Button {
             }
             _ => {}
         }
-        Response::new(&self.id, &self.fill_render.param.rect)
+        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
 }

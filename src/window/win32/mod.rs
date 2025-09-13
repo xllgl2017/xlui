@@ -12,7 +12,7 @@ use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL};
+use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 use crate::key::Key;
@@ -29,6 +29,8 @@ const CREATE_CHILD: u32 = WM_USER + 3;
 const RE_INIT: u32 = WM_USER + 4;
 const IME: u32 = WM_USER + 5;
 const REQ_CLOSE: u32 = WM_USER + 6;
+const USER_UPDATE: u32 = WM_USER + 7;
+const RESIZE: u32 = WM_USER + 8;
 
 
 pub struct Win32Window {
@@ -142,7 +144,7 @@ impl Win32Window {
             }
             let window = window.unwrap();
             match msg.message {
-                WM_SIZE => {
+                RESIZE => {
                     let width = until::loword(msg.lParam.0 as u32) as u32;
                     let height = until::hiword(msg.lParam.0 as u32) as u32;
                     println!("resize-{}-{}", width, height);
@@ -161,15 +163,45 @@ impl Win32Window {
                     } else if ctrl_pressed && msg.wParam.0 == 'V' as usize {
                         (window.id, WindowEvent::KeyPress(Key::CtrlV))
                     } else {
-                        let _ = TranslateMessage(&msg);
-                        DispatchMessageW(&msg);
-                        (window.id, WindowEvent::KeyPress(Key::Unknown))
+                        match VIRTUAL_KEY(msg.wParam.0 as u16) {
+                            VK_HOME => (window.id, WindowEvent::KeyPress(Key::Home)),
+                            VK_END => (window.id, WindowEvent::KeyPress(Key::End)),
+                            VK_RETURN => (window.id, WindowEvent::KeyPress(Key::Enter)),
+                            VK_LEFT => (window.id, WindowEvent::KeyPress(Key::LeftArrow)),
+                            VK_UP => (window.id, WindowEvent::KeyPress(Key::UpArrow)),
+                            VK_DOWN => (window.id, WindowEvent::KeyPress(Key::DownArrow)),
+                            VK_RIGHT => (window.id, WindowEvent::KeyPress(Key::RightArrow)),
+                            VK_DELETE => (window.id, WindowEvent::KeyPress(Key::Delete)),
+                            VK_BACK => (window.id, WindowEvent::KeyPress(Key::Backspace)),
+                            _ => {
+                                let _ = TranslateMessage(&msg);
+                                DispatchMessageW(&msg);
+                                (window.id, WindowEvent::KeyPress(Key::Unknown))
+                            }
+                        }
+                    }
+                }
+                WM_KEYUP => {
+                    match VIRTUAL_KEY(msg.wParam.0 as u16) {
+                        VK_HOME => (window.id, WindowEvent::KeyRelease(Key::Home)),
+                        VK_END => (window.id, WindowEvent::KeyRelease(Key::End)),
+                        VK_RETURN => (window.id, WindowEvent::KeyRelease(Key::Enter)),
+                        VK_LEFT => (window.id, WindowEvent::KeyRelease(Key::LeftArrow)),
+                        VK_UP => (window.id, WindowEvent::KeyRelease(Key::UpArrow)),
+                        VK_DOWN => (window.id, WindowEvent::KeyRelease(Key::DownArrow)),
+                        VK_RIGHT => (window.id, WindowEvent::KeyRelease(Key::RightArrow)),
+                        VK_DELETE => (window.id, WindowEvent::KeyRelease(Key::Delete)),
+                        VK_BACK => (window.id, WindowEvent::KeyRelease(Key::Backspace)),
+                        _ => (window.id, WindowEvent::None)
                     }
                 }
                 WM_CHAR => {
                     let ch = std::char::from_u32(msg.wParam.0 as u32).unwrap_or('\0');
-                    println!("Char input: {}", ch);
-                    (window.id, WindowEvent::KeyRelease(Key::Char(ch)))
+                    println!("Char input: {:?}", ch);
+                    match ch {
+                        '\r' => (window.id, WindowEvent::None),
+                        _ => (window.id, WindowEvent::KeyRelease(Key::Char(ch)))
+                    }
                 }
                 WM_LBUTTONDOWN => {
                     //切换输入法
@@ -191,11 +223,15 @@ impl Win32Window {
                     let y = until::get_y_lparam(msg.lParam) as f32;
                     (window.id, WindowEvent::MouseMove(Pos { x, y }))
                 }
+                WM_MOUSEWHEEL => {
+                    let delta = ((msg.wParam.0 >> 16) & 0xFFFF) as i16;
+                    (window.id, WindowEvent::MouseWheel(delta as f32))
+                }
                 REQ_UPDATE => (window.id, WindowEvent::ReqUpdate),
                 CREATE_CHILD => (window.id, WindowEvent::CreateChild),
                 RE_INIT => {
                     println!("re_init");
-                    (window.id, WindowEvent::Reinit)
+                    (window.id, WindowEvent::ReInit)
                 }
                 IME => {
                     // let himc = window.win32().himc.read().unwrap();

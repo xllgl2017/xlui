@@ -1,7 +1,20 @@
+use crate::frame::context::{ContextUpdate, UpdateType};
+use crate::frame::App;
+use crate::render::circle::param::CircleParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::response::{Callback, Response};
+use crate::size::border::Border;
+use crate::size::rect::Rect;
+use crate::size::SizeMode;
+use crate::style::color::Color;
+use crate::style::ClickStyle;
+use crate::text::rich::RichText;
+use crate::text::buffer::TextBuffer;
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
+
 /// ### RadioButton的示例用法
 /// ```
-/// use xlui::frame::App;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn checked<A:App>(_:&mut A,_:&mut Ui,checked:bool){
@@ -23,22 +36,6 @@
 ///
 ///     ui.add(radio);
 /// }
-
-use crate::frame::context::{ContextUpdate, UpdateType};
-use crate::frame::App;
-use crate::render::circle::param::CircleParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::response::{Callback, Response};
-use crate::size::border::Border;
-use crate::size::rect::Rect;
-use crate::size::SizeMode;
-use crate::style::color::Color;
-use crate::style::ClickStyle;
-use crate::text::rich::RichText;
-use crate::text::buffer::TextBuffer;
-use crate::ui::Ui;
-use crate::widgets::Widget;
-
 pub struct RadioButton {
     pub(crate) id: String,
     pub(crate) rect: Rect,
@@ -77,30 +74,33 @@ impl RadioButton {
             text: TextBuffer::new(label),
             callback: None,
             size_mode: SizeMode::Auto,
-            outer_render: RenderParam::new(CircleParam::new(Rect::new(), outer_style)),
-            inner_render: RenderParam::new(CircleParam::new(Rect::new(), inner_style)),
+            outer_render: RenderParam::new(CircleParam::new(Rect::new().with_size(16.0, 16.0), outer_style)),
+            inner_render: RenderParam::new(CircleParam::new(Rect::new().with_size(16.0, 16.0), inner_style)),
             hovered: false,
             contact_ids: vec![],
             changed: false,
         }
     }
     fn reset_size(&mut self, ui: &mut Ui) {
-        self.rect.set_height(16.0);
-        self.text.rect = self.rect.clone();
-        self.text.rect.add_min_x(18.0);
-        self.text.rect.add_max_x(18.0);
+        // self.rect.set_height(16.0);
+        // self.text.rect = self.rect.clone();
+        // self.text.rect.add_min_x(18.0);
+        // self.text.rect.add_max_x(18.0);
         self.text.init(ui);
-        match self.size_mode {
-            SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),
-            SizeMode::FixWidth => {}
-            SizeMode::FixHeight => self.rect.set_width(18.0 + self.text.rect.width()),
-            SizeMode::Fix => {}
-        }
+        let (w, h) = self.size_mode.size(self.text.rect.width() + 18.0, 18.0 + self.text.rect.height());
+        self.rect.set_size(w, h);
+        // match self.size_mode {
+        //     SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),
+        //     SizeMode::FixWidth => {}
+        //     SizeMode::FixHeight => self.rect.set_width(18.0 + self.text.rect.width()),
+        //     SizeMode::Fix => {}
+        // }
     }
 
     pub fn with_width(mut self, width: f32) -> RadioButton {
-        self.rect.set_width(width);
-        self.size_mode = SizeMode::FixWidth;
+        self.size_mode.fix_width(width);
+        // self.rect.set_width(width);
+        // self.size_mode = SizeMode::FixWidth;
         self
     }
 
@@ -125,19 +125,20 @@ impl RadioButton {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
+        // self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(ui);
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         //外圆
-        self.outer_render.param.rect = self.rect.clone();
-        self.outer_render.param.rect.set_width(self.rect.height());
+        // self.outer_render.param.rect = self.rect.clone();
+        // self.outer_render.param.rect.set_width(18.0);
+        // self.outer_render.param.rect.set_height(18.0);
         self.outer_render.init_circle(ui, self.value, self.value);
         //内圆
-        self.inner_render.param.rect = self.rect.clone();
-
+        // self.inner_render.param.rect = self.rect.clone();
+        // self.inner_render.param.rect.set_height(18.0);
         self.inner_render.param.rect.add_min_x(4.0);
         self.inner_render.param.rect.contract_y(4.0);
         self.inner_render.param.rect.set_width(self.inner_render.param.rect.height());
@@ -154,22 +155,40 @@ impl RadioButton {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_bool(&mut self.value);
-            self.changed = true;
+            ui.widget_changed |= WidgetChange::Value;
         }
-        if !self.changed && !ui.can_offset { return; }
-        if ui.can_offset {
-            self.outer_render.param.rect.offset(&ui.offset);
-            self.inner_render.param.rect.offset(&ui.offset);
-            self.text.rect.offset(&ui.offset);
-            self.rect.offset(&ui.offset);
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.changed = false;
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.rect.offset_to_rect(&ui.draw_rect);
+            self.outer_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+            let mut text_rect = ui.draw_rect.clone();
+            text_rect.add_min_x(self.outer_render.param.rect.width() + 2.0);
+            self.text.rect.offset_to_rect(&text_rect);
+            let mut inner_rect = ui.draw_rect.clone();
+            inner_rect.set_width(self.inner_render.param.rect.width());
+            inner_rect.add_min_x(4.0);
+            inner_rect.add_min_y(4.0);
+            self.inner_render.param.rect.offset_to_rect(&inner_rect);
+            self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
         }
-        self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-        self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
+
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+            self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
+        }
+        // if !self.changed && !ui.can_offset { return; }
+        // if ui.can_offset {
+        //     self.outer_render.param.rect.offset(&ui.offset);
+        //     self.inner_render.param.rect.offset(&ui.offset);
+        //     self.text.rect.offset(&ui.offset);
+        //     self.rect.offset(&ui.offset);
+        // }
+        // self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+        // self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
     }
-}
 
-
-impl Widget for RadioButton {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
@@ -177,9 +196,15 @@ impl Widget for RadioButton {
         ui.context.render.circle.render(&self.inner_render, pass);
         self.text.redraw(ui);
     }
+}
+
+
+impl Widget for RadioButton {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
@@ -187,6 +212,7 @@ impl Widget for RadioButton {
                 if hovered != self.hovered {
                     self.hovered = hovered;
                     self.changed = true;
+                    ui.context.window.request_redraw();
                 }
             }
             UpdateType::MouseRelease => {
@@ -206,6 +232,6 @@ impl Widget for RadioButton {
             _ => {}
         }
 
-        Response::new(&self.id, &self.rect)
+        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
     }
 }

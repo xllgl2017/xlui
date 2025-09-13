@@ -1,6 +1,16 @@
+use crate::frame::context::UpdateType;
+use crate::render::image::ImageSource;
+use crate::response::Response;
+use crate::size::rect::Rect;
+use crate::size::SizeMode;
+use crate::ui::Ui;
+use crate::vertex::ImageVertex;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::Size;
+use wgpu::util::DeviceExt;
+
 /// ### Image的示例用法
 ///```
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
@@ -22,20 +32,8 @@
 ///    image.set_image("logo_2.png");
 /// }
 /// ```
-
-use crate::size::rect::Rect;
-use crate::size::SizeMode;
-use crate::ui::Ui;
-use crate::vertex::ImageVertex;
-use crate::widgets::Widget;
-use wgpu::util::DeviceExt;
-use crate::frame::context::UpdateType;
-use crate::render::image::ImageSource;
-use crate::response::Response;
-use crate::Size;
-
 pub struct Image {
-    pub(crate) id: String,
+    id: String,
     source: ImageSource,
     pub(crate) rect: Rect,
     size_mode: SizeMode,
@@ -43,7 +41,7 @@ pub struct Image {
     vertices: Vec<ImageVertex>,
     vertex_buffer: Option<wgpu::Buffer>,
     index_buffer: Option<wgpu::Buffer>,
-    pub(crate) changed: bool,
+    changed: bool,
 }
 
 impl Image {
@@ -52,7 +50,7 @@ impl Image {
             id: crate::gen_unique_id(),
             source: source.into(),
             rect: Rect::new(),
-            size_mode: SizeMode::Fix,
+            size_mode: SizeMode::Auto,
             vertices: vec![],
             vertex_buffer: None,
             index_buffer: None,
@@ -61,18 +59,20 @@ impl Image {
     }
 
     fn reset_size(&mut self, size: Size) {
-        match self.size_mode {
-            SizeMode::Auto => self.rect.set_size(size.width as f32, size.height as f32),
-            SizeMode::FixWidth => {
-                let scale = self.rect.height() / size.height as f32;
-                self.rect.set_width(scale * size.width as f32)
-            }
-            SizeMode::FixHeight => {
-                let scale = self.rect.width() / size.width as f32;
-                self.rect.set_height(scale * size.height as f32);
-            }
-            _ => {}
-        }
+        let (w, h) = self.size_mode.size(size.width as f32, size.height as f32);
+        self.rect.set_size(w, h);
+        // match self.size_mode {
+        //     SizeMode::Auto => self.rect.set_size(size.width as f32, size.height as f32),
+        //     SizeMode::FixWidth => {
+        //         let scale = self.rect.height() / size.height as f32;
+        //         self.rect.set_width(scale * size.width as f32)
+        //     }
+        //     SizeMode::FixHeight => {
+        //         let scale = self.rect.width() / size.width as f32;
+        //         self.rect.set_height(scale * size.height as f32);
+        //     }
+        //     _ => {}
+        // }
     }
 
 
@@ -81,15 +81,12 @@ impl Image {
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.rect.set_width(width);
-        self.rect.set_height(height);
-        self.size_mode = SizeMode::Fix;
+        self.size_mode = SizeMode::Fix(width, height);
         self
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
-        self.rect.set_size(width, height);
-        self.size_mode = SizeMode::Fix;
+        self.size_mode = SizeMode::Fix(width, height);
     }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {
@@ -103,7 +100,6 @@ impl Image {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.re_init(ui);
     }
 
@@ -112,10 +108,10 @@ impl Image {
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         self.vertices = vec![
-            ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], &ui.context.size),
-            ImageVertex::new_coord(self.rect.left_bottom(), [0.0, 1.0], &ui.context.size),
-            ImageVertex::new_coord(self.rect.right_bottom(), [1.0, 1.0], &ui.context.size),
-            ImageVertex::new_coord(self.rect.right_top(), [1.0, 0.0], &ui.context.size)
+            ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(self.rect.left_bottom(), [0.0, 1.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(self.rect.right_bottom(), [1.0, 1.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(self.rect.right_top(), [1.0, 0.0], Size::from(&ui.device.surface_config))
         ];
         let vertex_buffer = ui.device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -132,28 +128,27 @@ impl Image {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if !self.changed && !ui.context.resize && !ui.can_offset { return; }
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
-        self.rect.offset(&ui.offset);
-        for (index, v) in self.vertices.iter_mut().enumerate() {
-            match index {
-                0 => v.position = self.rect.left_top(),
-                1 => v.position = self.rect.left_bottom(),
-                2 => v.position = self.rect.right_bottom(),
-                3 => v.position = self.rect.right_top(),
-                _ => {}
+        if !ui.widget_changed.unchanged() {
+            self.rect.offset_to_rect(&ui.draw_rect);
+            for (index, v) in self.vertices.iter_mut().enumerate() {
+                match index {
+                    0 => v.position = self.rect.left_top(),
+                    1 => v.position = self.rect.left_bottom(),
+                    2 => v.position = self.rect.right_bottom(),
+                    3 => v.position = self.rect.right_top(),
+                    _ => {}
+                }
+                v.screen_size = [ui.device.surface_config.width as f32, ui.device.surface_config.height as f32];
             }
-            v.screen_size = ui.context.size.as_gamma_size();
+            ui.device.queue.write_buffer(
+                self.vertex_buffer.as_ref().unwrap(), 0,
+                bytemuck::cast_slice(self.vertices.as_slice()));
+            ui.context.render.image.insert_image(&ui.device, &self.source);
         }
-        ui.context.render.image.insert_image(&ui.device, &self.source);
-        ui.device.queue.write_buffer(
-            self.vertex_buffer.as_ref().unwrap(), 0,
-            bytemuck::cast_slice(self.vertices.as_slice()));
     }
-}
-
-impl Widget for Image {
-    fn redraw(&mut self, ui: &mut Ui) {
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.image.render(
@@ -163,18 +158,23 @@ impl Widget for Image {
             pass,
         );
     }
+}
+
+impl Widget for Image {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
-            UpdateType::Offset(ref o) => {
-                if !ui.can_offset { return Response::new(&self.id, &self.rect); }
-                self.rect.offset(o);
-                self.changed = true;
-            }
+            // UpdateType::Offset(ref o) => {
+            //     if !ui.can_offset { return Response::new(&self.id, &self.rect); }
+            //     self.rect.offset(o);
+            //     self.changed = true;
+            // }
             _ => {}
         }
-        Response::new(&self.id, &self.rect)
+        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
     }
 }

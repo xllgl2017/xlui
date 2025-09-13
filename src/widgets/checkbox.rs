@@ -1,7 +1,21 @@
+use crate::frame::context::{ContextUpdate, UpdateType};
+use crate::frame::App;
+use crate::render::rectangle::param::RectParam;
+use crate::render::{RenderParam, WrcRender};
+use crate::response::{Callback, Response};
+use crate::size::border::Border;
+use crate::size::radius::Radius;
+use crate::size::rect::Rect;
+use crate::size::SizeMode;
+use crate::style::color::Color;
+use crate::style::ClickStyle;
+use crate::text::rich::RichText;
+use crate::text::buffer::TextBuffer;
+use crate::ui::Ui;
+use crate::widgets::{Widget, WidgetChange, WidgetSize};
+
 /// ### CheckBox的示例用法
 /// ```
-/// use xlui::frame::App;
-/// use xlui::ui::Ui;
 /// use xlui::*;
 ///
 /// fn checked<A:App>(_:&mut A,_:&mut Ui,check:bool){
@@ -27,22 +41,6 @@
 ///
 /// }
 /// ```
-
-use crate::frame::context::{ContextUpdate, UpdateType};
-use crate::frame::App;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
-use crate::response::{Callback, Response};
-use crate::size::border::Border;
-use crate::size::radius::Radius;
-use crate::size::rect::Rect;
-use crate::size::SizeMode;
-use crate::style::color::Color;
-use crate::style::ClickStyle;
-use crate::text::rich::RichText;
-use crate::text::buffer::TextBuffer;
-use crate::ui::Ui;
-use crate::widgets::Widget;
 
 pub struct CheckBox {
     pub(crate) id: String,
@@ -77,7 +75,7 @@ impl CheckBox {
             value: v,
             callback: None,
             size_mode: SizeMode::Auto,
-            check_render: RenderParam::new(RectParam::new(Rect::new(), check_style)),
+            check_render: RenderParam::new(RectParam::new(Rect::new().with_size(15.0, 15.0), check_style)),
             hovered: false,
             contact_ids: vec![],
             changed: false,
@@ -86,22 +84,24 @@ impl CheckBox {
 
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.rect = self.rect.clone();
+        // self.text.rect = self.rect.clone();
         self.text.init(ui);
-        self.text.rect.add_min_x(15.0);
-        self.text.rect.add_max_x(15.0);
+        // self.text.rect.add_min_x(15.0);
+        // self.text.rect.add_max_x(15.0);
         // self.text.rect.offset_x(15.0);
-        match self.size_mode {
-            SizeMode::Auto => {
-                self.rect.set_width(15.0 + self.text.rect.width());
-                self.rect.set_height(20.0);
-            }
-            SizeMode::FixWidth => self.rect.set_height(20.0),
-            SizeMode::FixHeight => self.rect.set_width(15.0 + self.text.rect.width()),
-            SizeMode::Fix => {}
-        }
-
-        self.text.rect.set_height(self.rect.height());
+        let (w, h) = self.size_mode.size(self.text.rect.width() + 15.0, self.text.rect.height());
+        self.rect.set_size(w, h);
+        // match self.size_mode {
+        //     SizeMode::Auto => {
+        //         self.rect.set_width(15.0 + self.text.rect.width());
+        //         self.rect.set_height(20.0);
+        //     }
+        //     SizeMode::FixWidth => self.rect.set_height(20.0),
+        //     SizeMode::FixHeight => self.rect.set_width(15.0 + self.text.rect.width()),
+        //     SizeMode::Fix => {}
+        // }
+        //
+        // self.text.rect.set_height(self.rect.height());
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, bool)) -> Self {
@@ -110,8 +110,9 @@ impl CheckBox {
     }
 
     pub fn with_width(mut self, width: f32) -> Self {
-        self.rect.set_width(width);
-        self.size_mode = SizeMode::FixWidth;
+        // self.rect.set_width(width);
+        self.size_mode.fix_width(width);
+        // self.size_mode = SizeMode::FixWidth;
         self
     }
 
@@ -131,16 +132,16 @@ impl CheckBox {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
+        // self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(ui);
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         //复选框
-        self.check_render.param.rect = self.rect.clone();
-        self.check_render.param.rect.set_width(15.0);
-        self.check_render.param.rect.set_height(15.0);
+        // self.check_render.param.rect = self.rect.clone();
+        // self.check_render.param.rect.set_width(15.0);
+        // self.check_render.param.rect.set_height(15.0);
         self.check_render.init_rectangle(ui, false, self.value);
         //文本
         self.check_text.init(ui);
@@ -153,20 +154,35 @@ impl CheckBox {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_bool(&mut self.value);
-            self.changed = true;
+            // self.changed = true;
+            ui.widget_changed |= WidgetChange::Value;
         }
-        if !self.changed && !ui.can_offset { return; }
-        if ui.can_offset {
-            self.check_render.param.rect.offset(&ui.offset);
-            self.text.rect.offset(&ui.offset);
-            self.check_text.rect.offset(&ui.offset);
-            self.rect.offset(&ui.offset);
+        if self.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.changed = false;
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.rect.offset_to_rect(&ui.draw_rect);
+            let check_rect = ui.draw_rect.clone_with_size(&self.check_render.param.rect);
+            self.check_render.param.rect.offset_to_rect(&check_rect);
+            self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+            self.check_text.rect.offset_to_rect(&check_rect);
+            let mut text_rect = ui.draw_rect.clone();
+            text_rect.add_min_x(self.check_render.param.rect.width() + 2.0);
+            self.text.rect.offset_to_rect(&text_rect);
         }
-        self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-    }
-}
+        if ui.widget_changed.contains(WidgetChange::Value) {
+            self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        }
 
-impl Widget for CheckBox {
+        // if !self.changed && !ui.can_offset { return; }
+        // if ui.can_offset {
+        //     self.check_render.param.rect.offset(&ui.offset);
+        //     self.text.rect.offset(&ui.offset);
+        //     self.check_text.rect.offset(&ui.offset);
+        //     self.rect.offset(&ui.offset);
+        // }
+        // self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
+    }
+
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
@@ -174,9 +190,14 @@ impl Widget for CheckBox {
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }
+}
+
+impl Widget for CheckBox {
+
 
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
@@ -204,6 +225,6 @@ impl Widget for CheckBox {
             }
             _ => {}
         }
-        Response::new(&self.id, &self.rect)
+        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
     }
 }

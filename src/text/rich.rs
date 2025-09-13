@@ -1,8 +1,10 @@
+use crate::style::color::Color;
+use crate::text::TextWrap;
+use std::fmt::Display;
+
 /// ### RichText的示例用法
 /// ```
-/// use xlui::{RichText, RichTextExt, TextWrap};
-/// use xlui::style::color::Color;
-/// use xlui::ui::Ui;
+/// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
 ///     //此处需要导入RichTextExt，对已实现Display的类型进行转换
@@ -19,11 +21,6 @@
 ///     ui.label(RichText::new("Rich").color(Color::YELLOW));
 /// }
 /// ```
-
-use crate::style::color::Color;
-use crate::text::TextWrap;
-use std::fmt::Display;
-
 
 pub struct RichText {
     pub(crate) text: String,

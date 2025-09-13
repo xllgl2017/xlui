@@ -6,6 +6,7 @@ use crate::window::x11::ime::bus::Bus;
 use crate::window::x11::ime::flag::Modifiers;
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::window::x11::ime::signal::{CommitText, UpdatePreeditText};
+#[cfg(not(feature = "winit"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
 use std::sync::Arc;
@@ -30,8 +31,11 @@ pub enum IMEData {
 pub struct IME {
     #[cfg(all(target_os = "linux", not(feature = "winit")))]
     kind: IMEKind,
+    #[cfg(not(feature = "winit"))]
     working: AtomicBool,
+    #[cfg(not(feature = "winit"))]
     chars: RwLock<Vec<char>>,
+    #[cfg(not(feature = "winit"))]
     commited: AtomicBool,
     requested: RwLock<Vec<bool>>,
 }
@@ -83,9 +87,6 @@ impl IME {
     #[cfg(feature = "winit")]
     pub fn new_winit() -> IME {
         IME {
-            working: AtomicBool::new(false),
-            chars: RwLock::new(Vec::new()),
-            commited: AtomicBool::new(false),
             requested: RwLock::new(Vec::new()),
         }
     }
@@ -104,18 +105,18 @@ impl IME {
         self.requested.write().unwrap().push(i);
     }
 
-
+    #[cfg(not(feature = "winit"))]
     pub fn ime_draw(&self, new_chars: Vec<char>) {
         let mut chars = self.chars.write().unwrap();
         *chars = new_chars;
     }
-
+    #[cfg(not(feature = "winit"))]
     pub fn ime_commit(&self, commit: Vec<char>) {
         self.working.store(false, Ordering::SeqCst);
         self.commited.store(true, Ordering::SeqCst);
         self.ime_draw(commit);
     }
-
+    #[cfg(not(feature = "winit"))]
     pub fn ime_done(&self) -> Vec<char> {
         self.commited.store(false, Ordering::SeqCst);
         let mut chars = self.chars.write().unwrap();
@@ -123,21 +124,21 @@ impl IME {
         chars.clear();
         res
     }
-
+    #[cfg(not(feature = "winit"))]
     pub fn chars(&self) -> Vec<char> {
         let chars = self.chars.read().unwrap();
         let res = chars.clone();
         res
     }
 
-    pub fn len(&self) -> usize {
-        self.chars.read().unwrap().len()
-    }
-
+    // pub fn len(&self) -> usize {
+    //     self.chars.read().unwrap().len()
+    // }
+    #[cfg(not(feature = "winit"))]
     pub fn is_working(&self) -> bool {
         self.working.load(Ordering::SeqCst)
     }
-
+    #[cfg(not(feature = "winit"))]
     pub fn is_commited(&self) -> bool {
         self.commited.load(Ordering::SeqCst)
     }

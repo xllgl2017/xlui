@@ -1,6 +1,7 @@
+use crate::{Border, BorderStyle, FillStyle};
 use crate::render::WrcParam;
 use crate::size::rect::Rect;
-use crate::style::{ClickStyle, Shadow};
+use crate::style::{ClickStyle, FrameStyle, Shadow};
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
@@ -58,11 +59,27 @@ impl RectParam {
         }
     }
 
+    pub fn new_frame(rect: Rect, frame: FrameStyle) -> Self {
+        let mut style = ClickStyle::new();
+        style.fill = FillStyle::same(frame.fill);
+        style.border = BorderStyle::same(Border::new(0.0).radius(frame.radius));
+        let res = Self::new(rect, style);
+        res.with_shadow(frame.shadow)
+    }
+
+    pub fn set_frame(&mut self, frame: FrameStyle) {
+        let mut style = ClickStyle::new();
+        style.fill = FillStyle::same(frame.fill);
+        style.border = BorderStyle::same(Border::new(0.0).radius(frame.radius));
+        self.style = style;
+        self.shadow = frame.shadow;
+    }
+
     pub fn with_shadow(mut self, shadow: Shadow) -> RectParam {
         self.shadow = shadow;
-        self.draw.shadow_offset = self.shadow.offset;
-        self.draw.shadow_spread = self.shadow.spread;
-        self.draw.shadow_color = self.shadow.color.as_gamma_rgba();
+        // self.draw.shadow_offset = self.shadow.offset;
+        // self.draw.shadow_spread = self.shadow.spread;
+        // self.draw.shadow_color = self.shadow.color.as_gamma_rgba();
         self
     }
 }

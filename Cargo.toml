@@ -1,6 +1,6 @@
 [package]
 name = "xlui"
-version = "0.2.0-alpha.1"
+version = "0.2.0-alpha.2"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/xllgl2017/xlui"
@@ -9,47 +9,13 @@ description = "Rust GUI库"
 readme = "README.md"
 #https://docs.rs/crate/xlui/latest
 
+#[[bin]]
+#name = "test_all"
+#path = "tests/all.rs"
+
 [lib]
 name = "xlui"
 crate-type = ['cdylib', 'rlib']
-
-#[[bin]]
-#name = "hello_world"
-#path = "example/hello_world.rs"
-
-
-[[bin]]
-name = "hello_xlui"
-path = "example/hello_xlui.rs"
-
-[[bin]]
-name = "test_layout"
-path = "test/layout.rs"
-
-[[bin]]
-name = "test_widget"
-path = "test/widget.rs"
-
-[[bin]]
-name = "test_hibernate"
-path = "test/hibernate.rs"
-
-[[bin]]
-name = "test_all"
-path = "test/all.rs"
-
-#[[bin]]
-#name = "test_x11_window"
-#path = "test/x11_window.rs"
-
-#[[bin]]
-#name = "test_win"
-#path = "test/test_win.rs"
-
-#[lib]
-#name = "xlui-web"
-#path = "test/web.rs"
-#crate-type = []
 
 [dependencies]
 winit = { version = "0.30.11", optional = true }
@@ -58,7 +24,6 @@ pollster = { version = "0.4.0", default-features = false }
 glyphon = "0.9.0"
 bytemuck = { version = "1.23.1", default-features = false }
 ab_glyph = { version = "0.2.31", default-features = false, features = ["std"] }
-#image = { version = "0.25.8", default-features = false, features = ["png", 'jpeg', ] }
 raw-window-handle = "0.6.2"
 
 [target.'cfg(target_os="linux")'.dependencies]
@@ -66,7 +31,7 @@ x11 = "2.21.0"
 dbus = { version = "0.9.9", default-features = false }
 
 [target.'cfg(not(target_os="windows"))'.dependencies]
-image = { version = "0.25.8", default-features = false, features = ["png", 'jpeg', ] }
+image = { version = "0.25.8", default-features = false, features = ["png", 'jpeg'] }
 
 [target.'cfg(target_os="windows")'.dependencies.windows]
 version = "0.62.0"

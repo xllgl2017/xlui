@@ -5,8 +5,8 @@
 [![Documentation](https://docs.rs/xlui/badge.svg)](https://docs.rs/xlui)
 [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/xlui/blob/main/LICENSE-APACHE)
 
-&nbsp;&nbsp;&nbsp;&nbsp; xlui是一个用Rust语言，基于winit和wgpu实现的2D
-GUI库。目标是利用Rust语言原生构建GUI、最小第三方依赖,体积比winit+wgpu少30%左右，简单易用， 在保证性能的前提下尽量减少CPU的开销。
+&nbsp;&nbsp;&nbsp;&nbsp; xlui是一个用Rust语言，基于原生窗口和wgpu实现的2D GUI库。
+目标是利用Rust语言原生构建GUI、最小第三方依赖、体积小（比winit+wgpu少50%左右）、简单易用， 在保证性能的前提下尽量减少CPU的开销。
 
 ## xlui的目标
 
@@ -28,64 +28,57 @@ GUI库。目标是利用Rust语言原生构建GUI、最小第三方依赖,体积
 ### xlui的最小运行示例
 
 ```rust
-use xlui::frame::App;
 use xlui::*;
-use xlui::ui::Ui;
-use xlui::frame::context::Context;
 
 fn main() {
-    let app = XlUiApp::new();
-    //直接调run()                                                                                                           
-    app.run();
+    let app=XlUiApp::new();
+    //直接调run()
+    app.run().unwrap();
 }
 
 struct XlUiApp {
-    label: Label,
+    status:String,
     count: i32,
 }
 
 
 impl XlUiApp {
-    fn new() -> XlUiApp {
-        XlUiApp {
-            label: Label::new("hello").width(100.0),
+    fn new()->XlUiApp{
+        XlUiApp{
             count: 0,
+            status:"这里是Label".to_string()
         }
     }
-    fn add(&mut self, _: &mut Button, ui: &mut Ui) {
+    fn add(&mut self,_:&mut Button,ui: &mut Ui){
         self.count += 1;
-        self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ui);
+        self.status=format!("count: {}", self.count);
     }
 
-    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
-        self.count -= 1;
-        self.label.set_text(format!("count: {}", self.count));
-        self.label.update(ui);
+    fn reduce(&mut self,_:&mut Button,ui: &mut Ui){
+        self.count-=1;
+        self.status=format!("count: {}", self.count);
     }
 }
 
-//实现App trait                                                                                                            
+//实现App trait
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
-        ui.add_mut(&mut self.label);
+        ui.add(Label::new("hello").with_id("status"));
         ui.horizontal(|ui| {
-            ui.add(Button::new("+".to_string()).width(30.0).height(30.0).connect(Self::add));
-            ui.add(Button::new("-".to_string()).width(30.0).height(30.0).connect(Self::reduce));
+            ui.add(Button::new("+").width(30.0).height(30.0).connect(Self::add));
+            ui.add(Button::new("-").width(30.0).height(30.0).connect(Self::reduce));
         });
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        self.label.update(ui);
+        let status:&mut Label=ui.get_widget("status").unwrap();
+        status.set_text(&self.status);
     }
 
-    fn redraw(&mut self, ui: &mut Ui) {
-        self.label.redraw(ui);
-    }
 
     fn window_attributes(&self) -> WindowAttribute {
-        WindowAttribute {
-            inner_size: (800, 600).into(),
+        WindowAttribute{
+            inner_size:(800,600).into(),
             ..Default::default()
         }
     }
@@ -97,5 +90,7 @@ impl App for XlUiApp {
 
 * [控件使用🦖](https://github.com/xllgl2017/xlui/wiki/%E6%8E%A7%E4%BB%B6)
 * [布局使用🦖](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)
+* [窗口设置🦖](https://github.com/xllgl2017/xlui/wiki/%E7%AA%97%E5%8F%A3)
 
-[//]:  # (❌⬜️)  
+[//]:  # (❌⬜️)
+
