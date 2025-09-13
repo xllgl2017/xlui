@@ -1,9 +1,10 @@
+use std::any::Any;
 use crate::align::Align;
-use crate::frame::context::UpdateType;
+use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::key::Key;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
-use crate::response::Response;
+use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
@@ -18,7 +19,7 @@ use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::window::ime::IMEData;
 use crate::window::ClipboardData;
-use crate::TextWrap;
+use crate::{App, TextWrap};
 use std::mem;
 
 pub(crate) mod buffer;
@@ -35,6 +36,8 @@ enum EditKind {
 
 pub struct TextEdit {
     id: String,
+    callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, String)>>,
+    contact_ids: Vec<String>,
     fill_render: RenderParam<RectParam>,
     select_render: EditSelection,
     cursor_render: EditCursor,
@@ -59,6 +62,8 @@ impl TextEdit {
         fill_style.border.clicked = fill_style.border.hovered.clone();
         TextEdit {
             id: crate::gen_unique_id(),
+            callback: None,
+            contact_ids: vec![],
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 30.0), fill_style)),
             select_render: EditSelection::new(),
             cursor_render: EditCursor::new(),
@@ -113,6 +118,16 @@ impl TextEdit {
 
     pub fn text(&self) -> String {
         self.char_layout.buffer.lines.iter().map(|x| x.raw_text()).collect()
+    }
+
+    pub fn contact(mut self, id: impl ToString) -> Self {
+        self.contact_ids.push(id.to_string());
+        self
+    }
+
+    pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, String)) -> Self {
+        self.callback = Some(Callback::create_textedit(f));
+        self
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
@@ -251,12 +266,13 @@ impl TextEdit {
             _ => {}
         }
         self.select_render.reset(&self.cursor_render);
-        // if let Some(ref mut callback) = self.callback {
-        //     let app = ui.app.take().unwrap();
-        //     callback(app, ui, self.char_layout.text());
-        //     ui.app.replace(app);
-        // }
-        // ui.send_updates(&self.contact_ids, ContextUpdate::String(self.char_layout.text()));
+        let text: String = self.char_layout.buffer.lines.iter().map(|x| x.raw_text()).collect();
+        if let Some(ref mut callback) = self.callback {
+            let app = ui.app.take().unwrap();
+            callback(app, ui, text.clone());
+            ui.app.replace(app);
+        }
+        ui.send_updates(&self.contact_ids, ContextUpdate::String(text));
         ui.context.window.request_redraw();
     }
 

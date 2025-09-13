@@ -54,10 +54,9 @@ impl TestWidget {
         self.status = format!("radio: {}", checked);
     }
 
-    // fn edit_changed(&mut self, ui: &mut Ui, value: String) {
-    //     self.label.set_text(format!("edit: {}", value));
-    //     self.label.update(ui);
-    // }
+    fn edit_changed(&mut self, _: &mut Ui, value: String) {
+        self.status = format!("edit: {}", value);
+    }
 
     fn image_button_click(&mut self, btn: &mut Button, ui: &mut Ui) {
         self.status = format!("image button: {}", self.count);
@@ -156,7 +155,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
-            ui.add(TextEdit::single_edit("abcdefghijklmnopqrstuvwsyz1234567890".to_string()));
+            ui.add(TextEdit::single_edit("abcdefghijklmnopqrstuvwsyz1234567890".to_string()).connect(Self::edit_changed));
             ui.add_space(87.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "选择");
@@ -168,7 +167,6 @@ impl App for TestWidget {
         });
         let cb = ComboBox::new(vec![SV::Item1, SV::Item2, SV::Item3, SV::Item4, SV::Item5, SV::Item6]).with_popup_height(150.0).connect(Self::combo_changed);
         let p = cb.parent();
-        // let p = Arc::new(RwLock::new(None));
         ui.horizontal(|ui| {
             ui.radio(true, "ComboBox");
             ui.add_space(30.0);
@@ -214,22 +212,15 @@ impl App for TestWidget {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        // let status: &mut Label = ui.get_widget("status").unwrap();
-        // status.set_text(&self.status);
-        // let status: &mut Label = ui.get_widget("status").unwrap();
-        // status.set_text(&self.status);
+        let status: &mut Label = ui.get_widget("status").unwrap();
+        status.set_text(&self.status);
         if self.change_image {
             self.change_image = false;
             let image: &mut Image = ui.get_widget("test_image").unwrap();
             image.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png");
         }
-        // self.label.update(ui);
     }
 
-    // fn redraw(&mut self, ui: &mut Ui) {
-    //     // let status: &mut Label = ui.get_widget("status").unwrap();
-    //     // status.set_text(&self.status);
-    // }
 
     fn window_attributes(&self) -> WindowAttribute {
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
@@ -239,7 +230,7 @@ impl App for TestWidget {
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         let other = tray.add_menu("其他", None);
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-        other.set_icon("C:\\Users\\xl\\Downloads\\aknxx-37a47-001.ico");//ico格式
+        other.set_icon("C:\\Users\\xl\\Downloads\\aknxx-37a47-001.ico"); //ico格式
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         other.add_child("item1", None);
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
