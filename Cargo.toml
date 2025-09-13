@@ -1,6 +1,6 @@
 [package]
 name = "xlui"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/xllgl2017/xlui"
@@ -12,6 +12,30 @@ readme = "README.md"
 #[[bin]]
 #name = "test_all"
 #path = "tests/all.rs"
+
+[[example]]
+name = "backend"
+doc-scrape-examples = false
+
+[[example]]
+name = "custom_font"
+doc-scrape-examples = false
+
+[[example]]
+name = "hello_world"
+doc-scrape-examples = false
+
+[[example]]
+name = "listview"
+doc-scrape-examples = false
+
+[[example]]
+name = "mutli_windows"
+doc-scrape-examples = false
+
+[[example]]
+name = "widget"
+doc-scrape-examples = false
 
 [lib]
 name = "xlui"
@@ -54,7 +78,10 @@ features = [
 default = []
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--cfg", "docsrs"]
+rustc-args = []
+cargo-args = []
+rustdoc-args = []
+
 
 [profile.release]
 opt-level = 's' #2
