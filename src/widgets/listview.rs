@@ -192,6 +192,7 @@ impl<T: 'static> ListView<T> {
         self.current.write().unwrap().take();
         self.hovered.take();
         self.selected.take();
+        if let UpdateType::Draw = ui.update_type {}else { ui.context.window.request_redraw(); }
 
         // let mut layout = ui.layout.take().expect("应在App::update中调用");
         // let area = layout.get_layout(&self.lid).expect("找不到ListView");
@@ -230,6 +231,7 @@ impl<T: 'static> ListView<T> {
             area.reset_context_height(h);
         }
         self.data.push(datum);
+        if let UpdateType::Draw = ui.update_type {}else { ui.context.window.request_redraw(); }
         // let mut layout = ui.layout.take().expect("应在App::update中调用");
         // let area = layout.get_layout(&self.lid).expect("找不到ListView");
         // if let LayoutKind::ScrollArea(area) = area {

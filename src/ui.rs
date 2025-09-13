@@ -92,6 +92,7 @@ impl AppContext {
             widget_changed: WidgetChange::None,
         };
         app.update(&mut ui);
+        self.layout = ui.layout.take();
     }
 
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
