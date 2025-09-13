@@ -274,8 +274,6 @@ impl TextEdit {
 }
 
 impl Widget for TextEdit {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
@@ -322,7 +320,11 @@ impl Widget for TextEdit {
             UpdateType::KeyPress(ref mut key) => {
                 if self.focused {
                     match key {
-                        Key::CtrlC => ui.context.window.set_clipboard(ClipboardData::Text(self.char_layout.select_text())),
+                        Key::CtrlC => {
+                            println!("copy");
+                            let select_text = self.char_layout.select_text(&self.select_render, &self.cursor_render);
+                            ui.context.window.set_clipboard(ClipboardData::Text(select_text));
+                        }
                         Key::CtrlV => {
                             #[cfg(target_os = "linux")]
                             ui.context.window.request_clipboard(ClipboardData::Text(String::new()));

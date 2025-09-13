@@ -211,6 +211,8 @@ impl X11Window {
                             return (window.id, WindowEvent::None);
                         } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
                             return (window.id, WindowEvent::None);
+                        } else if ctrl_press {
+                            return (window.id, WindowEvent::None);
                         }
                         return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])));
                     }

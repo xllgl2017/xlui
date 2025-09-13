@@ -5,7 +5,6 @@ use std::process::exit;
 use xlui::Tray;
 use xlui::*;
 
-#[test]
 fn main() {
     TestWidget::new().run().unwrap();
 }

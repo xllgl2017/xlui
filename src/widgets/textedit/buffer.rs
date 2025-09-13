@@ -181,7 +181,30 @@ impl CharBuffer {
         self.buffer.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)
     }
 
-    pub fn select_text(&self) -> String {
-        "test clipboard".to_string()
+    pub fn select_text(&self, select: &EditSelection, cursor: &EditCursor) -> String {
+        if !select.has_selected { return "".to_string(); }
+        let mut chars = vec![];
+        if select.start_vert != cursor.vert {
+            let (start_vert, start_horiz, end_vert, end_horiz) = if select.start_vert < cursor.vert {
+                (select.start_vert, select.start_horiz, cursor.vert, cursor.horiz)
+            } else {
+                (cursor.vert, cursor.horiz, select.start_vert, select.start_horiz)
+            };
+            let start_line = &self.buffer.lines[start_vert];
+            chars.push(start_line.get_text_by_range(start_horiz..start_line.len()));
+            for i in start_vert + 1..end_vert {
+                chars.push(self.buffer.lines[i].raw_text());
+            }
+            let end_line = &self.buffer.lines[end_vert];
+            chars.push(end_line.get_text_by_range(0..end_horiz));
+        } else {
+            let (start_horiz, end_horiz) = if select.start_horiz < cursor.horiz {
+                (select.start_horiz, cursor.horiz)
+            } else {
+                (cursor.horiz, select.start_horiz)
+            };
+            chars.push(self.buffer.lines[select.start_vert].get_text_by_range(start_horiz..end_horiz))
+        }
+        chars.join("")
     }
 }
