@@ -30,6 +30,7 @@ const RE_INIT: u32 = WM_USER + 4;
 const IME: u32 = WM_USER + 5;
 const REQ_CLOSE: u32 = WM_USER + 6;
 const USER_UPDATE: u32 = WM_USER + 7;
+const RESIZE: u32 = WM_USER + 8;
 
 
 pub struct Win32Window {
@@ -143,7 +144,7 @@ impl Win32Window {
             }
             let window = window.unwrap();
             match msg.message {
-                WM_SIZE => {
+                RESIZE => {
                     let width = until::loword(msg.lParam.0 as u32) as u32;
                     let height = until::hiword(msg.lParam.0 as u32) as u32;
                     println!("resize-{}-{}", width, height);

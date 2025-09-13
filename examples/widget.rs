@@ -238,6 +238,7 @@ impl App for TestWidget {
         tray.add_menu("退出", None).set_callback(|| exit(0));
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         let other = tray.add_menu("其他", None);
+        other.set_icon("C:\\Users\\xl\\Downloads\\aknxx-37a47-001.ico");//ico格式
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]
         other.add_child("item1", None);
         #[cfg(all(not(feature = "winit"), target_os = "windows"))]

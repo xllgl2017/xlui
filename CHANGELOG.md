@@ -12,6 +12,8 @@
   <img width="414" height="54" alt="image" src="https://github.com/user-attachments/assets/306cfeb8-eefc-4957-af42-46405cab4602" />
 * 支持系统托盘
 
+  <img width="231" height="53" alt="image" src="https://github.com/user-attachments/assets/1a70c2f0-5a42-4821-a695-83f062ef9fa9" />
+
 ### Linux
 
 * 更小的依赖，更小的体积
@@ -28,7 +30,7 @@
 
 * ✅文本对齐
 * ✅富文本
- 
+
 <img width="293" height="204" alt="image" src="https://github.com/user-attachments/assets/efa51ba0-cbb5-4f63-aa9d-2d2d50f83a28" />
 
 ### TextEdit
@@ -53,6 +55,8 @@
 ## 窗口
 
 ### 系统托盘（Windows）
+
+<img width="231" height="53" alt="image" src="https://github.com/user-attachments/assets/1a70c2f0-5a42-4821-a695-83f062ef9fa9" />
 
 ### 自定义字体和全局字号
 
