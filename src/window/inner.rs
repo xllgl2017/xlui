@@ -138,7 +138,7 @@ impl InnerWindow {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
         };
@@ -211,7 +211,7 @@ impl InnerWindow {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
         };
@@ -250,7 +250,7 @@ impl InnerWindow {
             can_offset: oui.can_offset,
             inner_windows: self.inner_windows.take(),
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
         };

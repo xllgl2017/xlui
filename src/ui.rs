@@ -1,29 +1,28 @@
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::layout::horizontal::HorizontalLayout;
+use crate::layout::popup::Popup;
 use crate::layout::vertical::VerticalLayout;
 use crate::layout::{Layout, LayoutItem, LayoutKind};
+use crate::map::Map;
 use crate::render::image::ImageSource;
 use crate::size::padding::Padding;
-use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::style::Style;
 use crate::text::rich::RichText;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::space::Space;
 use crate::widgets::{Widget, WidgetChange, WidgetKind};
+use crate::window::inner::InnerWindow;
 use crate::window::{UserEvent, WindowId, WindowType};
-use crate::{Button, Device, Image, Label, NumCastExt, Offset, RadioButton, SelectItem, Slider, SpinBox, SAMPLE_COUNT};
+use crate::{Button, Device, Image, Label, NumCastExt, RadioButton, SelectItem, Slider, SpinBox, SAMPLE_COUNT};
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
-use crate::layout::popup::Popup;
-use crate::map::Map;
-use crate::window::inner::InnerWindow;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -65,7 +64,7 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
             draw_rect,
             widget_changed: WidgetChange::None,
         };
@@ -87,7 +86,7 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
 
             draw_rect,
             widget_changed: WidgetChange::None,
@@ -108,7 +107,7 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
 
             draw_rect,
             widget_changed: WidgetChange::None,
@@ -248,7 +247,7 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
             draw_rect,
             widget_changed: WidgetChange::None,
         };
@@ -287,8 +286,8 @@ pub struct Ui<'a, 'p> {
     pub(crate) can_offset: bool,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
-    #[deprecated]
-    pub(crate) offset: Offset,
+    // #[deprecated]
+    // pub(crate) offset: Offset,
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
 }
