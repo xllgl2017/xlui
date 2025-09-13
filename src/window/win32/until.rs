@@ -1,4 +1,3 @@
-use std::io::Error;
 use crate::error::UiResult;
 use crate::window::win32::{Win32Window, IME, REQ_CLOSE, RESIZE, TRAY_ICON};
 use windows::core::PCWSTR;

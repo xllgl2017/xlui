@@ -12,7 +12,7 @@ use windows::Win32::Foundation::{HINSTANCE, POINT};
 use windows::Win32::Graphics::Gdi::ValidateRect;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL};
+use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 use crate::key::Key;
@@ -163,15 +163,45 @@ impl Win32Window {
                     } else if ctrl_pressed && msg.wParam.0 == 'V' as usize {
                         (window.id, WindowEvent::KeyPress(Key::CtrlV))
                     } else {
-                        let _ = TranslateMessage(&msg);
-                        DispatchMessageW(&msg);
-                        (window.id, WindowEvent::KeyPress(Key::Unknown))
+                        match VIRTUAL_KEY(msg.wParam.0 as u16) {
+                            VK_HOME => (window.id, WindowEvent::KeyPress(Key::Home)),
+                            VK_END => (window.id, WindowEvent::KeyPress(Key::End)),
+                            VK_RETURN => (window.id, WindowEvent::KeyPress(Key::Enter)),
+                            VK_LEFT => (window.id, WindowEvent::KeyPress(Key::LeftArrow)),
+                            VK_UP => (window.id, WindowEvent::KeyPress(Key::UpArrow)),
+                            VK_DOWN => (window.id, WindowEvent::KeyPress(Key::DownArrow)),
+                            VK_RIGHT => (window.id, WindowEvent::KeyPress(Key::RightArrow)),
+                            VK_DELETE => (window.id, WindowEvent::KeyPress(Key::Delete)),
+                            VK_BACK => (window.id, WindowEvent::KeyPress(Key::Backspace)),
+                            _ => {
+                                let _ = TranslateMessage(&msg);
+                                DispatchMessageW(&msg);
+                                (window.id, WindowEvent::KeyPress(Key::Unknown))
+                            }
+                        }
+                    }
+                }
+                WM_KEYUP => {
+                    match VIRTUAL_KEY(msg.wParam.0 as u16) {
+                        VK_HOME => (window.id, WindowEvent::KeyRelease(Key::Home)),
+                        VK_END => (window.id, WindowEvent::KeyRelease(Key::End)),
+                        VK_RETURN => (window.id, WindowEvent::KeyRelease(Key::Enter)),
+                        VK_LEFT => (window.id, WindowEvent::KeyRelease(Key::LeftArrow)),
+                        VK_UP => (window.id, WindowEvent::KeyRelease(Key::UpArrow)),
+                        VK_DOWN => (window.id, WindowEvent::KeyRelease(Key::DownArrow)),
+                        VK_RIGHT => (window.id, WindowEvent::KeyRelease(Key::RightArrow)),
+                        VK_DELETE => (window.id, WindowEvent::KeyRelease(Key::Delete)),
+                        VK_BACK => (window.id, WindowEvent::KeyRelease(Key::Backspace)),
+                        _ => (window.id, WindowEvent::None)
                     }
                 }
                 WM_CHAR => {
                     let ch = std::char::from_u32(msg.wParam.0 as u32).unwrap_or('\0');
-                    println!("Char input: {}", ch);
-                    (window.id, WindowEvent::KeyRelease(Key::Char(ch)))
+                    println!("Char input: {:?}", ch);
+                    match ch {
+                        '\r' => (window.id, WindowEvent::None),
+                        _ => (window.id, WindowEvent::KeyRelease(Key::Char(ch)))
+                    }
                 }
                 WM_LBUTTONDOWN => {
                     //切换输入法

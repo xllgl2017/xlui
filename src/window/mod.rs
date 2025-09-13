@@ -177,7 +177,7 @@ impl WindowType {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.request_clipboard(clipboard),
             #[cfg(all(target_os = "windows", not(feature = "winit")))]
-            WindowKind::Win32(ref window) => {}
+            WindowKind::Win32(_) => {}
         }
     }
 

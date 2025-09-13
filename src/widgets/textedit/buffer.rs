@@ -157,7 +157,7 @@ impl CharBuffer {
         self.rebuild_text(ui);
         let line = &mut self.buffer.lines[cursor.vert];
         println!("insert before-{}-{}", line.chars.len(), cursor.horiz);
-        let width = line.chars[if cursor.horiz == 0 { 0 } else { cursor.horiz - 1 }].width;
+        let width = if line.len() == 0 { 0.0 } else { line.chars[if cursor.horiz == 0 { 0 } else { cursor.horiz - 1 }].width };
         let horiz = if cursor.horiz + 1 >= line.chars.len() { line.chars.len() } else { cursor.horiz + 1 };
         if cursor.min_pos.x + line.get_width_in_char(horiz) > cursor.max_pos.x {
             self.offset.x -= width;
