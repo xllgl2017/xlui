@@ -72,6 +72,7 @@ impl AppContext {
         self.popups = ui.popups.take();
     }
 
+    #[cfg(not(feature = "winit"))]
     pub fn user_update(&mut self, app: &mut Box<dyn App>) {
         let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
         let mut ui = Ui {

@@ -129,7 +129,6 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                 }
                 println!("11");
                 window.render();
-                window.app_ctx.context.resize = false;
             }
             WindowEvent::Resized(size) => {
                 window.resize(Size { width: size.width, height: size.height });

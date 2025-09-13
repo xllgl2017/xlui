@@ -96,6 +96,7 @@ pub struct WindowType {
 
 impl WindowType {
     pub(crate) const ROOT: u32 = 0;
+    #[cfg(not(feature = "winit"))]
     pub(crate) const CHILD: u32 = 1;
 
     #[cfg(all(target_os = "linux", not(feature = "winit")))]

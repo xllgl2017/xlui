@@ -1,3 +1,4 @@
+#[cfg(not(feature = "winit"))]
 use std::ops::Range;
 
 #[derive(Debug)]
@@ -45,6 +46,7 @@ impl LineChar {
         width
     }
 
+    #[cfg(not(feature = "winit"))]
     pub fn get_text_by_range(&self, r: Range<usize>) -> String {
         let mut res: String = self.chars[r.clone()].iter().map(|x| x.cchar.to_string()).collect();
         if !self.auto_wrap && r.end == self.len() { res += "\n"; }

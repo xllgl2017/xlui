@@ -31,7 +31,6 @@ impl Window {
             user_update: (window.id, UpdateType::None),
             viewport,
             window,
-            resize: false,
             render: Render::new(&device),
             updates: Map::new(),
             new_window: None,
@@ -92,7 +91,6 @@ impl Window {
     }
 
     pub(crate) fn resize(&mut self, new_size: Size) {
-        self.app_ctx.context.resize = true;
         self.app_ctx.device.surface_config.width = new_size.width;
         self.app_ctx.device.surface_config.height = new_size.height;
         self.configure_surface();

@@ -181,6 +181,7 @@ impl CharBuffer {
         self.buffer.lines.get(cursor.vert)?.chars.get(cursor.horiz - 2)
     }
 
+    #[cfg(not(feature = "winit"))]
     pub fn select_text(&self, select: &EditSelection, cursor: &EditCursor) -> String {
         if !select.has_selected { return "".to_string(); }
         let mut chars = vec![];

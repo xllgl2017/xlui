@@ -9,25 +9,14 @@ fn main() {
 
 struct XlUiApp {
     status: String,
-    count: i32,
 }
 
 
 impl XlUiApp {
     fn new() -> XlUiApp {
         XlUiApp {
-            count: 0,
             status: "使用`微软雅黑`字体".to_string(),
         }
-    }
-    fn add(&mut self, _: &mut Button, _: &mut Ui) {
-        self.count += 1;
-        self.status = format!("count: {}", self.count);
-    }
-
-    fn reduce(&mut self, _: &mut Button, _: &mut Ui) {
-        self.count -= 1;
-        self.status = format!("count: {}", self.count);
     }
 }
 
