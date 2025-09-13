@@ -328,10 +328,10 @@ impl<'a, 'p> Ui<'a, 'p> {
         layout.get_widget(&id.to_string())
     }
 
-    // pub fn request_update(&mut self, ut: UpdateType) {
-    //     let wid = self.context.window.id();
-    //     self.request_update = Some((wid, ut));
-    // }
+    pub fn request_update(&mut self, ut: UpdateType) {
+        let wid = self.context.window.id();
+        self.request_update = Some((wid, ut));
+    }
 
     pub fn add_layout(&mut self, layout: impl Layout + 'static, context: impl FnOnce(&mut Ui)) {
         let layout = LayoutKind::new(layout);

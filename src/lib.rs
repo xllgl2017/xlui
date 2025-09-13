@@ -105,7 +105,7 @@ pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 pub use ui::Ui;
 pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow};
-pub use frame::{App};
+pub use frame::{App, context::UpdateType};
 pub use align::Align;
 
 pub trait NumCastExt: Sized {
