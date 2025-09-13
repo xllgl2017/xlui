@@ -242,7 +242,7 @@ impl TextEdit {
             Key::RightArrow => {
                 if self.cursor_render.cursor_min() + 2.0 >= self.cursor_render.max_pos.x && let Some(cchar) = self.char_layout.next_char(&self.cursor_render) {
                     self.char_layout.buffer.clip_x -= cchar.width;
-                    // self.char_layout.offset.x -= cchar.width;
+                    self.char_layout.offset.x = self.char_layout.buffer.clip_x;
                 }
                 self.cursor_render.move_right(&self.char_layout)
             }
@@ -307,7 +307,7 @@ impl Widget for TextEdit {
                 ui.context.window.request_redraw();
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.psd_buffer.rect) {
+                if ui.device.device_input.click_at(&self.psd_buffer.rect) && let EditKind::Password = self.char_layout.edit_kind {
                     self.char_layout.looking = !self.char_layout.looking;
                     self.psd_buffer.update_buffer_text(ui, if self.char_layout.looking { "🔓" } else { "🔒" });
                     self.char_layout.rebuild_text(ui);
