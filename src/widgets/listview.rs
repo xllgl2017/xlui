@@ -186,6 +186,8 @@ impl<T: 'static> ListView<T> {
             let item: &mut ItemWidget = x.widget_mut().unwrap();
             item.restore_status(false, false, 0.to_string());
         });
+        let h = recycle.size().rh;
+        area.reset_context_height(h);
         self.previous_display = 0..0;
         self.current.write().unwrap().take();
         self.hovered.take();

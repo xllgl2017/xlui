@@ -111,7 +111,7 @@ impl RecycleLayout {
 
     pub fn remove_item(&mut self) {
         self.total_count -= 1;
-        self.size.rh -= self.item_height + self.item_space;
+        self.size.rh = self.size.rh - self.item_height - self.item_space;
         if self.total_count < self.draw_count {
             self.items.remove_map_by_index(0);
         }

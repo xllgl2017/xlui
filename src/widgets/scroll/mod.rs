@@ -160,6 +160,7 @@ impl ScrollWidget {
 
     pub fn reset_context_height(&mut self, h: f32) {
         self.v_bar.set_context_height(h);
+        self.bar_offset(0.0, 0.0);
         // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
         // self.v_bar.set_context_height(layout.height() + layout.item_space());
     }
@@ -349,6 +350,4 @@ impl Widget for ScrollWidget {
         // }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
-
-
 }
