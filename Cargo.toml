@@ -13,6 +13,10 @@ readme = "README.md"
 #name = "test_all"
 #path = "tests/all.rs"
 
+[[bin]]
+name = "webview"
+path = "benches/webview.rs"
+
 #[[bin]]
 #name="test_table"
 #path = "tests/table.rs"
