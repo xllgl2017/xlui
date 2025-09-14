@@ -18,4 +18,6 @@ impl<E: Into<Box<dyn Error>>> From<E> for UiError {
     }
 }
 
+
+
 pub type UiResult<T> = Result<T, UiError>;
