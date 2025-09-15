@@ -6,7 +6,7 @@ use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::SizeMode;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle};
+use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
@@ -90,6 +90,17 @@ impl VerticalLayout {
         self
     }
 
+    ///设置背景的样式
+    pub fn set_style(&mut self, style: FrameStyle) {
+        match self.fill_render {
+            None => {
+                let fill_render = RenderParam::new(RectParam::new_frame(Rect::new(), style));
+                self.fill_render = Some(fill_render);
+            }
+            Some(ref mut render) => render.param.set_frame(style),
+        }
+    }
+
     pub fn set_width(&mut self, w: f32) {
         self.size_mode.fix_width(w);
     }
@@ -135,13 +146,15 @@ impl Layout for VerticalLayout {
                 }
                 if let Some(ref mut render) = self.fill_render {
                     let (dw, dh) = self.size_mode.size(width, height);
-                    render.param.rect.set_size(dw, dh);
+                    render.param.rect.set_size(dw - self.padding.horizontal(), dh - self.padding.vertical());
                     render.init_rectangle(ui, false, false);
                 }
             }
             _ => {
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
+                    render.param.rect.add_min_x(self.padding.left);
+                    render.param.rect.add_min_y(self.padding.top);
                     render.update(ui, false, false);
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);

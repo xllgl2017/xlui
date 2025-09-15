@@ -104,7 +104,7 @@ pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget
                   rectangle::Rectangle, circle::Circle, triangle::Triangle};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 pub use ui::Ui;
-pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow};
+pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow, FrameStyle};
 pub use frame::{App, context::UpdateType};
 pub use align::Align;
 

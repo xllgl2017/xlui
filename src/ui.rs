@@ -71,6 +71,7 @@ impl AppContext {
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
+        self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
     }
 
@@ -260,7 +261,7 @@ pub struct Ui<'a, 'p> {
 
 
 impl<'a, 'p> Ui<'a, 'p> {
-    pub(crate) fn layout(&mut self) -> &mut LayoutKind {
+    pub fn layout(&mut self) -> &mut LayoutKind {
         self.layout.as_mut().expect("仅能在App::update中调用")
     }
 
