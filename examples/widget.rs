@@ -239,6 +239,7 @@ impl App for TestWidget {
             inner_size: (1000, 800).into(),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             tray: Some(tray),
+            decorations: true,
             ..Default::default()
         }
     }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 #[cfg(feature = "winit")]
 use winit::window::{Icon, WindowLevel};
-use crate::Font;
+use crate::{Color, Font};
 use crate::size::Size;
 #[cfg(all(target_os = "windows", not(feature = "winit")))]
 use crate::window::win32::tray::Tray;
@@ -18,8 +18,10 @@ pub struct WindowAttribute {
     pub title: String,
     pub maximized: bool,
     pub visible: bool,
+    ///是否窗口透明
     pub transparent: bool,
     pub blur: bool,
+    ///窗口装饰，标题栏，边框，阴影
     pub decorations: bool,
     pub window_icon: Arc<Vec<u8>>,
     #[cfg(feature = "winit")]
@@ -28,6 +30,8 @@ pub struct WindowAttribute {
     pub font: Arc<Font>,
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub tray: Option<Tray>,
+    ///窗口填充色
+    pub fill: Color,
 }
 
 impl WindowAttribute {
@@ -88,6 +92,7 @@ impl Default for WindowAttribute {
             font: Arc::new(Font::default()),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             tray: None,
+            fill:Color::rgb(240, 240, 240),
         }
     }
 }

@@ -15,7 +15,7 @@ use crate::widgets::space::Space;
 use crate::widgets::{Widget, WidgetChange, WidgetKind};
 use crate::window::inner::InnerWindow;
 use crate::window::{UserEvent, WindowId, WindowType};
-use crate::{Button, Device, Image, Label, NumCastExt, RadioButton, SelectItem, Slider, SpinBox, SAMPLE_COUNT};
+use crate::{Button, Device, Image, Label, NumCastExt, RadioButton, SelectItem, Slider, SpinBox, WindowAttribute, SAMPLE_COUNT};
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
 use std::sync::atomic::Ordering;
@@ -33,10 +33,11 @@ pub struct AppContext {
     pub(crate) context: Context,
     previous_time: u128,
     redraw_thread: JoinHandle<()>,
+    attr: WindowAttribute,
 }
 
 impl AppContext {
-    pub fn new(device: Device, context: Context) -> AppContext {
+    pub fn new(device: Device, context: Context, attr: WindowAttribute) -> AppContext {
         let layout = VerticalLayout::top_to_bottom().with_size(device.surface_config.width as f32, device.surface_config.height as f32)
             .with_space(5.0).with_padding(Padding::same(5.0));
         AppContext {
@@ -48,6 +49,7 @@ impl AppContext {
             context,
             previous_time: 0,
             redraw_thread: spawn(|| {}),
+            attr,
         }
     }
 
@@ -192,7 +194,7 @@ impl AppContext {
                 view: &msaa_view,
                 resolve_target: Some(&view),
                 ops: Operations {
-                    load: LoadOp::Clear(self.style.window.fill.as_wgpu_color()),
+                    load: LoadOp::Clear(self.attr.fill.as_wgpu_color()),
                     store: wgpu::StoreOp::Store,
                 },
             })],

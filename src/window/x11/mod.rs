@@ -8,60 +8,83 @@ use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
 use std::ffi::CString;
+use std::os::raw::{c_long, c_ulong};
 use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
 use x11::xlib;
-use x11::xlib::{XCloseDisplay, XLookupString};
+use x11::xlib::{AllocNone, XCloseDisplay, XLookupString};
 
 pub mod ime;
 pub mod handle;
 mod clipboard;
 
+#[repr(C)]
+struct X11WmHints {
+    flags: c_ulong,
+    functions: c_ulong,
+    decorations: c_ulong,
+    input_mode: c_long,
+    status: c_ulong,
+}
+
 pub struct X11Window {
     display: *mut xlib::Display,
     handles: Vec<Arc<WindowType>>,
     wm_delete_atom: xlib::Atom,
-
     size: RwLock<Size>,
     root: xlib::Window,
+    visual_info: xlib::XVisualInfo,
 }
 
 impl X11Window {
     pub fn new(attr: &WindowAttribute, ime: Arc<IME>) -> Result<Self, String> {
         unsafe {
-            if xlib::XInitThreads() == 0 {
-                panic!("XInitThreads failed");
-            }
+            if xlib::XInitThreads() == 0 { return Err("XInitThreads failed".into()); }
             let display = xlib::XOpenDisplay(ptr::null());
-            if display.is_null() {
-                return Err("Cannot open X display".into());
-            }
+            if display.is_null() { return Err("Cannot open X display".into()); }
             let screen = xlib::XDefaultScreen(display);
             let root = xlib::XRootWindow(display, screen);
             let mut wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
-            let mut window = X11Window::create_window(display, screen, root, attr, &mut wm_delete);
 
-            // WM_DELETE_WINDOW
-            // let wm_protocols = xlib::XInternAtom(display, b"WM_PROTOCOLS\0".as_ptr() as *const i8, 0);
-            let update_atom = xlib::XInternAtom(display, b"MY_CUSTOM_MESSAGE\0".as_ptr() as *const i8, 0);
-            window.update_atom = update_atom;
+            // 查找 32 位 ARGB visual
+            let mut vinfo: xlib::XVisualInfo = std::mem::zeroed();
+            vinfo.screen = screen;
+            vinfo.depth = 32;
+            vinfo.class = xlib::TrueColor;
+            let mut n = 0;
+            let vinfo = xlib::XGetVisualInfo(
+                display,
+                xlib::VisualScreenMask | xlib::VisualDepthMask | xlib::VisualClassMask,
+                &mut vinfo,
+                &mut n,
+            );
+            if vinfo.is_null() { return Err("No ARGB visual found".into()); }
             let p = CString::new("@im=none").unwrap();
             xlib::XSetLocaleModifiers(p.as_ptr());
-            let window = WindowType {
-                kind: WindowKind::X11(window),
-                id: WindowId::unique_id(),
-                type_: WindowType::ROOT,
-                ime,
-            };
-            Ok(Self {
+            let mut res = Self {
                 display,
-                handles: vec![Arc::new(window)],
+                handles: vec![],
                 wm_delete_atom: wm_delete,
                 size: RwLock::new(attr.inner_size),
                 root,
-            })
+                visual_info: *vinfo,
+            };
+            xlib::XFree(vinfo as *mut _);
+            res.init(attr, ime, screen);
+            Ok(res)
         }
+    }
+
+    fn init(&mut self, attr: &WindowAttribute, ime: Arc<IME>, screen: i32) {
+        let handle = self.create_window(screen, attr);
+        let window = WindowType {
+            kind: WindowKind::X11(handle),
+            id: WindowId::unique_id(),
+            type_: WindowType::ROOT,
+            ime,
+        };
+        self.handles.push(Arc::new(window));
     }
 
 
@@ -69,18 +92,45 @@ impl X11Window {
         self.handles.last().cloned().unwrap()
     }
 
-    fn create_window(display: *mut xlib::Display, screen: i32, root: xlib::Window, attr: &WindowAttribute, wm_delete: &mut xlib::Atom) -> X11WindowHandle {
+    fn create_window(&mut self, screen: i32, attr: &WindowAttribute) -> X11WindowHandle {
         unsafe {
-            let child = xlib::XCreateSimpleWindow(
-                display, root,
-                attr.position[0], attr.position[1],
-                attr.inner_size.width, attr.inner_size.height,
-                1, // 边框宽度
-                xlib::XBlackPixel(display, screen),
-                xlib::XWhitePixel(display, screen),
+            let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, AllocNone);
+            let mut swa: xlib::XSetWindowAttributes = std::mem::zeroed();
+            swa.colormap = colormap;
+            swa.border_pixel = if attr.transparent { 0 } else { xlib::XWhitePixel(self.display, screen) };
+            swa.background_pixel = if attr.transparent { 0 } else { xlib::XWhitePixel(self.display, screen) }; //xlib::XWhitePixel(display,screen);
+            let child = xlib::XCreateWindow(
+                self.display,
+                self.root,
+                attr.position[0], attr.position[1], attr.inner_size.width, attr.inner_size.height,
+                1,
+                self.visual_info.depth,
+                xlib::InputOutput as u32,
+                self.visual_info.visual,
+                xlib::CWColormap | xlib::CWBorderPixel | xlib::CWBackPixel,
+                &mut swa,
             );
             let c_title = CString::new(attr.title.clone()).unwrap();
-            xlib::XStoreName(display, child, c_title.as_ptr());
+            xlib::XStoreName(self.display, child, c_title.as_ptr());
+            // ========= 去掉装饰 =========
+            let motif_hints_atom = xlib::XInternAtom(self.display, b"_MOTIF_WM_HINTS\0".as_ptr() as *const i8, xlib::False);
+            let hints = X11WmHints {
+                flags: 1 << 1,
+                functions: 0,
+                decorations: if attr.decorations { 1 } else { 0 }, // 0 = no border, no title bar
+                input_mode: 0,
+                status: 0,
+            };
+            xlib::XChangeProperty(
+                self.display,
+                child,
+                motif_hints_atom,
+                motif_hints_atom,
+                32,
+                xlib::PropModeReplace,
+                &hints as *const _ as *const u8,
+                5,
+            );
             let events = xlib::ExposureMask
                 | xlib::FocusChangeMask
                 | xlib::KeyPressMask
@@ -89,28 +139,26 @@ impl X11Window {
                 | xlib::ButtonReleaseMask
                 | xlib::PointerMotionMask
                 | xlib::StructureNotifyMask;
-            xlib::XSelectInput(display, child, events as i64);
+            xlib::XSelectInput(self.display, child, events as i64);
             let mut attrs: xlib::XSetWindowAttributes = mem::zeroed();
             attrs.background_pixel = 0;
-            xlib::XChangeWindowAttributes(display, child, xlib::CWBackPixmap, &mut attrs);
-            xlib::XSetWindowBackgroundPixmap(display, child, 0); // 0 == None
-            xlib::XMapWindow(display, child);
-            xlib::XFlush(display);
-            xlib::XSetWMProtocols(display, child, wm_delete, 1);
+            xlib::XChangeWindowAttributes(self.display, child, xlib::CWBackPixmap, &mut attrs);
+            xlib::XSetWindowBackgroundPixmap(self.display, child, 0); // 0 == None
+            xlib::XMapWindow(self.display, child);
+            xlib::XFlush(self.display);
+            xlib::XSetWMProtocols(self.display, child, &mut self.wm_delete_atom, 1);
             X11WindowHandle {
-                display,
+                display: self.display,
                 window: child,
                 update_atom: 0,
                 screen,
-                clipboard: X11ClipBoard::new(display).unwrap(),
+                clipboard: X11ClipBoard::new(self.display).unwrap(),
             }
         }
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
-        let mut window = X11Window::create_window(
-            parent.x11().display, parent.x11().screen, self.root, attr,
-            &mut self.wm_delete_atom);
+        let mut window = self.create_window(parent.x11().screen, attr);
         window.update_atom = parent.x11().update_atom;
         let window = Arc::from(WindowType {
             id: WindowId::unique_id(),

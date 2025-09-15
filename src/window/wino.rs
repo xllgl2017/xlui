@@ -19,7 +19,7 @@ pub struct LoopWindow {
 }
 
 impl LoopWindow {
-    pub async fn create_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: &WindowAttribute) -> LoopWindow {
+    pub async fn create_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: WindowAttribute) -> LoopWindow {
         let device = Self::rebuild_device(&wt, attr.inner_size).await.unwrap();
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
@@ -32,7 +32,7 @@ impl LoopWindow {
             user_update: (WindowId(crate::unique_id_u32()), UpdateType::None),
             new_window: None,
         };
-        let mut app_ctx = AppContext::new(device, context);
+        let mut app_ctx = AppContext::new(device, context, attr);
         app_ctx.draw(&mut app);
         LoopWindow {
             app_ctx,
