@@ -160,8 +160,9 @@ impl Layout for VerticalLayout {
             _ => {
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
-                    render.param.rect.add_min_x(self.marin.left);
-                    render.param.rect.add_min_y(self.marin.top);
+                    render.param.rect.offset(&Offset::new(Pos::new()).with_y(self.marin.top).with_x(self.marin.left));
+                    // render.param.rect.add_min_x(self.marin.left);
+                    // render.param.rect.add_min_y(self.marin.top);
                     render.update(ui, false, false);
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);
@@ -189,8 +190,10 @@ impl Layout for VerticalLayout {
             }
         }
         ui.draw_rect = previous_rect;
+        width += self.padding.horizontal() + self.marin.horizontal();
+        height += self.padding.vertical() + self.marin.vertical();
 
-        let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
+        let (dw, dh) = self.size_mode.size(width, height);
         Response::new(&self.id, WidgetSize {
             dw,
             dh,

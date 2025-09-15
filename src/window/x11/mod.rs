@@ -45,7 +45,7 @@ impl X11Window {
             if display.is_null() { return Err("Cannot open X display".into()); }
             let screen = xlib::XDefaultScreen(display);
             let root = xlib::XRootWindow(display, screen);
-            let mut wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
+            let wm_delete = xlib::XInternAtom(display, b"WM_DELETE_WINDOW\0".as_ptr() as *const i8, 0);
 
             // 查找 32 位 ARGB visual
             let mut vinfo: xlib::XVisualInfo = std::mem::zeroed();

@@ -62,7 +62,7 @@ impl RectParam {
     pub fn new_frame(rect: Rect, frame: FrameStyle) -> Self {
         let mut style = ClickStyle::new();
         style.fill = FillStyle::same(frame.fill);
-        style.border = BorderStyle::same(Border::new(0.0).radius(frame.radius));
+        style.border = BorderStyle::same(frame.border);
         let res = Self::new(rect, style);
         res.with_shadow(frame.shadow)
     }
@@ -70,7 +70,7 @@ impl RectParam {
     pub fn set_frame(&mut self, frame: FrameStyle) {
         let mut style = ClickStyle::new();
         style.fill = FillStyle::same(frame.fill);
-        style.border = BorderStyle::same(Border::new(0.0).radius(frame.radius));
+        style.border = BorderStyle::same(frame.border);
         self.style = style;
         self.shadow = frame.shadow;
     }

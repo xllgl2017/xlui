@@ -8,6 +8,7 @@ pub struct FrameStyle {
     pub fill: Color,
     pub radius: Radius,
     pub shadow: Shadow,
+    pub border: Border,
 
 }
 
@@ -134,6 +135,7 @@ impl Style {
                 radius: Radius::same(0),
                 fill: Color::rgb(240, 240, 240),
                 shadow: Shadow::new(),
+                border: Border::new(0.0),
             },
 
             widget: WidgetStyle {

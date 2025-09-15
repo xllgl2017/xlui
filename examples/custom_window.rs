@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::process::exit;
 use xlui::*;
 
 fn main() {
@@ -7,16 +7,16 @@ fn main() {
     app.run().unwrap();
 }
 
-struct XlUiApp {
-    status: String,
-}
+struct XlUiApp {}
 
 
 impl XlUiApp {
     fn new() -> XlUiApp {
-        XlUiApp {
-            status: "使用`微软雅黑`字体".to_string(),
-        }
+        XlUiApp {}
+    }
+
+    fn close(&mut self, _: &mut Button, _: &mut Ui) {
+        exit(0);
     }
 }
 
@@ -31,14 +31,36 @@ impl App for XlUiApp {
                 spread: 5.0,
                 color: Color::rgba(0, 0, 0, 100),
             },
+            border: Border::new(2.0).color(Color::rgb(170, 210, 255)),
         };
         let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
-        layout.set_margin(Margin::same(5.0));
+        layout.set_padding(Padding::same(2.0));
+        layout.set_margin(Margin::same(0.0));
         layout.set_style(style);
-        ui.add(Label::new(self.status.as_str().color(Color::ORANGE)).with_id("status"));
-        for i in 10..=28 {
-            ui.add(Label::new(format!("当前字号: {}px", i).size(i as f32).color(Color::GREEN)));
-        }
+        let title_layout = HorizontalLayout::left_to_right().with_size(296.0, 25.0)
+            .with_fill(Color::rgb(210, 210, 210));
+        ui.add_layout(title_layout, |ui| {
+            ui.image("logo.jpg", (25.0, 25.0));
+            ui.add(Label::new("自定义标题栏").align(Align::Center).height(25.0));
+            ui.add_layout(HorizontalLayout::right_to_left(), |ui| {
+                let mut style = ClickStyle::new();
+                style.fill.inactive = Color::TRANSPARENT;
+                style.fill.hovered = Color::rgba(255, 0, 0, 100);
+                style.fill.clicked = Color::rgba(255, 0, 0, 150);
+                style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+                let mut btn = Button::new("×").width(20.0).height(20.0).connect(Self::close);
+                btn.set_style(style.clone());
+                ui.add(btn);
+                let mut btn = Button::new("□").width(20.0).height(20.0);
+                style.fill.hovered = Color::rgba(160, 160, 160, 100);
+                style.fill.clicked = Color::rgba(160, 160, 160, 150);
+                btn.set_style(style.clone());
+                ui.add(btn);
+            });
+        });
+        ui.vertical(|ui| {
+            ui.label("sdfgdfg");
+        })
     }
 
     fn update(&mut self, _: &mut Ui) {}
@@ -46,7 +68,7 @@ impl App for XlUiApp {
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
-            font: Arc::new(Font::from_family("微软雅黑").with_size(24.0)),
+            // font: Arc::new(Font::from_family("微软雅黑").with_size(24.0)),
             inner_size: (300, 520).into(),
             transparent: true,
             decorations: false,
