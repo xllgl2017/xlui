@@ -10,7 +10,7 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Offset, Padding, Pos, Radius, Rect};
+use crate::{Border, Margin, Offset, Padding, Pos, Radius, Rect};
 ///### 垂直布局的使用
 ///```rust
 /// use xlui::*;
@@ -47,6 +47,7 @@ pub struct VerticalLayout {
     padding: Padding,
     direction: LayoutDirection,
     fill_render: Option<RenderParam<RectParam>>,
+    marin: Margin,
 }
 
 impl VerticalLayout {
@@ -60,6 +61,7 @@ impl VerticalLayout {
             direction,
             offset: Offset::new(Pos::new()),
             fill_render: None,
+            marin: Margin::ZERO,
         }
     }
 
@@ -128,6 +130,10 @@ impl VerticalLayout {
         self.padding = p;
     }
 
+    pub fn set_margin(&mut self, m: Margin) {
+        self.marin = m;
+    }
+
     pub fn item_space(&self) -> f32 {
         self.item_space
     }
@@ -145,27 +151,28 @@ impl Layout for VerticalLayout {
                     height += item.height() + self.item_space;
                 }
                 if let Some(ref mut render) = self.fill_render {
-                    let (dw, dh) = self.size_mode.size(width, height);
-                    render.param.rect.set_size(dw - self.padding.horizontal(), dh - self.padding.vertical());
+                    let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
+                    println!("{} {} {}  {}", dw, dh, self.marin.horizontal(), self.marin.vertical());
+                    render.param.rect.set_size(dw - self.marin.horizontal(), dh - self.marin.vertical());
                     render.init_rectangle(ui, false, false);
                 }
             }
             _ => {
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
-                    render.param.rect.add_min_x(self.padding.left);
-                    render.param.rect.add_min_y(self.padding.top);
+                    render.param.rect.add_min_x(self.marin.left);
+                    render.param.rect.add_min_y(self.marin.top);
                     render.update(ui, false, false);
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);
                 }
                 let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
-                ui.draw_rect.set_size(w, h);
+                ui.draw_rect.set_size(w - self.marin.horizontal(), h - self.marin.vertical());
                 //设置布局padding
-                ui.draw_rect.add_min_x(self.padding.left);
-                ui.draw_rect.add_min_y(self.padding.top);
-                ui.draw_rect.add_max_x(-self.padding.right);
-                ui.draw_rect.add_max_y(-self.padding.bottom);
+                ui.draw_rect.add_min_x(self.padding.left + self.marin.left);
+                ui.draw_rect.add_min_y(self.padding.top + self.marin.top);
+                ui.draw_rect.add_max_x(-self.padding.right + self.marin.right);
+                ui.draw_rect.add_max_y(-self.padding.bottom + self.marin.bottom);
                 ui.draw_rect.set_y_direction(self.direction);
                 ui.draw_rect.set_x_min(ui.draw_rect.dx().min + self.offset.x);
                 ui.draw_rect.set_y_min(ui.draw_rect.dy().min + self.offset.y);
@@ -183,7 +190,7 @@ impl Layout for VerticalLayout {
         }
         ui.draw_rect = previous_rect;
 
-        let (dw, dh) = self.size_mode.size(width, height);
+        let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
         Response::new(&self.id, WidgetSize {
             dw,
             dh,

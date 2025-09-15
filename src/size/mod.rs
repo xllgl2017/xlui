@@ -4,6 +4,7 @@ pub mod border;
 pub mod pos;
 pub mod radius;
 pub mod font;
+pub mod margin;
 
 #[derive(Clone, Copy)]
 pub enum SizeMode {

@@ -28,12 +28,12 @@ impl App for XlUiApp {
             radius: Radius::same(5),
             shadow: Shadow {
                 offset: [0.0, 0.0],
-                spread: 10.0,
-                color: Color::rgba(0, 0, 0, 30),
+                spread: 5.0,
+                color: Color::rgba(0, 0, 0, 100),
             },
         };
         let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
-        layout.set_padding(Padding::same(10.0));
+        layout.set_margin(Margin::same(5.0));
         layout.set_style(style);
         ui.add(Label::new(self.status.as_str().color(Color::ORANGE)).with_id("status"));
         for i in 10..=28 {
@@ -47,7 +47,7 @@ impl App for XlUiApp {
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
             font: Arc::new(Font::from_family("微软雅黑").with_size(24.0)),
-            inner_size: (300, 500).into(),
+            inner_size: (300, 520).into(),
             transparent: true,
             decorations: false,
             fill: Color::TRANSPARENT,
