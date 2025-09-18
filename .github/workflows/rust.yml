@@ -23,21 +23,16 @@ jobs:
             ~/.cargo/git
             ./target
           prefix-key: ${{ runner.os }}-cargo-
-#      - name: Install mold
-#        run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
-      - name: Cache mold
+      - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: ~/.mold
-          key: ${{ runner.os }}-mold-2.4.0
-
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-mold-x11-dbus
+          restore-keys: |
+            ${{ runner.os }}-apt-
       - name: Install mold
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/.mold
-          curl -L https://github.com/rui314/mold/releases/download/v2.4.0/mold-2.4.0-x86_64-linux.tar.gz \
-            | tar -xz --strip-components=1 -C ~/.mold
-          echo "$HOME/.mold/bin" >> $GITHUB_PATH
+        run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
+
       - name: Check Native
         run: cargo check
       - name: Check WInit
