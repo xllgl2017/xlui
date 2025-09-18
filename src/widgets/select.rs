@@ -155,6 +155,7 @@ impl<T: Display> SelectItem<T> {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
             self.text.rect.offset_to_rect(&ui.draw_rect);
         }
 
@@ -182,8 +183,6 @@ impl<T: Display> SelectItem<T> {
 }
 
 impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
