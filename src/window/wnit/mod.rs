@@ -35,7 +35,7 @@ impl Window {
             updates: Map::new(),
             new_window: None,
         };
-        let mut app_ctx = AppContext::new(device, context);
+        let mut app_ctx = AppContext::new(device, context, attr);
         app_ctx.draw(&mut app);
         let mut state = Window {
             app_ctx,
