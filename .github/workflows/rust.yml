@@ -26,7 +26,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: /var/cache/apt/archives
+          path: /var/cache/apt/archives/*.deb
           key: ${{ runner.os }}-apt-mold-x11-dbus
           restore-keys: |
             ${{ runner.os }}-apt-
