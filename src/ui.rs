@@ -226,8 +226,9 @@ impl AppContext {
         self.layout.as_mut().unwrap().update(&mut ui);
         self.popups = ui.popups.take();
         for popup in self.popups.as_mut().unwrap().iter_mut() {
+            if !popup.open { continue; }
             popup.update(&mut ui);
-            if popup.open && self.device.device_input.hovered_at(popup.rect()) { ui.update_type = UpdateType::None; }
+            // if popup.open && self.device.device_input.hovered_at(popup.rect()) { ui.update_type = UpdateType::None; }
         }
         if let Some(u) = ui.request_update.take() {
             ui.context.user_update = u;

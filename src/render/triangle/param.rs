@@ -1,3 +1,4 @@
+use crate::Rect;
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
@@ -16,10 +17,11 @@ struct TriangleDrawParam {
 }
 
 pub struct TriangleParam {
-    pub p0: Pos,
-    pub p1: Pos,
-    pub p2: Pos,
-    pub style: ClickStyle,
+    rect: Rect,
+    p0: Pos,
+    p1: Pos,
+    p2: Pos,
+    pub(crate) style: ClickStyle,
     draw: TriangleDrawParam,
 }
 
@@ -37,23 +39,47 @@ impl TriangleParam {
             _pad1: [0.0; 3],
             border_color: border.color.as_gamma_rgba(),
         };
+        let xs = vec![p0.x, p1.x, p2.x];
+        let ys = vec![p0.y, p1.y, p2.y];
+        let mut rect = Rect::new();
+        rect.set_x_min(xs.clone().into_iter().reduce(f32::min).unwrap());
+        rect.set_x_max(xs.into_iter().reduce(f32::max).unwrap());
+        rect.set_y_min(ys.clone().into_iter().reduce(f32::min).unwrap());
+        rect.set_x_max(ys.into_iter().reduce(f32::max).unwrap());
         TriangleParam {
             p0,
             p1,
             p2,
             style,
             draw,
+            rect,
         }
     }
 
-    // pub fn offset(&mut self, o: &Offset) {
-    //     self.p0.x += o.x;
-    //     self.p0.y += o.y;
-    //     self.p1.x += o.x;
-    //     self.p1.y += o.y;
-    //     self.p2.x += o.x;
-    //     self.p2.y += o.y;
-    // }
+    pub fn set_poses(&mut self, p0: Pos, p1: Pos, p2: Pos) {
+        let xs = vec![p0.x, p1.x, p2.x];
+        let ys = vec![p0.y, p1.y, p2.y];
+        self.rect.set_x_min(xs.clone().into_iter().reduce(f32::min).unwrap());
+        self.rect.set_x_max(xs.into_iter().reduce(f32::max).unwrap());
+        self.rect.set_y_min(ys.clone().into_iter().reduce(f32::min).unwrap());
+        self.rect.set_x_max(ys.into_iter().reduce(f32::max).unwrap());
+        self.p0 = p0;
+        self.p1 = p1;
+        self.p2 = p2;
+    }
+
+    pub fn offset_to_rect(&mut self, rect: &Rect) {
+        let offset = self.rect.offset_to_rect(rect);
+        self.p0.offset(offset.x, offset.y);
+        self.p1.offset(offset.x, offset.y);
+        self.p2.offset(offset.x, offset.y);
+        // self.p0.x += o.x;
+        // self.p0.y += o.y;
+        // self.p1.x += o.x;
+        // self.p1.y += o.y;
+        // self.p2.x += o.x;
+        // self.p2.y += o.y;
+    }
 }
 
 impl WrcParam for TriangleParam {

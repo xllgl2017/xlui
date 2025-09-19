@@ -32,7 +32,7 @@ impl Triangle {
     }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {
-        self.id= id.to_string();
+        self.id = id.to_string();
         self
     }
 
@@ -55,9 +55,10 @@ impl Triangle {
         rect.set_y_min(y_min);
         rect.set_y_max(y_max);
         println!("triangle  {:?}", rect);
-        self.render.param.p0 = p0;
-        self.render.param.p1 = p1;
-        self.render.param.p2 = p2;
+        self.render.param.set_poses(p0, p1, p2);
+        // self.render.param.p0 = p0;
+        // self.render.param.p1 = p1;
+        // self.render.param.p2 = p2;
         self.rect = rect;
     }
 
@@ -78,10 +79,11 @@ impl Triangle {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            let offset = self.rect.offset_to_rect(&ui.draw_rect);
-            self.render.param.p0.offset(offset.x, offset.y);
-            self.render.param.p1.offset(offset.x, offset.y);
-            self.render.param.p2.offset(offset.x, offset.y);
+            self.rect.offset_to_rect(&ui.draw_rect);
+            self.render.param.offset_to_rect(&ui.draw_rect);
+            // self.render.param.p0.offset(offset.x, offset.y);
+            // self.render.param.p1.offset(offset.x, offset.y);
+            // self.render.param.p2.offset(offset.x, offset.y);
             self.render.update(ui, false, false);
         }
 
@@ -104,8 +106,6 @@ impl Triangle {
 
 
 impl Widget for Triangle {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
