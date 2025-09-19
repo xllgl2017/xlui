@@ -119,6 +119,7 @@ impl Widget for Popup {
                         ui.context.window.request_redraw();
                     }
                 }
+                if ui.device.device_input.hovered_at(&self.fill_render.param.rect) { ui.update_type = UpdateType::None; }
             }
         }
         Response::new(&self.id, self.size.clone())
