@@ -39,13 +39,13 @@ impl X11WindowHandle {
         unsafe { xlib::XFlush(self.display); }
     }
 
-    pub fn window_handle(&self) -> WindowHandle {
+    pub fn window_handle(&self) -> WindowHandle<'_> {
         let xlib_window_handle = XlibWindowHandle::new(self.window);
         let raw_window_handle = RawWindowHandle::Xlib(xlib_window_handle);
         unsafe { WindowHandle::borrow_raw(raw_window_handle) }
     }
 
-    pub fn display_handle(&self) -> DisplayHandle {
+    pub fn display_handle(&self) -> DisplayHandle<'_> {
         let display = NonNull::new(self.display as *mut c_void);
         let x11_display_handle = XlibDisplayHandle::new(display, self.screen);
         let raw_display_handle = RawDisplayHandle::Xlib(x11_display_handle);

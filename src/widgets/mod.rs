@@ -109,7 +109,7 @@ impl WidgetKind {
     //     self.rect.offset(o);
     //     !self.rect.out_of_rect(pr)
     // }
-    pub fn update(&mut self, ui: &mut Ui) -> Response {
+    pub fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         ui.widget_changed = WidgetChange::Position;
         let resp = self.widget.update(ui);
         if resp.size.dw != self.width || resp.size.dh != self.height {
