@@ -160,7 +160,7 @@ impl<T: Display + 'static> ComboBox<T> {
             }
 
             let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
-            popup.open = false;
+            popup.toggle();
         }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
@@ -205,8 +205,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.fill_render.param.rect) {
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
-                    println!("3333333333333-{}",popup.open);
-                    popup.open = !popup.open;
+                    popup.toggle();
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
                 }

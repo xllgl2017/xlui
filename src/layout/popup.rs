@@ -17,7 +17,8 @@ pub struct Popup {
     scroll_area: ScrollWidget,
     fill_render: RenderParam<RectParam>,
     size: WidgetSize,
-    pub(crate) open: bool,
+    open: bool,
+    requests: Vec<bool>,
     changed: bool,
 }
 
@@ -40,6 +41,7 @@ impl Popup {
             fill_render,
             size: WidgetSize::same(width, height),
             open: false,
+            requests: vec![],
             changed: false,
         }
     }
@@ -104,6 +106,22 @@ impl Popup {
         self.scroll_area.redraw(ui);
         ui.draw_rect = previous_rect;
     }
+
+    pub fn opened(&mut self) -> bool {
+        if self.requests.len() == 0 { return self.open; }
+        let open = self.requests.iter().find(|x| **x == true);
+        self.open = open.is_some();
+        self.requests.clear();
+        self.open
+    }
+
+    pub fn request_state(&mut self, state: bool) {
+        self.requests.push(state);
+    }
+
+    pub fn toggle(&mut self) {
+        self.requests.push(!self.open);
+    }
 }
 
 impl Widget for Popup {
@@ -115,7 +133,7 @@ impl Widget for Popup {
                 self.scroll_area.update(ui);
                 if let UpdateType::MouseRelease = ui.update_type {
                     if !ui.device.device_input.click_at(&self.fill_render.param.rect) {
-                        self.open = false;
+                        self.requests.push(false);
                         ui.context.window.request_redraw();
                     }
                 }
