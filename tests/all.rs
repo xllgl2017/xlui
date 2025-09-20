@@ -8,6 +8,7 @@ use xlui::*;
 use crate::align::TestAlign;
 use crate::layout::TestLayout;
 use crate::shape::TestShape;
+use crate::table::TestTable;
 
 #[derive(PartialEq)]
 enum TestKind {
@@ -23,10 +24,11 @@ impl Display for TestKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TestKind::Shape => f.write_str("图形"),
-            TestKind::Widgets => f.write_str("控件"),
+            // TestKind::Widgets => f.write_str("控件"),
             TestKind::Align => f.write_str("对齐"),
             TestKind::ChildWindow => f.write_str("新窗口"),
-            TestKind::Table => f.write_str("表格")
+            TestKind::Table => f.write_str("表格"),
+            TestKind::Layout => f.write_str("布局")
         }
     }
 }
@@ -81,7 +83,7 @@ impl App for XlUi {
             // ui.button(TestKind::Widgets).set_callback(Self::open_test_widgets);
             ui.button(TestKind::Align).set_callback(Self::open_test_align);
             ui.button(TestKind::ChildWindow).set_callback(Self::open_child_window);
-            ui.button(TestKind::Table).set_callback(Self::open_test_table)
+            ui.button(TestKind::Table).set_callback(Self::open_test_table);
             ui.button(TestKind::Layout).set_callback(Self::open_test_layout);
         });
     }

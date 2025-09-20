@@ -1,15 +1,12 @@
-use crate::layout::scroll_area::ScrollArea;
+use crate::layout::{Layout, LayoutItem};
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::column::TableColumn;
-use crate::widgets::table::header::TableHeader;
+use crate::widgets::table::header::{TableHeader, TableHeaderUi};
 use crate::widgets::table::param::TableParams;
 use crate::widgets::table::row::TableRow;
-use crate::{Border, Padding, Radius, Rect};
-use crate::cell::Cell;
-use crate::table::header::TableHeaderUi;
+use crate::{Border, Radius, Rect, RecycleLayout, ScrollWidget};
 
 mod param;
 pub mod column;
@@ -50,9 +47,7 @@ impl<T: TableExt> TableView<T> {
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.rect.set_width(width);
-        self.rect.set_height(height);
-        self
+        self.with_width(width).with_height(height)
     }
 
     pub fn set_header_ui(&mut self, column: usize, hui: TableHeaderUi) {
@@ -65,26 +60,31 @@ impl<T: TableExt> TableView<T> {
         self.params.set_data(data);
     }
 
-    pub fn show_row(&mut self, ui: &mut Ui, row: usize) {
-        let data = &mut self.params.row_data_mut()[row];
-        let mut row = TableRow::new(data.height());
-        row.init(ui, true);
-        let previous_layout = ui.layout.replace(row.layout.take().unwrap()).unwrap();
-        let r = 0..data.data().cols().len();
-        for column_index in r {
-            data.set_column(column_index);
-            let cell = TableCell::new();
-            cell.show_body(ui, &self.header, data);
+    pub fn show_rows(&mut self, ui: &mut Ui) {
+        let layout: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
+        let draw_count = layout.draw_count();
+        let header_row = TableRow::new(&self.header, self.params.row_height());
+        let header_item = header_row.show_header(ui, &self.header);
+        println!("2323-{}-{}", header_item.width, header_item.height);
+        let layout: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
+        layout.add_item(LayoutItem::Widget(header_item));
+        for i in 0..self.params.row_data().len() {
+            if i <= draw_count {
+                let row = TableRow::new(&self.header, self.params.row_height())
+                    .show(ui, &self.header, &mut self.params.row_mut(i));
+                let layout: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
+                layout.add_item(LayoutItem::Widget(row));
+            } else {
+                let recycle: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
+                recycle.add_item_empty();
+            }
         }
-        row.layout = ui.layout.replace(previous_layout);
-        ui.add(row);
     }
 
     pub fn show(&mut self, ui: &mut Ui) {
-        self.rect = ui.available_rect().clone_with_size(&self.rect);
-        let mut area = ScrollArea::new();
+        let layout = RecycleLayout::new().with_item_height(self.params.row_height()).with_size(self.rect.width(), self.rect.height()); //.with_size(self.rect.width()+550.0, self.rect.height());
+        let mut area = ScrollWidget::vertical().enable_hscroll().with_layout(layout);
         self.lid = area.id.clone();
-        area.set_rect(self.rect.clone());
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::TRANSPARENT;
         fill_style.fill.hovered = Color::TRANSPARENT;
@@ -94,17 +94,7 @@ impl<T: TableExt> TableView<T> {
         fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         area.set_style(fill_style);
         area.show(ui, |ui| {
-            ui.layout().set_item_space(0.0);
-            ui.layout().set_padding(Padding::same(0.0));
-            let mut table_rows = TableRow::new(&self.header);
-            let mut rows =vec![];
-            for (column_index,column) in self.header.columns.iter().enumerate() {
-                rows.push(Cell::new().with_context(Box::new(|ui|{}));
-            }
-            self.header.show(ui);
-            for row in 0..self.params.row_data().len() {
-                self.show_row(ui, row);
-            }
+            self.show_rows(ui);
         });
     }
 

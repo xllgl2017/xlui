@@ -1,75 +1,97 @@
 use crate::frame::context::UpdateType;
-use crate::layout::{HorizontalLayout, LayoutKind};
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
+use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
-use crate::{Padding, Rect, Widget};
-use crate::column::Column;
-use crate::map::Map;
-use crate::table::header::TableHeader;
+use crate::widgets::{WidgetKind, WidgetSize};
+use crate::{Offset, Pos, Rect, Widget};
+use crate::widgets::table::cell::TableCell;
 
 pub struct TableRow {
     id: String,
     fill_render: RenderParam<RectParam>,
-    columns: Map<Column>,
+    cells: Vec<TableCell>,
+    offset: Offset,
 }
 
 impl TableRow {
-    pub fn new<T>(headers: &TableHeader<T>) -> TableRow {
-        let mut columns = vec![];
+    pub fn new<T>(headers: &TableHeader<T>, row_height: f32) -> TableRow {
+        let mut cells = vec![];
         for column in &headers.columns {
-            columns.push(Column::new().width(column.width()).resize(true));
+            cells.push(TableCell::new(column.width(), row_height));
         }
         TableRow {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
-            columns: Map::new(),
+            fill_render: RenderParam::new(RectParam::new(Rect::new().with_height(row_height), ClickStyle::new())),
+            cells,
+
+            offset: Offset::new(Pos::new()),
         }
     }
 
-    pub fn add_row(&mut self){
-
+    pub fn with_width(mut self, w: f32) -> TableRow {
+        self.fill_render.param.rect.set_width(w);
+        self
     }
 
-    pub(crate) fn init(&mut self, ui: &mut Ui, init: bool) {
-        let mut current_layout = self.layout.take().unwrap();
-        if init {
-            let mut rect = ui.available_rect().clone(); //.clone_with_size(current_layout.max_rect());
-            rect.set_height(current_layout.max_rect().height());
-            current_layout.set_rect(rect.clone(), &Padding::same(0.0));
-            self.fill_render.param.rect = rect;
-        }
+    pub fn add_row(&mut self) {}
+
+    pub(crate) fn init(&mut self, ui: &mut Ui) {
         self.fill_render.init_rectangle(ui, false, false);
-        self.layout = Some(current_layout);
+    }
+
+
+    pub fn show_header<T: TableExt>(mut self, ui: &mut Ui, header: &TableHeader<T>) -> WidgetKind {
+        self.cells = header.show(ui);
+        let row = WidgetKind::new(ui, self);
+        row
+    }
+
+    pub fn show<T: TableExt>(mut self, ui: &mut Ui, header: &TableHeader<T>, datum: &mut TableRowData<T>) -> WidgetKind {
+        for (index, cell) in self.cells.iter_mut().enumerate() {
+            datum.set_column(index);
+            cell.show_body(ui, header, datum);
+        }
+
+        let row = WidgetKind::new(ui, self);
+        row
+    }
+
+    fn redraw(&mut self, ui: &mut Ui) {
+        // let pass = ui.pass.as_mut().unwrap();
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
     }
 }
 
 impl Widget for TableRow {
-    fn redraw(&mut self, ui: &mut Ui) {
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.layout.as_mut().unwrap().redraw(ui);
-    }
-
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::None => {}
-            UpdateType::Init => {}
-            UpdateType::ReInit => self.init(ui, false),
+            UpdateType::Init => self.init(ui),
+            UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {}
             UpdateType::MousePress => {}
             UpdateType::MouseRelease => {}
             UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(_) => {}
-            UpdateType::Offset(_) => {}
-            UpdateType::Drop => {}
             UpdateType::IME(_) => {}
             UpdateType::CreateWindow => {}
+            _ => {}
         }
-        Response::new(&self.id, &self.fill_render.param.rect)
+        let mut width = 0.0;
+        println!("{:?}", ui.draw_rect);
+        let previous_rect = ui.draw_rect.clone();
+        for cell in self.cells.iter_mut() {
+            let resp = cell.update(ui);
+            width += resp.size.dw;
+            ui.draw_rect.add_min_x(resp.size.dw);
+        }
+        ui.draw_rect = previous_rect;
+        Response::new(&self.id, WidgetSize::same(width, self.fill_render.param.rect.height()))
     }
 }
 

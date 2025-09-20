@@ -1,9 +1,8 @@
-use crate::table::cell::TableCell;
-use crate::table::row::{TableRow, TableRowData};
-use crate::table::TableExt;
+use crate::TableExt;
 use crate::ui::Ui;
+use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::column::TableColumn;
-
+use crate::widgets::table::row::{TableRow, TableRowData};
 
 pub type TableHeaderUi = Box<dyn Fn(&mut Ui, &TableColumn) + 'static>;
 pub type TableBodyUi<T> = Box<dyn Fn(&mut Ui, &TableRowData<T>) + 'static>;
@@ -52,17 +51,14 @@ impl<T: TableExt> TableHeader<T> {
         }
     }
 
-    pub fn show(&mut self, ui: &mut Ui) {
-        let mut row = TableRow::new(self.height);
-        row.init(ui, true);
-        let previous_layout = ui.layout.replace(row.layout.take().unwrap()).unwrap();
-        for (column_index, column) in self.columns.iter_mut().enumerate() {
-            let cell = TableCell::new();
-            let tui = &self.uis[column_index];
-            cell.show_header(ui, tui, column);
+    pub fn show(&self, ui: &mut Ui) -> Vec<TableCell> {
+        let mut cells = vec![];
+        for (column_index, column) in self.columns.iter().enumerate() {
+            let mut cell = TableCell::new(column.width(), self.height);
+            cell.show_header(ui, &self.uis[column_index], column);
+            cells.push(cell);
         }
-        row.layout = ui.layout.replace(previous_layout);
-        ui.add(row);
+        cells
     }
 
     pub fn set_hui(&mut self, column: usize, hui: TableHeaderUi) {
