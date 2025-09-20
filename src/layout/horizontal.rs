@@ -161,7 +161,6 @@ impl Layout for HorizontalLayout {
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
                     render.update(ui, false, false);
-                    println!("{:?}", render.param.rect);
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);
                 }
