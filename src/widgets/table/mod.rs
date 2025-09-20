@@ -63,7 +63,8 @@ impl<T: TableExt> TableView<T> {
     pub fn show_rows(&mut self, ui: &mut Ui) {
         let layout: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
         let draw_count = layout.draw_count();
-        let header_row = TableRow::new(&self.header, self.params.row_height());
+        let header_row = TableRow::new(&self.header, self.params.row_height())
+            .with_width(self.rect.width());
         let header_item = header_row.show_header(ui, &self.header);
         println!("2323-{}-{}", header_item.width, header_item.height);
         let layout: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
@@ -71,7 +72,7 @@ impl<T: TableExt> TableView<T> {
         for i in 0..self.params.row_data().len() {
             if i <= draw_count {
                 let row = TableRow::new(&self.header, self.params.row_height())
-                    .show(ui, &self.header, &mut self.params.row_mut(i));
+                    .with_width(self.rect.width()).show(ui, &self.header, &mut self.params.row_mut(i));
                 let layout: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
                 layout.add_item(LayoutItem::Widget(row));
             } else {
@@ -82,7 +83,8 @@ impl<T: TableExt> TableView<T> {
     }
 
     pub fn show(&mut self, ui: &mut Ui) {
-        let layout = RecycleLayout::new().with_item_height(self.params.row_height()).with_size(self.rect.width(), self.rect.height()); //.with_size(self.rect.width()+550.0, self.rect.height());
+        let layout = RecycleLayout::new().with_item_height(self.params.row_height())
+            .with_size(self.rect.width(), self.rect.height()).with_space(0.0);
         let mut area = ScrollWidget::vertical().enable_hscroll().with_layout(layout);
         self.lid = area.id.clone();
         let mut fill_style = ClickStyle::new();

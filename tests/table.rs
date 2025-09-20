@@ -24,7 +24,7 @@ impl TestTable {
         ];
         let mut table_view = TableView::new(columns).with_size(780.0, 600.0);
         let mut data = vec![];
-        for _ in 0..100 {
+        for _ in 0..5 {
             data.push(TableData {});
         }
         table_view.set_data(data);

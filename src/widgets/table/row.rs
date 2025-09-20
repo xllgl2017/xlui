@@ -6,8 +6,8 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
-use crate::widgets::{WidgetKind, WidgetSize};
-use crate::{Offset, Pos, Rect, Widget};
+use crate::widgets::{WidgetChange, WidgetKind, WidgetSize};
+use crate::{Color, FillStyle, Offset, Pos, Rect, Widget};
 use crate::widgets::table::cell::TableCell;
 
 pub struct TableRow {
@@ -27,7 +27,6 @@ impl TableRow {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_height(row_height), ClickStyle::new())),
             cells,
-
             offset: Offset::new(Pos::new()),
         }
     }
@@ -36,8 +35,6 @@ impl TableRow {
         self.fill_render.param.rect.set_width(w);
         self
     }
-
-    pub fn add_row(&mut self) {}
 
     pub(crate) fn init(&mut self, ui: &mut Ui) {
         self.fill_render.init_rectangle(ui, false, false);
@@ -55,14 +52,19 @@ impl TableRow {
             datum.set_column(index);
             cell.show_body(ui, header, datum);
         }
+        if datum.row%2==0 { self.fill_render.param.style.fill=FillStyle::same(Color::rgb(245, 245, 245)) }
 
         let row = WidgetKind::new(ui, self);
         row
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        // let pass = ui.pass.as_mut().unwrap();
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        if ui.widget_changed.contains(WidgetChange::Position) {
+            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.update(ui, false, false);
+        }
+        let pass = ui.pass.as_mut().unwrap();
+        ui.context.render.rectangle.render(&self.fill_render, pass);
     }
 }
 
@@ -70,20 +72,10 @@ impl Widget for TableRow {
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::None => {}
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.init(ui),
-            UpdateType::MouseMove => {}
-            UpdateType::MousePress => {}
-            UpdateType::MouseRelease => {}
-            UpdateType::MouseWheel => {}
-            UpdateType::KeyRelease(_) => {}
-            UpdateType::IME(_) => {}
-            UpdateType::CreateWindow => {}
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             _ => {}
         }
         let mut width = 0.0;
-        println!("{:?}", ui.draw_rect);
         let previous_rect = ui.draw_rect.clone();
         for cell in self.cells.iter_mut() {
             let resp = cell.update(ui);
