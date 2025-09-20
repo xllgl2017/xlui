@@ -1,21 +1,21 @@
 use crate::frame::context::UpdateType;
-use crate::layout::{LayoutKind, VerticalLayout};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
+use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::cell::Cell;
-use crate::{Border, Padding, Rect, Widget};
-use crate::style::color::Color;
+use crate::widgets::WidgetSize;
+use crate::{Border, LayoutKind, Rect, VerticalLayout, Widget};
 
 pub struct Column {
     id: String,
     resize: bool,
     width: f32,
     right_line: RenderParam<RectParam>,
-    cells: Map<Cell>,
+    cells: Map<String, Cell>,
     draw_rect: Rect,
 }
 
@@ -39,7 +39,7 @@ impl Column {
     }
 
     pub fn cell(&mut self, context: impl Fn(&mut Ui) + 'static) {
-        let cell = Cell::new().with_context(Box::new(context));
+        let cell = Cell::new();
         self.add(cell);
     }
 
@@ -55,20 +55,16 @@ impl Column {
 
     pub(crate) fn init(&mut self, ui: &mut Ui, init: bool) {
         if init {
-            let rect = ui.available_rect().clone();
-            let mut layout = VerticalLayout::new().max_rect(rect, Padding::same(0.0));
-            layout.item_space = 0.0;
-            let previous_layout = ui.layout.replace(LayoutKind::Vertical(layout)).unwrap();
+            let layout = VerticalLayout::top_to_bottom().with_space(0.0);
+            let previous_layout = ui.layout.replace(LayoutKind::new(layout)).unwrap();
             for cell in self.cells.iter_mut() {
                 let resp = cell.update(ui);
-                ui.layout().alloc_rect(resp.rect);
             }
             self.draw_rect = ui.layout().drawn_rect();
             if self.width != 0.0 { self.draw_rect.set_width(self.width); }
             self.draw_rect.add_max_x(1.0);
             self.right_line.param.rect = self.draw_rect.clone();
             self.right_line.param.rect.set_x_min(self.right_line.param.rect.dx().max - 1.0);
-            // self.right_line.param.rect.set_x_max(self.draw_rect.dx().max);
             ui.layout.replace(previous_layout).unwrap();
         } else {
             for cell in self.cells.iter_mut() {
@@ -81,9 +77,7 @@ impl Column {
     pub(crate) fn get_cell(&mut self, id: &String) -> Option<&mut Cell> {
         self.cells.get_mut(id)
     }
-}
 
-impl Widget for Column {
     fn redraw(&mut self, ui: &mut Ui) {
         if self.resize {
             let pass = ui.pass.as_mut().unwrap();
@@ -91,9 +85,12 @@ impl Widget for Column {
         }
         self.cells.iter_mut().for_each(|cell| cell.redraw(ui));
     }
+}
 
+impl Widget for Column {
     fn update(&mut self, ui: &mut Ui) -> Response {
         match ui.update_type {
+            UpdateType::Draw => self.redraw(ui),
             UpdateType::None => {}
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
@@ -102,11 +99,10 @@ impl Widget for Column {
             UpdateType::MouseRelease => {}
             UpdateType::MouseWheel => {}
             UpdateType::KeyRelease(_) => {}
-            UpdateType::Offset(_) => {}
-            UpdateType::Drop => {}
             UpdateType::IME(_) => {}
             UpdateType::CreateWindow => {}
+            _ => {}
         }
-        Response::new(&self.id, &self.draw_rect)
+        Response::new(&self.id, WidgetSize::same(self.draw_rect.width(), self.draw_rect.height()))
     }
 }
