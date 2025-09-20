@@ -14,6 +14,7 @@ use crate::{Border, HorizontalLayout, LayoutKind, Padding, Radius, Rect, TableEx
 pub struct TableCell {
     pub(crate) id: String,
     fill_render: RenderParam<RectParam>,
+    cell_line: RenderParam<RectParam>,
     layout: Option<LayoutKind>,
 }
 
@@ -23,10 +24,14 @@ impl TableCell {
         cell_style.fill = FillStyle::same(Color::rgb(235, 235, 235));
         cell_style.border = BorderStyle::same(Border::new(0.0).color(Color::BLUE).radius(Radius::same(0)));
         let layout = HorizontalLayout::left_to_right().with_size(width, height)
-            .with_padding(Padding::same(0.0));
+            .with_padding(Padding::same(0.0).left(5.0));
+        let mut cell_line_style = ClickStyle::new();
+        cell_line_style.fill = FillStyle::same(Color::BLACK);
+        cell_line_style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
         TableCell {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(width, height), cell_style)),
+            cell_line: RenderParam::new(RectParam::new(Rect::new().with_size(1.0, height), cell_line_style)),
             layout: Some(LayoutKind::new(layout)),
         }
     }
@@ -37,6 +42,7 @@ impl TableCell {
         tui.show_header(ui, column);
         self.layout = ui.layout.replace(previous_layout);
         self.fill_render.init_rectangle(ui, false, false);
+        self.cell_line.init_rectangle(ui, false, false);
     }
 
     pub fn show_body<T: TableExt>(&mut self, ui: &mut Ui, header: &TableHeader<T>, row_datum: &TableRowData<T>) {
@@ -46,20 +52,23 @@ impl TableCell {
         tui.show_body(ui, row_datum);
         self.layout = ui.layout.replace(previous_layout);
         if (row_datum.column_index() % 2 == 0 && row_datum.row_index() % 2 != 0) || (row_datum.column_index() % 2 != 0 && row_datum.row_index() % 2 == 0) {
-            self.fill_render.param.style.fill = FillStyle::same(Color::rgb(245,245,245))
+            self.fill_render.param.style.fill = FillStyle::same(Color::rgb(245, 245, 245))
         }
-        // if row_datum.column_index() % 2 == 0 && row_datum.row_index() % 2 != 0 {
-        //
-        // }
+        self.cell_line.init_rectangle(ui, false, false);
         self.fill_render.init_rectangle(ui, false, false);
     }
     fn redraw(&mut self, ui: &mut Ui) {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
+            let mut cell_rect = self.fill_render.param.rect.clone();
+            cell_rect.set_x_min(cell_rect.dx().max - 2.0);
+            self.cell_line.param.rect.offset_to_rect(&cell_rect);
+            self.cell_line.update(ui, false, false);
         }
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        ui.context.render.rectangle.render(&self.cell_line, pass);
         self.layout.as_mut().unwrap().update(ui);
     }
 }
