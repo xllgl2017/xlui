@@ -52,19 +52,19 @@ impl TableRow {
             datum.set_column(index);
             cell.show_body(ui, header, datum);
         }
-        if datum.row%2==0 { self.fill_render.param.style.fill=FillStyle::same(Color::rgb(245, 245, 245)) }
+        if datum.row % 2 == 0 { self.fill_render.param.style.fill = FillStyle::same(Color::rgb(245, 245, 245)) }
 
         let row = WidgetKind::new(ui, self);
         row
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
-        if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
-            self.fill_render.update(ui, false, false);
-        }
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
+        // if ui.widget_changed.contains(WidgetChange::Position) {
+        //     self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+        //     self.fill_render.update(ui, false, false);
+        // }
+        // let pass = ui.pass.as_mut().unwrap();
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
     }
 }
 
@@ -118,6 +118,8 @@ impl<T> TableRowData<T> {
     pub fn column_index(&self) -> usize {
         self.column
     }
+
+    pub fn row_index(&self) -> usize { self.row }
 }
 
 impl<T: TableExt> TableRowData<T> {
