@@ -7,7 +7,7 @@ use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
@@ -42,7 +42,7 @@ pub struct TextEdit {
     cursor_render: EditCursor,
     changed: bool,
     hovered: bool,
-    size_mode: SizeMode,
+    geometry: Geometry,
     char_layout: CharBuffer,
     desire_lines: usize,
     pub(crate) focused: bool,
@@ -68,7 +68,7 @@ impl TextEdit {
             cursor_render: EditCursor::new(),
             changed: false,
             hovered: false,
-            size_mode: SizeMode::FixWidth(200.0),
+            geometry: Geometry::new(),
             char_layout: CharBuffer::new(text),
             desire_lines: 8,
             focused: false,
@@ -101,7 +101,9 @@ impl TextEdit {
     }
 
     pub fn set_width(&mut self, width: f32) {
-        self.size_mode.fix_width(width);
+        self.geometry.set_fix_width(width);
+        &self.char_layout.buffer.geometry.set_fix_width(width);
+        // self.size_mode.fix_width(width);
     }
 
     // pub(crate) fn set_rect(&mut self, rect: Rect) {
@@ -130,20 +132,24 @@ impl TextEdit {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.char_layout.buffer.set_width(self.size_mode.width(200.0) - 6.0);
+        self.char_layout.buffer.geometry.set_fix_width(self.geometry.width() - 6.0);
+        // self.char_layout.buffer.set_width(self.size_mode.width(200.0) - 6.0);
         // self.char_layout.buffer.rect.set_width(194.0);
         // self.char_layout.buffer.size_mode = SizeMode::FixWidth;
         self.char_layout.buffer.init(ui); //计算行高
         let height = self.char_layout.buffer.text.height * self.desire_lines as f32 + 6.0;
-        let (w, h) = self.size_mode.size(200.0, height);
+        self.char_layout.buffer.geometry.set_fix_height(height);
+        self.geometry.set_size(self.char_layout.buffer.geometry.width(), self.char_layout.buffer.geometry.height());
+
+        // let (w, h) = self.size_mode.size(200.0, height);
         // match self.size_mode {
         //     SizeMode::Auto => self.fill_render.param.rect.set_size(200.0, height),
         //     SizeMode::FixWidth => self.fill_render.param.rect.set_height(height),
         //     _ => {}
         // }
         // let mut rect = self.fill_render.param.rect.clone_add_padding(&Padding::same(3.0));
-        self.fill_render.param.rect.set_size(w, h);
-        self.char_layout.buffer.set_height(h);
+        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
+        self.char_layout.buffer.set_height(self.geometry.height());
         // rect.contract_x(2.0);
         // self.char_layout.buffer.rect = rect;
     }
@@ -159,22 +165,24 @@ impl TextEdit {
             text_rect.contract(3.0, 3.0);
             // text_rect.add_min_x(3.0);
             // text_rect.add_min_y(3.0);
-            self.char_layout.buffer.rect.offset_to_rect(&text_rect);
+            self.char_layout.buffer.geometry.set_pos(text_rect.dx().min, text_rect.dy().min);
+            // self.char_layout.buffer.rect.offset_to_rect(&text_rect);
             // println!("{:?}", self.char_layout.buffer.rect);
             // self.cursor_render.min_pos.x = self.char_layout.buffer.rect.dx().min;
             // self.cursor_render.min_pos.y = self.char_layout.buffer.rect.dy().min;
             // self.cursor_render.max_pos.x = self.char_layout.buffer.rect.dx().max;
             // self.cursor_render.max_pos.y = self.char_layout.buffer.rect.dy().max;
-            let mut cursor_rect = self.char_layout.buffer.rect.clone();
+            let mut cursor_rect = self.char_layout.buffer.geometry.rect();
             cursor_rect.set_width(2.0);
             cursor_rect.set_height(self.char_layout.buffer.text.height);
             self.cursor_render.update_position(ui, cursor_rect, &self.char_layout);
-            self.select_render.update_position(ui, self.char_layout.buffer.rect.clone());
+            self.select_render.update_position(ui, self.char_layout.buffer.geometry.rect());
 
-            self.psd_buffer.rect = self.fill_render.param.rect.clone();
-            self.psd_buffer.rect.set_x_min(self.fill_render.param.rect.dx().max - 20.0);
+            self.psd_buffer.geometry.set_pos(self.fill_render.param.rect.dx().max - 20.0, self.fill_render.param.rect.dy().min + 1.0);
+            // self.psd_buffer.rect = self.fill_render.param.rect.clone();
+            // self.psd_buffer.rect.set_x_min(self.fill_render.param.rect.dx().max - 20.0);
             // self.psd_buffer.init(ui);
-            self.psd_buffer.rect.add_min_y(1.0);
+            // self.psd_buffer.rect.add_min_y(1.0);
             // self.cursor_render.set_rect(cursor_rect);
             // self.cursor_render.update(ui);
         }
@@ -200,8 +208,8 @@ impl TextEdit {
             self.reset_size(ui);
             self.char_layout.set_font_size(self.char_layout.buffer.text.font_size());
             self.char_layout.set_line_height(self.char_layout.buffer.text.height);
-            println!("111111111111111-{}-{}", self.char_layout.buffer.rect.width(), self.fill_render.param.rect.width());
-            self.char_layout.set_max_wrap_width(self.char_layout.buffer.rect.width());
+            println!("111111111111111-{}-{}", self.char_layout.buffer.geometry.width(), self.fill_render.param.rect.width());
+            self.char_layout.set_max_wrap_width(self.char_layout.buffer.geometry.width());
             if let EditKind::Password = self.char_layout.edit_kind { self.char_layout.rebuild_text(ui); }
 
             // self.psd_buffer.align = Align::Center;
@@ -212,7 +220,7 @@ impl TextEdit {
         }
         self.fill_render.init_rectangle(ui, false, false);
         self.cursor_render.init(&self.char_layout, ui, init);
-        self.select_render.init(self.desire_lines, &self.char_layout.buffer.rect, self.char_layout.buffer.text.height, ui, init);
+        self.select_render.init(self.desire_lines, &self.char_layout.buffer.geometry.rect(), self.char_layout.buffer.text.height, ui, init);
     }
 
     fn key_input(&mut self, key: Key, ui: &mut Ui) {
@@ -322,7 +330,7 @@ impl Widget for TextEdit {
                 ui.context.window.request_redraw();
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.psd_buffer.rect) && let EditKind::Password = self.char_layout.edit_kind {
+                if ui.device.device_input.click_at(&self.psd_buffer.geometry.rect()) && let EditKind::Password = self.char_layout.edit_kind {
                     self.char_layout.looking = !self.char_layout.looking;
                     self.psd_buffer.update_buffer_text(ui, if self.char_layout.looking { "🔓" } else { "🔒" });
                     self.char_layout.rebuild_text(ui);

@@ -21,8 +21,8 @@ impl ImageTexture {
 
     fn create_bind_group(device: &Device, rgba: Vec<u8>, size: Size, group_layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
         let size = wgpu::Extent3d {
-            width: size.width,
-            height: size.height,
+            width: size.width_u32(),
+            height: size.height_u32(),
             depth_or_array_layers: 1,
         };
         let texture = device.device.create_texture(&wgpu::TextureDescriptor {

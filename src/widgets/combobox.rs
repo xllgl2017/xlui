@@ -1,25 +1,25 @@
+use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::render::rectangle::param::RectParam;
+use crate::render::triangle::param::TriangleParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::{FillStyle, Offset, Pos};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::{FillStyle, Offset, Pos};
-use crate::align::Align;
-use crate::render::triangle::param::TriangleParam;
 
 /// ### ComboBox的示例用法
 ///```
@@ -43,7 +43,7 @@ use crate::render::triangle::param::TriangleParam;
 pub struct ComboBox<T> {
     pub(crate) id: String,
     popup_id: String,
-    size_mode: SizeMode,
+    geometry: Geometry,
     text_buffer: TextBuffer,
     data: Vec<T>,
     popup_rect: Rect,
@@ -68,7 +68,7 @@ impl<T: Display + 'static> ComboBox<T> {
         ComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
-            size_mode: SizeMode::Fix(100.0, 20.0),
+            geometry: Geometry::new(),
             text_buffer: TextBuffer::new("".to_string()).with_align(Align::LeftCenter),
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
@@ -83,14 +83,17 @@ impl<T: Display + 'static> ComboBox<T> {
     }
 
     fn reset_size(&mut self, ui: &mut Ui) {
-        self.text_buffer.size_mode = self.size_mode.clone();
+        // self.text_buffer.size_mode = self.size_mode.clone();
         self.text_buffer.init(ui);
-        let (w, h) = self.size_mode.size(self.fill_render.param.rect.width(), self.fill_render.param.rect.height());
-        self.fill_render.param.rect.set_size(w, h);
+        self.geometry.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
+        // let (w, h) = self.size_mode.size(self.fill_render.param.rect.width(), self.fill_render.param.rect.height());
+        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.size_mode = SizeMode::Fix(width, height);
+        self.geometry.set_fix_size(width, height);
+        self.text_buffer.geometry.set_fix_size(width, height);
+        // self.size_mode = SizeMode::Fix(width, height);
         self
     }
 
@@ -176,9 +179,10 @@ impl<T: Display + 'static> ComboBox<T> {
             self.allow_render.param.offset_to_rect(&allow_rect);
             self.allow_render.update(ui, false, false);
 
-            let mut text_rect = self.fill_render.param.rect.clone();
-            text_rect.add_min_x(2.0);
-            self.text_buffer.rect = text_rect;
+            // let mut text_rect = self.fill_render.param.rect.clone();
+            // text_rect.add_min_x(2.0);
+            // self.text_buffer.rect = text_rect;
+            self.text_buffer.geometry.set_pos(self.fill_render.param.rect.dx().min + 2.0, self.fill_render.param.rect.dy().min);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {

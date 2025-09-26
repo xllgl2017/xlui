@@ -29,7 +29,7 @@ impl TabLabel {
 
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill.param.rect.set_size(if self.text.rect.width() < 50.0 { 50.0 } else { self.text.rect.width() }, self.text.rect.height());
+        self.fill.param.rect.set_size(if self.text.geometry.width() < 50.0 { 50.0 } else { self.text.geometry.width() }, self.text.geometry.height());
         println!("{:?}", self.fill.param.rect);
         self.fill.init_rectangle(ui, false, false);
     }
@@ -41,7 +41,8 @@ impl TabLabel {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill.param.rect.offset_to_rect(&ui.draw_rect);
             ui.widget_changed |= WidgetChange::Value;
-            self.text.rect.offset_to_rect(&ui.draw_rect);
+            self.text.geometry.set_pos(ui.draw_rect.dx().min, ui.draw_rect.dy().min);
+            // self.text.rect.offset_to_rect(&ui.draw_rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.fill.update(ui, false, false);

@@ -1,8 +1,8 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::response::Response;
-use crate::text::rich::RichText;
 use crate::text::buffer::TextBuffer;
+use crate::text::rich::RichText;
 use crate::text::TextWrap;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
@@ -90,7 +90,8 @@ impl Label {
             ui.widget_changed |= WidgetChange::Value;
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.buffer.rect.offset_to_rect(&ui.draw_rect);
+            self.buffer.geometry.set_pos(ui.draw_rect.dx().min, ui.draw_rect.dy().min);
+            // self.buffer.rect.offset_to_rect(&ui.draw_rect);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
@@ -113,6 +114,6 @@ impl Widget for Label {
             UpdateType::Draw => self.redraw(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.buffer.rect.width(), self.buffer.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.buffer.geometry.width(), self.buffer.geometry.height()))
     }
 }

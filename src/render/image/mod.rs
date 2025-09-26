@@ -227,7 +227,7 @@ pub fn load_image_file(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(not(target_os = "windows"))]
     let img = image::open(fp)?;
     #[cfg(not(target_os = "windows"))]
-    Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
+    Ok((img.to_rgba8().to_vec(), (img.width(), img.height()).into()))
 }
 
 
@@ -239,5 +239,5 @@ pub fn load_image_bytes(bytes: &[u8]) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(not(target_os = "windows"))]
     let img = image::load_from_memory(bytes)?;
     #[cfg(not(target_os = "windows"))]
-    Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
+    Ok((img.to_rgba8().to_vec(), (img.width(), img.height()).into()))
 }

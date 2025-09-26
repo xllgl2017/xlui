@@ -102,7 +102,7 @@ impl X11Window {
             let child = xlib::XCreateWindow(
                 self.display,
                 self.root,
-                attr.position[0], attr.position[1], attr.inner_size.width, attr.inner_size.height,
+                attr.position[0], attr.position[1], attr.inner_size.width_u32(), attr.inner_size.height_u32(),
                 1,
                 self.visual_info.depth,
                 xlib::InputOutput as u32,
@@ -186,10 +186,10 @@ impl X11Window {
                 }
                 xlib::ConfigureNotify => {
                     let xcfg: xlib::XConfigureEvent = event.configure;
-                    let new_w = xcfg.width as u32;
-                    let new_h = xcfg.height as u32;
+                    let new_w = xcfg.width as f32;
+                    let new_h = xcfg.height as f32;
                     let mut size = self.size.write().unwrap();
-                    if new_w == 0 || new_h == 0 {
+                    if new_w == 0.0 || new_h == 0.0 {
                         // ignore weird zero sizes
                     } else if new_w != size.width || new_h != size.height {
                         size.width = new_w;

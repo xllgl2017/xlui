@@ -2,7 +2,7 @@ use crate::frame::context::UpdateType;
 use crate::render::image::ImageSource;
 use crate::response::Response;
 use crate::size::rect::Rect;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::ui::Ui;
 use crate::vertex::ImageVertex;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
@@ -36,7 +36,7 @@ pub struct Image {
     id: String,
     source: ImageSource,
     pub(crate) rect: Rect,
-    size_mode: SizeMode,
+    geometry: Geometry,
 
     vertices: Vec<ImageVertex>,
     vertex_buffer: Option<wgpu::Buffer>,
@@ -50,7 +50,7 @@ impl Image {
             id: crate::gen_unique_id(),
             source: source.into(),
             rect: Rect::new(),
-            size_mode: SizeMode::Auto,
+            geometry: Geometry::new(),
             vertices: vec![],
             vertex_buffer: None,
             index_buffer: None,
@@ -59,8 +59,8 @@ impl Image {
     }
 
     fn reset_size(&mut self, size: Size) {
-        let (w, h) = self.size_mode.size(size.width as f32, size.height as f32);
-        self.rect.set_size(w, h);
+        self.geometry.set_size(size.width, size.height);
+        self.rect.set_size(self.geometry.width(), self.geometry.height());
         // match self.size_mode {
         //     SizeMode::Auto => self.rect.set_size(size.width as f32, size.height as f32),
         //     SizeMode::FixWidth => {
@@ -81,12 +81,12 @@ impl Image {
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.size_mode = SizeMode::Fix(width, height);
+        self.set_size(width, height);
         self
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
-        self.size_mode = SizeMode::Fix(width, height);
+        self.geometry.set_fix_size(width, height);
     }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {
@@ -161,18 +161,11 @@ impl Image {
 }
 
 impl Widget for Image {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
-            // UpdateType::Offset(ref o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.rect); }
-            //     self.rect.offset(o);
-            //     self.changed = true;
-            // }
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))

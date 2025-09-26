@@ -1,3 +1,4 @@
+use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -6,7 +7,7 @@ use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
@@ -14,7 +15,6 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::align::Align;
 
 /// ### SelectItem的示例用法
 /// ```
@@ -39,7 +39,7 @@ pub struct SelectItem<T> {
     pub(crate) id: String,
     text: TextBuffer,
     padding: Padding,
-    size_mode: SizeMode,
+    geometry: Geometry,
     value: T,
     parent_selected: Arc<RwLock<Option<String>>>,
     fill_render: RenderParam<RectParam>,
@@ -63,7 +63,7 @@ impl<T: Display> SelectItem<T> {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(value.to_string()).with_align(Align::Center),
             padding: Padding::same(2.0),
-            size_mode: SizeMode::Auto,
+            geometry: Geometry::new(),
             value,
             parent_selected: Arc::new(RwLock::new(None)),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
@@ -75,10 +75,13 @@ impl<T: Display> SelectItem<T> {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.size_mode = self.size_mode.clone();
+        self.text.geometry.add_fix_width(self.padding.horizontal());
+        self.text.geometry.add_fix_height(self.padding.vertical());
+        // self.text.size_mode = self.size_mode.clone();
         self.text.init(ui);
-        let (w, h) = self.size_mode.size(self.text.rect.width() + self.padding.horizontal(), self.text.rect.height() + self.padding.vertical());
-        self.fill_render.param.rect.set_size(w, h);
+        self.geometry.set_size(self.text.geometry.width(), self.text.geometry.height());
+        // let (w, h) = self.size_mode.size(self.text.rect.width() + self.padding.horizontal(), self.text.rect.height() + self.padding.vertical());
+        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
         // match self.size_mode {
         //     SizeMode::Auto => {
         //         let width = self.text.rect.width() + self.padding.horizontal();
@@ -94,7 +97,9 @@ impl<T: Display> SelectItem<T> {
 
     pub fn set_size(&mut self, width: f32, height: f32) {
         // self.fill_render.param.rect.set_size(width, height);
-        self.size_mode = SizeMode::Fix(width, height);
+        // self.size_mode = SizeMode::Fix(width, height);
+        self.geometry.set_fix_size(width, height);
+        self.text.geometry.set_fix_size(width, height);
     }
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
@@ -156,7 +161,8 @@ impl<T: Display> SelectItem<T> {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
-            self.text.rect.offset_to_rect(&ui.draw_rect);
+            self.text.geometry.set_pos(ui.draw_rect.dx().min + self.padding.left, ui.draw_rect.dy().min + self.padding.top);
+            // self.text.rect.offset_to_rect(&ui.draw_rect);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
