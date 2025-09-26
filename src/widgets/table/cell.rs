@@ -26,7 +26,7 @@ impl TableCell {
         let layout = HorizontalLayout::left_to_right().with_size(width, height)
             .with_padding(Padding::same(0.0).left(5.0));
         let mut cell_line_style = ClickStyle::new();
-        cell_line_style.fill = FillStyle::same(Color::BLACK);
+        cell_line_style.fill = FillStyle::same(Color::rgb(160, 160, 160));
         cell_line_style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
         TableCell {
             id: crate::gen_unique_id(),
@@ -77,6 +77,16 @@ impl Widget for TableCell {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
+            UpdateType::MouseMove => {
+                let mut rect = self.cell_line.param.rect.clone();
+                rect.add_min_x(-2.0);
+                rect.add_max_x(2.0);
+                if ui.device.device_input.hovered_at(&rect) {
+                    self.cell_line.param.style.border.inactive.width = 2.0;
+                    self.cell_line.update(ui, false, false);
+                    ui.context.window.request_redraw();
+                }
+            }
             _ => {}
         }
         self.layout.as_mut().unwrap().update(ui);
