@@ -201,14 +201,58 @@ pub struct Device {
     pub surface: wgpu::Surface<'static>,
 }
 
+#[derive(Clone, Debug)]
+pub struct MousePos {
+    relative: Pos,
+    absolute: Pos,
+}
+
+impl MousePos {
+    pub fn new() -> MousePos {
+        MousePos {
+            relative: Pos::new(),
+            absolute: Pos::new(),
+        }
+    }
+}
+
+impl From<(Pos, Pos)> for MousePos {
+    fn from((relative, absolute): (Pos, Pos)) -> Self {
+        Self { relative, absolute }
+    }
+}
+
+impl From<(f32, f32, f32, f32)> for MousePos {
+    fn from(value: (f32, f32, f32, f32)) -> Self {
+        MousePos {
+            relative: Pos {
+                x: value.0,
+                y: value.1,
+            },
+            absolute: Pos {
+                x: value.2,
+                y: value.3,
+            },
+        }
+    }
+}
+
+impl From<(i32, i32, i32, i32)> for MousePos {
+    fn from(value: (i32, i32, i32, i32)) -> Self {
+        MousePos {
+            relative: Pos { x: value.0 as f32, y: value.1 as f32 },
+            absolute: Pos { x: value.2 as f32, y: value.3 as f32 },
+        }
+    }
+}
+
 pub struct MouseInput {
-    lastest: Pos,
-    lastest_a: Pos,
-    previous: Pos,
+    lastest: MousePos,
+    previous: MousePos,
     delta: (f32, f32),
 
     pressed: bool,
-    pressed_pos: Pos,
+    pressed_pos: MousePos,
     pressed_time: u128,
 
     clicked: AtomicBool,
@@ -221,29 +265,28 @@ impl MouseInput {
     }
 
     pub fn offset_x(&self) -> f32 {
-        self.lastest.x - self.previous.x
+        self.lastest.relative.x - self.previous.relative.x
     }
 
     pub fn offset_y(&self) -> f32 {
-        self.lastest.y - self.previous.y
+        self.lastest.relative.y - self.previous.relative.y
     }
 
     pub fn x(&self) -> f32 {
-        self.lastest.x
+        self.lastest.relative.x
     }
 
     pub fn y(&self) -> f32 {
-        self.lastest.y
+        self.lastest.relative.y
     }
 
-    pub fn update(&mut self, pos: Pos, ap: Pos) {
+    pub fn update(&mut self, pos: MousePos) {
         self.previous = self.lastest.clone();
-        self.lastest_a = ap;
         self.lastest = pos;
     }
 
     pub fn lastest(&self) -> &Pos {
-        &self.lastest
+        &self.lastest.relative
     }
 
     pub fn delta_x(&self) -> f32 { self.delta.0 }
@@ -277,11 +320,10 @@ impl DeviceInput {
     pub fn new() -> DeviceInput {
         DeviceInput {
             mouse: MouseInput {
-                lastest: Pos::new(),
-                lastest_a: Pos::new(),
-                previous: Pos::new(),
+                lastest: MousePos::new(),
+                previous: MousePos::new(),
                 delta: (0.0, 0.0),
-                pressed_pos: Pos::new(),
+                pressed_pos: MousePos::new(),
                 pressed: false,
                 clicked: AtomicBool::new(false),
                 pressed_time: 0,
@@ -293,19 +335,19 @@ impl DeviceInput {
     pub fn click_at(&self, rect: &Rect) -> bool {
         if !self.mouse.clicked.load(Ordering::SeqCst) { return false; }
 
-        let press = rect.has_position(self.mouse.pressed_pos);
-        let release = rect.has_position(self.mouse.lastest);
+        let press = rect.has_position(self.mouse.pressed_pos.relative);
+        let release = rect.has_position(self.mouse.lastest.relative);
         self.mouse.clicked.store(!(press && release), Ordering::SeqCst);
         press && release
     }
 
     pub fn pressed_at(&self, rect: &Rect) -> bool {
         if !self.mouse.pressed { return false; }
-        rect.has_position(self.mouse.pressed_pos)
+        rect.has_position(self.mouse.pressed_pos.relative)
     }
 
     pub fn hovered_at(&self, rect: &Rect) -> bool {
-        rect.has_position(self.mouse.lastest)
+        rect.has_position(self.mouse.lastest.relative)
     }
 }
 

@@ -204,7 +204,7 @@ impl Widget for Slider {
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => { //滑动
                 if self.focused && ui.device.device_input.mouse.pressed {
-                    let ox = ui.device.device_input.mouse.lastest.x - self.fill_render.param.rect.dx().min;
+                    let ox = ui.device.device_input.mouse.lastest.relative.x - self.fill_render.param.rect.dx().min;
                     let mut cl = ox / self.fill_render.param.rect.width();
                     if cl >= 1.0 {
                         self.offset = self.fill_render.param.rect.width();

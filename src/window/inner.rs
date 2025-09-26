@@ -170,7 +170,7 @@ impl InnerWindow {
                     self.fill_render.param.rect.offset(&Offset::new(Pos::new()).with_x(ox).with_y(oy).covered());
                     self.offset.x += ox;
                     self.offset.y += oy;
-                    self.offset.pos = ui.device.device_input.mouse.lastest;
+                    self.offset.pos = ui.device.device_input.mouse.lastest.relative;
                     // ui.update_type = UpdateType::Offset(self.offset.clone());
                     // ui.can_offset = true;
                     self.changed = true;

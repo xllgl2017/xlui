@@ -314,7 +314,7 @@ impl Widget for TextEdit {
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
                     // ui.context.window.win32().request_ime();
-                    let pos = ui.device.device_input.mouse.lastest;
+                    let pos = ui.device.device_input.mouse.lastest.relative;
                     self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);
                 }

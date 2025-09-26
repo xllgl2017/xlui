@@ -100,7 +100,7 @@ impl EditSelection {
     }
 
     pub fn move_select(&mut self, ui: &mut Ui, cursor: &mut EditCursor, cchar: &mut CharBuffer) {
-        let pos = ui.device.device_input.mouse.lastest;
+        let pos = ui.device.device_input.mouse.lastest.relative;
         cursor.update_by_pos(pos, cchar);
         // println!("move_select-{:?}-{}-{}-{}-{}", pos, cursor.horiz, cursor.vert, self.start_horiz, self.start_vert);
         if cursor.vert > self.start_vert { //向下选择

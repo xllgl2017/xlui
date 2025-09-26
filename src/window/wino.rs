@@ -81,8 +81,8 @@ impl EventLoopHandle for LoopWindow {
             WindowEvent::None => {}
             WindowEvent::KeyPress(key) => self.app_ctx.update(UpdateType::KeyPress(key), &mut self.app),
             WindowEvent::KeyRelease(key) => self.app_ctx.update(UpdateType::KeyRelease(key), &mut self.app),
-            WindowEvent::MouseMove(pos, ap) => {
-                self.app_ctx.device.device_input.mouse.update(pos, ap);
+            WindowEvent::MouseMove(pos) => {
+                self.app_ctx.device.device_input.mouse.update(pos);
                 self.app_ctx.update(UpdateType::MouseMove, &mut self.app);
             }
             WindowEvent::MouseWheel(y) => {
@@ -91,12 +91,12 @@ impl EventLoopHandle for LoopWindow {
                 self.app_ctx.device.device_input.mouse.delta = (0.0, 0.0);
             }
             WindowEvent::MousePress(pos) => {
-                self.app_ctx.device.device_input.mouse.lastest = pos;
+                self.app_ctx.device.device_input.mouse.lastest.relative = pos;
                 self.app_ctx.device.device_input.mouse.mouse_press();
                 self.app_ctx.update(UpdateType::MousePress, &mut self.app);
             }
             WindowEvent::MouseRelease(pos) => {
-                self.app_ctx.device.device_input.mouse.lastest = pos;
+                self.app_ctx.device.device_input.mouse.lastest.relative = pos;
                 self.app_ctx.device.device_input.mouse.mouse_release();
                 self.app_ctx.update(UpdateType::MouseRelease, &mut self.app);
                 self.app_ctx.device.device_input.mouse.a = 0.0;

@@ -176,16 +176,16 @@ impl Layout for HorizontalLayout {
                 }
                 if let UpdateType::MousePress = ui.update_type {
                     self.pressed = ui.device.device_input.pressed_at(&ui.draw_rect);
-                    self.press_pos.x = ui.device.device_input.mouse.lastest.x - ui.draw_rect.dx().min;
-                    self.press_pos.y = ui.device.device_input.mouse.lastest.y - ui.draw_rect.dy().min;
+                    self.press_pos.x = ui.device.device_input.mouse.lastest.relative.x - ui.draw_rect.dx().min;
+                    self.press_pos.y = ui.device.device_input.mouse.lastest.relative.y - ui.draw_rect.dy().min;
                 }
                 if let UpdateType::MouseRelease = ui.update_type {
                     self.pressed = false;
                 }
                 if let UpdateType::Draw = ui.update_type && self.window && self.pressed {
-                    println!("{:?}", ui.device.device_input.mouse.lastest);
-                    let x = ui.device.device_input.mouse.lastest_a.x - self.press_pos.x;
-                    let y = ui.device.device_input.mouse.lastest_a.y - self.press_pos.y;
+                    println!("{:?}", ui.device.device_input.mouse.lastest.relative);
+                    let x = ui.device.device_input.mouse.lastest.absolute.x - self.press_pos.x;
+                    let y = ui.device.device_input.mouse.lastest.absolute.y - self.press_pos.y;
                     ui.context.window.x11().move_window(x, y);
                 }
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {

@@ -1,4 +1,4 @@
-use crate::{Pos, Size};
+use crate::{MousePos, Pos, Size};
 use crate::key::Key;
 use crate::window::ClipboardData;
 use crate::window::ime::IMEData;
@@ -8,7 +8,7 @@ pub enum WindowEvent {
     None,
     KeyPress(Key),
     KeyRelease(Key),
-    MouseMove(Pos, Pos),
+    MouseMove(MousePos),
     MouseWheel(f32),
     MousePress(Pos),
     MouseRelease(Pos),

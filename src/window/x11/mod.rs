@@ -285,10 +285,8 @@ impl X11Window {
                     } else {
                         let mut x: i32 = 0;
                         let mut y: i32 = 0;
-                        unsafe {
-                            xlib::XQueryPointer(self.display, self.root, &mut event.button.root, &mut event.button.subwindow, &mut x, &mut y, &mut event.button.x, &mut event.button.y, &mut event.button.state);
-                        }
-                        (window.id, WindowEvent::MouseMove((xm.x, xm.y).into(), (x, y).into()))
+                        xlib::XQueryPointer(self.display, self.root, &mut event.button.root, &mut event.button.subwindow, &mut x, &mut y, &mut event.button.x, &mut event.button.y, &mut event.button.state);
+                        (window.id, WindowEvent::MouseMove((xm.x, xm.y, x, y).into()))
                     };
                 }
                 xlib::SelectionRequest => window.x11().clipboard.handle_request(&event).unwrap(),
