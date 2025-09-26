@@ -18,7 +18,7 @@ impl Font {
         let mut font_system = glyphon::FontSystem::new();
         let face = font_system.db().faces().find(|x| {
             for (font_family, _) in &x.families {
-                if font_family.contains(family) { return true; };
+                if font_family == family { return true; };
             }
             false
         }).unwrap();
