@@ -74,7 +74,7 @@ impl TableCell {
 }
 
 impl Widget for TableCell {
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             _ => {}

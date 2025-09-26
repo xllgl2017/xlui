@@ -1,14 +1,14 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
 use crate::response::Response;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
+use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
-use crate::widgets::{WidgetChange, WidgetKind, WidgetSize};
+use crate::widgets::{WidgetKind, WidgetSize};
 use crate::{Color, FillStyle, Offset, Pos, Rect, Widget};
-use crate::widgets::table::cell::TableCell;
 
 pub struct TableRow {
     id: String,
@@ -57,21 +57,11 @@ impl TableRow {
         let row = WidgetKind::new(ui, self);
         row
     }
-
-    fn redraw(&mut self, ui: &mut Ui) {
-        // if ui.widget_changed.contains(WidgetChange::Position) {
-        //     self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
-        //     self.fill_render.update(ui, false, false);
-        // }
-        // let pass = ui.pass.as_mut().unwrap();
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
-    }
 }
 
 impl Widget for TableRow {
-    fn update(&mut self, ui: &mut Ui) -> Response {
+    fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
-            UpdateType::Draw => self.redraw(ui),
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             _ => {}
         }

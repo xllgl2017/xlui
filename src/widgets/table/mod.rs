@@ -46,7 +46,7 @@ impl<T: TableExt> TableView<T> {
         self
     }
 
-    pub fn with_size(mut self, width: f32, height: f32) -> Self {
+    pub fn with_size(self, width: f32, height: f32) -> Self {
         self.with_width(width).with_height(height)
     }
 
