@@ -169,9 +169,9 @@ impl Layout for HorizontalLayout {
                 }
             }
             _ => {
+                let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
+                ui.draw_rect.set_size(w, h);
                 if let UpdateType::MouseMove = ui.update_type && self.window && self.pressed {
-                    // let (ox, oy) = ui.device.device_input.mouse.offset();
-
                     ui.context.window.request_redraw();
                 }
                 if let UpdateType::MousePress = ui.update_type {
@@ -183,7 +183,6 @@ impl Layout for HorizontalLayout {
                     self.pressed = false;
                 }
                 if let UpdateType::Draw = ui.update_type && self.window && self.pressed {
-                    println!("{:?}", ui.device.device_input.mouse.lastest.relative);
                     let x = ui.device.device_input.mouse.lastest.absolute.x - self.press_pos.x;
                     let y = ui.device.device_input.mouse.lastest.absolute.y - self.press_pos.y;
                     ui.context.window.x11().move_window(x, y);
@@ -194,8 +193,7 @@ impl Layout for HorizontalLayout {
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);
                 }
-                let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
-                ui.draw_rect.set_size(w, h);
+
                 //设置布局padding
                 ui.draw_rect.add_min_x(self.padding.left);
                 ui.draw_rect.add_min_y(self.padding.top);
