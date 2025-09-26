@@ -217,4 +217,9 @@ impl TextBuffer {
         self.rect.set_height(height);
         self.size_mode.fix_height(height);
     }
+
+    pub fn height(mut self, height: f32) -> Self {
+        self.set_height(height);
+        self
+    }
 }
