@@ -1,6 +1,6 @@
 use crate::frame::context::{Render, UpdateType};
 use crate::frame::App;
-use crate::{Pos, Size};
+use crate::Size;
 use glyphon::Viewport;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -158,7 +158,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                 }
             }
             WindowEvent::CursorMoved { position, .. } => {
-                window.app_ctx.device.device_input.mouse.update(Pos { x: position.x as f32, y: position.y as f32 });
+                window.app_ctx.device.device_input.mouse.update((position.x, position.y).into());
                 window.app_ctx.update(UpdateType::MouseMove, &mut window.app);
             }
             WindowEvent::KeyboardInput { device_id: _device_id, event, .. } => {

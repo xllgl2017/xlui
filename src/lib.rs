@@ -138,14 +138,6 @@ impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 const SAMPLE_COUNT: u32 = 4;
 
-// #[deprecated]
-// #[derive(Clone, Debug)]
-// enum OffsetDirection {
-//     Down,
-//     Left,
-//     Right,
-//     Up,
-// }
 
 #[derive(Clone, Debug)]
 pub struct Offset {
@@ -153,8 +145,6 @@ pub struct Offset {
     x: f32,
     y: f32,
     covered: bool,
-    // direction: OffsetDirection,
-    // target_id: String,
 }
 
 impl Offset {
@@ -164,8 +154,6 @@ impl Offset {
             x: 0.0,
             y: 0.0,
             covered: false,
-            // direction: OffsetDirection::Down,
-            // target_id: "".to_string(),
         }
     }
 
@@ -242,6 +230,18 @@ impl From<(i32, i32, i32, i32)> for MousePos {
         MousePos {
             relative: Pos { x: value.0 as f32, y: value.1 as f32 },
             absolute: Pos { x: value.2 as f32, y: value.3 as f32 },
+        }
+    }
+}
+
+impl From<(f64, f64)> for MousePos {
+    fn from(value: (f64, f64)) -> Self {
+        MousePos {
+            relative: Pos {
+                x: value.0 as f32,
+                y: value.1 as f32,
+            },
+            absolute: Pos::new(),
         }
     }
 }

@@ -152,7 +152,6 @@ impl Layout for VerticalLayout {
                 }
                 if let Some(ref mut render) = self.fill_render {
                     let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
-                    println!("{} {} {}  {}", dw, dh, self.marin.horizontal(), self.marin.vertical());
                     render.param.rect.set_size(dw - self.marin.horizontal(), dh - self.marin.vertical());
                     render.init_rectangle(ui, false, false);
                 }

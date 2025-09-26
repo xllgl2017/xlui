@@ -182,6 +182,7 @@ impl Layout for HorizontalLayout {
                 if let UpdateType::MouseRelease = ui.update_type {
                     self.pressed = false;
                 }
+                #[cfg(not(feature = "winit"))]
                 if let UpdateType::Draw = ui.update_type && self.window && self.pressed {
                     let x = ui.device.device_input.mouse.lastest.absolute.x - self.press_pos.x;
                     let y = ui.device.device_input.mouse.lastest.absolute.y - self.press_pos.y;
