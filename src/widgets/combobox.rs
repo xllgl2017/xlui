@@ -160,7 +160,7 @@ impl<T: Display + 'static> ComboBox<T> {
             }
 
             let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
-            popup.toggle();
+            popup.request_state(false);
         }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
