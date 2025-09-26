@@ -1,8 +1,8 @@
-use crate::TableExt;
 use crate::ui::Ui;
 use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::column::TableColumn;
-use crate::widgets::table::row::{TableRow, TableRowData};
+use crate::widgets::table::row::TableRowData;
+use crate::TableExt;
 
 pub type TableHeaderUi = Box<dyn Fn(&mut Ui, &TableColumn) + 'static>;
 pub type TableBodyUi<T> = Box<dyn Fn(&mut Ui, &TableRowData<T>) + 'static>;
