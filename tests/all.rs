@@ -1,12 +1,14 @@
 mod shape;
 mod align;
 mod layout;
+mod tabs;
 
 use std::fmt::{Display, Formatter};
 use xlui::*;
 use crate::align::TestAlign;
 use crate::layout::TestLayout;
 use crate::shape::TestShape;
+use crate::tabs::TestTabWidget;
 
 #[derive(PartialEq)]
 enum TestKind {
@@ -15,6 +17,7 @@ enum TestKind {
     Align,
     ChildWindow,
     Layout,
+    TabWidget,
 }
 
 impl Display for TestKind {
@@ -25,6 +28,7 @@ impl Display for TestKind {
             TestKind::Align => f.write_str("Align"),
             TestKind::ChildWindow => f.write_str("ChildWindow"),
             TestKind::Layout => f.write_str("Layout"),
+            TestKind::TabWidget => f.write_str("TabWidget"),
         }
     }
 }
@@ -66,6 +70,10 @@ impl XlUi {
     fn open_test_layout(&mut self, _: &mut Button, ui: &mut Ui) {
         ui.create_inner_window(TestLayout {});
     }
+
+    fn open_tab_widget(&mut self, _: &mut Button, ui: &mut Ui) {
+        ui.create_inner_window(TestTabWidget::new());
+    }
 }
 
 impl App for XlUi {
@@ -76,6 +84,7 @@ impl App for XlUi {
             ui.button(TestKind::Align).set_callback(Self::open_test_align);
             ui.button(TestKind::ChildWindow).set_callback(Self::open_child_window);
             ui.button(TestKind::Layout).set_callback(Self::open_test_layout);
+            ui.button(TestKind::TabWidget).set_callback(Self::open_tab_widget);
         });
     }
     fn window_attributes(&self) -> WindowAttribute {
