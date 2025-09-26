@@ -69,7 +69,7 @@ impl<T: Display + 'static> ComboBox<T> {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
             size_mode: SizeMode::Fix(100.0, 20.0),
-            text_buffer: TextBuffer::new("123456".to_string()).with_align(Align::LeftCenter),
+            text_buffer: TextBuffer::new("".to_string()).with_align(Align::LeftCenter),
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
             callback: None,
@@ -192,6 +192,14 @@ impl<T: Display + 'static> ComboBox<T> {
         ui.context.render.rectangle.render(&self.fill_render, pass);
         ui.context.render.triangle.render(&self.allow_render, pass);
         self.text_buffer.redraw(ui);
+    }
+
+    ///初始化时设置当前item，默认为None
+    pub fn with_current_index(mut self, index: usize) -> Self {
+        let current = self.data[index].to_string();
+        self.text_buffer.set_text(current.clone());
+        *self.selected.write().unwrap() = Some(current);
+        self
     }
 }
 

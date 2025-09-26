@@ -22,6 +22,7 @@ pub mod space;
 pub mod processbar;
 pub mod triangle;
 pub mod circle;
+pub(crate) mod tab;
 
 pub trait Widget: Any {
     // #[deprecated="use Widget::update"]

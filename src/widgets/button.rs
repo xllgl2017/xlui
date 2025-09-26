@@ -105,35 +105,6 @@ impl Button {
             self.text_buffer.set_width(self.text_buffer.rect.width() - ih);
             self.text_buffer.init(ui);
         }
-
-        // self.text_buffer.rect.set_size(self.text_buffer.text.width, self.text_buffer.text.height);
-        // match self.size_mode {
-        //     SizeMode::Auto => {
-        //         let width = self.text_buffer.rect.width() + self.padding.horizontal();
-        //         let height = self.text_buffer.rect.height() + self.padding.vertical();
-        //         self.fill_render.param.rect.set_size(width, height);
-        //     }
-        //     SizeMode::FixWidth => self.fill_render.param.rect.set_height(self.text_buffer.rect.height()),
-        //     SizeMode::FixHeight => self.fill_render.param.rect.set_width(self.text_buffer.rect.width()),
-        //     SizeMode::Fix => {
-        //         self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
-        //         println!("text {:?}", self.text_buffer.rect);
-        //     }
-        // }
-        // self.text_buffer.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
-        // if self.image.is_some() {
-        //     self.fill_render.param.rect.set_width(self.fill_render.param.rect.width() + self.fill_render.param.rect.height());
-        //     // self.text_buffer.rect.add_min_x(self.fill_render.param.rect.height());
-        //     // self.text_buffer.rect.add_max_x(self.fill_render.param.rect.height());
-        //     // self.image_rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
-        //     // self.image_rect.add_min_x(self.padding.left);
-        //     // self.image_rect.add_max_x(self.padding.left);
-        //     // self.image_rect.add_min_y(self.padding.top);
-        //     // self.image_rect.add_max_y(self.padding.top);
-        //     // self.image_rect.set_width(self.image_rect.height() - self.padding.vertical());
-        //     // self.image_rect.set_height(self.image_rect.height() - self.padding.vertical());
-        // }
-        // self.text_buffer.init(ui);
     }
 
 
