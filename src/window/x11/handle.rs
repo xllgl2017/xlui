@@ -10,7 +10,6 @@ use std::ptr::NonNull;
 use std::sync::Arc;
 use x11::xlib;
 use x11::xlib::XMoveWindow;
-use crate::{Pos, Size};
 use crate::error::UiResult;
 
 pub struct X11WindowHandle {
@@ -19,34 +18,17 @@ pub struct X11WindowHandle {
     pub(crate) update_atom: xlib::Atom,
     pub(crate) screen: i32,
     pub(crate) clipboard: X11ClipBoard,
-    size: RefCell<Size>,
-    pos: RefCell<Pos>,
-    update: RefCell<bool>,
 }
 
 
 impl X11WindowHandle {
     pub fn new(display: *mut xlib::Display, window: xlib::Window, update_atom: xlib::Atom, screen: i32) -> UiResult<X11WindowHandle> {
-        let mut x = 0;
-        let mut y = 0;
-        let mut width = 0;
-        let mut height = 0;
-        let mut border_width = 0;
-        let mut depth = 0;
-        unsafe {
-            let mut root = xlib::XRootWindow(display, screen);
-            xlib::XGetGeometry(display, window, &mut root, &mut x, &mut y, &mut width, &mut height, &mut border_width, &mut depth);
-        }
-        println!("x:{}; y={}; width:{}; height={}", x, y, width, height);
         Ok(X11WindowHandle {
             display,
             window,
             update_atom,
             screen,
             clipboard: X11ClipBoard::new(display)?,
-            size: RefCell::new(Size { width: width as u32, height: height as u32 }),
-            pos: RefCell::new(Pos { x: x as f32, y: y as f32 }),
-            update: RefCell::new(false),
         })
     }
 
@@ -116,26 +98,7 @@ impl X11WindowHandle {
 
     pub fn move_window(&self, x: f32, y: f32) {
         unsafe { XMoveWindow(self.display, self.window, x as i32, y as i32) };
-        // let mut x: i32 = 0;
-        // let mut y: i32 = 0;
-        // unsafe {
-        //     let root = xlib::XRootWindow(self.display, self.screen);
-        //     xlib::XQueryPointer(self.display, root, &mut event.xbutton.root, &mut event.xbutton.subwindow, &mut x, &mut y, &mut event.xbutton.x, &mut event.xbutton.y, &mut event.xbutton.state);
-        // }
-        // // 更新窗口位置
-        // unsafe {
-        //     XMoveWindow(display, window, x, y);
-        // }
-        // let mut pos = self.pos.borrow_mut();
-        // println!("move {:?} {} {}", pos, ox, oy);
-        // pos.offset(ox, oy);
     }
-
-    // pub fn update(&self) {
-    //     let pos = self.pos.borrow();
-    //     // println!("update {:?}", pos);
-    //     unsafe { XMoveWindow(self.display, self.window, pos.x as i32, pos.y as i32) };
-    // }
 }
 
 impl Drop for X11WindowHandle {
