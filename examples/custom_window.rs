@@ -31,14 +31,14 @@ impl App for XlUiApp {
                 spread: 5.0,
                 color: Color::rgba(0, 0, 0, 100),
             },
-            border: Border::new(2.0).color(Color::rgb(170, 210, 255)),
+            border: Border::new(2.0).color(Color::rgb(150, 210, 255)),
         };
         let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
         layout.set_padding(Padding::same(2.0));
         layout.set_margin(Margin::same(0.0));
         layout.set_style(style);
         let title_layout = HorizontalLayout::left_to_right().with_size(296.0, 25.0)
-            .with_fill(Color::rgb(210, 210, 210));
+            .with_fill(Color::rgb(210, 210, 210)).moving();
         ui.add_layout(title_layout, |ui| {
             ui.image("logo.jpg", (25.0, 25.0));
             ui.add(Label::new("自定义标题栏").align(Align::Center).height(25.0));

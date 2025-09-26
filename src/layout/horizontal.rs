@@ -49,6 +49,9 @@ pub struct HorizontalLayout {
     padding: Padding,
     offset: Offset,
     fill_render: Option<RenderParam<RectParam>>,
+    window: bool,
+    pressed: bool,
+    press_pos: Pos,
 }
 
 impl HorizontalLayout {
@@ -62,6 +65,9 @@ impl HorizontalLayout {
             padding: Padding::same(0.0),
             offset: Offset::new(Pos::new()),
             fill_render: None,
+            window: false,
+            pressed: false,
+            press_pos: Pos::new(),
         }
     }
 
@@ -137,6 +143,11 @@ impl HorizontalLayout {
     pub fn item_space(&self) -> f32 {
         self.item_space
     }
+
+    pub fn moving(mut self) -> Self {
+        self.window = true;
+        self
+    }
 }
 
 impl Layout for HorizontalLayout {
@@ -158,10 +169,28 @@ impl Layout for HorizontalLayout {
                 }
             }
             _ => {
+                if let UpdateType::MouseMove = ui.update_type && self.window && self.pressed {
+                    // let (ox, oy) = ui.device.device_input.mouse.offset();
+
+                    ui.context.window.request_redraw();
+                }
+                if let UpdateType::MousePress = ui.update_type {
+                    self.pressed = ui.device.device_input.pressed_at(&ui.draw_rect);
+                    self.press_pos.x = ui.device.device_input.mouse.lastest.x - ui.draw_rect.dx().min;
+                    self.press_pos.y = ui.device.device_input.mouse.lastest.y - ui.draw_rect.dy().min;
+                }
+                if let UpdateType::MouseRelease = ui.update_type {
+                    self.pressed = false;
+                }
+                if let UpdateType::Draw = ui.update_type && self.window && self.pressed {
+                    println!("{:?}", ui.device.device_input.mouse.lastest);
+                    let x = ui.device.device_input.mouse.lastest_a.x - self.press_pos.x;
+                    let y = ui.device.device_input.mouse.lastest_a.y - self.press_pos.y;
+                    ui.context.window.x11().move_window(x, y);
+                }
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
                     render.update(ui, false, false);
-                    println!("{:?}", render.param.rect);
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);
                 }

@@ -42,6 +42,15 @@ impl From<(f32, f32)> for Pos {
     }
 }
 
+impl From<(i32, i32)> for Pos {
+    fn from(p: (i32, i32)) -> Pos {
+        Pos {
+            x: p.0 as f32,
+            y: p.1 as f32,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Axis {
     pub min: f32,

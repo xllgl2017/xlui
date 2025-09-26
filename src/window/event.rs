@@ -8,7 +8,7 @@ pub enum WindowEvent {
     None,
     KeyPress(Key),
     KeyRelease(Key),
-    MouseMove(Pos),
+    MouseMove(Pos, Pos),
     MouseWheel(f32),
     MousePress(Pos),
     MouseRelease(Pos),

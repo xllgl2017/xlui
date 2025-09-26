@@ -2,7 +2,6 @@ use crate::error::UiResult;
 use crate::key::Key;
 use crate::window::event::WindowEvent;
 use crate::window::ime::{IMEData, IME};
-use crate::window::x11::clipboard::X11ClipBoard;
 use crate::window::x11::handle::X11WindowHandle;
 use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
@@ -38,7 +37,7 @@ pub struct X11Window {
 }
 
 impl X11Window {
-    pub fn new(attr: &WindowAttribute, ime: Arc<IME>) -> Result<Self, String> {
+    pub fn new(attr: &WindowAttribute, ime: Arc<IME>) -> UiResult<Self> {
         unsafe {
             if xlib::XInitThreads() == 0 { return Err("XInitThreads failed".into()); }
             let display = xlib::XOpenDisplay(ptr::null());
@@ -71,13 +70,13 @@ impl X11Window {
                 visual_info: *vinfo,
             };
             xlib::XFree(vinfo as *mut _);
-            res.init(attr, ime, screen);
+            res.init(attr, ime, screen)?;
             Ok(res)
         }
     }
 
-    fn init(&mut self, attr: &WindowAttribute, ime: Arc<IME>, screen: i32) {
-        let handle = self.create_window(screen, attr);
+    fn init(&mut self, attr: &WindowAttribute, ime: Arc<IME>, screen: i32) -> UiResult<()> {
+        let handle = self.create_window(screen, attr)?;
         let window = WindowType {
             kind: WindowKind::X11(handle),
             id: WindowId::unique_id(),
@@ -85,6 +84,7 @@ impl X11Window {
             ime,
         };
         self.handles.push(Arc::new(window));
+        Ok(())
     }
 
 
@@ -92,7 +92,7 @@ impl X11Window {
         self.handles.last().cloned().unwrap()
     }
 
-    fn create_window(&mut self, screen: i32, attr: &WindowAttribute) -> X11WindowHandle {
+    fn create_window(&mut self, screen: i32, attr: &WindowAttribute) -> UiResult<X11WindowHandle> {
         unsafe {
             let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, AllocNone);
             let mut swa: xlib::XSetWindowAttributes = std::mem::zeroed();
@@ -147,18 +147,12 @@ impl X11Window {
             xlib::XMapWindow(self.display, child);
             xlib::XFlush(self.display);
             xlib::XSetWMProtocols(self.display, child, &mut self.wm_delete_atom, 1);
-            X11WindowHandle {
-                display: self.display,
-                window: child,
-                update_atom: 0,
-                screen,
-                clipboard: X11ClipBoard::new(self.display).unwrap(),
-            }
+            X11WindowHandle::new(self.display, child, 0, screen)
         }
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
-        let mut window = self.create_window(parent.x11().screen, attr);
+        let mut window = self.create_window(parent.x11().screen, attr)?;
         window.update_atom = parent.x11().update_atom;
         let window = Arc::from(WindowType {
             id: WindowId::unique_id(),
@@ -289,7 +283,12 @@ impl X11Window {
                     return if window.ime.is_commited() {
                         (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())))
                     } else {
-                        (window.id, WindowEvent::MouseMove(Pos { x: xm.x as f32, y: xm.y as f32 }))
+                        let mut x: i32 = 0;
+                        let mut y: i32 = 0;
+                        unsafe {
+                            xlib::XQueryPointer(self.display, self.root, &mut event.button.root, &mut event.button.subwindow, &mut x, &mut y, &mut event.button.x, &mut event.button.y, &mut event.button.state);
+                        }
+                        (window.id, WindowEvent::MouseMove((xm.x, xm.y).into(), (x, y).into()))
                     };
                 }
                 xlib::SelectionRequest => window.x11().clipboard.handle_request(&event).unwrap(),

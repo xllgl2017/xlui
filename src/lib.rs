@@ -203,6 +203,7 @@ pub struct Device {
 
 pub struct MouseInput {
     lastest: Pos,
+    lastest_a: Pos,
     previous: Pos,
     delta: (f32, f32),
 
@@ -235,8 +236,9 @@ impl MouseInput {
         self.lastest.y
     }
 
-    pub fn update(&mut self, pos: Pos) {
+    pub fn update(&mut self, pos: Pos, ap: Pos) {
         self.previous = self.lastest.clone();
+        self.lastest_a = ap;
         self.lastest = pos;
     }
 
@@ -276,6 +278,7 @@ impl DeviceInput {
         DeviceInput {
             mouse: MouseInput {
                 lastest: Pos::new(),
+                lastest_a: Pos::new(),
                 previous: Pos::new(),
                 delta: (0.0, 0.0),
                 pressed_pos: Pos::new(),
