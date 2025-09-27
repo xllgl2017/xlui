@@ -142,7 +142,7 @@ impl Layout for RecycleLayout {
 
                 let item_total_h = self.item_height + self.item_space;
                 let first_offset = -(-self.offset.y - self.display.start as f32 * item_total_h);
-
+                ui.draw_rect.set_x_min(ui.draw_rect.dx().min + self.offset.x);
                 ui.draw_rect.set_y_min(previous_rect.dy().min + first_offset);
                 let mut start = self.display.start;
                 for item in self.items.iter_mut() {
@@ -166,6 +166,8 @@ impl Layout for RecycleLayout {
     fn add_item(&mut self, item: LayoutItem) {
         self.total_count += 1;
         self.size.rh += self.item_height + self.item_space;
+        if self.size.rw < item.width() { self.size.rw = item.width(); }
+        println!("{} {}", self.size.rh, self.size.rw);
         if self.items.len() < self.draw_count {
             self.items.insert(item.id().to_string(), item);
         }
