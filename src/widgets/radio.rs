@@ -169,7 +169,8 @@ impl RadioButton {
             self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.outer_render.param.rect.width() + 2.0);
-            self.text.geometry.set_pos(text_rect.dx().min,text_rect.dy().min);
+            self.text.geometry.offset_to_rect(&text_rect);
+            // self.text.geometry.set_pos(text_rect.dx().min,text_rect.dy().min);
             // self.text.rect.offset_to_rect(&text_rect);
             let mut inner_rect = ui.draw_rect.clone();
             inner_rect.set_width(self.inner_render.param.rect.width());

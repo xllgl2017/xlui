@@ -4,7 +4,7 @@ use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
@@ -43,8 +43,7 @@ pub struct VerticalLayout {
     items: Map<String, LayoutItem>,
     item_space: f32, //item之间的间隔
     offset: Offset,
-    size_mode: SizeMode,
-    padding: Padding,
+    geometry: Geometry,
     direction: LayoutDirection,
     fill_render: Option<RenderParam<RectParam>>,
     marin: Margin,
@@ -56,8 +55,7 @@ impl VerticalLayout {
             id: crate::gen_unique_id(),
             items: Map::new(),
             item_space: 5.0,
-            size_mode: SizeMode::Auto,
-            padding: Padding::same(0.0),
+            geometry: Geometry::new(),
             direction,
             offset: Offset::new(Pos::new()),
             fill_render: None,
@@ -104,7 +102,7 @@ impl VerticalLayout {
     }
 
     pub fn set_width(&mut self, w: f32) {
-        self.size_mode.fix_width(w);
+        self.geometry.set_fix_width(w);
     }
 
     pub fn with_height(mut self, h: f32) -> Self {
@@ -113,7 +111,7 @@ impl VerticalLayout {
     }
 
     pub fn set_height(&mut self, h: f32) {
-        self.size_mode.fix_height(h);
+        self.geometry.set_fix_height(h);
     }
 
     pub fn with_space(mut self, s: f32) -> Self {
@@ -127,7 +125,7 @@ impl VerticalLayout {
     }
 
     pub fn set_padding(&mut self, p: Padding) {
-        self.padding = p;
+        self.geometry.set_padding(p);
     }
 
     pub fn set_margin(&mut self, m: Margin) {
@@ -151,8 +149,9 @@ impl Layout for VerticalLayout {
                     height += item.height() + self.item_space;
                 }
                 if let Some(ref mut render) = self.fill_render {
-                    let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
-                    render.param.rect.set_size(dw - self.marin.horizontal(), dh - self.marin.vertical());
+                    self.geometry.set_size(width, height);
+                    // let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
+                    render.param.rect.set_size(self.geometry.width() - self.marin.horizontal(), self.geometry.height() - self.marin.vertical());
                     render.init_rectangle(ui, false, false);
                 }
             }
@@ -166,13 +165,14 @@ impl Layout for VerticalLayout {
                     let pass = ui.pass.as_mut().unwrap();
                     ui.context.render.rectangle.render(&render, pass);
                 }
-                let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
-                ui.draw_rect.set_size(w - self.marin.horizontal(), h - self.marin.vertical());
+                self.geometry.set_size(previous_rect.width(), previous_rect.height());
+                // let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
+                ui.draw_rect.set_size(self.geometry.width() - self.marin.horizontal(), self.geometry.height() - self.marin.vertical());
                 //设置布局padding
-                ui.draw_rect.add_min_x(self.padding.left + self.marin.left);
-                ui.draw_rect.add_min_y(self.padding.top + self.marin.top);
-                ui.draw_rect.add_max_x(-self.padding.right + self.marin.right);
-                ui.draw_rect.add_max_y(-self.padding.bottom + self.marin.bottom);
+                ui.draw_rect.add_min_x(self.geometry.padding().left + self.marin.left);
+                ui.draw_rect.add_min_y(self.geometry.padding().top + self.marin.top);
+                ui.draw_rect.add_max_x(-self.geometry.padding().right - self.marin.right);
+                ui.draw_rect.add_max_y(-self.geometry.padding().bottom - self.marin.bottom);
                 ui.draw_rect.set_y_direction(self.direction);
                 ui.draw_rect.set_x_min(ui.draw_rect.dx().min + self.offset.x);
                 ui.draw_rect.set_y_min(ui.draw_rect.dy().min + self.offset.y);
@@ -189,13 +189,13 @@ impl Layout for VerticalLayout {
             }
         }
         ui.draw_rect = previous_rect;
-        width += self.padding.horizontal() + self.marin.horizontal();
-        height += self.padding.vertical() + self.marin.vertical();
-
-        let (dw, dh) = self.size_mode.size(width, height);
+        // width += self.padding.horizontal() + self.marin.horizontal();
+        // height += self.padding.vertical() + self.marin.vertical();
+        self.geometry.set_size(width, height);
+        // let (dw, dh) = self.size_mode.size(width, height);
         Response::new(&self.id, WidgetSize {
-            dw,
-            dh,
+            dw:self.geometry.width()+self.marin.horizontal(),
+            dh:self.geometry.height()+self.marin.vertical(),
             rw: width,
             rh: height,
         })

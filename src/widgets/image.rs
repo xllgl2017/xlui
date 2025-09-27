@@ -61,18 +61,6 @@ impl Image {
     fn reset_size(&mut self, size: Size) {
         self.geometry.set_size(size.width, size.height);
         self.rect.set_size(self.geometry.width(), self.geometry.height());
-        // match self.size_mode {
-        //     SizeMode::Auto => self.rect.set_size(size.width as f32, size.height as f32),
-        //     SizeMode::FixWidth => {
-        //         let scale = self.rect.height() / size.height as f32;
-        //         self.rect.set_width(scale * size.width as f32)
-        //     }
-        //     SizeMode::FixHeight => {
-        //         let scale = self.rect.width() / size.width as f32;
-        //         self.rect.set_height(scale * size.height as f32);
-        //     }
-        //     _ => {}
-        // }
     }
 
 

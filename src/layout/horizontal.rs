@@ -4,7 +4,7 @@ use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
@@ -44,9 +44,8 @@ pub struct HorizontalLayout {
     id: String,
     items: Map<String, LayoutItem>,
     item_space: f32, //item之间的间隔
-    size_mode: SizeMode,
+    geometry: Geometry,
     direction: LayoutDirection,
-    padding: Padding,
     offset: Offset,
     fill_render: Option<RenderParam<RectParam>>,
     window: bool,
@@ -60,9 +59,8 @@ impl HorizontalLayout {
             id: crate::gen_unique_id(),
             items: Map::new(),
             item_space: 5.0,
-            size_mode: SizeMode::Auto,
             direction,
-            padding: Padding::same(0.0),
+            geometry: Geometry::new(),
             offset: Offset::new(Pos::new()),
             fill_render: None,
             window: false,
@@ -113,7 +111,7 @@ impl HorizontalLayout {
     }
     ///设置布局的宽度
     pub fn set_width(&mut self, w: f32) {
-        self.size_mode.fix_width(w);
+        self.geometry.set_fix_width(w);
     }
 
     pub fn with_height(mut self, h: f32) -> Self {
@@ -123,7 +121,7 @@ impl HorizontalLayout {
 
     ///设置布局的高度
     pub fn set_height(&mut self, h: f32) {
-        self.size_mode.fix_height(h);
+        self.geometry.set_fix_height(h);
     }
 
     pub fn with_space(mut self, s: f32) -> Self {
@@ -137,7 +135,7 @@ impl HorizontalLayout {
     }
 
     pub fn set_padding(&mut self, p: Padding) {
-        self.padding = p;
+        self.geometry.set_padding(p);
     }
 
     pub fn item_space(&self) -> f32 {
@@ -163,14 +161,14 @@ impl Layout for HorizontalLayout {
                 }
                 width -= self.item_space;
                 if let Some(ref mut render) = self.fill_render {
-                    let (dw, dh) = self.size_mode.size(width, height);
-                    render.param.rect.set_size(dw, dh);
+                    self.geometry.set_size(width, height);
+                    render.param.rect.set_size(self.geometry.width(), self.geometry.height());
                     render.init_rectangle(ui, false, false);
                 }
             }
             _ => {
-                let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
-                ui.draw_rect.set_size(w, h);
+                self.geometry.set_size(previous_rect.width(), previous_rect.height());
+                ui.draw_rect.set_size(self.geometry.width(), self.geometry.height());
                 if let UpdateType::MouseMove = ui.update_type && self.window && self.pressed {
                     ui.context.window.request_redraw();
                 }
@@ -196,10 +194,10 @@ impl Layout for HorizontalLayout {
                 }
 
                 //设置布局padding
-                ui.draw_rect.add_min_x(self.padding.left);
-                ui.draw_rect.add_min_y(self.padding.top);
-                ui.draw_rect.add_max_x(-self.padding.right);
-                ui.draw_rect.add_max_y(-self.padding.bottom);
+                ui.draw_rect.add_min_x(self.geometry.padding().left);
+                ui.draw_rect.add_min_y(self.geometry.padding().top);
+                ui.draw_rect.add_max_x(-self.geometry.padding().right);
+                ui.draw_rect.add_max_y(-self.geometry.padding().bottom);
                 ui.draw_rect.set_x_direction(self.direction);
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);
@@ -214,10 +212,10 @@ impl Layout for HorizontalLayout {
             }
         }
         ui.draw_rect = previous_rect;
-        let (dw, dh) = self.size_mode.size(width, height);
+        self.geometry.set_size(width, height);
         Response::new(&self.id, WidgetSize {
-            dw,
-            dh,
+            dw: self.geometry.width(),
+            dh: self.geometry.height(),
             rw: width,
             rh: height,
         })

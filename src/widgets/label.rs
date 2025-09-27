@@ -55,12 +55,18 @@ impl Label {
     }
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
-        self.buffer.set_width(w);
+        self.buffer.geometry.set_fix_width(w);
+        self
+    }
+
+    pub fn max_width(mut self, w: f32) -> Self {
+        self.buffer.geometry.set_max_width(w);
         self
     }
     ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
-        self.buffer.set_height(h);
+        self.buffer.geometry.set_fix_height(h);
+        // self.buffer.set_height(h);
         self
     }
 
@@ -90,8 +96,8 @@ impl Label {
             ui.widget_changed |= WidgetChange::Value;
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.buffer.geometry.set_pos(ui.draw_rect.dx().min, ui.draw_rect.dy().min);
-            // self.buffer.rect.offset_to_rect(&ui.draw_rect);
+            self.buffer.geometry.offset_to_rect(&ui.draw_rect);
+            // self.buffer.geometry.set_pos(ui.draw_rect.dx().min, ui.draw_rect.dy().min);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {

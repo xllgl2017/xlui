@@ -1,7 +1,7 @@
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
 use crate::widgets::{WidgetChange, WidgetSize};
 use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind, Radius, Rect, RichText, Ui, UpdateType, VerticalLayout, Widget};
@@ -30,7 +30,6 @@ impl TabLabel {
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
         self.fill.param.rect.set_size(if self.text.geometry.width() < 50.0 { 50.0 } else { self.text.geometry.width() }, self.text.geometry.height());
-        println!("{:?}", self.fill.param.rect);
         self.fill.init_rectangle(ui, false, false);
     }
 
@@ -41,8 +40,7 @@ impl TabLabel {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill.param.rect.offset_to_rect(&ui.draw_rect);
             ui.widget_changed |= WidgetChange::Value;
-            self.text.geometry.set_pos(ui.draw_rect.dx().min, ui.draw_rect.dy().min);
-            // self.text.rect.offset_to_rect(&ui.draw_rect);
+            self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.fill.update(ui, false, false);
@@ -77,7 +75,7 @@ pub struct TabWidget {
     id: String,
     current: Option<usize>,
     items: Vec<TabItem>,
-    size_mode: SizeMode,
+    geometry: Geometry,
 }
 
 impl TabWidget {
@@ -86,7 +84,7 @@ impl TabWidget {
             id: crate::gen_unique_id(),
             current: None,
             items: vec![],
-            size_mode: SizeMode::Auto,
+            geometry: Geometry::new(),
         }
     }
     pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) {
@@ -117,11 +115,13 @@ impl Widget for TabWidget {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         let mut context_rect = ui.draw_rect.clone();
         let mut tab_text_rect = ui.draw_rect.clone();
+        let mut width = 0.0;
         for index in 0..self.items.len() {
             ui.draw_rect = tab_text_rect.clone();
             let item = &mut self.items[index];
             let clicked = if let UpdateType::MouseRelease = ui.update_type { true } else { false };
             let resp = item.label.update(ui);
+            width += resp.size.dw;
             ui.draw_rect.set_size(resp.size.dw, resp.size.dh);
             tab_text_rect.add_min_x(resp.size.dw);
             if clicked && ui.draw_rect.has_position(ui.device.device_input.mouse.lastest.relative) {
@@ -133,14 +133,15 @@ impl Widget for TabWidget {
 
                 ui.context.window.request_redraw();
             }
+
         }
 
         context_rect.add_min_y(25.0);
         if let Some(current) = self.current {
             ui.draw_rect = context_rect;
-            self.items[current].layout.update(ui);
+            let resp = self.items[current].layout.update(ui);
+            self.geometry.set_size(if width > resp.size.dw { width } else { resp.size.dw }, resp.size.dh + 25.0);
         }
-        let (w, h) = self.size_mode.size(100.0, 100.0);
-        Response::new(&self.id, WidgetSize::same(w, h))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
     }
 }

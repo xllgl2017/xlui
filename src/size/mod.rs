@@ -1,4 +1,5 @@
-use crate::Rect;
+use crate::layout::LayoutDirection;
+use crate::{Padding, Rect};
 
 pub mod rect;
 pub mod padding;
@@ -7,69 +8,6 @@ pub mod pos;
 pub mod radius;
 pub mod font;
 pub mod margin;
-
-#[derive(Clone, Copy)]
-#[deprecated]
-pub enum SizeMode {
-    Auto,
-    FixWidth(f32),
-    FixHeight(f32),
-    Fix(f32, f32),
-}
-
-impl SizeMode {
-    pub fn fix_width(&mut self, w: f32) {
-        match self {
-            SizeMode::Auto => *self = SizeMode::FixWidth(w),
-            SizeMode::FixHeight(h) => *self = SizeMode::Fix(w, *h),
-            SizeMode::FixWidth(fw) => *fw = w,
-            SizeMode::Fix(fw, _) => *fw = w,
-        }
-    }
-
-    pub fn fix_height(&mut self, h: f32) {
-        match self {
-            SizeMode::Auto => *self = SizeMode::FixHeight(h),
-            SizeMode::FixWidth(w) => *self = SizeMode::Fix(*w, h),
-            SizeMode::FixHeight(fh) => *fh = h,
-            SizeMode::Fix(_, fh) => *fh = h,
-        }
-    }
-
-
-    pub fn is_fixed_width(&self) -> bool {
-        match self {
-            SizeMode::FixWidth(_) | SizeMode::Fix(_, _) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_auto_width(&self) -> bool {
-        match self {
-            SizeMode::Auto => true,
-            SizeMode::FixHeight(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn size(&self, w: f32, h: f32) -> (f32, f32) {
-        match self {
-            SizeMode::Auto => (w, h),
-            SizeMode::FixWidth(w) => (*w, h),
-            SizeMode::FixHeight(h) => (w, *h),
-            SizeMode::Fix(w, h) => (*w, *h)
-        }
-    }
-
-    pub fn width(&self, w: f32) -> f32 {
-        match self {
-            SizeMode::Auto => w,
-            SizeMode::FixWidth(w) => *w,
-            SizeMode::FixHeight(_) => w,
-            SizeMode::Fix(w, _) => *w,
-        }
-    }
-}
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub struct Size {
@@ -114,6 +52,18 @@ impl From<&wgpu::SurfaceConfiguration> for Size {
     }
 }
 
+
+///```text
+///              (fix/min/max width)
+/// (x,y)---------------------------(right)
+/// |                                 |
+/// |                                 |
+/// |                                 |
+/// |                                 |(fix/min/max height)
+/// |                                 |
+/// |                                 |
+/// |------------------------------(bottom)
+/// ```
 pub struct Geometry {
     x: f32,
     y: f32,
@@ -125,6 +75,7 @@ pub struct Geometry {
     max_height: Option<f32>,
     fix_width: Option<f32>,
     fix_height: Option<f32>,
+    padding: Padding,
 }
 
 impl Geometry {
@@ -140,12 +91,19 @@ impl Geometry {
             max_height: None,
             fix_width: None,
             fix_height: None,
+            padding: Padding::same(0.0),
         }
     }
 
-    pub fn set_pos(&mut self, x: f32, y: f32) {
-        self.x = x;
-        self.y = y;
+    pub fn offset_to_rect(&mut self, rect: &Rect) {
+        match rect.x_direction() {
+            LayoutDirection::Min => self.x = rect.dx().min,
+            LayoutDirection::Max => self.x = rect.dx().max - self.width()
+        }
+        match rect.y_direction() {
+            LayoutDirection::Min => self.y = rect.dy().min,
+            LayoutDirection::Max => self.y = rect.dy().max - self.height()
+        }
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
@@ -154,11 +112,11 @@ impl Geometry {
     }
 
     pub fn set_width(&mut self, width: f32) {
-        self.width = width;
+        self.width = width + self.padding.horizontal();
     }
 
     pub fn set_height(&mut self, height: f32) {
-        self.height = height;
+        self.height = height + self.padding.vertical();
     }
 
     pub fn is_fix_width(&self) -> bool {
@@ -173,7 +131,7 @@ impl Geometry {
     }
 
     pub fn height(&self) -> f32 {
-        if let Some(height) = self.max_height { return height; };
+        if let Some(height) = self.fix_height { return height; };
         if let Some(min_height) = self.min_height && self.height < min_height { return min_height; }
         if let Some(max_height) = self.max_height && self.height > max_height { return max_height; }
         self.height
@@ -181,43 +139,43 @@ impl Geometry {
 
     pub fn rect(&self) -> Rect {
         let mut rect = Rect::new();
-        rect.set_x_min(self.x);
-        rect.set_y_min(self.y);
-        rect.set_width(self.width());
-        rect.set_height(self.height());
+        rect.set_x_min(self.x());
+        rect.set_y_min(self.y());
+        rect.set_x_max(self.right());
+        rect.set_y_max(self.bottom());
         rect
     }
 
     pub fn x(&self) -> f32 {
-        self.x
+        self.x + self.padding.left
     }
 
     pub fn x_i32(&self) -> i32 {
-        self.x as i32
+        self.x() as i32
     }
 
     pub fn y(&self) -> f32 {
-        self.y
+        self.y + self.padding.top
     }
 
-    pub fn y_i32(&self) -> i32 {
-        self.y as i32
-    }
+    // pub fn y_i32(&self) -> i32 {
+    //     self.y() as i32
+    // }
 
     pub fn right(&self) -> f32 {
-        self.x + self.width
+        self.x + self.width() - self.padding.right
     }
 
     pub fn right_i32(&self) -> i32 {
-        self.x as i32 + self.width as i32
+        self.right() as i32
     }
 
     pub fn bottom(&self) -> f32 {
-        self.y + self.height
+        self.y + self.height() - self.padding.bottom
     }
 
     pub fn bottom_i32(&self) -> i32 {
-        self.y as i32 + self.height as i32
+        self.bottom() as i32
     }
 
     pub fn set_fix_size(&mut self, w: f32, h: f32) {
@@ -233,15 +191,50 @@ impl Geometry {
         self.fix_width = Some(w);
     }
 
+    pub fn set_max_width(&mut self, width: f32) {
+        self.max_width = Some(width);
+    }
+
+    // pub fn set_max_height(&mut self, height: f32) {
+    //     self.max_height = Some(height);
+    // }
+
+    // pub fn set_min_width(&mut self, min_width: f32) {
+    //     self.min_width = Some(min_width);
+    // }
+
+    // pub fn set_min_height(&mut self, min_height: f32) {
+    //     self.min_height = Some(min_height);
+    // }
+
     pub fn add_fix_width(&mut self, w: f32) {
         if let Some(fix_width) = self.fix_width {
             self.fix_width = Some(fix_width + w);
         }
     }
 
-    pub fn add_fix_height(&mut self, h: f32) {
-        if let Some(fix_height) = self.fix_height {
-            self.fix_height = Some(fix_height + h);
-        }
+    // pub fn add_fix_height(&mut self, h: f32) {
+    //     if let Some(fix_height) = self.fix_height {
+    //         self.fix_height = Some(fix_height + h);
+    //     }
+    // }
+
+    pub fn with_padding(&mut self, padding: Padding) -> &mut Self {
+        self.set_padding(padding);
+        self
+    }
+
+    pub fn set_padding(&mut self, padding: Padding) {
+        self.padding = padding;
+    }
+
+    pub fn padding(&self) -> &Padding {
+        &self.padding
+    }
+
+    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+        self.set_width(w);
+        self.set_height(h);
+        self
     }
 }

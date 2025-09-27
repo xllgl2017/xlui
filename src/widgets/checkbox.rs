@@ -151,7 +151,8 @@ impl CheckBox {
         self.check_text.init(ui);
         // self.text.draw(ui);
         // self.check_text.reset_size(ui);
-        self.check_text.geometry.set_pos(self.check_render.param.rect.dx().min, self.check_render.param.rect.dy().min);
+        self.check_text.geometry.offset_to_rect(&self.check_render.param.rect);
+        // self.check_text.geometry.set_pos(self.check_render.param.rect.dx().min, self.check_render.param.rect.dy().min);
         // self.check_text.rect = self.check_render.param.rect.clone();
         // self.check_text.draw(ui);
     }
@@ -169,10 +170,12 @@ impl CheckBox {
             let check_rect = ui.draw_rect.clone_with_size(&self.check_render.param.rect);
             self.check_render.param.rect.offset_to_rect(&check_rect);
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-            self.check_text.geometry.set_pos(check_rect.dx().min, check_rect.dy().min); //.rect.offset_to_rect(&check_rect);
+            self.check_text.geometry.offset_to_rect(&check_rect);
+            // self.check_text.geometry.set_pos(check_rect.dx().min, check_rect.dy().min); //.rect.offset_to_rect(&check_rect);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.check_render.param.rect.width() + 2.0);
-            self.text.geometry.set_pos(text_rect.dx().min,text_rect.dy().min);
+            self.text.geometry.offset_to_rect(&text_rect);
+            // self.text.geometry.set_pos(text_rect.dx().min, text_rect.dy().min);
             // self.text.rect.offset_to_rect(&text_rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {

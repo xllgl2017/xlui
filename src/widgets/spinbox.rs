@@ -1,22 +1,22 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
+use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
+use crate::size::pos::Pos;
 use crate::size::rect::Rect;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle};
 use crate::ui::Ui;
+use crate::widgets::textedit::TextEdit;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::window::UserEvent;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
-use crate::key::Key;
-use crate::size::pos::Pos;
-use crate::widgets::textedit::TextEdit;
-use crate::window::UserEvent;
 /// ### Slider的示例用法
 /// ```
 /// use xlui::*;
@@ -44,7 +44,7 @@ pub struct SpinBox<T> {
     pub(crate) id: String,
     edit: TextEdit,
     rect: Rect,
-    size_mode: SizeMode,
+    geometry: Geometry,
     value: T,
     gap: T,
     range: Range<T>,
@@ -55,7 +55,6 @@ pub struct SpinBox<T> {
     down_rect: Rect,
     changed: bool,
     contact_ids: Vec<String>,
-
     press_up: bool,
     press_down: bool,
     press_time: u128,
@@ -73,7 +72,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             id: crate::gen_unique_id(),
             edit: TextEdit::single_edit(format!("{:.*}", 2, v)),
             rect: Rect::new().with_size(100.0, 25.0),
-            size_mode: SizeMode::Auto,
+            geometry: Geometry::new().with_size(100.0, 25.0),
             value: v,
             gap: g,
             range: r,
@@ -95,17 +94,17 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     pub fn reset_size(&mut self) {
-        let (w, h) = self.size_mode.size(self.rect.width(), self.rect.height());
-        self.rect.set_size(w, h);
+        // let (w, h) = self.size_mode.size(self.rect.width(), self.rect.height());
+        // self.rect.set_size(w, h);
         // match self.size_mode {
         //     SizeMode::Auto => self.rect.set_size(100.0, 25.0),
         //     SizeMode::FixWidth => self.rect.set_height(25.0),
         //     SizeMode::FixHeight => self.rect.set_width(80.0),
         //     SizeMode::Fix => {}
         // }
-        let mut edit_rect = self.rect.clone();
-        edit_rect.set_x_max(edit_rect.dx().max - 18.0);
-        self.edit.set_width(edit_rect.width())
+        // let mut edit_rect = self.rect.clone();
+        // edit_rect.set_x_max(edit_rect.dx().max - 18.0);
+        self.edit.set_width(self.geometry.width() - 18.0);
         // self.edit.set_rect(edit_rect);
     }
 

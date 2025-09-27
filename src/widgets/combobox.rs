@@ -179,10 +179,11 @@ impl<T: Display + 'static> ComboBox<T> {
             self.allow_render.param.offset_to_rect(&allow_rect);
             self.allow_render.update(ui, false, false);
 
-            // let mut text_rect = self.fill_render.param.rect.clone();
-            // text_rect.add_min_x(2.0);
+            let mut text_rect = self.fill_render.param.rect.clone();
+            text_rect.add_min_x(2.0);
+            self.text_buffer.geometry.offset_to_rect(&text_rect);
             // self.text_buffer.rect = text_rect;
-            self.text_buffer.geometry.set_pos(self.fill_render.param.rect.dx().min + 2.0, self.fill_render.param.rect.dy().min);
+            // self.text_buffer.geometry.set_pos(self.fill_render.param.rect.dx().min + 2.0, self.fill_render.param.rect.dy().min);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {

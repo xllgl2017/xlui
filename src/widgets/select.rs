@@ -7,7 +7,6 @@ use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
-use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
@@ -38,8 +37,6 @@ use std::sync::{Arc, RwLock};
 pub struct SelectItem<T> {
     pub(crate) id: String,
     text: TextBuffer,
-    padding: Padding,
-    geometry: Geometry,
     value: T,
     parent_selected: Arc<RwLock<Option<String>>>,
     fill_render: RenderParam<RectParam>,
@@ -62,8 +59,6 @@ impl<T: Display> SelectItem<T> {
         SelectItem {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(value.to_string()).with_align(Align::Center),
-            padding: Padding::same(2.0),
-            geometry: Geometry::new(),
             value,
             parent_selected: Arc::new(RwLock::new(None)),
             fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
@@ -75,30 +70,12 @@ impl<T: Display> SelectItem<T> {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.geometry.add_fix_width(self.padding.horizontal());
-        self.text.geometry.add_fix_height(self.padding.vertical());
-        // self.text.size_mode = self.size_mode.clone();
+        self.text.geometry.set_padding(Padding::same(2.0));
         self.text.init(ui);
-        self.geometry.set_size(self.text.geometry.width(), self.text.geometry.height());
-        // let (w, h) = self.size_mode.size(self.text.rect.width() + self.padding.horizontal(), self.text.rect.height() + self.padding.vertical());
-        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
-        // match self.size_mode {
-        //     SizeMode::Auto => {
-        //         let width = self.text.rect.width() + self.padding.horizontal();
-        //         let height = self.text.rect.height() + self.padding.vertical();
-        //         self.fill_render.param.rect.set_size(width, height);
-        //     }
-        //     SizeMode::FixWidth => self.fill_render.param.rect.set_height(self.text.rect.height()),
-        //     SizeMode::FixHeight => self.fill_render.param.rect.set_width(self.text.rect.width()),
-        //     SizeMode::Fix => {}
-        // }
-        // self.text.rect = self.fill_render.param.rect.clone_add_padding(&self.padding);
+        self.fill_render.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
     }
 
     pub fn set_size(&mut self, width: f32, height: f32) {
-        // self.fill_render.param.rect.set_size(width, height);
-        // self.size_mode = SizeMode::Fix(width, height);
-        self.geometry.set_fix_size(width, height);
         self.text.geometry.set_fix_size(width, height);
     }
 
@@ -113,7 +90,7 @@ impl<T: Display> SelectItem<T> {
     }
 
     pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
+        self.text.geometry.set_padding(padding);
         self
     }
 
@@ -132,7 +109,6 @@ impl<T: Display> SelectItem<T> {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        // self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
         self.reset_size(ui);
         self.re_init(ui);
     }
@@ -142,8 +118,6 @@ impl<T: Display> SelectItem<T> {
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
         self.fill_render.init_rectangle(ui, selected, selected);
-        //文本
-        // self.text.init(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -161,8 +135,7 @@ impl<T: Display> SelectItem<T> {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
-            self.text.geometry.set_pos(ui.draw_rect.dx().min + self.padding.left, ui.draw_rect.dy().min + self.padding.top);
-            // self.text.rect.offset_to_rect(&ui.draw_rect);
+            self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
@@ -170,14 +143,6 @@ impl<T: Display> SelectItem<T> {
             let selected = current.as_ref() == Some(&self.value.to_string());
             self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
         }
-
-
-        // if !self.changed && !ui.can_offset { return; }
-
-        // if ui.can_offset {
-        //     self.fill_render.param.rect.offset(&ui.offset);
-        //     self.text.rect.offset(&ui.offset);
-        // }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
