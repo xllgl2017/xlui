@@ -17,7 +17,9 @@ impl TabLabel {
     fn new(text: impl Into<RichText>) -> TabLabel {
         let mut tab_style = ClickStyle::new();
         tab_style.fill = FillStyle::same(Color::WHITE);
-        tab_style.border = BorderStyle::same(Border::new(1.0).radius(Radius::same(1)).color(Color::rgb(160, 160, 160)));
+        let mut border = Border::same(1.0).radius(Radius::same(1)).color(Color::rgb(160, 160, 160));
+        border.bottom_width = 0.0;
+        tab_style.border = BorderStyle::same(border);
         TabLabel {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0),
@@ -84,7 +86,7 @@ impl TabWidget {
     pub fn new() -> TabWidget {
         let mut fill_style = ClickStyle::new();
         fill_style.fill = FillStyle::same(Color::WHITE);
-        fill_style.border = BorderStyle::same(Border::new(1.0).radius(Radius::same(1)).color(Color::rgba(144, 209, 255, 255)));
+        fill_style.border = BorderStyle::same(Border::same(1.0).radius(Radius::same(1)).color(Color::rgba(144, 209, 255, 255)));
         TabWidget {
             id: crate::gen_unique_id(),
             current: None,
@@ -131,7 +133,7 @@ impl TabWidget {
         self
     }
 
-    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+    pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
 }

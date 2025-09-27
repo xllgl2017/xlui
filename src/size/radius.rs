@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Radius {
     pub left_bottom: u8,
     pub right_bottom: u8,

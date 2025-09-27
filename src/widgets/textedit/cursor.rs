@@ -28,9 +28,9 @@ impl EditCursor {
         cursor_style.fill.inactive = Color::rgb(0, 83, 125);
         cursor_style.fill.hovered = Color::rgb(0, 83, 125);
         cursor_style.fill.clicked = Color::rgb(0, 83, 125);
-        cursor_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
-        cursor_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
-        cursor_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
+        cursor_style.border.inactive = Border::same(0.0).radius(Radius::same(0));
+        cursor_style.border.hovered = Border::same(0.0).radius(Radius::same(0));
+        cursor_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
         EditCursor {
             min_pos: Pos::new(),
             max_pos: Pos::new(),

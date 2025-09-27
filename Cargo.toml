@@ -41,6 +41,10 @@ doc-scrape-examples = false
 name = "widget"
 doc-scrape-examples = false
 
+[[bin]]
+name = "test_334"
+path = "tests/hello_world.rs"
+
 [lib]
 name = "xlui"
 crate-type = ['cdylib', 'rlib']

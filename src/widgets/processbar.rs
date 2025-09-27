@@ -29,16 +29,16 @@ impl ProcessBar {
         fill_style.fill.inactive = Color::rgb(220, 220, 220);
         fill_style.fill.hovered = Color::rgb(220, 220, 220);
         fill_style.fill.clicked = Color::rgb(220, 220, 220);
-        fill_style.border.inactive = Border::new(0.0).radius(Radius::same(4));
-        fill_style.border.hovered = Border::new(0.0).radius(Radius::same(1));
-        fill_style.border.clicked = Border::new(0.0).radius(Radius::same(1));
+        fill_style.border.inactive = Border::same(0.0).radius(Radius::same(4));
+        fill_style.border.hovered = Border::same(0.0).radius(Radius::same(1));
+        fill_style.border.clicked = Border::same(0.0).radius(Radius::same(1));
         let mut process_style = ClickStyle::new();
         process_style.fill.inactive = Color::rgb(56, 182, 244);
         process_style.fill.hovered = Color::rgb(56, 182, 244);
         process_style.fill.clicked = Color::rgb(56, 182, 244);
-        process_style.border.inactive = Border::new(0.0).radius(Radius::same(4));
-        process_style.border.hovered = Border::new(0.0).radius(Radius::same(1));
-        process_style.border.clicked = Border::new(0.0).radius(Radius::same(1));
+        process_style.border.inactive = Border::same(0.0).radius(Radius::same(4));
+        process_style.border.hovered = Border::same(0.0).radius(Radius::same(1));
+        process_style.border.clicked = Border::same(0.0).radius(Radius::same(1));
         ProcessBar {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 10.0), fill_style)),

@@ -27,6 +27,7 @@ impl Popup {
         let shadow = Shadow {
             offset: [5.0, 8.0],
             spread: 10.0,
+            blur: 1.0,
             color: Color::rgba(0, 0, 0, 30),
         };
 
@@ -71,17 +72,27 @@ impl Popup {
             },
             border: BorderStyle {
                 inactive: Border {
-                    width: 1.0,
+                    left_width: 1.0,
+                    right_width: 1.0,
+                    top_width: 1.0,
+                    bottom_width: 1.0,
                     radius: Radius::same(5),
                     color: Color::rgba(144, 209, 255, 255),
+
                 },
                 hovered: Border {
-                    width: 1.0,
+                    left_width: 1.0,
+                    right_width: 1.0,
+                    top_width: 1.0,
+                    bottom_width: 1.0,
                     radius: Radius::same(5),
                     color: Color::rgba(144, 209, 255, 255),
                 },
                 clicked: Border {
-                    width: 1.0,
+                    left_width: 1.0,
+                    right_width: 1.0,
+                    top_width: 1.0,
+                    bottom_width: 1.0,
                     radius: Radius::same(5),
                     color: Color::rgba(144, 209, 255, 255),
                 },

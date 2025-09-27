@@ -84,7 +84,7 @@ impl VerticalLayout {
     pub fn with_fill(mut self, color: Color) -> Self {
         let mut style = ClickStyle::new();
         style.fill = FillStyle::same(color);
-        style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+        style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
         let fill_render = RenderParam::new(RectParam::new(Rect::new(), style));
         self.fill_render = Some(fill_render);
         self

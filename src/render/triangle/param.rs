@@ -1,4 +1,4 @@
-use crate::Rect;
+use crate::{Rect, Size};
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
@@ -35,7 +35,7 @@ impl TriangleParam {
             p2: [p2.x, p2.y],
             _pad0: [0.0; 2],
             fill_color,
-            border_thickness: border.width,
+            border_thickness: border.left_width,
             _pad1: [0.0; 3],
             border_color: border.color.as_gamma_rgba(),
         };
@@ -83,13 +83,13 @@ impl TriangleParam {
 }
 
 impl WrcParam for TriangleParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8] {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);
         self.draw.p0 = [self.p0.x, self.p0.y];
         self.draw.p1 = [self.p1.x, self.p1.y];
         self.draw.p2 = [self.p2.x, self.p2.y];
-        self.draw.border_thickness = border.width;
+        self.draw.border_thickness = border.left_width;
         self.draw.border_color = border.color.as_gamma_rgba();
         self.draw.fill_color = fill_color;
         bytemuck::bytes_of(&self.draw)

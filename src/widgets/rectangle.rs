@@ -1,3 +1,4 @@
+use crate::Border;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
@@ -14,8 +15,9 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 ///     //阴影
 ///     let shadow = Shadow {
 ///         offset: [5.0, 8.0],
-///         spread: 10.0,
+///         spread: 10.0,//
 ///         color: Color::rgba(0, 0, 0, 30),
+///         blur:1.0,//阴影强调
 ///     };
 ///     let rectangle=Rectangle::new(Popup::popup_style(),300.0,300.0)
 ///         //设置阴影
@@ -79,9 +81,10 @@ impl Rectangle {
         self.fill_render.param.shadow.offset[1] = v;
     }
 
-    pub fn set_border_width(&mut self, v: f32) {
-        self.changed = self.fill_render.param.style.border.inactive.width == v;
-        self.fill_render.param.style.border.inactive.width = v;
+    pub fn set_border(&mut self, nb: Border) {
+        let ob = &self.fill_render.param.style.border.inactive;
+        self.changed = ob == &nb;
+        self.fill_render.param.style.border.inactive = nb;
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -104,11 +107,9 @@ impl Rectangle {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.rectangle.render(&self.fill_render, pass);
     }
-
 }
 
 impl Widget for Rectangle {
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),

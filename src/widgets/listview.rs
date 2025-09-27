@@ -142,9 +142,9 @@ impl<T: 'static> ListView<T> {
                 clicked: Color::rgba(153, 193, 241, 220),
             },
             border: BorderStyle {
-                inactive: Border::new(1.0).radius(Radius::same(3)).color(Color::rgb(190, 190, 190)),
-                hovered: Border::new(0.0).radius(Radius::same(3)),
-                clicked: Border::new(0.0).radius(Radius::same(3)),
+                inactive: Border::same(1.0).radius(Radius::same(3)).color(Color::rgb(190, 190, 190)),
+                hovered: Border::same(0.0).radius(Radius::same(3)),
+                clicked: Border::same(0.0).radius(Radius::same(3)),
             },
         };
         let current = self.current.clone();
@@ -268,9 +268,9 @@ impl<T: 'static> ListView<T> {
         fill_style.fill.inactive = Color::TRANSPARENT;
         fill_style.fill.hovered = Color::TRANSPARENT;
         fill_style.fill.clicked = Color::TRANSPARENT;
-        fill_style.border.inactive = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.hovered = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         area.set_style(fill_style);
         area.show(ui, |ui| {
             let recycle: &mut RecycleLayout = ui.layout().as_mut_().unwrap();

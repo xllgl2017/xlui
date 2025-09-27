@@ -45,6 +45,7 @@ impl InnerWindow {
         let shadow = Shadow {
             offset: [5.0, 8.0],
             spread: 10.0,
+            blur: 1.0,
             color: Color::rgba(0, 0, 0, 30),
         };
         let attr = w.window_attributes();
@@ -83,7 +84,7 @@ impl InnerWindow {
             fill: Color::rgb(210, 210, 210),
             radius: Radius::same(0).with_left_top(1).with_right_top(1),
             shadow: Shadow::new(),
-            border: Border::new(0.0),
+            border: Border::same(0.0),
         };
         // let mut style = ClickStyle::new();
         // style.fill = FillStyle::same();
@@ -102,7 +103,7 @@ impl InnerWindow {
             style.fill.inactive = Color::TRANSPARENT;
             style.fill.hovered = Color::rgba(255, 0, 0, 100);
             style.fill.clicked = Color::rgba(255, 0, 0, 150);
-            style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+            style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
             let mut btn = Button::new("×").width(20.0).height(20.0);
             btn.set_style(style.clone());
             let closed = self.request_close.clone();

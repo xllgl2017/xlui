@@ -56,17 +56,17 @@ impl RadioButton {
         outer_style.fill.inactive = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
         outer_style.fill.hovered = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
         outer_style.fill.clicked = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
-        outer_style.border.inactive = Border::new(1.0).color(Color::rgb(95, 95, 95));
-        outer_style.border.hovered = Border::new(1.0).color(Color::rgb(56, 160, 200));
-        outer_style.border.clicked = Border::new(1.0).color(Color::rgb(56, 182, 244));
+        outer_style.border.inactive = Border::same(1.0).color(Color::rgb(95, 95, 95));
+        outer_style.border.hovered = Border::same(1.0).color(Color::rgb(56, 160, 200));
+        outer_style.border.clicked = Border::same(1.0).color(Color::rgb(56, 182, 244));
 
         let mut inner_style = ClickStyle::new();
         inner_style.fill.inactive = Color::TRANSPARENT;
         inner_style.fill.hovered = Color::rgb(56, 160, 200);
         inner_style.fill.clicked = Color::rgb(56, 182, 244);
-        inner_style.border.inactive = Border::new(0.0).color(Color::TRANSPARENT);
-        inner_style.border.hovered = Border::new(0.0).color(Color::TRANSPARENT);
-        inner_style.border.clicked = Border::new(0.0).color(Color::TRANSPARENT);
+        inner_style.border.inactive = Border::same(0.0).color(Color::TRANSPARENT);
+        inner_style.border.hovered = Border::same(0.0).color(Color::TRANSPARENT);
+        inner_style.border.clicked = Border::same(0.0).color(Color::TRANSPARENT);
         RadioButton {
             id: crate::gen_unique_id(),
             rect: Rect::new(),

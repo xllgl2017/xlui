@@ -64,25 +64,25 @@ impl Slider {
         fill_style.fill.inactive = Color::rgb(220, 220, 220);
         fill_style.fill.hovered = Color::rgb(220, 220, 220);
         fill_style.fill.clicked = Color::rgb(220, 220, 220);
-        fill_style.border.inactive = Border::new(0.0).radius(Radius::same(3));
-        fill_style.border.hovered = Border::new(0.0).radius(Radius::same(3));
-        fill_style.border.clicked = Border::new(0.0).radius(Radius::same(3));
+        fill_style.border.inactive = Border::same(0.0).radius(Radius::same(3));
+        fill_style.border.hovered = Border::same(0.0).radius(Radius::same(3));
+        fill_style.border.clicked = Border::same(0.0).radius(Radius::same(3));
 
         let mut slider_style = ClickStyle::new();
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
         slider_style.fill.clicked = Color::rgb(56, 182, 244);
-        slider_style.border.inactive = Border::new(0.0).color(Color::BLACK).radius(Radius::same(8));
-        slider_style.border.hovered = Border::new(1.0).color(Color::BLACK).radius(Radius::same(8));
-        slider_style.border.clicked = Border::new(1.0).color(Color::BLACK).radius(Radius::same(8));
+        slider_style.border.inactive = Border::same(0.0).color(Color::BLACK).radius(Radius::same(8));
+        slider_style.border.hovered = Border::same(1.0).color(Color::BLACK).radius(Radius::same(8));
+        slider_style.border.clicked = Border::same(1.0).color(Color::BLACK).radius(Radius::same(8));
 
         let mut slided_style = ClickStyle::new();
         slided_style.fill.inactive = Color::rgb(56, 182, 244);
         slided_style.fill.hovered = Color::rgb(56, 182, 244);
         slided_style.fill.clicked = Color::rgb(56, 182, 244);
-        slided_style.border.inactive = Border::new(0.0).radius(Radius::same(3));
-        slided_style.border.hovered = Border::new(0.0).radius(Radius::same(3));
-        slided_style.border.clicked = Border::new(0.0).radius(Radius::same(3));
+        slided_style.border.inactive = Border::same(0.0).radius(Radius::same(3));
+        slided_style.border.hovered = Border::same(0.0).radius(Radius::same(3));
+        slided_style.border.clicked = Border::same(0.0).radius(Radius::same(3));
         Slider {
             id: crate::gen_unique_id(),
             rect: Rect::new().with_size(130.0, 16.0),

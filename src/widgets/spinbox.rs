@@ -67,7 +67,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         let mut style = ClickStyle::new();
         style.fill.inactive = color;
         style.fill.hovered = inactive_color;
-        style.border = BorderStyle::same(Border::new(0.0));
+        style.border = BorderStyle::same(Border::same(0.0));
         SpinBox {
             id: crate::gen_unique_id(),
             edit: TextEdit::single_edit(format!("{:.*}", 2, v)),
