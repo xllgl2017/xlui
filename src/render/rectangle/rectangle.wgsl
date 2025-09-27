@@ -38,8 +38,6 @@ struct DrawParam {
 @group(0) @binding(0)
 var<uniform> param: DrawParam;
 
-//@group(0) @binding(1)
-//var<uniform> style: Style;
 
 @fragment
 fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
@@ -67,11 +65,11 @@ fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     let x1 = x0 + param.size.x;
     let y1 = y0 + param.size.y;
 
-    let fill_color   = param.fill_color;//vec4(1.0, 1.0, 0.0, 1.0);
-    let border_color = param.border_color;//vec4(0.2, 0.4, 0.9, 1.0);
-    let shadow_color = param.shadow_color;//vec4(1.0, 0.0, 0.0, 0.3);
-    let shadow_offset = param.shadow_offset;//vec2(4.0, 4.0);
-    let shadow_spread = param.shadow_spread;//10.0;
+    let fill_color   = param.fill_color;
+    let border_color = param.border_color;
+    let shadow_color = param.shadow_color;
+    let shadow_offset = param.shadow_offset;
+    let shadow_spread = param.shadow_spread;
 
     let inner_x0 = x0 + border;
     let inner_y0 = y0 + border;
@@ -95,8 +93,6 @@ fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
         corner_dist = max(dx, dy);
     }
 
-//    let in_outer = p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && corner_dist <= 0.0;
-//    let in_inner = p.x >= inner_x0 && p.x <= inner_x1 && p.y >= inner_y0 && p.y <= inner_y1;
     var border_region = false;
     var fill_region = false;
         var corner_radius = 0.0;
@@ -183,8 +179,6 @@ fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
         if shadow_dist < shadow_spread {
             let alpha = 1.0 - clamp(shadow_dist / shadow_spread, 0.0, 1.0);
             color = vec4(shadow_color.rgb, shadow_color.a * alpha);
-//            let alpha = 1.0 - smoothstep(shadow_spread, shadow_spread + aa_width, shadow_dist);
-//            color = vec4(shadow_color.rgb, shadow_color.a * alpha);
         }
     }
 

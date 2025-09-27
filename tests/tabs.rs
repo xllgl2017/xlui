@@ -10,7 +10,7 @@ impl TestTabWidget {
 
 impl App for TestTabWidget {
     fn draw(&mut self, ui: &mut Ui) {
-        let mut widget = TabWidget::new();
+        let mut widget = TabWidget::new().with_size(400.0, 300.0);
         widget.add_tab(ui, "1", |ui| {
             ui.label("tab1");
         });
