@@ -39,7 +39,7 @@ impl WindowAttribute {
     pub fn as_winit_attributes(&self) -> winit::window::WindowAttributes {
         let attr = winit::window::WindowAttributes::default();
         let (rgba, size) = super::super::render::image::load_image_bytes(self.window_icon.as_ref()).unwrap();
-        let icon = Icon::from_rgba(rgba, size.width, size.height).unwrap();
+        let icon = Icon::from_rgba(rgba, size.width_u32(), size.height_u32()).unwrap();
         attr.with_inner_size(self.inner_size.as_physical_size())
             .with_min_inner_size(self.min_inner_size.as_physical_size())
             .with_max_inner_size(self.max_inner_size.as_physical_size())
@@ -75,9 +75,9 @@ impl WindowAttribute {
 impl Default for WindowAttribute {
     fn default() -> WindowAttribute {
         WindowAttribute {
-            inner_size: Size { width: 800, height: 600 },
-            min_inner_size: Size { width: 0, height: 0 },
-            max_inner_size: Size { width: 2560, height: 1440 },
+            inner_size: (800,600).into(),
+            min_inner_size:(0,0).into(),
+            max_inner_size:(2560,1440).into(),
             position: [100, 100],
             resizable: true,
             title: "xlui".to_string(),

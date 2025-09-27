@@ -4,7 +4,7 @@ use crate::ui::Ui;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::textedit::EditKind;
-use crate::{Offset, RichTextExt, TextWrap};
+use crate::{Offset, Padding, RichTextExt, TextWrap};
 use crate::text::buffer::TextBuffer;
 
 pub(crate) struct CharBuffer {
@@ -20,7 +20,7 @@ pub(crate) struct CharBuffer {
 impl CharBuffer {
     pub fn new(text: impl ToString) -> CharBuffer {
         CharBuffer {
-            buffer: TextBuffer::new(text.to_string().wrap(TextWrap::WrapAny)),
+            buffer: TextBuffer::new(text.to_string().wrap(TextWrap::WrapAny)).fix_width(200.0).padding(Padding::same(3.0)),
             font_size: 0.0,
             line_height: 0.0,
             max_wrap_width: 0.0,

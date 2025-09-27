@@ -90,10 +90,10 @@ impl EditCursor {
         self.render.param.rect = rect;
         self.render.param.rect.offset(&self.offset);
         self.render.update(ui, false, false);
-        self.min_pos.x = cchar.buffer.rect.dx().min;
-        self.min_pos.y = cchar.buffer.rect.dy().min;
-        self.max_pos.x = cchar.buffer.rect.dx().max;
-        self.max_pos.y = cchar.buffer.rect.dy().max;
+        self.min_pos.x = cchar.buffer.geometry.x(); //cchar.buffer.rect.dx().min;
+        self.min_pos.y = cchar.buffer.geometry.y(); //cchar.buffer.rect.dy().min;
+        self.max_pos.x = cchar.buffer.geometry.right(); //cchar.buffer.rect.dx().max;
+        self.max_pos.y = cchar.buffer.geometry.bottom(); //cchar.buffer.rect.dy().max;
     }
 
     pub fn move_left(&mut self, cchar: &CharBuffer) {

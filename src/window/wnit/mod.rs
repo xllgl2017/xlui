@@ -91,8 +91,8 @@ impl Window {
     }
 
     pub(crate) fn resize(&mut self, new_size: Size) {
-        self.app_ctx.device.surface_config.width = new_size.width;
-        self.app_ctx.device.surface_config.height = new_size.height;
+        self.app_ctx.device.surface_config.width = new_size.width_u32();
+        self.app_ctx.device.surface_config.height = new_size.height_u32();
         self.configure_surface();
     }
 }

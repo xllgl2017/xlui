@@ -52,8 +52,8 @@ impl LoopWindow {
             format: cap.formats[0],
             view_formats: vec![cap.formats[0].add_srgb_suffix()],
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
-            width: size.width,
-            height: size.height,
+            width: size.width_u32(),
+            height: size.height_u32(),
             desired_maximum_frame_latency: 2,
             present_mode: wgpu::PresentMode::AutoVsync,
         };
@@ -110,8 +110,8 @@ impl EventLoopHandle for LoopWindow {
             }
             WindowEvent::ReInit => self.app_ctx.update(UpdateType::ReInit, &mut self.app),
             WindowEvent::Resize(size) => {
-                self.app_ctx.device.surface_config.width = size.width;
-                self.app_ctx.device.surface_config.height = size.height;
+                self.app_ctx.device.surface_config.width = size.width_u32();
+                self.app_ctx.device.surface_config.height = size.height_u32();
                 let device = &self.app_ctx.device.device;
                 let config = &self.app_ctx.device.surface_config;
                 self.app_ctx.device.surface.configure(device, config);

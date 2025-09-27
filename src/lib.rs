@@ -246,6 +246,15 @@ impl From<(f64, f64)> for MousePos {
     }
 }
 
+impl From<(f32, f32)> for MousePos {
+    fn from(value: (f32, f32)) -> Self {
+        MousePos {
+            relative: Pos { x: value.0, y: value.1 },
+            absolute: Pos::new(),
+        }
+    }
+}
+
 pub struct MouseInput {
     lastest: MousePos,
     previous: MousePos,

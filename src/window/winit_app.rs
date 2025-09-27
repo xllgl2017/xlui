@@ -1,6 +1,9 @@
 use crate::frame::context::{Render, UpdateType};
 use crate::frame::App;
-use crate::Size;
+use crate::window::ime::{IMEData, IME};
+use crate::window::wnit::handle::WInitWindowHandle;
+use crate::window::wnit::Window;
+use crate::window::{UserEvent, WindowKind, WindowType};
 use glyphon::Viewport;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -10,10 +13,6 @@ use winit::event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{ImePurpose, WindowId};
-use crate::window::{UserEvent, WindowKind, WindowType};
-use crate::window::ime::{IMEData, IME};
-use crate::window::wnit::handle::WInitWindowHandle;
-use crate::window::wnit::Window;
 
 pub struct WInitApplication<A> {
     windows: HashMap<super::WindowId, Window>,
@@ -131,7 +130,7 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
                 window.render();
             }
             WindowEvent::Resized(size) => {
-                window.resize(Size { width: size.width, height: size.height });
+                window.resize((size.width, size.height).into());
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 match (state, button) {

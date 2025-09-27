@@ -102,7 +102,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "Label");
             ui.add_space(50.0);
-            ui.add(Label::new("这里是Label+").with_id("status").width(100.0));
+            ui.add(Label::new("这里是Label+").with_id("status").max_width(100.0));
             ui.add_space(190.0);
             ui.checkbox(true, "文本更新");
             ui.checkbox(true, "多样文本");

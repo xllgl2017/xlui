@@ -210,9 +210,11 @@ pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
     let frame = unsafe { decoder.GetFrame(0) }?;
     let converter = unsafe { factory.CreateFormatConverter() }?;
     unsafe { converter.Initialize(&frame, &GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, None, 0.0, WICBitmapPaletteTypeCustom)?; }
-    let mut size = Size { width: 0, height: 0 };
-    unsafe { converter.GetSize(&mut size.width, &mut size.height)?; }
-    let stride = (size.width * 4) as usize;
+    let mut width = 0;
+    let mut height = 0;
+    unsafe { converter.GetSize(&mut width, &mut height)?; }
+    let size: Size = (width, height).into();
+    let stride = (size.width * 4.0) as usize;
     let buf_size = stride * size.height as usize;
     let mut buffer = vec![0; buf_size];
     unsafe { converter.CopyPixels(null_mut(), stride as u32, &mut buffer)?; }
@@ -227,7 +229,7 @@ pub fn load_image_file(fp: impl AsRef<Path>) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(not(target_os = "windows"))]
     let img = image::open(fp)?;
     #[cfg(not(target_os = "windows"))]
-    Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
+    Ok((img.to_rgba8().to_vec(), (img.width(), img.height()).into()))
 }
 
 
@@ -239,5 +241,5 @@ pub fn load_image_bytes(bytes: &[u8]) -> UiResult<(Vec<u8>, Size)> {
     #[cfg(not(target_os = "windows"))]
     let img = image::load_from_memory(bytes)?;
     #[cfg(not(target_os = "windows"))]
-    Ok((img.to_rgba8().to_vec(), Size { width: img.width(), height: img.height() }))
+    Ok((img.to_rgba8().to_vec(), (img.width(), img.height()).into()))
 }

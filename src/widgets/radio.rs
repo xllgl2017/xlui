@@ -5,11 +5,11 @@ use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::rect::Rect;
-use crate::size::SizeMode;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
-use crate::text::rich::RichText;
 use crate::text::buffer::TextBuffer;
+use crate::text::rich::RichText;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
@@ -42,7 +42,7 @@ pub struct RadioButton {
     pub(crate) value: bool,
     pub(crate) text: TextBuffer,
     pub(crate) callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
-    size_mode: SizeMode,
+    geometry: Geometry,
     outer_render: RenderParam<CircleParam>,
     inner_render: RenderParam<CircleParam>,
     hovered: bool,
@@ -73,7 +73,7 @@ impl RadioButton {
             value: v,
             text: TextBuffer::new(label),
             callback: None,
-            size_mode: SizeMode::Auto,
+            geometry: Geometry::new(),
             outer_render: RenderParam::new(CircleParam::new(Rect::new().with_size(16.0, 16.0), outer_style)),
             inner_render: RenderParam::new(CircleParam::new(Rect::new().with_size(16.0, 16.0), inner_style)),
             hovered: false,
@@ -86,9 +86,11 @@ impl RadioButton {
         // self.text.rect = self.rect.clone();
         // self.text.rect.add_min_x(18.0);
         // self.text.rect.add_max_x(18.0);
+        self.text.geometry.add_fix_width(-18.0);
         self.text.init(ui);
-        let (w, h) = self.size_mode.size(self.text.rect.width() + 18.0, 18.0 + self.text.rect.height());
-        self.rect.set_size(w, h);
+        self.geometry.set_size(self.text.geometry.width() + 18.0, self.text.geometry.height());
+        // let (w, h) = self.size_mode.size(self.text.rect.width() + 18.0, 18.0 + self.text.rect.height());
+        self.rect.set_size(self.geometry.width(),self.geometry.height());
         // match self.size_mode {
         //     SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),
         //     SizeMode::FixWidth => {}
@@ -98,7 +100,9 @@ impl RadioButton {
     }
 
     pub fn with_width(mut self, width: f32) -> RadioButton {
-        self.size_mode.fix_width(width);
+        self.geometry.set_fix_width(width);
+        self.text.geometry.set_fix_width(width);
+        // self.size_mode.fix_width(width);
         // self.rect.set_width(width);
         // self.size_mode = SizeMode::FixWidth;
         self
@@ -165,7 +169,9 @@ impl RadioButton {
             self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.outer_render.param.rect.width() + 2.0);
-            self.text.rect.offset_to_rect(&text_rect);
+            self.text.geometry.offset_to_rect(&text_rect);
+            // self.text.geometry.set_pos(text_rect.dx().min,text_rect.dy().min);
+            // self.text.rect.offset_to_rect(&text_rect);
             let mut inner_rect = ui.draw_rect.clone();
             inner_rect.set_width(self.inner_render.param.rect.width());
             inner_rect.add_min_x(4.0);
@@ -200,8 +206,6 @@ impl RadioButton {
 
 
 impl Widget for RadioButton {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
