@@ -32,6 +32,7 @@ impl Display for TestKind {
             TestKind::ChildWindow => f.write_str("新窗口"),
             TestKind::Table => f.write_str("表格"),
             TestKind::TabWidget => f.write_str("选项卡"),
+            TestKind::Layout => f.write_str("布局")
         }
     }
 }
