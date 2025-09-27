@@ -199,9 +199,9 @@ impl Geometry {
     //     self.max_height = Some(height);
     // }
 
-    // pub fn set_min_width(&mut self, min_width: f32) {
-    //     self.min_width = Some(min_width);
-    // }
+    pub fn set_min_width(&mut self, min_width: f32) {
+        self.min_width = Some(min_width);
+    }
 
     // pub fn set_min_height(&mut self, min_height: f32) {
     //     self.min_height = Some(min_height);

@@ -43,7 +43,6 @@ use std::sync::{Arc, RwLock};
 pub struct ComboBox<T> {
     pub(crate) id: String,
     popup_id: String,
-    geometry: Geometry,
     text_buffer: TextBuffer,
     data: Vec<T>,
     popup_rect: Rect,
@@ -68,8 +67,7 @@ impl<T: Display + 'static> ComboBox<T> {
         ComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
-            geometry: Geometry::new(),
-            text_buffer: TextBuffer::new("".to_string()).with_align(Align::LeftCenter),
+            text_buffer: TextBuffer::new("".to_string()).with_align(Align::LeftCenter).padding(Padding::same(2.0)),
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
             callback: None,
@@ -83,17 +81,14 @@ impl<T: Display + 'static> ComboBox<T> {
     }
 
     fn reset_size(&mut self, ui: &mut Ui) {
-        // self.text_buffer.size_mode = self.size_mode.clone();
+        self.text_buffer.geometry.set_min_width(100.0);
+        self.text_buffer.geometry.set_max_width(100.0);
         self.text_buffer.init(ui);
-        self.geometry.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
-        // let (w, h) = self.size_mode.size(self.fill_render.param.rect.width(), self.fill_render.param.rect.height());
-        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
+        self.fill_render.param.rect.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.geometry.set_fix_size(width, height);
         self.text_buffer.geometry.set_fix_size(width, height);
-        // self.size_mode = SizeMode::Fix(width, height);
         self
     }
 

@@ -184,6 +184,7 @@ impl Layout for HorizontalLayout {
                 if let UpdateType::Draw = ui.update_type && self.window && self.pressed {
                     let x = ui.device.device_input.mouse.lastest.absolute.x - self.press_pos.x;
                     let y = ui.device.device_input.mouse.lastest.absolute.y - self.press_pos.y;
+                    #[cfg(target_os = "linux")]
                     ui.context.window.x11().move_window(x, y);
                 }
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
