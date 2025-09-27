@@ -201,8 +201,18 @@ impl TextBuffer {
         self
     }
 
+    pub fn fix_height(mut self, h: f32) -> Self {
+        self.geometry.set_fix_height(h);
+        self
+    }
+
     pub fn padding(mut self, padding: Padding) -> Self {
         self.geometry.set_padding(padding);
+        self
+    }
+
+    pub fn min_width(mut self, w: f32) -> Self {
+        self.geometry.set_min_width(w);
         self
     }
 }
