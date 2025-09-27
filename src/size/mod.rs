@@ -22,7 +22,7 @@ impl Size {
 
     #[cfg(feature = "winit")]
     pub fn as_physical_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        winit::dpi::PhysicalSize::new(self.width, self.height)
+        winit::dpi::PhysicalSize::new(self.width_u32(), self.height_u32())
     }
 
     pub fn width_u32(&self) -> u32 {
