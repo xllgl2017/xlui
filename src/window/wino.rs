@@ -116,7 +116,6 @@ impl EventLoopHandle for LoopWindow {
                 let config = &self.app_ctx.device.surface_config;
                 self.app_ctx.device.surface.configure(device, config);
             }
-            // WindowEvent::ReqClose => self.sender.send((self.app_ctx.context.window.id(), WindowEvent::ReqClose)).unwrap(),
             WindowEvent::ReqUpdate => self.app_ctx.update(self.app_ctx.context.user_update.1.clone(), &mut self.app),
             WindowEvent::IME(data) => self.app_ctx.update(UpdateType::IME(data), &mut self.app),
             WindowEvent::Clipboard(data) => self.app_ctx.update(UpdateType::Clipboard(data), &mut self.app),

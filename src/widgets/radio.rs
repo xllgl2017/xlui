@@ -82,29 +82,15 @@ impl RadioButton {
         }
     }
     fn reset_size(&mut self, ui: &mut Ui) {
-        // self.rect.set_height(16.0);
-        // self.text.rect = self.rect.clone();
-        // self.text.rect.add_min_x(18.0);
-        // self.text.rect.add_max_x(18.0);
         self.text.geometry.add_fix_width(-18.0);
         self.text.init(ui);
         self.geometry.set_size(self.text.geometry.width() + 18.0, self.text.geometry.height());
-        // let (w, h) = self.size_mode.size(self.text.rect.width() + 18.0, 18.0 + self.text.rect.height());
         self.rect.set_size(self.geometry.width(),self.geometry.height());
-        // match self.size_mode {
-        //     SizeMode::Auto => self.rect.set_width(18.0 + self.text.rect.width()),
-        //     SizeMode::FixWidth => {}
-        //     SizeMode::FixHeight => self.rect.set_width(18.0 + self.text.rect.width()),
-        //     SizeMode::Fix => {}
-        // }
     }
 
     pub fn with_width(mut self, width: f32) -> RadioButton {
         self.geometry.set_fix_width(width);
         self.text.geometry.set_fix_width(width);
-        // self.size_mode.fix_width(width);
-        // self.rect.set_width(width);
-        // self.size_mode = SizeMode::FixWidth;
         self
     }
 
@@ -129,20 +115,14 @@ impl RadioButton {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        // self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(ui);
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         //外圆
-        // self.outer_render.param.rect = self.rect.clone();
-        // self.outer_render.param.rect.set_width(18.0);
-        // self.outer_render.param.rect.set_height(18.0);
         self.outer_render.init_circle(ui, self.value, self.value);
         //内圆
-        // self.inner_render.param.rect = self.rect.clone();
-        // self.inner_render.param.rect.set_height(18.0);
         self.inner_render.param.rect.add_min_x(4.0);
         self.inner_render.param.rect.contract_y(4.0);
         self.inner_render.param.rect.set_width(self.inner_render.param.rect.height());
@@ -150,11 +130,6 @@ impl RadioButton {
         //文本
         self.text.init(ui);
     }
-
-    // fn update_radio(&mut self, ui: &mut Ui) {
-    //
-    //     ui.context.window.request_redraw();
-    // }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
@@ -170,8 +145,6 @@ impl RadioButton {
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.outer_render.param.rect.width() + 2.0);
             self.text.geometry.offset_to_rect(&text_rect);
-            // self.text.geometry.set_pos(text_rect.dx().min,text_rect.dy().min);
-            // self.text.rect.offset_to_rect(&text_rect);
             let mut inner_rect = ui.draw_rect.clone();
             inner_rect.set_width(self.inner_render.param.rect.width());
             inner_rect.add_min_x(4.0);
@@ -184,15 +157,6 @@ impl RadioButton {
             self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
         }
-        // if !self.changed && !ui.can_offset { return; }
-        // if ui.can_offset {
-        //     self.outer_render.param.rect.offset(&ui.offset);
-        //     self.inner_render.param.rect.offset(&ui.offset);
-        //     self.text.rect.offset(&ui.offset);
-        //     self.rect.offset(&ui.offset);
-        // }
-        // self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-        // self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {

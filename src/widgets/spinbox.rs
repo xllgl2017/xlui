@@ -94,18 +94,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     pub fn reset_size(&mut self) {
-        // let (w, h) = self.size_mode.size(self.rect.width(), self.rect.height());
-        // self.rect.set_size(w, h);
-        // match self.size_mode {
-        //     SizeMode::Auto => self.rect.set_size(100.0, 25.0),
-        //     SizeMode::FixWidth => self.rect.set_height(25.0),
-        //     SizeMode::FixHeight => self.rect.set_width(80.0),
-        //     SizeMode::Fix => {}
-        // }
-        // let mut edit_rect = self.rect.clone();
-        // edit_rect.set_x_max(edit_rect.dx().max - 18.0);
         self.edit.set_width(self.geometry.width() - 18.0);
-        // self.edit.set_rect(edit_rect);
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, T)) -> Self {
@@ -128,16 +117,12 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        // self.init = true;
-        // self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size();
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         self.edit.update(ui);
-        // let mut rect = self.rect.clone();
-        // rect.set_width(18.0);
         self.up_rect.set_x_min(self.rect.dx().max - 14.0);
         self.up_rect.set_x_max(self.rect.dx().max);
         self.up_rect.set_y_min(self.rect.dy().min + 1.0);
@@ -145,15 +130,12 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         let mut p0 = Pos::new();
         p0.x = self.up_rect.dx().min + self.up_rect.width() / 2.0;
         p0.y = self.up_rect.dy().min;
-        // self.up_render.param.p0 = p0;
         let mut p1 = Pos::new();
         p1.x = self.up_rect.dx().min;
         p1.y = self.up_rect.dy().max;
-        // self.up_render.param.p1 = p1;
         let mut p2 = Pos::new();
         p2.x = self.rect.dx().max;
         p2.y = self.up_rect.dy().max;
-        // self.up_render.param.p2 = p2;
         self.up_render.param.set_poses(p0, p1, p2);
         self.up_render.init_triangle(ui, false, false);
         self.down_rect.set_x_min(self.rect.dx().max - 14.0);
@@ -163,15 +145,12 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         let mut p0 = Pos::new();
         p0.x = self.down_rect.dx().min + self.down_rect.width() / 2.0;
         p0.y = self.down_rect.dy().max;
-        // self.down_render.param.p0 = p0;
         let mut p1 = Pos::new();
         p1.x = self.rect.dx().max - 14.0;
         p1.y = self.down_rect.dy().min;
-        // self.down_render.param.p1 = p1;
         let mut p2 = Pos::new();
         p2.x = self.rect.dx().max;
         p2.y = self.down_rect.dy().min;
-        // self.down_render.param.p2 = p2;
         self.down_render.param.set_poses(p0, p1, p2);
         self.down_render.init_triangle(ui, false, false);
     }
@@ -218,22 +197,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             std::thread::sleep(std::time::Duration::from_millis(st));
             window.request_update_event(UserEvent::ReqUpdate);
         });
-        // #[cfg(feature = "winit")]
-        // {
-        //     let w = ui.context.window.clone();
-        //     std::thread::spawn(move || {
-        //         std::thread::sleep(std::time::Duration::from_millis(st));
-        //         w.request_update(UserEvent::ReqUpdate);
-        //     });
-        // }
-        // #[cfg(not(feature = "winit"))]
-        // {
-        //     let window = ui.context.window.clone();
-        //     std::thread::spawn(move || {
-        //         std::thread::sleep(std::time::Duration::from_millis(st));
-        //         window.request_update(UserEvent::ReqUpdate);
-        //     });
-        // }
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -250,18 +213,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.up_rect.set_y_min(self.rect.dy().min + 1.0);
             self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
             self.up_render.param.offset_to_rect(&self.up_rect);
-            // let mut p0 = Pos::new();
-            // p0.x = self.up_rect.dx().min + self.up_rect.width() / 2.0;
-            // p0.y = self.up_rect.dy().min;
-            // self.up_render.param.p0 = p0;
-            // let mut p1 = Pos::new();
-            // p1.x = self.up_rect.dx().min;
-            // p1.y = self.up_rect.dy().max;
-            // self.up_render.param.p1 = p1;
-            // let mut p2 = Pos::new();
-            // p2.x = self.rect.dx().max;
-            // p2.y = self.up_rect.dy().max;
-            // self.up_render.param.p2 = p2;
             self.up_render.update(ui, false, false);
 
             self.down_rect.set_x_min(self.rect.dx().max - 14.0);
@@ -269,18 +220,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
             self.down_rect.set_y_max(self.rect.dy().max - 2.0);
             self.down_render.param.offset_to_rect(&self.down_rect);
-            // let mut p0 = Pos::new();
-            // p0.x = self.down_rect.dx().min + self.down_rect.width() / 2.0;
-            // p0.y = self.down_rect.dy().max;
-            // self.down_render.param.p0 = p0;
-            // let mut p1 = Pos::new();
-            // p1.x = self.rect.dx().max - 14.0;
-            // p1.y = self.down_rect.dy().min;
-            // self.down_render.param.p1 = p1;
-            // let mut p2 = Pos::new();
-            // p2.x = self.rect.dx().max;
-            // p2.y = self.down_rect.dy().min;
-            // self.down_render.param.p2 = p2;
             self.down_render.update(ui, false, false);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
@@ -373,7 +312,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.listen_input(ui, 100);
                 }
             }
-            // UpdateType::Drop => {}
             _ => {}
         }
         self.edit.update(ui);

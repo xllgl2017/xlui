@@ -86,18 +86,13 @@ impl ProcessBar {
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
+            if self.value > self.range.end { self.value = self.range.end; }
             let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
             self.process_render.param.rect.set_width(w);
             self.process_render.update(ui, false, false);
             self.fill_render.update(ui, false, false);
         }
 
-        // if !self.change && !ui.can_offset { return; }
-        // self.change = false;
-        // if ui.can_offset {
-        //     self.fill_render.param.rect.offset(&ui.offset);
-        //     self.process_render.param.rect.offset(&ui.offset);
-        // }
 
     }
 
@@ -111,8 +106,6 @@ impl ProcessBar {
 
 
 impl Widget for ProcessBar {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
