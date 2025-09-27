@@ -38,9 +38,9 @@ impl EditSelection {
             select_style.fill.inactive = Color::rgba(255, 0, 0, 100); //Color::rgba(144, 209, 255, 100); //
             select_style.fill.hovered = Color::rgba(144, 209, 255, 100);
             select_style.fill.clicked = Color::rgba(144, 209, 255, 100);
-            select_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
-            select_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
-            select_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
+            select_style.border.inactive = Border::same(0.0).radius(Radius::same(0));
+            select_style.border.hovered = Border::same(0.0).radius(Radius::same(0));
+            select_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
             for row in 0..rows {
                 let mut rect = rect.clone();
                 rect.set_x_max(rect.dx().min);

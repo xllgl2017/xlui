@@ -9,7 +9,7 @@ pub struct RectangleRender {
 
 impl RectangleRender {
     pub fn new(device: &Device) -> RectangleRender {
-        let shader = device.device.create_shader_module(wgpu::include_wgsl!("rectangle.wgsl"));
+        let shader = device.device.create_shader_module(wgpu::include_wgsl!("rectangle2.wgsl"));
         let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::FRAGMENT,

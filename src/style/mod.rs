@@ -21,13 +21,13 @@ pub struct FrameStyle {
 ///     let mut style=ClickStyle::new();
 ///     //未活跃的状态
 ///     style.fill.inactive=Color::GRAY;
-///     style.border.inactive=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     style.border.inactive=Border::same(1.0).radius(Radius::same(5)).color(Color::RED);
 ///     //滑动状态
 ///     style.fill.hovered=Color::GRAY;
-///     style.border.hovered=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     style.border.hovered=Border::same(1.0).radius(Radius::same(5)).color(Color::RED);
 ///     //活跃状态
 ///     style.fill.clicked=Color::GRAY;
-///     style.border.clicked=Border::new(1.0).radius(Radius::same(5)).color(Color::RED);
+///     style.border.clicked=Border::same(1.0).radius(Radius::same(5)).color(Color::RED);
 /// }
 /// ```
 ///
@@ -82,9 +82,9 @@ impl ClickStyle {
             },
 
             border: BorderStyle {
-                inactive: Border::new(0.0),
-                hovered: Border::new(1.0).color(Color::rgb(0, 0, 0)),
-                clicked: Border::new(1.0).color(Color::rgb(0, 0, 0)),
+                inactive: Border::same(0.0),
+                hovered: Border::same(1.0).color(Color::rgb(0, 0, 0)),
+                clicked: Border::same(1.0).color(Color::rgb(0, 0, 0)),
             },
         }
     }
@@ -108,6 +108,7 @@ pub struct WidgetStyle {
 pub struct Shadow {
     pub offset: [f32; 2],
     pub spread: f32,
+    pub blur: f32,
     pub color: Color,
 }
 
@@ -116,6 +117,7 @@ impl Shadow {
         Shadow {
             offset: [0.0; 2],
             spread: 0.0,
+            blur: 0.0,
             color: Color::TRANSPARENT,
         }
     }
@@ -135,7 +137,7 @@ impl Style {
                 radius: Radius::same(0),
                 fill: Color::rgb(240, 240, 240),
                 shadow: Shadow::new(),
-                border: Border::new(0.0),
+                border: Border::same(0.0),
             },
 
             widget: WidgetStyle {

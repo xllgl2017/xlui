@@ -64,9 +64,9 @@ impl CheckBox {
         check_style.fill.inactive = Color::rgb(210, 210, 210);
         check_style.fill.hovered = Color::rgb(210, 210, 210);
         check_style.fill.clicked = Color::rgb(210, 210, 210);
-        check_style.border.inactive = Border::new(0.0).radius(Radius::same(2));
-        check_style.border.hovered = Border::new(1.0).color(Color::BLACK).radius(Radius::same(2));
-        check_style.border.clicked = Border::new(1.0).color(Color::BLACK).radius(Radius::same(2));
+        check_style.border.inactive = Border::same(0.0).radius(Radius::same(2));
+        check_style.border.hovered = Border::same(1.0).color(Color::BLACK).radius(Radius::same(2));
+        check_style.border.clicked = Border::same(1.0).color(Color::BLACK).radius(Radius::same(2));
         CheckBox {
             id: crate::gen_unique_id(),
             rect: Rect::new(),

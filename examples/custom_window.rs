@@ -29,9 +29,10 @@ impl App for XlUiApp {
             shadow: Shadow {
                 offset: [0.0, 0.0],
                 spread: 5.0,
+                blur: 1.0,
                 color: Color::rgba(0, 0, 0, 100),
             },
-            border: Border::new(2.0).color(Color::rgb(150, 210, 255)),
+            border: Border::same(2.0).color(Color::rgb(150, 210, 255)),
         };
         let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
         layout.set_padding(Padding::same(2.0));
@@ -47,7 +48,7 @@ impl App for XlUiApp {
                 style.fill.inactive = Color::TRANSPARENT;
                 style.fill.hovered = Color::rgba(255, 0, 0, 100);
                 style.fill.clicked = Color::rgba(255, 0, 0, 150);
-                style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+                style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
                 let mut btn = Button::new("×").width(20.0).height(20.0).connect(Self::close);
                 btn.set_style(style.clone());
                 ui.add(btn);

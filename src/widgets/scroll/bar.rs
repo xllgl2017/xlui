@@ -32,9 +32,9 @@ impl ScrollBar {
         slider_style.fill.inactive = Color::rgb(56, 182, 244);
         slider_style.fill.hovered = Color::rgb(56, 182, 244);
         slider_style.fill.clicked = Color::rgb(56, 182, 244);
-        slider_style.border.inactive = Border::new(0.0).radius(Radius::same(0));
-        slider_style.border.hovered = Border::new(0.0).radius(Radius::same(0));
-        slider_style.border.clicked = Border::new(0.0).radius(Radius::same(0));
+        slider_style.border.inactive = Border::same(0.0).radius(Radius::same(0));
+        slider_style.border.hovered = Border::same(0.0).radius(Radius::same(0));
+        slider_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
         ScrollBar {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(10.0, 20.0), fill_style)),

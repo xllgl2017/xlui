@@ -1,5 +1,5 @@
 use crate::ui::Ui;
-use crate::{Device, SAMPLE_COUNT};
+use crate::{Device, Size, SAMPLE_COUNT};
 use wgpu::util::DeviceExt;
 
 pub mod rectangle;
@@ -8,7 +8,7 @@ pub mod image;
 pub mod triangle;
 
 pub trait WrcParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) -> &[u8];
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8];
 }
 
 pub struct RenderParam<T> {
@@ -27,26 +27,30 @@ impl<T: WrcParam> RenderParam<T> {
     }
 
     pub fn update(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        let data = self.param.as_draw_param(hovered, pressed);
+        let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
+        let data = self.param.as_draw_param(hovered, pressed, size);
         ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
     }
 
     pub fn init_rectangle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        let data = self.param.as_draw_param(hovered, pressed);
+        let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
+        let data = self.param.as_draw_param(hovered, pressed, size);
         let (buffer, bind_group) = ui.context.render.rectangle.init(&ui.device, data);
         self.buffer = Some(buffer);
         self.bind_group = Some(bind_group);
     }
 
     pub fn init_triangle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        let data = self.param.as_draw_param(hovered, pressed);
+        let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
+        let data = self.param.as_draw_param(hovered, pressed, size);
         let (buffer, bind_group) = ui.context.render.triangle.init(&ui.device, data);
         self.buffer = Some(buffer);
         self.bind_group = Some(bind_group);
     }
 
     pub fn init_circle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        let data = self.param.as_draw_param(hovered, pressed);
+        let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
+        let data = self.param.as_draw_param(hovered, pressed, size);
         let (buffer, bind_group) = ui.context.render.circle.init(&ui.device, data);
         self.buffer = Some(buffer);
         self.bind_group = Some(bind_group);

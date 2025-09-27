@@ -191,10 +191,10 @@ impl TextBuffer {
         self.reset();
     }
 
-    pub fn height(mut self, height: f32) -> Self {
-        self.geometry.set_height(height);
-        self
-    }
+    // pub fn height(mut self, height: f32) -> Self {
+    //     self.geometry.set_height(height);
+    //     self
+    // }
 
     pub fn fix_width(mut self, w: f32) -> Self {
         self.geometry.set_fix_width(w);

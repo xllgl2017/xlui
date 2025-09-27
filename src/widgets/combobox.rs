@@ -59,7 +59,7 @@ impl<T: Display + 'static> ComboBox<T> {
     pub fn new(data: Vec<T>) -> Self {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
-        fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
+        fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         let mut allow_style = ClickStyle::new();
         allow_style.fill = FillStyle::same(Color::BLACK);
         ComboBox {
@@ -128,7 +128,7 @@ impl<T: Display + 'static> ComboBox<T> {
         //背景
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
-        fill_style.border.inactive = Border::new(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
+        fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         self.fill_render.init_rectangle(ui, false, false);
         self.allow_render.init_triangle(ui, false, false);
         //文本
