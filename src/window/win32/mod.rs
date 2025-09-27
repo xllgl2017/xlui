@@ -145,8 +145,8 @@ impl Win32Window {
             let window = window.unwrap();
             match msg.message {
                 RESIZE => {
-                    let width = until::loword(msg.lParam.0 as u32) as u32;
-                    let height = until::hiword(msg.lParam.0 as u32) as u32;
+                    let width = until::loword(msg.lParam.0 as u32) as f32;
+                    let height = until::hiword(msg.lParam.0 as u32) as f32;
                     println!("resize-{}-{}", width, height);
                     (window.id, WindowEvent::Resize(Size { width, height }))
                 }
@@ -221,7 +221,7 @@ impl Win32Window {
                 WM_MOUSEMOVE => {
                     let x = until::get_x_lparam(msg.lParam) as f32;
                     let y = until::get_y_lparam(msg.lParam) as f32;
-                    (window.id, WindowEvent::MouseMove(Pos { x, y }))
+                    (window.id, WindowEvent::MouseMove((x, y).into()))
                 }
                 WM_MOUSEWHEEL => {
                     let delta = ((msg.wParam.0 >> 16) & 0xFFFF) as i16;
