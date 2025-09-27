@@ -84,26 +84,10 @@ impl CheckBox {
 
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        // self.text.rect = self.rect.clone();
         self.text.geometry.add_fix_width(-15.0);
         self.text.init(ui);
         self.geometry.set_size(self.text.geometry.width() + 15.0, self.text.geometry.height());
-        // self.text.rect.add_min_x(15.0);
-        // self.text.rect.add_max_x(15.0);
-        // self.text.rect.offset_x(15.0);
-        // let (w, h) = self.size_mode.size(self.text.rect.width() + 15.0, self.text.rect.height());
         self.rect.set_size(self.geometry.width(), self.geometry.height());
-        // match self.size_mode {
-        //     SizeMode::Auto => {
-        //         self.rect.set_width(15.0 + self.text.rect.width());
-        //         self.rect.set_height(20.0);
-        //     }
-        //     SizeMode::FixWidth => self.rect.set_height(20.0),
-        //     SizeMode::FixHeight => self.rect.set_width(15.0 + self.text.rect.width()),
-        //     SizeMode::Fix => {}
-        // }
-        //
-        // self.text.rect.set_height(self.rect.height());
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, bool)) -> Self {
@@ -114,9 +98,6 @@ impl CheckBox {
     pub fn with_width(mut self, width: f32) -> Self {
         self.geometry.set_fix_width(width);
         self.text.geometry.set_fix_width(width);
-        // self.rect.set_width(width);
-        // self.size_mode.fix_width(width);
-        // self.size_mode = SizeMode::FixWidth;
         self
     }
 
@@ -136,31 +117,21 @@ impl CheckBox {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        // self.rect = ui.layout().available_rect().clone_with_size(&self.rect);
         self.reset_size(ui);
         self.re_init(ui);
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
         //复选框
-        // self.check_render.param.rect = self.rect.clone();
-        // self.check_render.param.rect.set_width(15.0);
-        // self.check_render.param.rect.set_height(15.0);
         self.check_render.init_rectangle(ui, false, self.value);
         //文本
         self.check_text.init(ui);
-        // self.text.draw(ui);
-        // self.check_text.reset_size(ui);
         self.check_text.geometry.offset_to_rect(&self.check_render.param.rect);
-        // self.check_text.geometry.set_pos(self.check_render.param.rect.dx().min, self.check_render.param.rect.dy().min);
-        // self.check_text.rect = self.check_render.param.rect.clone();
-        // self.check_text.draw(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_bool(&mut self.value);
-            // self.changed = true;
             ui.widget_changed |= WidgetChange::Value;
         }
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
@@ -171,25 +142,13 @@ impl CheckBox {
             self.check_render.param.rect.offset_to_rect(&check_rect);
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.check_text.geometry.offset_to_rect(&check_rect);
-            // self.check_text.geometry.set_pos(check_rect.dx().min, check_rect.dy().min); //.rect.offset_to_rect(&check_rect);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.check_render.param.rect.width() + 2.0);
             self.text.geometry.offset_to_rect(&text_rect);
-            // self.text.geometry.set_pos(text_rect.dx().min, text_rect.dy().min);
-            // self.text.rect.offset_to_rect(&text_rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
-
-        // if !self.changed && !ui.can_offset { return; }
-        // if ui.can_offset {
-        //     self.check_render.param.rect.offset(&ui.offset);
-        //     self.text.rect.offset(&ui.offset);
-        //     self.check_text.rect.offset(&ui.offset);
-        //     self.rect.offset(&ui.offset);
-        // }
-        // self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
