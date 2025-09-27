@@ -1,4 +1,3 @@
-use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
@@ -10,14 +9,13 @@ use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
-use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
-use crate::{FillStyle, Offset, Pos};
+use crate::{Align, FillStyle, Offset, Pos};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 
