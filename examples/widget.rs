@@ -171,6 +171,7 @@ impl App for TestWidget {
             ui.radio(true, "ComboBox");
             ui.add_space(30.0);
             ui.add(cb);
+            ui.add(CheckComboBox::new(vec![1, 2, 3, 4]).with_popup_height(150.0));
             ui.add_space(186.0);
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "滚动");

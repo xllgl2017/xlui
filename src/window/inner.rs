@@ -12,7 +12,7 @@ use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FrameStyle, Shadow};
+use crate::style::{BorderStyle, ClickStyle, FrameStyle, Shadow, Style};
 use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::WidgetChange;
@@ -20,6 +20,8 @@ use crate::window::attribute::WindowAttribute;
 use crate::window::WindowId;
 use crate::{HorizontalLayout, Offset, VerticalLayout, Widget};
 use std::any::Any;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -51,7 +53,7 @@ impl InnerWindow {
         let attr = w.window_attributes();
         let mut rect = Rect::new().with_size(attr.inner_width_f32(), attr.inner_height_f32());
         rect.offset_to(attr.pos_x_f32(), attr.pos_y_f32());
-        let fill_param = RectParam::new(rect.clone(), Popup::popup_style())
+        let fill_param = RectParam::new(rect.clone(), ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);
@@ -143,6 +145,7 @@ impl InnerWindow {
             // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
+            style:Rc::new(RefCell::new(Style::light_style()))
         };
 
 
@@ -216,6 +219,7 @@ impl InnerWindow {
             // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
+            style: Rc::new(RefCell::new(Style::light_style())),
         };
 
 
@@ -255,6 +259,7 @@ impl InnerWindow {
             // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
+            style: Rc::new(RefCell::new(Style::light_style())),
         };
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);

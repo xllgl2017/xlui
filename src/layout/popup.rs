@@ -1,16 +1,14 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
-use crate::{ScrollWidget, Widget};
 use crate::response::Response;
-use crate::size::border::Border;
 use crate::size::padding::Padding;
-use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle, Shadow};
+use crate::style::Shadow;
 use crate::ui::Ui;
 use crate::widgets::{WidgetChange, WidgetSize};
+use crate::{ScrollWidget, Widget};
 
 pub struct Popup {
     pub(crate) id: String,
@@ -31,7 +29,7 @@ impl Popup {
             color: Color::rgba(0, 0, 0, 30),
         };
 
-        let fill_param = RectParam::new(Rect::new(), Popup::popup_style())
+        let fill_param = RectParam::new(Rect::new(), ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);
@@ -61,43 +59,6 @@ impl Popup {
 
     pub fn rect(&self) -> &Rect {
         &self.fill_render.param.rect
-    }
-
-    pub fn popup_style() -> ClickStyle {
-        ClickStyle {
-            fill: FillStyle {
-                inactive: Color::rgb(240, 240, 240),
-                hovered: Color::rgb(240, 240, 240),
-                clicked: Color::rgb(240, 240, 240),
-            },
-            border: BorderStyle {
-                inactive: Border {
-                    left_width: 1.0,
-                    right_width: 1.0,
-                    top_width: 1.0,
-                    bottom_width: 1.0,
-                    radius: Radius::same(5),
-                    color: Color::rgba(144, 209, 255, 255),
-
-                },
-                hovered: Border {
-                    left_width: 1.0,
-                    right_width: 1.0,
-                    top_width: 1.0,
-                    bottom_width: 1.0,
-                    radius: Radius::same(5),
-                    color: Color::rgba(144, 209, 255, 255),
-                },
-                clicked: Border {
-                    left_width: 1.0,
-                    right_width: 1.0,
-                    top_width: 1.0,
-                    bottom_width: 1.0,
-                    radius: Radius::same(5),
-                    color: Color::rgba(144, 209, 255, 255),
-                },
-            },
-        }
     }
 
     pub fn update_buffer(&mut self, ui: &mut Ui) {
