@@ -105,7 +105,7 @@ fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     let shadow_col = vec4<f32>(u.shadow_color.rgb, u.shadow_color.a * shadow_mask);
 
     // compose fill and border
-    let fill_col = vec4<f32>(u.fill_color.rgb * u.fill_color.a, u.fill_color.a) * fill_mask;
+    let fill_col = u.fill_color * fill_mask;
     let border_col = vec4<f32>(u.border_color.rgb * u.border_color.a, u.border_color.a) * border_mask;
 
     // Simple over compositing: shadow below, then fill, then border
