@@ -156,7 +156,7 @@ impl CheckBox {
         if ui.widget_changed.contains(WidgetChange::Position) {
             if let Some(ref mut fill) = self.fill {
                 fill.param.rect.offset_to_rect(&ui.draw_rect);
-                fill.update(ui, false, false);
+                fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             }
             self.geometry.offset_to_rect(&ui.draw_rect);
             let mut rect = self.geometry.rect();
@@ -167,6 +167,9 @@ impl CheckBox {
             self.text.geometry.offset_to_rect(&rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
+            if let Some(ref mut fill) = self.fill {
+                fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+            }
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
     }
