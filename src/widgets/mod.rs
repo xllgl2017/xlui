@@ -1,8 +1,8 @@
 use crate::response::Response;
 use crate::ui::Ui;
+use crate::widgets::space::Space;
 use std::any::{Any, TypeId};
 use std::ops::{BitAnd, BitOr, BitOrAssign, Deref, DerefMut};
-use crate::widgets::space::Space;
 
 pub mod label;
 pub mod button;
@@ -26,11 +26,8 @@ pub mod tab;
 pub mod combo;
 
 pub trait Widget: Any {
-    // #[deprecated="use Widget::update"]
-    // fn redraw(&mut self, ui: &mut Ui); //绘制调用
     fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
-    // #[allow(unused_attributes)]
-    // fn store(&mut self, datum: &dyn Any) {}
+    // fn style_mut(&mut self) -> &mut RenderParam<RectParam>;
 }
 
 #[derive(Copy, Clone, PartialEq)]

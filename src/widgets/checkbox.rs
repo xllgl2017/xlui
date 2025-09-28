@@ -1,4 +1,3 @@
-use crate::Align;
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
@@ -75,7 +74,7 @@ impl CheckBox {
             value: v,
             callback: None,
             inner_callback: None,
-            geometry: Geometry::new().with_align(Align::LeftCenter),
+            geometry: Geometry::new(),
             check_render: RenderParam::new(param),
             hovered: false,
             contact_ids: vec![],
@@ -135,6 +134,11 @@ impl CheckBox {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
+        //背景
+        if let Some(ref mut fill) = self.fill {
+            fill.param.rect.set_size(self.geometry.width(), self.geometry.height());
+            fill.init_rectangle(ui, false, false);
+        }
         //复选框
         self.check_render.init_rectangle(ui, false, self.value);
         //文本
@@ -150,6 +154,10 @@ impl CheckBox {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
+            if let Some(ref mut fill) = self.fill {
+                fill.param.rect.offset_to_rect(&ui.draw_rect);
+                fill.update(ui, false, false);
+            }
             self.geometry.offset_to_rect(&ui.draw_rect);
             let mut rect = self.geometry.rect();
             self.check_render.param.rect.offset_to_rect(&rect);
@@ -166,13 +174,20 @@ impl CheckBox {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
+        if let Some(ref fill) = self.fill {
+            ui.context.render.rectangle.render(fill, pass);
+        }
         ui.context.render.rectangle.render(&self.check_render, pass);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }
 
     pub fn style_mut(&mut self) -> &mut RenderParam<RectParam> {
-        self.fill.get_or_insert_with(||RenderParam::new(RectParam::new()))
+        self.fill.get_or_insert_with(|| RenderParam::new(RectParam::new()))
+    }
+
+    pub fn geometry_mut(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }
 

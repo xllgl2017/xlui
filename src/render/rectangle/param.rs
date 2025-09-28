@@ -126,8 +126,12 @@ impl RectParam {
     }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
-        self.style = style;
+        self.set_style(style);
         self
+    }
+
+    pub fn set_style(&mut self,style:ClickStyle){
+        self.style = style;
     }
 
     pub fn set_frame(&mut self, frame: FrameStyle) {
