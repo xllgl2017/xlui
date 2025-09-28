@@ -3,7 +3,7 @@ use crate::render::triangle::param::TriangleParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::widgets::{WidgetChange, WidgetSize};
-use crate::{App, Border, CheckBox, ClickStyle, Color, FillStyle, Offset, Popup, Pos, Radius, Rect, TextEdit, Ui, UpdateType, Widget};
+use crate::{Align, App, Border, BorderStyle, CheckBox, ClickStyle, Color, FillStyle, Offset, Padding, Popup, Pos, Radius, Rect, TextEdit, Ui, UpdateType, Widget};
 use std::fmt::Display;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
@@ -57,15 +57,29 @@ impl<T: Display + 'static> CheckComboBox<T> {
         let value = item.to_string();
         let current = self.selected.clone();
         let state = self.changed.clone();
-        ui.add(CheckBox::new(false, &value).with_width(self.popup_rect.width() - 10.0)
-            .connect_inner(move || {
-                let mut current = current.write().unwrap();
-                match current.iter().position(|x| x == &value) {
-                    None => current.push(value.clone()),
-                    Some(index) => { current.remove(index); }
-                }
-                state.store(true, Ordering::SeqCst);
-            }));
+        let mut item = CheckBox::new(false, &value).with_width(self.popup_rect.width() - 10.0);
+        let mut item = item.connect_inner(move || {
+            let mut current = current.write().unwrap();
+            match current.iter().position(|x| x == &value) {
+                None => current.push(value.clone()),
+                Some(index) => { current.remove(index); }
+            }
+            state.store(true, Ordering::SeqCst);
+        });
+        item.geometry_mut().an(Align::LeftCenter).pd(Padding::same(3.0));
+        item.style_mut().param.set_style(ClickStyle {
+            fill: FillStyle {
+                inactive: Color::TRANSPARENT,
+                hovered: Color::rgba(153, 193, 241, 220),
+                clicked: Color::rgba(153, 193, 241, 220),
+            },
+            border: BorderStyle {
+                inactive: Border::same(0.0),
+                hovered: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
+                clicked: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
+            },
+        });
+        ui.add(item);
     }
 
     fn add_items(&self, ui: &mut Ui) {
