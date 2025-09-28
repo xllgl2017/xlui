@@ -4,7 +4,7 @@ use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
 use crate::widgets::{WidgetChange, WidgetSize};
-use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind, Padding, Radius, Rect, RichText, Ui, UpdateType, VerticalLayout, Widget};
+use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind, Padding, Radius, RichText, Ui, UpdateType, VerticalLayout, Widget};
 
 pub struct TabLabel {
     id: String,
@@ -23,7 +23,7 @@ impl TabLabel {
         TabLabel {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0),
-            fill: RenderParam::new(RectParam::new(Rect::new().with_height(25.0), tab_style)),
+            fill: RenderParam::new(RectParam::new().with_height(25.0).with_style(tab_style)),
             changed: false,
         }
     }
@@ -93,7 +93,7 @@ impl TabWidget {
             space: 2.0,
             items: vec![],
             geometry: Geometry::new(),
-            fill: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            fill: RenderParam::new(RectParam::new().with_style(fill_style)),
         }
     }
     pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) {

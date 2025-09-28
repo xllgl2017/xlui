@@ -3,7 +3,6 @@ use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
-use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
@@ -26,7 +25,7 @@ impl ItemWidget {
     pub fn new(layout: LayoutKind, data_str: String) -> Self {
         ItemWidget {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
+            fill_render: RenderParam::new(RectParam::new()),
             hovered: false,
             layout: Some(layout),
             data_str,

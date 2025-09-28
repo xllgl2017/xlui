@@ -130,7 +130,7 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "CheckBox");
             ui.add_space(30.0);
-            ui.add(CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check));
+            ui.add(CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check).with_size(100.0, 25.0));
             ui.checkbox(true, "checkbox2").set_callback(Self::check);
             ui.add_space(129.0);
             ui.checkbox(true, "变动监测");

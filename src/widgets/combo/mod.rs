@@ -71,7 +71,7 @@ impl<T: Display + 'static> ComboBox<T> {
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
             callback: None,
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(100.0, 20.0), fill_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(100.0,20.0).with_style(fill_style)),
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
 

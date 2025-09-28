@@ -1,3 +1,4 @@
+use crate::Align;
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
@@ -44,19 +45,17 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct CheckBox {
     pub(crate) id: String,
-    rect: Rect,
     text: TextBuffer,
     check_text: TextBuffer,
     value: bool,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
     inner_callback: Option<InnerCallB>,
     geometry: Geometry,
-
     check_render: RenderParam<RectParam>,
-
     hovered: bool,
     contact_ids: Vec<String>,
     changed: bool,
+    fill: Option<RenderParam<RectParam>>,
 }
 
 impl CheckBox {
@@ -68,28 +67,27 @@ impl CheckBox {
         check_style.border.inactive = Border::same(0.0).radius(Radius::same(2));
         check_style.border.hovered = Border::same(1.0).color(Color::BLACK).radius(Radius::same(2));
         check_style.border.clicked = Border::same(1.0).color(Color::BLACK).radius(Radius::same(2));
+        let param = RectParam::new().with_rect(Rect::new().with_size(15.0, 15.0)).with_style(check_style);
         CheckBox {
             id: crate::gen_unique_id(),
-            rect: Rect::new(),
             text: TextBuffer::new(label),
             check_text: TextBuffer::new(RichText::new("√").size(14.0)),
             value: v,
             callback: None,
             inner_callback: None,
-            geometry: Geometry::new(),
-            check_render: RenderParam::new(RectParam::new(Rect::new().with_size(15.0, 15.0), check_style)),
+            geometry: Geometry::new().with_align(Align::LeftCenter),
+            check_render: RenderParam::new(param),
             hovered: false,
             contact_ids: vec![],
             changed: false,
+            fill: None,
         }
     }
 
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.geometry.add_fix_width(-15.0);
         self.text.init(ui);
         self.geometry.set_size(self.text.geometry.width() + 15.0, self.text.geometry.height());
-        self.rect.set_size(self.geometry.width(), self.geometry.height());
     }
 
     pub(crate) fn connect_inner(mut self, callback: impl FnMut() + 'static) -> Self {
@@ -104,8 +102,16 @@ impl CheckBox {
 
     pub fn with_width(mut self, width: f32) -> Self {
         self.geometry.set_fix_width(width);
-        self.text.geometry.set_fix_width(width);
         self
+    }
+
+    pub fn with_height(mut self, height: f32) -> Self {
+        self.geometry.set_fix_height(height);
+        self
+    }
+
+    pub fn with_size(self, w: f32, h: f32) -> Self {
+        self.with_height(h).with_width(w)
     }
 
     pub fn id(mut self, id: impl ToString) -> Self {
@@ -144,14 +150,13 @@ impl CheckBox {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.rect.offset_to_rect(&ui.draw_rect);
-            let check_rect = ui.draw_rect.clone_with_size(&self.check_render.param.rect);
-            self.check_render.param.rect.offset_to_rect(&check_rect);
+            self.geometry.offset_to_rect(&ui.draw_rect);
+            let mut rect = self.geometry.rect();
+            self.check_render.param.rect.offset_to_rect(&rect);
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-            self.check_text.geometry.offset_to_rect(&check_rect);
-            let mut text_rect = ui.draw_rect.clone();
-            text_rect.add_min_x(self.check_render.param.rect.width() + 2.0);
-            self.text.geometry.offset_to_rect(&text_rect);
+            self.check_text.geometry.offset_to_rect(&rect);
+            rect.add_min_x(self.check_render.param.rect.width() + 2.0);
+            self.text.geometry.offset_to_rect(&rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
@@ -165,6 +170,10 @@ impl CheckBox {
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }
+
+    pub fn style_mut(&mut self) -> &mut RenderParam<RectParam> {
+        self.fill.get_or_insert_with(||RenderParam::new(RectParam::new()))
+    }
 }
 
 impl Widget for CheckBox {
@@ -174,16 +183,15 @@ impl Widget for CheckBox {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.geometry.max_rect());
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
-            UpdateType::MousePress => {}
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.rect) {
+                if ui.device.device_input.click_at(&self.geometry.max_rect()) {
                     self.value = !self.value;
                     self.changed = true;
                     if let Some(ref mut callback) = self.callback {
@@ -201,6 +209,6 @@ impl Widget for CheckBox {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
     }
 }

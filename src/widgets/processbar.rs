@@ -1,15 +1,14 @@
-use std::ops::Range;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
-use crate::size::rect::Rect;
-use crate::style::ClickStyle;
 use crate::style::color::Color;
+use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use std::ops::Range;
 
 pub struct ProcessBar {
     id: String,
@@ -41,8 +40,8 @@ impl ProcessBar {
         process_style.border.clicked = Border::same(0.0).radius(Radius::same(1));
         ProcessBar {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 10.0), fill_style)),
-            process_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 10.0), process_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(200.0,10.0).with_style(fill_style)),
+            process_render: RenderParam::new(RectParam::new().with_size(200.0,10.0).with_style(process_style)),
             value: v,
             range: 0.0..100.0,
             change: false,

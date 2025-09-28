@@ -6,7 +6,6 @@ use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::padding::Padding;
-use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
@@ -76,7 +75,7 @@ impl Button {
             image: None,
             hovered: false,
             changed: false,
-            fill_render: RenderParam::new(RectParam::new(Rect::new(), ClickStyle::new())),
+            fill_render: RenderParam::new(RectParam::new()),
         }
     }
 
