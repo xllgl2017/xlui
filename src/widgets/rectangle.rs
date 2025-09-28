@@ -36,7 +36,7 @@ impl Rectangle {
     pub fn new(style: ClickStyle, width: f32, height: f32) -> Self {
         Rectangle {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(width, height), style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(width, height).with_style(style)),
             hovered: false,
             changed: false,
         }

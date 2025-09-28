@@ -29,7 +29,7 @@ impl Popup {
             color: Color::rgba(0, 0, 0, 30),
         };
 
-        let fill_param = RectParam::new(Rect::new(), ui.style.borrow().widgets.popup.clone())
+        let fill_param = RectParam::new().with_style(ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);

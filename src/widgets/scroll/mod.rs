@@ -44,7 +44,7 @@ impl ScrollWidget {
             layout: None,
             v_bar: ScrollBar::vertical(),
             h_bar: ScrollBar::horizontal(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            fill_render: RenderParam::new(RectParam::new().with_style(fill_style)),
             a: 0.0,
             padding: Padding::same(5.0),
             horiz_scrollable: false,

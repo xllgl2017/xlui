@@ -1,5 +1,5 @@
 use crate::layout::LayoutDirection;
-use crate::{Padding, Rect};
+use crate::{Align, Padding, Rect};
 
 pub mod rect;
 pub mod padding;
@@ -76,6 +76,7 @@ pub struct Geometry {
     fix_width: Option<f32>,
     fix_height: Option<f32>,
     padding: Padding,
+    align: Align,
 }
 
 impl Geometry {
@@ -92,6 +93,7 @@ impl Geometry {
             fix_width: None,
             fix_height: None,
             padding: Padding::same(0.0),
+            align: Align::LeftTop,
         }
     }
 
@@ -146,8 +148,40 @@ impl Geometry {
         rect
     }
 
+    pub fn max_rect(&self) -> Rect {
+        let mut rect = Rect::new();
+        rect.set_x_min(self.x);
+        rect.set_y_min(self.y);
+        rect.set_width(self.width());
+        rect.set_height(self.height());
+        rect
+    }
+
+    /// Align
+    ///```text
+    /// |--------------------------------|
+    /// |lt             ct            rt |
+    /// |lc             cc            rc |
+    /// |lb             cb            rb |
+    /// |--------------------------------|
+    /// ```
     pub fn x(&self) -> f32 {
-        self.x + self.padding.left
+        let mut x = self.x + self.padding.left;
+        let max_width = if let Some(max_width) = self.max_width {
+            max_width
+        } else { return x };
+        match self.align {
+            Align::CenterTop | Align::Center | Align::CenterBottom => {
+                let free_space = max_width - self.width;
+                x += free_space / 2.0;
+            }
+            Align::RightTop | Align::RightCenter | Align::RightBottom => {
+                let free_space = max_width - self.width;
+                x += free_space;
+            }
+            _ => {}
+        }
+        x
     }
 
     pub fn x_i32(&self) -> i32 {
@@ -155,7 +189,24 @@ impl Geometry {
     }
 
     pub fn y(&self) -> f32 {
-        self.y + self.padding.top
+        let mut y = self.y + self.padding.top;
+        let max_height = if let Some(max_height) = self.max_height {
+            max_height
+        } else {
+            return y;
+        };
+        match self.align {
+            Align::LeftCenter | Align::Center | Align::RightCenter => {
+                let free_space = max_height - self.height;
+                y += free_space / 2.0;
+            }
+            Align::LeftBottom | Align::CenterBottom | Align::RightBottom => {
+                let free_space = max_height - self.height;
+                y += free_space;
+            }
+            _ => {}
+        }
+        y
     }
 
     // pub fn y_i32(&self) -> i32 {
@@ -235,6 +286,11 @@ impl Geometry {
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
         self.set_width(w);
         self.set_height(h);
+        self
+    }
+
+    pub fn with_align(mut self, align: Align) -> Self {
+        self.align = align;
         self
     }
 }

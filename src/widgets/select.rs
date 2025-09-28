@@ -6,7 +6,6 @@ use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
-use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
@@ -61,7 +60,7 @@ impl<T: Display> SelectItem<T> {
             text: TextBuffer::new(value.to_string()).with_align(Align::Center),
             value,
             parent_selected: Arc::new(RwLock::new(None)),
-            fill_render: RenderParam::new(RectParam::new(Rect::new(), fill_style)),
+            fill_render: RenderParam::new(RectParam::new().with_style(fill_style)),
             callback: None,
             hovered: false,
             selected: false,

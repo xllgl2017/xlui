@@ -53,7 +53,7 @@ impl InnerWindow {
         let attr = w.window_attributes();
         let mut rect = Rect::new().with_size(attr.inner_width_f32(), attr.inner_height_f32());
         rect.offset_to(attr.pos_x_f32(), attr.pos_y_f32());
-        let fill_param = RectParam::new(rect.clone(), ui.style.borrow().widgets.popup.clone())
+        let fill_param = RectParam::new().with_rect(rect.clone()).with_style(ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
         fill_render.init_rectangle(ui, false, false);

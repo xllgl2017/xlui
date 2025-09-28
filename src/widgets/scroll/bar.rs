@@ -4,7 +4,6 @@ use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
-use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
@@ -37,8 +36,8 @@ impl ScrollBar {
         slider_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
         ScrollBar {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(10.0, 20.0), fill_style)),
-            slider_render: RenderParam::new(RectParam::new(Rect::new().with_size(10.0, 10.0), slider_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(10.0,20.0).with_style(fill_style)),
+            slider_render: RenderParam::new(RectParam::new().with_size(10.0,10.0).with_style(slider_style)),
             context_size: 0.0,
             focused: false,
             offset: Offset::new(Pos::new()),

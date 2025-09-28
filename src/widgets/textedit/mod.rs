@@ -58,11 +58,12 @@ impl TextEdit {
         fill_style.border.inactive = Border::same(0.0).radius(Radius::same(2));
         fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill_style.border.clicked = fill_style.border.hovered.clone();
+        let param=RectParam::new().with_rect(Rect::new().with_size(200.0,30.0)).with_style(fill_style);
         TextEdit {
             id: crate::gen_unique_id(),
             callback: None,
             contact_ids: vec![],
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(200.0, 30.0), fill_style)),
+            fill_render: RenderParam::new(param),
             select_render: EditSelection::new(),
             cursor_render: EditCursor::new(),
             changed: false,

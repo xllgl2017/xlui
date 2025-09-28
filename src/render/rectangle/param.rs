@@ -44,10 +44,12 @@ pub struct RectParam {
 }
 
 impl RectParam {
-    pub fn new(rect: Rect, style: ClickStyle) -> Self {
-        let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
-        let border = style.dyn_border(false, false);
-        let shadow = Shadow::new();
+    pub fn new() -> Self {
+        // let rect = Rect::new();
+        // let style = ClickStyle::new();
+        // let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
+        // let border = style.dyn_border(false, false);
+        // let shadow = Shadow::new();
         // let draw = RectDrawParam {
         //     pos: [rect.dx().min, rect.dy().min],
         //     size: [rect.width(), rect.height()],
@@ -64,29 +66,39 @@ impl RectParam {
         //     shadow_color: shadow.color.as_gamma_rgba(),
         //     fill_color,
         // };
-        let x = (rect.dx().min + rect.dx().max) / 2.0;
-        let y = (rect.dy().min + rect.dy().max) / 2.0;
-        let draw = RectDrawParam2 {
-            center_position: [x, y],
-            radius: [rect.width() / 2.0, rect.height() / 2.0],
-            corner_radii: [
-                border.radius.left_top as f32,
-                border.radius.right_top as f32,
-                border.radius.right_bottom as f32,
-                border.radius.left_bottom as f32,
-            ],
-            border_widths: [border.left_width, border.right_width, border.bottom_width, border.top_width],
-            fill_color,
-            border_color: border.color.as_gamma_rgba(),
-            screen: [800.0, 600.0, 1.0, 0.0],
-            shadow_params: [shadow.offset[0], shadow.offset[1], shadow.spread, shadow.blur],
-            shadow_color: shadow.color.as_gamma_rgba(),
-        };
+        // let x = (rect.dx().min + rect.dx().max) / 2.0;
+        // let y = (rect.dy().min + rect.dy().max) / 2.0;
+        // let draw = RectDrawParam2 {
+        //     center_position: [x, y],
+        //     radius: [rect.width() / 2.0, rect.height() / 2.0],
+        //     corner_radii: [
+        //         border.radius.left_top as f32,
+        //         border.radius.right_top as f32,
+        //         border.radius.right_bottom as f32,
+        //         border.radius.left_bottom as f32,
+        //     ],
+        //     border_widths: [border.left_width, border.right_width, border.bottom_width, border.top_width],
+        //     fill_color,
+        //     border_color: border.color.as_gamma_rgba(),
+        //     screen: [800.0, 600.0, 1.0, 0.0],
+        //     shadow_params: [shadow.offset[0], shadow.offset[1], shadow.spread, shadow.blur],
+        //     shadow_color: shadow.color.as_gamma_rgba(),
+        // };
         RectParam {
-            rect,
-            style,
-            shadow,
-            draw,
+            rect: Rect::new(),
+            style: ClickStyle::new(),
+            shadow: Shadow::new(),
+            draw: RectDrawParam2 {
+                center_position: [0.0; 2],
+                radius: [0.0; 2],
+                corner_radii: [0.0; 4],
+                border_widths: [0.0; 4],
+                fill_color: [0.0; 4],
+                border_color: [0.0; 4],
+                screen: [0.0; 4],
+                shadow_params: [0.0; 4],
+                shadow_color: [0.0; 4],
+            },
         }
     }
 
@@ -94,8 +106,28 @@ impl RectParam {
         let mut style = ClickStyle::new();
         style.fill = FillStyle::same(frame.fill);
         style.border = BorderStyle::same(frame.border);
-        let res = Self::new(rect, style);
+        let res = Self::new().with_rect(rect).with_style(style);
         res.with_shadow(frame.shadow)
+    }
+
+    pub fn with_rect(mut self, rect: Rect) -> Self {
+        self.rect = rect;
+        self
+    }
+
+    pub fn with_size(mut self, w: f32, h: f32) -> Self {
+        self.rect.set_size(w, h);
+        self
+    }
+
+    pub fn with_height(mut self,h:f32) -> Self {
+        self.rect.set_height(h);
+        self
+    }
+
+    pub fn with_style(mut self, style: ClickStyle) -> Self {
+        self.style = style;
+        self
     }
 
     pub fn set_frame(&mut self, frame: FrameStyle) {
