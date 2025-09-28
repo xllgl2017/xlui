@@ -130,7 +130,14 @@ impl App for TestWidget {
         ui.horizontal(|ui| {
             ui.radio(true, "CheckBox");
             ui.add_space(30.0);
-            ui.add(CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check).with_size(100.0, 25.0));
+            let mut cb = CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check).with_size(100.0, 25.0);
+            let style = cb.style_mut();
+            style.param.set_style(ClickStyle {
+                fill: FillStyle::same(Color::rgb(2, 165, 154)),
+                border: BorderStyle::same(Border::same(1.0).color(Color::BLACK).radius(Radius::same(2))),
+            });
+            cb.geometry_mut().an(Align::LeftCenter).pd(Padding::same(2.0));
+            ui.add(cb);
             ui.checkbox(true, "checkbox2").set_callback(Self::check);
             ui.add_space(129.0);
             ui.checkbox(true, "变动监测");

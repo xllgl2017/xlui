@@ -121,25 +121,25 @@ impl Geometry {
         self.height = height + self.padding.vertical();
     }
 
-    pub fn is_fix_width(&self) -> bool {
+    pub(crate) fn is_fix_width(&self) -> bool {
         self.fix_width.is_some()
     }
 
-    pub fn width(&self) -> f32 {
+    pub(crate) fn width(&self) -> f32 {
         if let Some(width) = self.fix_width { return width; };
         if let Some(min_width) = self.min_width && self.width < min_width { return min_width; }
         if let Some(max_height) = self.max_width && self.width > max_height { return max_height; }
         self.width
     }
 
-    pub fn height(&self) -> f32 {
+    pub(crate) fn height(&self) -> f32 {
         if let Some(height) = self.fix_height { return height; };
         if let Some(min_height) = self.min_height && self.height < min_height { return min_height; }
         if let Some(max_height) = self.max_height && self.height > max_height { return max_height; }
         self.height
     }
 
-    pub fn rect(&self) -> Rect {
+    pub(crate) fn rect(&self) -> Rect {
         let mut rect = Rect::new();
         rect.set_x_min(self.x());
         rect.set_y_min(self.y());
@@ -148,7 +148,7 @@ impl Geometry {
         rect
     }
 
-    pub fn max_rect(&self) -> Rect {
+    pub(crate) fn max_rect(&self) -> Rect {
         let mut rect = Rect::new();
         rect.set_x_min(self.x);
         rect.set_y_min(self.y);
@@ -165,18 +165,18 @@ impl Geometry {
     /// |lb             cb            rb |
     /// |--------------------------------|
     /// ```
-    pub fn x(&self) -> f32 {
+    pub(crate) fn x(&self) -> f32 {
         let mut x = self.x + self.padding.left;
-        let max_width = if let Some(max_width) = self.max_width {
-            max_width
+        let fix_width = if let Some(fix_width) = self.fix_width {
+            fix_width
         } else { return x };
         match self.align {
             Align::CenterTop | Align::Center | Align::CenterBottom => {
-                let free_space = max_width - self.width;
+                let free_space = fix_width - self.width;
                 x += free_space / 2.0;
             }
             Align::RightTop | Align::RightCenter | Align::RightBottom => {
-                let free_space = max_width - self.width;
+                let free_space = fix_width - self.width;
                 x += free_space;
             }
             _ => {}
@@ -184,24 +184,25 @@ impl Geometry {
         x
     }
 
-    pub fn x_i32(&self) -> i32 {
+    pub(crate) fn x_i32(&self) -> i32 {
         self.x() as i32
     }
 
-    pub fn y(&self) -> f32 {
+    pub(crate) fn y(&self) -> f32 {
         let mut y = self.y + self.padding.top;
-        let max_height = if let Some(max_height) = self.max_height {
-            max_height
+        let fix_height = if let Some(fix_height) = self.fix_height {
+            fix_height
         } else {
             return y;
         };
         match self.align {
             Align::LeftCenter | Align::Center | Align::RightCenter => {
-                let free_space = max_height - self.height;
+                println!("11111111111111111111111111111");
+                let free_space = fix_height - self.height;
                 y += free_space / 2.0;
             }
             Align::LeftBottom | Align::CenterBottom | Align::RightBottom => {
-                let free_space = max_height - self.height;
+                let free_space = fix_height - self.height;
                 y += free_space;
             }
             _ => {}
@@ -213,19 +214,19 @@ impl Geometry {
     //     self.y() as i32
     // }
 
-    pub fn right(&self) -> f32 {
+    pub(crate) fn right(&self) -> f32 {
         self.x + self.width() - self.padding.right
     }
 
-    pub fn right_i32(&self) -> i32 {
+    pub(crate) fn right_i32(&self) -> i32 {
         self.right() as i32
     }
 
-    pub fn bottom(&self) -> f32 {
+    pub(crate) fn bottom(&self) -> f32 {
         self.y + self.height() - self.padding.bottom
     }
 
-    pub fn bottom_i32(&self) -> i32 {
+    pub(crate) fn bottom_i32(&self) -> i32 {
         self.bottom() as i32
     }
 
@@ -290,7 +291,23 @@ impl Geometry {
     }
 
     pub fn with_align(mut self, align: Align) -> Self {
+        self.set_align(align);
+        self
+    }
+
+    pub fn set_align(&mut self, align: Align) {
         self.align = align;
+    }
+
+    ///Align
+    pub fn an(&mut self, align: Align) -> &mut Self {
+        self.set_align(align);
+        self
+    }
+
+    ///padding
+    pub fn pd(&mut self, padding: Padding) -> &mut Self {
+        self.set_padding(padding);
         self
     }
 }
