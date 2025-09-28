@@ -103,6 +103,7 @@ impl ClickStyle {
 
 pub struct WidgetStyle {
     pub click: ClickStyle,
+    pub popup: ClickStyle,
 }
 
 pub struct Shadow {
@@ -123,10 +124,9 @@ impl Shadow {
     }
 }
 
-
 pub struct Style {
     pub window: FrameStyle,
-    pub widget: WidgetStyle,
+    pub widgets: WidgetStyle,
 }
 
 
@@ -140,8 +140,13 @@ impl Style {
                 border: Border::same(0.0),
             },
 
-            widget: WidgetStyle {
+            widgets: WidgetStyle {
                 click: ClickStyle::new(),
+                popup: ClickStyle {
+                    fill: FillStyle::same(Color::rgb(240, 240, 240)),
+                    border: BorderStyle::same(Border::same(1.0).radius(Radius::same(5))
+                        .color(Color::rgb(144, 209, 255))),
+                },
             },
         }
     }

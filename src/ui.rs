@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::layout::horizontal::HorizontalLayout;
@@ -18,6 +19,7 @@ use crate::window::{UserEvent, WindowId, WindowType};
 use crate::{Button, Device, Image, Label, NumCastExt, RadioButton, SelectItem, Slider, SpinBox, WindowAttribute, SAMPLE_COUNT};
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use std::rc::Rc;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
@@ -29,7 +31,7 @@ pub struct AppContext {
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
-    pub(crate) style: Style,
+    pub(crate) style: Rc<RefCell<Style>>,
     pub(crate) context: Context,
     previous_time: u128,
     redraw_thread: JoinHandle<()>,
@@ -45,7 +47,7 @@ impl AppContext {
             layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
             inner_windows: Some(Map::new()),
-            style: Style::light_style(),
+            style: Rc::new(RefCell::new(Style::light_style())),
             context,
             previous_time: 0,
             redraw_thread: spawn(|| {}),
@@ -68,6 +70,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
+            style: self.style.clone(),
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -91,6 +94,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
+            style:self.style.clone(),
         };
         app.update(&mut ui);
         self.layout = ui.layout.take();
@@ -112,6 +116,7 @@ impl AppContext {
 
             draw_rect,
             widget_changed: WidgetChange::None,
+            style:self.style.clone(),
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -218,6 +223,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
+            style: self.style.clone(),
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -256,6 +262,7 @@ pub struct Ui<'a, 'p> {
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
+    pub style: Rc<RefCell<Style>>,
 }
 
 

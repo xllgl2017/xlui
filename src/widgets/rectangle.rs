@@ -19,7 +19,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 ///         color: Color::rgba(0, 0, 0, 30),
 ///         blur:1.0,//阴影强调
 ///     };
-///     let rectangle=Rectangle::new(Popup::popup_style(),300.0,300.0)
+///     let rectangle=Rectangle::new(ui.style.borrow().widgets.popup.clone(),300.0,300.0)
 ///         //设置阴影
 ///         .with_shadow(shadow);
 ///     ui.add(rectangle);

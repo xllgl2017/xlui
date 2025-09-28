@@ -102,6 +102,11 @@ impl TextEdit {
         self.char_layout.buffer.geometry.set_fix_width(width);
     }
 
+    pub fn with_width(mut self,w:f32)->Self{
+        self.set_width(w);
+        self
+    }
+
 
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
         self.char_layout.buffer.update_buffer_text(ui, &text);
@@ -121,6 +126,9 @@ impl TextEdit {
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, String)) -> Self {
         self.callback = Some(Callback::create_textedit(f));
         self
+    }
+    pub(crate) fn buffer(&mut self)->&mut TextBuffer {
+        &mut self.char_layout.buffer
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {

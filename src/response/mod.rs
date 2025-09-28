@@ -6,6 +6,7 @@ use crate::InnerWindow;
 use crate::widgets::WidgetSize;
 use crate::widgets::button::Button;
 
+pub type InnerCallB = Box<dyn FnMut()>;
 pub struct Callback;
 
 impl Callback {

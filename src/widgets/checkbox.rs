@@ -2,7 +2,7 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
-use crate::response::{Callback, Response};
+use crate::response::{Callback, InnerCallB, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
@@ -49,6 +49,7 @@ pub struct CheckBox {
     check_text: TextBuffer,
     value: bool,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
+    inner_callback: Option<InnerCallB>,
     geometry: Geometry,
 
     check_render: RenderParam<RectParam>,
@@ -74,6 +75,7 @@ impl CheckBox {
             check_text: TextBuffer::new(RichText::new("√").size(14.0)),
             value: v,
             callback: None,
+            inner_callback: None,
             geometry: Geometry::new(),
             check_render: RenderParam::new(RectParam::new(Rect::new().with_size(15.0, 15.0), check_style)),
             hovered: false,
@@ -88,6 +90,11 @@ impl CheckBox {
         self.text.init(ui);
         self.geometry.set_size(self.text.geometry.width() + 15.0, self.text.geometry.height());
         self.rect.set_size(self.geometry.width(), self.geometry.height());
+    }
+
+    pub(crate) fn connect_inner(mut self, callback: impl FnMut() + 'static) -> Self {
+        self.inner_callback = Some(Box::new(callback));
+        self
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, bool)) -> Self {
@@ -183,6 +190,9 @@ impl Widget for CheckBox {
                         let app = ui.app.take().unwrap();
                         callback(app, ui, self.value);
                         ui.app.replace(app);
+                    }
+                    if let Some(ref mut callback) = self.inner_callback {
+                        callback();
                     }
                     ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
                     ui.context.window.request_redraw();
