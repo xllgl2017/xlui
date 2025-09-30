@@ -20,6 +20,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::{Align, FillStyle, Offset, Pos};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use crate::size::Geometry;
 
 /// ### ComboBox的示例用法
 ///```
@@ -71,7 +72,7 @@ impl<T: Display + 'static> ComboBox<T> {
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
             callback: None,
-            fill_render: RenderParam::new(RectParam::new().with_size(100.0,20.0).with_style(fill_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(100.0, 20.0).with_style(fill_style)),
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
 
@@ -221,5 +222,9 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.text_buffer.geometry
     }
 }

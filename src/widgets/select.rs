@@ -13,6 +13,7 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use crate::size::Geometry;
 
 /// ### SelectItem的示例用法
 /// ```
@@ -74,10 +75,12 @@ impl<T: Display> SelectItem<T> {
         self.fill_render.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
     }
 
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn set_size(&mut self, width: f32, height: f32) {
         self.text.geometry.set_fix_size(width, height);
     }
 
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
         self.set_size(w, h);
         self
@@ -88,6 +91,7 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
+    #[deprecated="use Geometry::set_padding"]
     pub fn padding(mut self, padding: Padding) -> Self {
         self.text.geometry.set_padding(padding);
         self
@@ -98,6 +102,7 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
+    #[deprecated="use Geometry::set_align"]
     pub fn align(mut self, align: Align) -> Self {
         self.text.align = align;
         self
@@ -184,5 +189,9 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.text.geometry
     }
 }

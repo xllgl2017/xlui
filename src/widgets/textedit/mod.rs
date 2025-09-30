@@ -20,6 +20,7 @@ use crate::window::ime::IMEData;
 use crate::window::ClipboardData;
 use crate::{App, TextWrap};
 use std::mem;
+use crate::size::Geometry;
 
 pub(crate) mod buffer;
 mod select;
@@ -98,11 +99,11 @@ impl TextEdit {
         if row == 1 { self.char_layout.edit_kind = EditKind::Single; }
         self
     }
-
+    #[deprecated="use Geometry::set_fix_width"]
     pub fn set_width(&mut self, width: f32) {
         self.char_layout.buffer.geometry.set_fix_width(width);
     }
-
+    #[deprecated="use Geometry::set_fix_width"]
     pub fn with_width(mut self,w:f32)->Self{
         self.set_width(w);
         self
@@ -373,5 +374,9 @@ impl Widget for TextEdit {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.char_layout.buffer.geometry
     }
 }

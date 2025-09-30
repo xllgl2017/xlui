@@ -99,16 +99,19 @@ impl CheckBox {
         self
     }
 
+    #[deprecated="use Geometry::set_fix_width"]
     pub fn with_width(mut self, width: f32) -> Self {
         self.geometry.set_fix_width(width);
         self
     }
 
+    #[deprecated="use Geometry::set_fix_height"]
     pub fn with_height(mut self, height: f32) -> Self {
         self.geometry.set_fix_height(height);
         self
     }
 
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_height(h).with_width(w)
     }
@@ -228,5 +231,9 @@ impl Widget for CheckBox {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

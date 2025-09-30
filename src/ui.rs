@@ -94,7 +94,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style:self.style.clone(),
+            style: self.style.clone(),
         };
         app.update(&mut ui);
         self.layout = ui.layout.take();
@@ -116,7 +116,7 @@ impl AppContext {
 
             draw_rect,
             widget_changed: WidgetChange::None,
-            style:self.style.clone(),
+            style: self.style.clone(),
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -319,7 +319,8 @@ impl<'a, 'p> Ui<'a, 'p> {
         let previous_layout = self.layout.replace(LayoutKind::new(current_layout)).unwrap();
         context(self);
         let mut current_layout = self.layout.replace(previous_layout).unwrap();
-        current_layout.update(self);
+        let resp = current_layout.update(self);
+        println!("{}-{}", resp.size.dw, resp.size.dh);
         self.layout().add_item(LayoutItem::Layout(current_layout));
     }
 

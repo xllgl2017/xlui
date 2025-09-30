@@ -3,6 +3,7 @@ use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
+use crate::size::Geometry;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Shadow};
 use crate::ui::Ui;
@@ -28,6 +29,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 pub struct Rectangle {
     id: String,
     fill_render: RenderParam<RectParam>,
+    geometry: Geometry,
     hovered: bool,
     changed: bool,
 }
@@ -37,6 +39,7 @@ impl Rectangle {
         Rectangle {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new().with_size(width, height).with_style(style)),
+            geometry: Geometry::new().with_size(width, height),
             hovered: false,
             changed: false,
         }
@@ -128,6 +131,10 @@ impl Widget for Rectangle {
             // }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

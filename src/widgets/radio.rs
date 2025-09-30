@@ -81,13 +81,14 @@ impl RadioButton {
             changed: false,
         }
     }
+
     fn reset_size(&mut self, ui: &mut Ui) {
         self.text.geometry.add_fix_width(-18.0);
         self.text.init(ui);
         self.geometry.set_size(self.text.geometry.width() + 18.0, self.text.geometry.height());
         self.rect.set_size(self.geometry.width(),self.geometry.height());
     }
-
+    #[deprecated="use Geometry::set_fix_width"]
     pub fn with_width(mut self, width: f32) -> RadioButton {
         self.geometry.set_fix_width(width);
         self.text.geometry.set_fix_width(width);
@@ -201,5 +202,9 @@ impl Widget for RadioButton {
         }
 
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

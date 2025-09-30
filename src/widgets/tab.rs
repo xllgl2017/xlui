@@ -66,6 +66,10 @@ impl Widget for TabHeader {
         }
         Response::new(&self.id, WidgetSize::same(self.fill.param.rect.width(), self.fill.param.rect.height()))
     }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.text.geometry
+    }
 }
 
 pub struct TabItem {
@@ -124,16 +128,19 @@ impl TabWidget {
         self.fill.init_rectangle(ui, false, false);
     }
 
+    #[deprecated="use Geometry::set_fix_width"]
     pub fn with_width(mut self, w: f32) -> Self {
         self.geometry.set_fix_width(w);
         self
     }
 
+    #[deprecated="use Geometry::set_fix_height"]
     pub fn with_height(mut self, h: f32) -> Self {
         self.geometry.set_fix_height(h);
         self
     }
 
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
@@ -182,5 +189,9 @@ impl Widget for TabWidget {
             UpdateType::Init | UpdateType::ReInit | _ => self.init(ui),
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

@@ -68,11 +68,13 @@ impl Image {
         self.rect = rect;
     }
 
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.set_size(width, height);
         self
     }
 
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn set_size(&mut self, width: f32, height: f32) {
         self.geometry.set_fix_size(width, height);
     }
@@ -157,5 +159,9 @@ impl Widget for Image {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

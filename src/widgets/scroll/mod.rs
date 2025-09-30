@@ -16,6 +16,7 @@ use crate::ui::Ui;
 use crate::widgets::scroll::bar::ScrollBar;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::{Offset, VerticalLayout};
+use crate::size::Geometry;
 
 pub struct ScrollWidget {
     pub(crate) id: String,
@@ -25,11 +26,15 @@ pub struct ScrollWidget {
     h_bar: ScrollBar,
     fill_render: RenderParam<RectParam>,
     a: f32,
+    #[deprecated = "use Geometry::padding"]
     padding: Padding,
     horiz_scrollable: bool,
     vert_scrollable: bool,
+    #[deprecated = "use Geometry::width"]
     width: f32,
+    #[deprecated = "use Geometry::height"]
     height: f32,
+    geometry: Geometry,
 }
 
 impl ScrollWidget {
@@ -51,6 +56,7 @@ impl ScrollWidget {
             vert_scrollable: false,
             width: 400.0,
             height: 300.0,
+            geometry: Geometry::new().with_size(400.0, 300.0).with_padding(Padding::same(5.0)),
         }
     }
 
@@ -80,38 +86,41 @@ impl ScrollWidget {
     pub fn set_layout(&mut self, layout: LayoutKind) {
         self.layout = Some(layout);
     }
-
+    #[deprecated = "use Geometry::set_fix_size"]
     pub fn set_size(&mut self, w: f32, h: f32) {
         self.set_with(w);
         self.set_height(h);
     }
-
+    #[deprecated = "use Geometry::set_fix_size"]
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.set_size(width, height);
         self
     }
-
+    #[deprecated = "use Geometry::set_fix_width"]
     pub fn with_width(mut self, w: f32) -> Self {
         self.set_with(w);
         self
     }
-
+    #[deprecated = "use Geometry::set_fix_width"]
     pub fn set_with(&mut self, w: f32) {
         self.width = w;
+        self.geometry.set_fix_width(w);
     }
-
+    #[deprecated = "use Geometry::set_fix_width"]
     pub fn with_height(mut self, h: f32) -> Self {
         self.set_height(h);
         self
     }
-
+    #[deprecated = "use Geometry::set_fix_height"]
     pub fn set_height(&mut self, h: f32) {
         self.height = h;
+        self.geometry.set_fix_height(h);
     }
 
-
+    #[deprecated = "use Geometry::set_padding"]
     pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
+        self.padding = padding.clone();
+        self.geometry.set_padding(padding);
         self
     }
 
@@ -128,8 +137,8 @@ impl ScrollWidget {
         // let mut current_layout = VerticalLayout::top_to_bottom().max_rect(self.context_rect.clone(), self.padding.clone());
         // current_layout.size_mode = SizeMode::Fix;
         let mut current_layout = self.layout.take().unwrap_or_else(|| LayoutKind::new(VerticalLayout::top_to_bottom()));
-        let lw = self.width - self.padding.horizontal() - self.v_bar.width();
-        let lh = self.height - self.padding.vertical() - self.h_bar.height();
+        let lw = self.geometry.width() - self.geometry.padding().horizontal() - self.v_bar.geometry().width(); //self.width - self.padding.horizontal() - self.v_bar.width();
+        let lh = self.geometry.height() - self.geometry.padding().vertical() - self.h_bar.geometry().height(); //self.height - self.padding.vertical() - self.h_bar.height();
         current_layout.set_size(lw, lh);
         // layout.set_width();
         // layout.set_height();
@@ -138,10 +147,13 @@ impl ScrollWidget {
         callback(ui);
         let mut current_layout = ui.layout.replace(previous_layout).unwrap();
         let resp = current_layout.update(ui);
-        self.fill_render.param.rect.set_size(self.width, self.height);
-        self.v_bar.set_height(self.height - self.h_bar.height() - self.padding.vertical());
+        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
+        // self.fill_render.param.rect.set_size(self.width, self.height);
+        self.v_bar.geometry().set_fix_height(self.geometry.height() - self.h_bar.geometry().height() - self.geometry.padding().vertical());
+        // self.v_bar.set_height(self.height - self.h_bar.height() - self.padding.vertical());
         self.v_bar.set_context_height(resp.size.rh);
-        self.h_bar.set_width(self.width - self.v_bar.width() - self.padding.horizontal());
+        self.h_bar.geometry().set_fix_width(self.geometry.width() - self.v_bar.geometry().width() - self.geometry.padding().horizontal());
+        // self.h_bar.set_width(self.width - self.v_bar.width() - self.padding.horizontal());
         self.h_bar.set_context_width(resp.size.rw);
         self.layout = Some(current_layout);
     }
@@ -203,15 +215,15 @@ impl ScrollWidget {
 
         //背景
         ui.context.render.rectangle.render(&self.fill_render, pass);
-        let clip = self.fill_render.param.rect.clone_add_padding(&self.padding);
+        let clip = self.fill_render.param.rect.clone_add_padding(self.geometry.padding());
         // println!("{:?}", clip);
         pass.set_scissor_rect(clip.dx().min as u32, clip.dy().min as u32, clip.width() as u32, clip.height() as u32);
         let resp = if ui.widget_changed.contains(WidgetChange::Position) {
             self.context_rect = ui.draw_rect.clone();
-            self.context_rect.set_width(self.fill_render.param.rect.width() - self.padding.horizontal() - self.v_bar.width());
-            self.context_rect.set_height(self.fill_render.param.rect.height() - self.padding.vertical() - self.h_bar.height());
-            self.context_rect.add_min_x(self.padding.left);
-            self.context_rect.add_min_y(self.padding.top);
+            self.context_rect.set_width(self.fill_render.param.rect.width() - self.geometry.padding().horizontal() - self.v_bar.geometry().width());
+            self.context_rect.set_height(self.fill_render.param.rect.height() - self.geometry.padding().vertical() - self.h_bar.geometry().height());
+            self.context_rect.add_min_x(self.geometry.padding().left);
+            self.context_rect.add_min_y(self.geometry.padding().top);
             // self.context_rect.add_min_x(self.padding.left);
             // self.context_rect.add_max_x(-self.v_bar.width() - self.padding.right);
             // self.context_rect.add_min_y(self.padding.left);
@@ -233,10 +245,10 @@ impl ScrollWidget {
             if ui.widget_changed.contains(WidgetChange::Position) {
                 let previous_rect = ui.draw_rect.clone();
                 let mut v_bar_rect = previous_rect.clone();
-                v_bar_rect.add_min_x(resp.size.dw + self.padding.left);
-                v_bar_rect.add_max_x(-self.padding.right);
-                v_bar_rect.add_min_y(self.padding.top);
-                v_bar_rect.add_max_y(-self.padding.bottom);
+                v_bar_rect.add_min_x(resp.size.dw + self.geometry.padding().left);
+                v_bar_rect.add_max_x(-self.geometry.padding().right);
+                v_bar_rect.add_min_y(self.geometry.padding().top);
+                v_bar_rect.add_max_y(-self.geometry.padding().bottom);
                 ui.draw_rect = v_bar_rect;
                 self.v_bar.redraw(ui);
                 ui.draw_rect = previous_rect;
@@ -250,10 +262,10 @@ impl ScrollWidget {
             if ui.widget_changed.contains(WidgetChange::Position) {
                 let previous_rect = ui.draw_rect.clone();
                 let mut h_bar_rect = previous_rect.clone();
-                h_bar_rect.add_min_y(resp.size.dh + self.padding.top);
-                h_bar_rect.add_max_y(-self.padding.bottom);
-                h_bar_rect.add_min_x(self.padding.left);
-                h_bar_rect.add_max_x(-self.padding.right);
+                h_bar_rect.add_min_y(resp.size.dh + self.geometry.padding().top);
+                h_bar_rect.add_max_y(-self.geometry.padding().bottom);
+                h_bar_rect.add_min_x(self.geometry.padding().left);
+                h_bar_rect.add_max_x(-self.geometry.padding().right);
                 ui.draw_rect = h_bar_rect;
                 self.h_bar.redraw(ui);
                 ui.draw_rect = previous_rect;
@@ -349,5 +361,9 @@ impl Widget for ScrollWidget {
         //     ui.update_type = UpdateType::None;
         // }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }
