@@ -28,13 +28,15 @@ impl TabHeader {
         }
     }
 
+    pub fn set_style(&mut self, style: ClickStyle) {
+        self.fill.param.style = style;
+    }
 
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
         self.fill.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
         self.fill.init_rectangle(ui, false, false);
     }
-
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
@@ -76,6 +78,22 @@ pub struct TabItem {
     header: TabHeader,
     layout: LayoutKind,
 }
+
+/// ### TabWidget的示例用法
+/// ```rust
+/// use xlui::*;
+///
+/// fn draw<A:App>(ui:&mut Ui){
+///     let mut tab=TabWidget::new()
+///         //设置大小
+///         .with_size(400.0,300.0);
+///     let header=tab.add_tab(ui,"tab1",|ui|ui.label("这里是tab1"));
+///     //这里可以对tab头进行设置
+///     header.geometry().set_padding(Padding::same(2.0));
+///     tab.add_tab(ui,"tab2",|ui|ui.label("这里是tab2"));
+///
+/// }
+/// ```
 
 pub struct TabWidget {
     id: String,
