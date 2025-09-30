@@ -6,21 +6,21 @@ use crate::text::buffer::TextBuffer;
 use crate::widgets::{WidgetChange, WidgetSize};
 use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind, Padding, Radius, RichText, Ui, UpdateType, VerticalLayout, Widget};
 
-pub struct TabLabel {
+pub struct TabHeader {
     id: String,
     text: TextBuffer,
     fill: RenderParam<RectParam>,
     changed: bool,
 }
 
-impl TabLabel {
-    fn new(text: impl Into<RichText>) -> TabLabel {
+impl TabHeader {
+    fn new(text: impl Into<RichText>) -> TabHeader {
         let mut tab_style = ClickStyle::new();
         tab_style.fill = FillStyle::same(Color::WHITE);
         let mut border = Border::same(1.0).radius(Radius::same(1)).color(Color::rgb(160, 160, 160));
         border.bottom_width = 0.0;
         tab_style.border = BorderStyle::same(border);
-        TabLabel {
+        TabHeader {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0).padding(Padding::same(3.0)),
             fill: RenderParam::new(RectParam::new().with_height(25.0).with_style(tab_style)),
@@ -57,7 +57,7 @@ impl TabLabel {
     }
 }
 
-impl Widget for TabLabel {
+impl Widget for TabHeader {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.draw(ui),
@@ -69,7 +69,7 @@ impl Widget for TabLabel {
 }
 
 pub struct TabItem {
-    label: TabLabel,
+    label: TabHeader,
     layout: LayoutKind,
 }
 
@@ -103,7 +103,7 @@ impl TabWidget {
         self.current = Some(self.items.len());
         let ut = ui.update_type.clone();
         ui.update_type = UpdateType::Init;
-        let mut label = TabLabel::new(name);
+        let mut label = TabHeader::new(name);
         label.update(ui);
         let current_layout = VerticalLayout::top_to_bottom().with_padding(Padding::same(2.0));
         let previous_layout = ui.layout.replace(LayoutKind::new(current_layout));
