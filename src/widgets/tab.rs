@@ -128,19 +128,16 @@ impl TabWidget {
         self.fill.init_rectangle(ui, false, false);
     }
 
-    #[deprecated="use Geometry::set_fix_width"]
     pub fn with_width(mut self, w: f32) -> Self {
         self.geometry.set_fix_width(w);
         self
     }
 
-    #[deprecated="use Geometry::set_fix_height"]
     pub fn with_height(mut self, h: f32) -> Self {
         self.geometry.set_fix_height(h);
         self
     }
 
-    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }

@@ -50,14 +50,14 @@ impl ScrollBar {
 
     pub fn horizontal() -> ScrollBar {
         let mut res = ScrollBar::new();
-        res.fill_render.param.rect.set_size(300.0, 5.0);
+        res.geometry.set_size(300.0, 5.0);
         res.slider_render.param.rect.set_size(30.0, 5.0);
         res
     }
 
     pub fn vertical() -> ScrollBar {
         let mut res = ScrollBar::new();
-        res.fill_render.param.rect.set_size(5.0, 300.0);
+        res.geometry.set_size(5.0, 300.0);
         res.slider_render.param.rect.set_size(5.0, 30.0);
         res
     }
@@ -65,28 +65,14 @@ impl ScrollBar {
     pub fn set_vbar_value_by_offset(&mut self, offset: f32) -> f32 {
         let oy = self.slider_offset_y(offset);
         let roy = self.slider_render.param.rect.offset_y_limit(self.offset.y + oy, self.fill_render.param.rect.dy());
-        // let mut offset = Offset::new(Pos::new()).with_y(self.context_offset_y(-roy));
-        // if self.offset < roy {
-        //     offset.direction = OffsetDirection::Down
-        // } else {
-        //     offset.direction = OffsetDirection::Up;
-        // }
-        // println!("{} {} {} {}", roy, offset.y, self.context_height,self.fill_render.param.rect.height());
         self.offset.y = roy;
         self.changed = true;
-
-        // let ut = UpdateType::Offset(offset);
-        // ui.update_type = UpdateType::None;
-        // self.slider_render.update(ui, true, true);
-        // ui.request_update(ut);
-        // offset
         self.context_offset_y(-roy)
     }
 
     pub fn set_hbar_value_by_offset(&mut self, offset: f32) -> f32 {
         let ox = self.slider_offset_x(offset);
         let rox = self.slider_render.param.rect.offset_x_limit(self.offset.x + ox, self.fill_render.param.rect.dx());
-        // println!("{} {}", rox, self.context_offset_x(-rox));
         self.offset.x = rox;
         self.changed = true;
         self.context_offset_x(-rox)
@@ -94,32 +80,10 @@ impl ScrollBar {
 
     pub fn offset(&mut self) -> f32 {
         if self.geometry.height() > self.geometry.width() { //垂直滚动条
-            // if self.height() > self.width() { //垂直滚动条
             self.context_offset_y(-self.offset.y)
         } else { //水平滚动条
             self.context_offset_x(-self.offset.x)
         }
-    }
-
-    // pub fn set_size(&mut self, w: f32, h: f32) {
-    //     self.set_width(w);
-    //     self.set_height(h);
-    // }
-    #[deprecated = "use Geometry::set_fix_width"]
-    pub fn set_width(&mut self, w: f32) {
-        self.fill_render.param.rect.set_width(w);
-    }
-    #[deprecated = "use Geometry::set_fix_height"]
-    pub fn set_height(&mut self, h: f32) {
-        self.fill_render.param.rect.set_height(h);
-    }
-    #[deprecated = "use Geometry::set_fix_width"]
-    pub fn width(&self) -> f32 {
-        self.fill_render.param.rect.width()
-    }
-    #[deprecated = "use Geometry::set_fix_height"]
-    pub fn height(&self) -> f32 {
-        self.fill_render.param.rect.height()
     }
 
     pub fn set_context_height(&mut self, context_height: f32) {
@@ -145,14 +109,6 @@ impl ScrollBar {
         self.slider_render.param.rect.set_width(slider_width);
         self.changed = true;
     }
-
-    // pub fn set_height(&mut self, height: f32) {
-    //     self.fill_render.param.rect.set_height(height);
-    // }
-
-    // pub fn scrolling(&self) -> bool {
-    //     self.offset.y < (self.fill_render.param.rect.height() - self.slider_render.param.rect.height()) && self.offset != 0.0
-    // }
 
     //计算滑块位移
     fn slider_offset_y(&self, cy: f32) -> f32 {
@@ -188,6 +144,7 @@ impl ScrollBar {
 
     fn init(&mut self, ui: &mut Ui) {
         //背景
+        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
         self.fill_render.init_rectangle(ui, false, false);
         //滑块
         self.slider_render.param.rect = self.fill_render.param.rect.clone_with_size(&self.slider_render.param.rect);
@@ -197,6 +154,7 @@ impl ScrollBar {
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         if ui.widget_changed.contains(WidgetChange::Position) {
+            self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.slider_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
@@ -210,11 +168,11 @@ impl ScrollBar {
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        if self.context_size > self.fill_render.param.rect.height() && self.height() > self.width() { //垂直
+        if self.context_size > self.fill_render.param.rect.height() && self.geometry.height() > self.geometry.width() { //垂直
             ui.context.render.rectangle.render(&self.fill_render, pass);
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
-        if self.context_size > self.fill_render.param.rect.width() && self.width() > self.height() { //垂直
+        if self.context_size > self.fill_render.param.rect.width() && self.geometry.width() > self.geometry.height() { //垂直
             ui.context.render.rectangle.render(&self.fill_render, pass);
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
@@ -228,9 +186,7 @@ impl Widget for ScrollBar {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
-                    // println!("bar move {}", self.offset.y);
                     if self.geometry.height() > self.geometry.width() { //垂直滚动条
-                        // if self.height() > self.width() { //垂直滚动条
                         let oy = ui.device.device_input.mouse.offset_y();
                         let roy = self.slider_render.param.rect.offset_y_limit(self.offset.y + oy, self.fill_render.param.rect.dy());
                         self.offset.y = roy;
@@ -240,38 +196,10 @@ impl Widget for ScrollBar {
                         self.offset.x = rox;
                     }
                     ui.context.window.request_redraw();
-                    // let mut offset = Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(self.context_offset_y(-roy));
-                    // if self.offset < roy {
-                    //     offset.direction = OffsetDirection::Down
-                    // } else {
-                    //     offset.direction = OffsetDirection::Up;
-                    // }
-
                     self.changed = true;
-                    // let ut = UpdateType::Offset(offset);
-                    // ui.update_type = UpdateType::None;
-                    // self.slider_render.update(ui, true, true);
-                    // ui.context.window.request_redraw();
-                    // ui.request_update(ut);
                 }
             }
             UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(&self.slider_render.param.rect),
-            // UpdateType::Offset(ref o) => {
-            //     // let oy = self.slider_offset_y(o.y);
-            //     // let roy = self.slider_render.param.rect.offset_y_limit(self.offset + oy, self.fill_render.param.rect.dy());
-            //     // let mut offset = Offset::new(o.pos).with_y(self.context_offset_y(-roy));
-            //     // if self.offset < roy {
-            //     //     offset.direction = OffsetDirection::Down
-            //     // } else {
-            //     //     offset.direction = OffsetDirection::Up;
-            //     // }
-            //     // self.offset = roy;
-            //     //
-            //     // let ut = UpdateType::Offset(offset);
-            //     // ui.update_type = UpdateType::None;
-            //     // self.slider_render.update(ui, true, true);
-            //     // ui.request_update(ut);
-            // }
             _ => {
                 if self.changed {
                     self.changed = false;

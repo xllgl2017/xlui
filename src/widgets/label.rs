@@ -44,7 +44,7 @@ impl Label {
         self.buffer.set_wrap(wrap);
         self
     }
-    #[deprecated = "use Geometry::set_align"]
+
     ///仅作用于draw
     pub fn align(mut self, align: Align) -> Self {
         self.buffer.align = align;
@@ -56,18 +56,15 @@ impl Label {
         self.buffer.set_text(text.to_string());
     }
 
-    #[deprecated = "use Geometry::set_fix_width"]
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.buffer.geometry.set_fix_width(w);
         self
     }
-    #[deprecated = "use Geometry::set_max_width"]
     pub fn max_width(mut self, w: f32) -> Self {
         self.buffer.geometry.set_max_width(w);
         self
     }
-    #[deprecated = "use Geometry::set_fix_height"]
     ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
         self.buffer.geometry.set_fix_height(h);
@@ -102,7 +99,6 @@ impl Label {
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.buffer.geometry.offset_to_rect(&ui.draw_rect);
-            // self.buffer.geometry.set_pos(ui.draw_rect.dx().min, ui.draw_rect.dy().min);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {

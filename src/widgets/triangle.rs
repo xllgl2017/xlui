@@ -11,8 +11,6 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct Triangle {
     id: String,
-    #[deprecated = "use Geometry"]
-    rect: Rect,
     render: RenderParam<TriangleParam>,
     changed: bool,
     geometry: Geometry,
@@ -23,7 +21,6 @@ impl Triangle {
     pub fn new() -> Self {
         Triangle {
             id: crate::gen_unique_id(),
-            rect: Rect::new(),
             render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), ClickStyle::new())),
             changed: false,
             geometry: Geometry::new(),
@@ -58,14 +55,9 @@ impl Triangle {
         rect.set_x_max(x_max);
         rect.set_y_min(y_min);
         rect.set_y_max(y_max);
-        println!("triangle  {:?}", rect);
         self.render.param.set_poses(p0, p1, p2);
-        // self.render.param.p0 = p0;
-        // self.render.param.p1 = p1;
-        // self.render.param.p2 = p2;
         self.geometry.set_size(rect.width(), rect.height());
         self.geometry.offset_to_rect(&rect);
-        self.rect = rect;
     }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
@@ -85,12 +77,8 @@ impl Triangle {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            // self.rect.offset_to_rect(&ui.draw_rect);
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.param.offset_to_rect(&ui.draw_rect);
-            // self.render.param.p0.offset(offset.x, offset.y);
-            // self.render.param.p1.offset(offset.x, offset.y);
-            // self.render.param.p2.offset(offset.x, offset.y);
             self.render.update(ui, false, false);
         }
 

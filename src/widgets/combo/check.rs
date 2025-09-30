@@ -58,7 +58,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
         let value = item.to_string();
         let current = self.selected.clone();
         let state = self.changed.clone();
-        let mut item = CheckBox::new(false, &value).with_width(self.popup_rect.width() - 10.0);
+        let item = CheckBox::new(false, &value).with_width(self.popup_rect.width() - 10.0);
         let mut item = item.connect_inner(move || {
             let mut current = current.write().unwrap();
             match current.iter().position(|x| x == &value) {
