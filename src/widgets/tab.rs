@@ -22,7 +22,7 @@ impl TabLabel {
         tab_style.border = BorderStyle::same(border);
         TabLabel {
             id: crate::gen_unique_id(),
-            text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0),
+            text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0).padding(Padding::same(3.0)),
             fill: RenderParam::new(RectParam::new().with_height(25.0).with_style(tab_style)),
             changed: false,
         }
