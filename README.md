@@ -10,14 +10,14 @@
 
 ## xlui的目标
 
-| 适配情况 |   目标系统    |    平台UI     |    备注    |
-|:----:|:---------:|:-----------:|:--------:|
-|  ✅   |   Linux   | x11,wayland | x11为原生窗口 |
-|  ✅   |  Windows  |    10,11    |   原生窗口   |
-|  ⬜️  |   MacOS   |      -      |  winit   |
-|  ⬜️  |  Android  |     11+     |  winit   |
-|  ⬜️  |    Web    |    Wasm     |  winit   |
-|  ❌   | HarmonyOS |   暂无适配计划    |          |
+| 适配情况 |   目标系统    |    平台UI     |  渲染  |     窗口管理      | 备注 |
+|:----:|:---------:|:-----------:|:----:|:-------------:|:--:|
+|  ✅   |   Linux   | x11,wayland | wgpu |   x11,winit   |    |
+|  ✅   |  Windows  |    10,11    | wgpu | windows,winit |    |
+|  ⬜️  |   MacOS   |      -      | wgpu |     winit     |    |
+|  ⬜️  |  Android  |     11+     | wgpu |     winit     |    |
+|  ⬜️  |    Web    |    Wasm     | wgpu |     winit     |    |
+|  ❌   | HarmonyOS |   暂无适配计划    |  -   |       -       | -  |
 
 ## [🎯](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)控件(目前可用)
 
@@ -31,32 +31,32 @@
 use xlui::*;
 
 fn main() {
-    let app=XlUiApp::new();
+    let app = XlUiApp::new();
     //直接调run()
     app.run().unwrap();
 }
 
 struct XlUiApp {
-    status:String,
+    status: String,
     count: i32,
 }
 
 
 impl XlUiApp {
-    fn new()->XlUiApp{
-        XlUiApp{
+    fn new() -> XlUiApp {
+        XlUiApp {
             count: 0,
-            status:"这里是Label".to_string()
+            status: "这里是Label".to_string()
         }
     }
-    fn add(&mut self,_:&mut Button,ui: &mut Ui){
+    fn add(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count += 1;
-        self.status=format!("count: {}", self.count);
+        self.status = format!("count: {}", self.count);
     }
 
-    fn reduce(&mut self,_:&mut Button,ui: &mut Ui){
-        self.count-=1;
-        self.status=format!("count: {}", self.count);
+    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
+        self.count -= 1;
+        self.status = format!("count: {}", self.count);
     }
 }
 
@@ -71,14 +71,14 @@ impl App for XlUiApp {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        let status:&mut Label=ui.get_widget("status").unwrap();
+        let status: &mut Label = ui.get_widget("status").unwrap();
         status.set_text(&self.status);
     }
 
 
     fn window_attributes(&self) -> WindowAttribute {
-        WindowAttribute{
-            inner_size:(800,600).into(),
+        WindowAttribute {
+            inner_size: (800, 600).into(),
             ..Default::default()
         }
     }
