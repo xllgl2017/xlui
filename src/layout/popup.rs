@@ -9,15 +9,18 @@ use crate::style::Shadow;
 use crate::ui::Ui;
 use crate::widgets::{WidgetChange, WidgetSize};
 use crate::{ScrollWidget, Widget};
+use crate::size::Geometry;
 
 pub struct Popup {
     pub(crate) id: String,
     scroll_area: ScrollWidget,
     fill_render: RenderParam<RectParam>,
+    #[deprecated="use Geometry"]
     size: WidgetSize,
     open: bool,
     requests: Vec<bool>,
     changed: bool,
+    geometry: Geometry,
 }
 
 impl Popup {
@@ -42,6 +45,7 @@ impl Popup {
             open: false,
             requests: vec![],
             changed: false,
+            geometry: Geometry::new().with_size(width, height).with_padding(Padding::same(5.0)),
         }
     }
 
@@ -113,5 +117,9 @@ impl Widget for Popup {
             }
         }
         Response::new(&self.id, self.size.clone())
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

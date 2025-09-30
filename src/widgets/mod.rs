@@ -3,6 +3,7 @@ use crate::ui::Ui;
 use crate::widgets::space::Space;
 use std::any::{Any, TypeId};
 use std::ops::{BitAnd, BitOr, BitOrAssign, Deref, DerefMut};
+use crate::size::Geometry;
 
 pub mod label;
 pub mod button;
@@ -30,8 +31,10 @@ pub type UiDraw = Box<dyn Fn(&mut Ui)>;
 pub mod tab;
 
 pub trait Widget: Any {
-    fn update(&mut self, ui: &mut Ui) -> Response<'_>; //后续更新调用
-    // fn style_mut(&mut self) -> &mut RenderParam<RectParam>;
+    ///后续更新调用
+    fn update(&mut self, ui: &mut Ui) -> Response<'_>;
+    ///控件的几何信息：位置、大小、最小大小、最大大小、间隔、对齐
+    fn geometry(&mut self) -> &mut Geometry;
 }
 
 #[derive(Copy, Clone, PartialEq)]

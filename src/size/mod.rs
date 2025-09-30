@@ -113,6 +113,11 @@ impl Geometry {
         self.set_height(height);
     }
 
+    pub fn with_width(mut self, width: f32) -> Self {
+        self.set_width(width);
+        self
+    }
+
     pub fn set_width(&mut self, width: f32) {
         self.width = width + self.padding.horizontal();
     }
@@ -128,7 +133,7 @@ impl Geometry {
     pub(crate) fn width(&self) -> f32 {
         if let Some(width) = self.fix_width { return width; };
         if let Some(min_width) = self.min_width && self.width < min_width { return min_width; }
-        if let Some(max_height) = self.max_width && self.width > max_height { return max_height; }
+        if let Some(max_width) = self.max_width && self.width > max_width { return max_width; }
         self.width
     }
 
@@ -239,6 +244,11 @@ impl Geometry {
         self.fix_height = Some(h);
     }
 
+    pub fn with_fix_width(mut self, width: f32) -> Self {
+        self.set_fix_width(width);
+        self
+    }
+
     pub fn set_fix_width(&mut self, w: f32) {
         self.fix_width = Some(w);
     }
@@ -271,7 +281,7 @@ impl Geometry {
     //     }
     // }
 
-    pub fn with_padding(&mut self, padding: Padding) -> &mut Self {
+    pub fn with_padding(mut self, padding: Padding) -> Self {
         self.set_padding(padding);
         self
     }

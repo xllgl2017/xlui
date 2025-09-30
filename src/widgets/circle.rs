@@ -2,6 +2,7 @@ use crate::frame::context::UpdateType;
 use crate::render::circle::param::CircleParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
+use crate::size::Geometry;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
@@ -11,6 +12,7 @@ pub struct Circle {
     id: String,
     render: RenderParam<CircleParam>,
     changed: bool,
+    geometry: Geometry,
 }
 
 impl Circle {
@@ -20,13 +22,15 @@ impl Circle {
         rect.set_width(r * 2.0);
         Circle {
             id: crate::gen_unique_id(),
+            geometry: Geometry::new().with_size(rect.width(), rect.height()),
             render: RenderParam::new(CircleParam::new(rect, ClickStyle::new())),
             changed: false,
+
         }
     }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {
-        self.id= id.to_string();
+        self.id = id.to_string();
         self
     }
 
@@ -44,6 +48,7 @@ impl Circle {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
+            self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.param.rect.offset_to_rect(&ui.draw_rect);
             self.render.update(ui, false, false);
         }
@@ -61,11 +66,9 @@ impl Circle {
         let pass = ui.pass.as_mut().unwrap();
         ui.context.render.circle.render(&self.render, pass);
     }
-
 }
 
 impl Widget for Circle {
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
@@ -74,5 +77,9 @@ impl Widget for Circle {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.render.param.rect.width(), self.render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

@@ -9,6 +9,7 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use std::ops::Range;
+use crate::size::Geometry;
 
 pub struct ProcessBar {
     id: String,
@@ -20,6 +21,7 @@ pub struct ProcessBar {
     value: f32,
     range: Range<f32>,
     change: bool,
+    geometry: Geometry,
 }
 
 impl ProcessBar {
@@ -40,11 +42,12 @@ impl ProcessBar {
         process_style.border.clicked = Border::same(0.0).radius(Radius::same(1));
         ProcessBar {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new().with_size(200.0,10.0).with_style(fill_style)),
-            process_render: RenderParam::new(RectParam::new().with_size(200.0,10.0).with_style(process_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(200.0, 10.0).with_style(fill_style)),
+            process_render: RenderParam::new(RectParam::new().with_size(200.0, 10.0).with_style(process_style)),
             value: v,
             range: 0.0..100.0,
             change: false,
+            geometry: Geometry::new().with_size(200.0, 10.0),
         }
     }
 
@@ -78,6 +81,7 @@ impl ProcessBar {
         }
         if self.change { ui.widget_changed |= WidgetChange::Value; }
         if ui.widget_changed.contains(WidgetChange::Position) {
+            self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
             self.process_render.param.rect.offset_to_rect(&ui.draw_rect);
@@ -91,8 +95,6 @@ impl ProcessBar {
             self.process_render.update(ui, false, false);
             self.fill_render.update(ui, false, false);
         }
-
-
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
@@ -113,5 +115,9 @@ impl Widget for ProcessBar {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

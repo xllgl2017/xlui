@@ -7,6 +7,7 @@ use crate::{Align, App, Border, BorderStyle, CheckBox, ClickStyle, Color, FillSt
 use std::fmt::Display;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
+use crate::size::Geometry;
 
 pub struct CheckComboBox<T> {
     pub(crate) id: String,
@@ -189,5 +190,9 @@ impl<T: Display + 'static> Widget for CheckComboBox<T> {
             _ => { self.edit.update(ui); }
         }
         Response::new(&self.id, WidgetSize::same(self.edit.buffer().geometry.width(), self.edit.buffer().geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.edit.buffer().geometry
     }
 }

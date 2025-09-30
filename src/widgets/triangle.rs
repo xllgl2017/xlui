@@ -2,6 +2,7 @@ use crate::frame::context::UpdateType;
 use crate::render::{RenderParam, WrcRender};
 use crate::render::triangle::param::TriangleParam;
 use crate::response::Response;
+use crate::size::Geometry;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
@@ -10,9 +11,11 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct Triangle {
     id: String,
+    #[deprecated = "use Geometry"]
     rect: Rect,
     render: RenderParam<TriangleParam>,
     changed: bool,
+    geometry: Geometry,
 }
 
 
@@ -23,6 +26,7 @@ impl Triangle {
             rect: Rect::new(),
             render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), ClickStyle::new())),
             changed: false,
+            geometry: Geometry::new(),
         }
     }
 
@@ -59,6 +63,8 @@ impl Triangle {
         // self.render.param.p0 = p0;
         // self.render.param.p1 = p1;
         // self.render.param.p2 = p2;
+        self.geometry.set_size(rect.width(), rect.height());
+        self.geometry.offset_to_rect(&rect);
         self.rect = rect;
     }
 
@@ -79,7 +85,8 @@ impl Triangle {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.rect.offset_to_rect(&ui.draw_rect);
+            // self.rect.offset_to_rect(&ui.draw_rect);
+            self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.param.offset_to_rect(&ui.draw_rect);
             // self.render.param.p0.offset(offset.x, offset.y);
             // self.render.param.p1.offset(offset.x, offset.y);
@@ -113,6 +120,10 @@ impl Widget for Triangle {
             UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

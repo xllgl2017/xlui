@@ -9,6 +9,7 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::{Offset, Pos};
+use crate::size::Geometry;
 
 pub struct ScrollBar {
     id: String,
@@ -18,6 +19,7 @@ pub struct ScrollBar {
     focused: bool,
     offset: Offset,
     changed: bool,
+    geometry: Geometry,
 }
 
 
@@ -36,12 +38,13 @@ impl ScrollBar {
         slider_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
         ScrollBar {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new().with_size(10.0,20.0).with_style(fill_style)),
-            slider_render: RenderParam::new(RectParam::new().with_size(10.0,10.0).with_style(slider_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(10.0, 20.0).with_style(fill_style)),
+            slider_render: RenderParam::new(RectParam::new().with_size(10.0, 10.0).with_style(slider_style)),
             context_size: 0.0,
             focused: false,
             offset: Offset::new(Pos::new()),
             changed: false,
+            geometry: Geometry::new().with_size(10.0, 20.0),
         }
     }
 
@@ -90,7 +93,8 @@ impl ScrollBar {
     }
 
     pub fn offset(&mut self) -> f32 {
-        if self.height() > self.width() { //垂直滚动条
+        if self.geometry.height() > self.geometry.width() { //垂直滚动条
+            // if self.height() > self.width() { //垂直滚动条
             self.context_offset_y(-self.offset.y)
         } else { //水平滚动条
             self.context_offset_x(-self.offset.x)
@@ -101,19 +105,19 @@ impl ScrollBar {
     //     self.set_width(w);
     //     self.set_height(h);
     // }
-
+    #[deprecated = "use Geometry::set_fix_width"]
     pub fn set_width(&mut self, w: f32) {
         self.fill_render.param.rect.set_width(w);
     }
-
+    #[deprecated = "use Geometry::set_fix_height"]
     pub fn set_height(&mut self, h: f32) {
         self.fill_render.param.rect.set_height(h);
     }
-
+    #[deprecated = "use Geometry::set_fix_width"]
     pub fn width(&self) -> f32 {
         self.fill_render.param.rect.width()
     }
-
+    #[deprecated = "use Geometry::set_fix_height"]
     pub fn height(&self) -> f32 {
         self.fill_render.param.rect.height()
     }
@@ -206,11 +210,11 @@ impl ScrollBar {
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         let pass = ui.pass.as_mut().unwrap();
-        if self.context_size > self.fill_render.param.rect.height() && self.height() > self.width() {//垂直
+        if self.context_size > self.fill_render.param.rect.height() && self.height() > self.width() { //垂直
             ui.context.render.rectangle.render(&self.fill_render, pass);
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
-        if self.context_size > self.fill_render.param.rect.width() && self.width() > self.height() {//垂直
+        if self.context_size > self.fill_render.param.rect.width() && self.width() > self.height() { //垂直
             ui.context.render.rectangle.render(&self.fill_render, pass);
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
@@ -219,15 +223,14 @@ impl ScrollBar {
 
 
 impl Widget for ScrollBar {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 if self.focused && ui.device.device_input.mouse.pressed {
                     // println!("bar move {}", self.offset.y);
-                    if self.height() > self.width() { //垂直滚动条
+                    if self.geometry.height() > self.geometry.width() { //垂直滚动条
+                        // if self.height() > self.width() { //垂直滚动条
                         let oy = ui.device.device_input.mouse.offset_y();
                         let roy = self.slider_render.param.rect.offset_y_limit(self.offset.y + oy, self.fill_render.param.rect.dy());
                         self.offset.y = roy;
@@ -277,5 +280,9 @@ impl Widget for ScrollBar {
             }
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

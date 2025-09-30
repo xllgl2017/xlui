@@ -1,6 +1,7 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::response::Response;
+use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::text::TextWrap;
@@ -43,6 +44,7 @@ impl Label {
         self.buffer.set_wrap(wrap);
         self
     }
+    #[deprecated = "use Geometry::set_align"]
     ///仅作用于draw
     pub fn align(mut self, align: Align) -> Self {
         self.buffer.align = align;
@@ -53,16 +55,19 @@ impl Label {
     pub fn set_text(&mut self, text: impl ToString) {
         self.buffer.set_text(text.to_string());
     }
+
+    #[deprecated = "use Geometry::set_fix_width"]
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.buffer.geometry.set_fix_width(w);
         self
     }
-
+    #[deprecated = "use Geometry::set_max_width"]
     pub fn max_width(mut self, w: f32) -> Self {
         self.buffer.geometry.set_max_width(w);
         self
     }
+    #[deprecated = "use Geometry::set_fix_height"]
     ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
         self.buffer.geometry.set_fix_height(h);
@@ -121,5 +126,9 @@ impl Widget for Label {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.buffer.geometry.width(), self.buffer.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.buffer.geometry
     }
 }

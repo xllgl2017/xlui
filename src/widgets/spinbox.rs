@@ -93,7 +93,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self
     }
 
-    pub fn reset_size(&mut self) {
+    pub(crate) fn reset_size(&mut self) {
         self.edit.set_width(self.geometry.width() - 18.0);
     }
 
@@ -316,5 +316,9 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         }
         self.edit.update(ui);
         Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

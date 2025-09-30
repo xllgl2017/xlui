@@ -8,6 +8,7 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use std::mem;
 use std::sync::{Arc, RwLock};
+use crate::size::Geometry;
 
 pub struct ItemWidget {
     id: String,
@@ -19,6 +20,7 @@ pub struct ItemWidget {
     callback: Option<Box<dyn Fn(&String, &mut Ui)>>,
     selected: bool,
     changed: bool,
+    geometry: Geometry,
 }
 
 impl ItemWidget {
@@ -33,6 +35,7 @@ impl ItemWidget {
             callback: None,
             selected: false,
             changed: false,
+            geometry: Geometry::new(),
         }
     }
 
@@ -51,6 +54,7 @@ impl ItemWidget {
         context(ui);
         self.layout = ui.layout.replace(previous_layout);
         let resp = self.layout.as_mut().unwrap().update(ui);
+        self.geometry.set_size(resp.size.dw, resp.size.dh);
         self.fill_render.param.rect.set_size(resp.size.dw, resp.size.dh);
         // ui.add(self);
     }
@@ -84,6 +88,7 @@ impl ItemWidget {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
+            self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
         }
@@ -117,8 +122,6 @@ impl ItemWidget {
 }
 
 impl Widget for ItemWidget {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         // self.layout.as_mut().unwrap().update(ui);注意这里不能直接调widgets的update
         match ui.update_type {
@@ -145,13 +148,15 @@ impl Widget for ItemWidget {
                     }
                     self.changed = true;
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
+                    return Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()));
                 }
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
     }
+
+    fn geometry(&mut self) -> &mut Geometry { &mut self.geometry }
     // fn store(&mut self, datum: &dyn Any) {
     //     // let datum: &String = datum.downcast_ref().unwrap();
     //     // let layout = self.layout.as_mut().unwrap();

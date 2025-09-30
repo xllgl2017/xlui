@@ -14,6 +14,8 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::Offset;
 use std::ops::Range;
+use crate::size::Geometry;
+
 /// ### Slider的示例用法
 /// ```
 /// use xlui::*;
@@ -41,7 +43,7 @@ use std::ops::Range;
 /// ```
 pub struct Slider {
     pub(crate) id: String,
-    rect: Rect,
+    // rect: Rect,
     value: f32,
     range: Range<f32>,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)>>,
@@ -55,6 +57,7 @@ pub struct Slider {
     hovered: bool,
     offset: f32,
     changed: bool,
+    geometry: Geometry,
 }
 
 
@@ -85,18 +88,19 @@ impl Slider {
         slided_style.border.clicked = Border::same(0.0).radius(Radius::same(3));
         Slider {
             id: crate::gen_unique_id(),
-            rect: Rect::new().with_size(130.0, 16.0),
+            // rect: Rect::new().with_size(130.0, 16.0),
             value: v,
             range: 0.0..1.0,
             callback: None,
             contact_ids: vec![],
-            fill_render: RenderParam::new(RectParam::new().with_size(114.0,6.0).with_style(fill_style)),
+            fill_render: RenderParam::new(RectParam::new().with_size(114.0, 6.0).with_style(fill_style)),
             slider_render: RenderParam::new(CircleParam::new(Rect::new().with_size(16.0, 16.0), slider_style)),
-            slided_render: RenderParam::new(RectParam::new().with_size(114.0,6.0).with_style(slided_style)),
+            slided_render: RenderParam::new(RectParam::new().with_size(114.0, 6.0).with_style(slided_style)),
             focused: false,
             hovered: false,
             offset: 0.0,
             changed: false,
+            geometry: Geometry::new().with_size(130.0, 16.0),
         }
     }
 
@@ -137,7 +141,7 @@ impl Slider {
         self.slided_render.param.rect.set_width(self.slided_render.param.rect.width() * scale);
         self.slided_render.init_rectangle(ui, false, false);
         //滑块
-        self.slider_render.param.rect.set_width(self.rect.height());
+        self.slider_render.param.rect.set_width(self.geometry.height());
         self.offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.slider_render.param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
         self.slider_render.init_circle(ui, false, false);
@@ -151,7 +155,8 @@ impl Slider {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.rect.offset_to_rect(&ui.draw_rect);
+            self.geometry.offset_to_rect(&ui.draw_rect);
+            // self.rect.offset_to_rect(&ui.draw_rect);
             let mut fill_rect = ui.draw_rect.clone();
             fill_rect.contract(8.0, 5.0);
             self.fill_render.param.rect.offset_to_rect(&fill_rect);
@@ -175,14 +180,13 @@ impl Slider {
             let scale = self.value / (self.range.end - self.range.start);
             self.slided_render.param.rect.set_width(self.fill_render.param.rect.width() * scale);
             self.slided_render.update(ui, false, false);
-            self.slider_render.param.rect = self.rect.clone();
-            self.slider_render.param.rect.set_width(self.rect.height());
+            self.slider_render.param.rect = self.geometry.rect();
+            self.slider_render.param.rect.set_width(self.geometry.height());
             let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
-            self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.rect.dx());
+            self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.geometry.rect().dx());
             self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
             self.fill_render.update(ui, false, false);
         }
-
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
@@ -195,8 +199,6 @@ impl Slider {
 }
 
 impl Widget for Slider {
-
-
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
@@ -224,7 +226,7 @@ impl Widget for Slider {
                     ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value));
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));
+                    return Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()));
                 }
                 let hovered = ui.device.device_input.hovered_at(&self.slider_render.param.rect);
                 if self.hovered != hovered {
@@ -249,6 +251,10 @@ impl Widget for Slider {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

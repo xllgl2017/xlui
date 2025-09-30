@@ -5,6 +5,7 @@ use crate::render::image::ImageSource;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
+use crate::size::Geometry;
 use crate::size::padding::Padding;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
@@ -86,7 +87,7 @@ impl Button {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text_buffer.geometry.with_padding(Padding::same(2.0));
+        self.text_buffer.geometry.set_padding(Padding::same(2.0));
         self.text_buffer.init(ui);
         self.fill_render.param.rect.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
         if let Some(ref mut image) = self.image {
@@ -97,37 +98,40 @@ impl Button {
         }
     }
 
-
+    #[deprecated="use Geometry::set_fix_width"]
     pub fn set_width(&mut self, width: f32) {
         self.text_buffer.geometry.set_fix_width(width);
     }
 
+    #[deprecated="use Geometry::set_fix_height"]
     pub fn set_height(&mut self, height: f32) {
         self.text_buffer.geometry.set_fix_height(height);
     }
 
-
+    #[deprecated="use Geometry::set_fix_size"]
     pub fn set_size(&mut self, width: f32, height: f32) {
         self.set_width(width);
         self.set_height(height);
     }
-
+    #[deprecated="use Geometry::set_fix_width"]
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
         self.set_width(w);
         self
     }
-
+    #[deprecated="use Geometry::set_padding"]
     ///仅作用于draw
     pub fn align(mut self, align: Align) -> Self {
         self.text_buffer.align = align;
         self
     }
+    #[deprecated="use Geometry::set_fix_height"]
     ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
         self.set_height(h);
         self
     }
+    #[deprecated="use Geometry::set_padding"]
     ///仅作用于draw
     pub fn padding(mut self, padding: Padding) -> Self {
         self.text_buffer.geometry.set_padding(padding);
@@ -277,5 +281,9 @@ impl Widget for Button {
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.text_buffer.geometry
     }
 }
