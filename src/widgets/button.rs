@@ -47,7 +47,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 ///    //设置字体大小
 ///    //btn.set_font_size(14.0);
 ///    //设置控件宽高
-///    btn.set_size(30.0,30.0);
+///    btn.geometry().set_size(30.0,30.0);
 ///    ui.add(btn);
 ///    //图片按钮
 ///    let image_btn=Button::image_and_text("logo.jpg","点击");
@@ -92,46 +92,27 @@ impl Button {
         self.fill_render.param.rect.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
         if let Some(ref mut image) = self.image {
             let ih = self.fill_render.param.rect.height() - self.text_buffer.geometry.padding().vertical();
-            image.set_size(ih, ih);
+            image.geometry().set_fix_size(ih, ih);
             self.text_buffer.geometry.set_fix_width(self.text_buffer.geometry.width() - ih);
             self.text_buffer.init(ui);
         }
     }
 
-    #[deprecated="use Geometry::set_fix_width"]
-    pub fn set_width(&mut self, width: f32) {
-        self.text_buffer.geometry.set_fix_width(width);
-    }
-
-    #[deprecated="use Geometry::set_fix_height"]
-    pub fn set_height(&mut self, height: f32) {
-        self.text_buffer.geometry.set_fix_height(height);
-    }
-
-    #[deprecated="use Geometry::set_fix_size"]
-    pub fn set_size(&mut self, width: f32, height: f32) {
-        self.set_width(width);
-        self.set_height(height);
-    }
-    #[deprecated="use Geometry::set_fix_width"]
     ///仅作用于draw
     pub fn width(mut self, w: f32) -> Self {
-        self.set_width(w);
+        self.text_buffer.geometry.set_fix_width(w);
         self
     }
-    #[deprecated="use Geometry::set_padding"]
     ///仅作用于draw
     pub fn align(mut self, align: Align) -> Self {
-        self.text_buffer.align = align;
+        self.text_buffer.geometry.set_align(align);
         self
     }
-    #[deprecated="use Geometry::set_fix_height"]
     ///仅作用于draw
     pub fn height(mut self, h: f32) -> Self {
-        self.set_height(h);
+        self.text_buffer.geometry.set_fix_height(h);
         self
     }
-    #[deprecated="use Geometry::set_padding"]
     ///仅作用于draw
     pub fn padding(mut self, padding: Padding) -> Self {
         self.text_buffer.geometry.set_padding(padding);
@@ -173,19 +154,13 @@ impl Button {
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
         if init {
-            // self.fill_render.param.rect = ui.layout().available_rect().clone_with_size(&self.fill_render.param.rect);
             self.reset_size(ui);
         }
         //按钮矩形
         self.fill_render.init_rectangle(ui, false, false);
-
         if let Some(ref mut image) = self.image {
             image.update(ui);
-            // image.rect = self.image_rect.clone();
-            // image.changed = true
         }
-        //按钮文本
-        // self.text_buffer.draw(ui);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -195,21 +170,12 @@ impl Button {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.geometry.offset_to_rect(&ui.draw_rect);
-            // self.text_buffer.geometry.set_pos(self.fill_render.param.rect.dx().min, self.fill_render.param.rect.dy().min);
-            // self.text_buffer.rect.offset_to_rect(&ui.draw_rect);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.update_buffer(ui);
         }
-        // if !self.changed && !ui.can_offset { return; }
-        // self.changed = false;
-        // if ui.can_offset {
-        //     self.fill_render.param.rect.offset(&ui.offset);
-        //     self.text_buffer.rect.offset(&ui.offset);
-        // }
-        // self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
@@ -220,11 +186,11 @@ impl Button {
             Some(ref mut image) => {
                 if ui.widget_changed.contains(WidgetChange::Position) {
                     let mut text_rect = ui.draw_rect.clone();
-                    text_rect.add_min_x(image.rect.width());
+                    text_rect.add_min_x(image.geometry().width());
                     self.text_buffer.geometry.offset_to_rect(&text_rect);
                     self.text_buffer.redraw(ui);
                 }
-                let mut image_rect = ui.draw_rect.clone_with_size(&image.rect);
+                let mut image_rect = ui.draw_rect.clone_with_size(&image.geometry().rect());
                 image_rect.add_min_x(self.text_buffer.geometry.padding().left);
                 image_rect.add_min_y(self.text_buffer.geometry.padding().top);
                 ui.draw_rect = image_rect;
@@ -259,7 +225,6 @@ impl Widget for Button {
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
-
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.fill_render.param.rect) {

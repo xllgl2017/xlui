@@ -1,7 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::render::image::ImageSource;
 use crate::response::Response;
-use crate::size::rect::Rect;
 use crate::size::Geometry;
 use crate::ui::Ui;
 use crate::vertex::ImageVertex;
@@ -35,7 +34,6 @@ use wgpu::util::DeviceExt;
 pub struct Image {
     id: String,
     source: ImageSource,
-    pub(crate) rect: Rect,
     geometry: Geometry,
 
     vertices: Vec<ImageVertex>,
@@ -49,7 +47,6 @@ impl Image {
         Image {
             id: crate::gen_unique_id(),
             source: source.into(),
-            rect: Rect::new(),
             geometry: Geometry::new(),
             vertices: vec![],
             vertex_buffer: None,
@@ -60,24 +57,14 @@ impl Image {
 
     fn reset_size(&mut self, size: Size) {
         self.geometry.set_size(size.width, size.height);
-        self.rect.set_size(self.geometry.width(), self.geometry.height());
     }
 
 
-    pub fn set_rect(&mut self, rect: Rect) {
-        self.rect = rect;
-    }
-
-    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.set_size(width, height);
+        self.geometry.set_fix_size(width,height);
         self
     }
 
-    #[deprecated="use Geometry::set_fix_size"]
-    pub fn set_size(&mut self, width: f32, height: f32) {
-        self.geometry.set_fix_size(width, height);
-    }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {
         self.id = id.to_string();
@@ -97,11 +84,12 @@ impl Image {
         let size = ui.context.render.image.insert_image(&ui.device, &self.source);
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
+        let rect = self.geometry.rect();
         self.vertices = vec![
-            ImageVertex::new_coord(self.rect.left_top(), [0.0, 0.0], Size::from(&ui.device.surface_config)),
-            ImageVertex::new_coord(self.rect.left_bottom(), [0.0, 1.0], Size::from(&ui.device.surface_config)),
-            ImageVertex::new_coord(self.rect.right_bottom(), [1.0, 1.0], Size::from(&ui.device.surface_config)),
-            ImageVertex::new_coord(self.rect.right_top(), [1.0, 0.0], Size::from(&ui.device.surface_config))
+            ImageVertex::new_coord(rect.left_top(), [0.0, 0.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(rect.left_bottom(), [0.0, 1.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(rect.right_bottom(), [1.0, 1.0], Size::from(&ui.device.surface_config)),
+            ImageVertex::new_coord(rect.right_top(), [1.0, 0.0], Size::from(&ui.device.surface_config))
         ];
         let vertex_buffer = ui.device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -121,13 +109,14 @@ impl Image {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if !ui.widget_changed.unchanged() {
-            self.rect.offset_to_rect(&ui.draw_rect);
+            self.geometry.offset_to_rect(&ui.draw_rect);
+            let rect = self.geometry.rect();
             for (index, v) in self.vertices.iter_mut().enumerate() {
                 match index {
-                    0 => v.position = self.rect.left_top(),
-                    1 => v.position = self.rect.left_bottom(),
-                    2 => v.position = self.rect.right_bottom(),
-                    3 => v.position = self.rect.right_top(),
+                    0 => v.position = rect.left_top(),
+                    1 => v.position = rect.left_bottom(),
+                    2 => v.position = rect.right_bottom(),
+                    3 => v.position = rect.right_top(),
                     _ => {}
                 }
                 v.screen_size = [ui.device.surface_config.width as f32, ui.device.surface_config.height as f32];
@@ -158,7 +147,7 @@ impl Widget for Image {
             UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

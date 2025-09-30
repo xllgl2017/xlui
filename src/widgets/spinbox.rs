@@ -94,7 +94,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     pub(crate) fn reset_size(&mut self) {
-        self.edit.set_width(self.geometry.width() - 18.0);
+        self.edit.geometry().set_fix_width(self.geometry.width() - 18.0);
     }
 
     pub fn connect<A: 'static>(mut self, f: fn(&mut A, &mut Ui, T)) -> Self {

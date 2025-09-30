@@ -29,7 +29,7 @@ use crate::size::Geometry;
 ///         .padding(Padding::same(5.0));
 ///
 ///         //设置控件大小
-///     item.set_size(30.0,30.0);
+///     item.geometry().set_size(30.0,30.0);
 ///     ui.add(item);
 ///
 /// }
@@ -58,7 +58,7 @@ impl<T: Display> SelectItem<T> {
         fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         SelectItem {
             id: crate::gen_unique_id(),
-            text: TextBuffer::new(value.to_string()).with_align(Align::Center),
+            text: TextBuffer::new(value.to_string()).with_align(Align::LeftCenter).padding(Padding::same(2.0)),
             value,
             parent_selected: Arc::new(RwLock::new(None)),
             fill_render: RenderParam::new(RectParam::new().with_style(fill_style)),
@@ -70,19 +70,12 @@ impl<T: Display> SelectItem<T> {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.geometry.set_padding(Padding::same(2.0));
         self.text.init(ui);
         self.fill_render.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
     }
 
-    #[deprecated="use Geometry::set_fix_size"]
-    pub fn set_size(&mut self, width: f32, height: f32) {
-        self.text.geometry.set_fix_size(width, height);
-    }
-
-    #[deprecated="use Geometry::set_fix_size"]
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
-        self.set_size(w, h);
+        self.text.geometry.set_fix_size(w,h);
         self
     }
 
@@ -91,7 +84,6 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
-    #[deprecated="use Geometry::set_padding"]
     pub fn padding(mut self, padding: Padding) -> Self {
         self.text.geometry.set_padding(padding);
         self
@@ -102,9 +94,8 @@ impl<T: Display> SelectItem<T> {
         self
     }
 
-    #[deprecated="use Geometry::set_align"]
     pub fn align(mut self, align: Align) -> Self {
-        self.text.align = align;
+        self.text.geometry.set_align(align);
         self
     }
 
@@ -171,7 +162,6 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                     ui.context.window.request_redraw();
                 }
             }
-            UpdateType::MousePress => {}
             UpdateType::MouseRelease => {
                 let clicked = ui.device.device_input.click_at(&self.fill_render.param.rect);
                 if clicked {
@@ -183,12 +173,9 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                     ui.context.window.request_redraw();
                 }
             }
-            UpdateType::MouseWheel => {}
-            #[cfg(feature = "winit")]
-            UpdateType::KeyRelease(_) => {}
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.text.geometry.width(),self.text.geometry.height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

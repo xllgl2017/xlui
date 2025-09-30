@@ -99,13 +99,9 @@ impl TextEdit {
         if row == 1 { self.char_layout.edit_kind = EditKind::Single; }
         self
     }
-    #[deprecated="use Geometry::set_fix_width"]
-    pub fn set_width(&mut self, width: f32) {
-        self.char_layout.buffer.geometry.set_fix_width(width);
-    }
-    #[deprecated="use Geometry::set_fix_width"]
+
     pub fn with_width(mut self,w:f32)->Self{
-        self.set_width(w);
+        self.char_layout.buffer.geometry.set_fix_width(w);
         self
     }
 

@@ -15,8 +15,6 @@ pub struct Popup {
     pub(crate) id: String,
     scroll_area: ScrollWidget,
     fill_render: RenderParam<RectParam>,
-    #[deprecated="use Geometry"]
-    size: WidgetSize,
     open: bool,
     requests: Vec<bool>,
     changed: bool,
@@ -41,7 +39,6 @@ impl Popup {
             id: crate::gen_unique_id(),
             scroll_area: area,
             fill_render,
-            size: WidgetSize::same(width, height),
             open: false,
             requests: vec![],
             changed: false,
@@ -116,7 +113,7 @@ impl Widget for Popup {
                 if ui.device.device_input.hovered_at(&self.fill_render.param.rect) { ui.update_type = UpdateType::None; }
             }
         }
-        Response::new(&self.id, self.size.clone())
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(),self.geometry.height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

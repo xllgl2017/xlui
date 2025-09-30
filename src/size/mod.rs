@@ -202,7 +202,6 @@ impl Geometry {
         };
         match self.align {
             Align::LeftCenter | Align::Center | Align::RightCenter => {
-                println!("11111111111111111111111111111");
                 let free_space = fix_height - self.height;
                 y += free_space / 2.0;
             }

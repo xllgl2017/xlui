@@ -26,14 +26,8 @@ pub struct ScrollWidget {
     h_bar: ScrollBar,
     fill_render: RenderParam<RectParam>,
     a: f32,
-    #[deprecated = "use Geometry::padding"]
-    padding: Padding,
     horiz_scrollable: bool,
     vert_scrollable: bool,
-    #[deprecated = "use Geometry::width"]
-    width: f32,
-    #[deprecated = "use Geometry::height"]
-    height: f32,
     geometry: Geometry,
 }
 
@@ -51,11 +45,8 @@ impl ScrollWidget {
             h_bar: ScrollBar::horizontal(),
             fill_render: RenderParam::new(RectParam::new().with_style(fill_style)),
             a: 0.0,
-            padding: Padding::same(5.0),
             horiz_scrollable: false,
             vert_scrollable: false,
-            width: 400.0,
-            height: 300.0,
             geometry: Geometry::new().with_size(400.0, 300.0).with_padding(Padding::same(5.0)),
         }
     }
@@ -86,40 +77,23 @@ impl ScrollWidget {
     pub fn set_layout(&mut self, layout: LayoutKind) {
         self.layout = Some(layout);
     }
-    #[deprecated = "use Geometry::set_fix_size"]
-    pub fn set_size(&mut self, w: f32, h: f32) {
-        self.set_with(w);
-        self.set_height(h);
-    }
-    #[deprecated = "use Geometry::set_fix_size"]
+
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.set_size(width, height);
+        self.geometry.set_fix_size(width, height);
         self
-    }
-    #[deprecated = "use Geometry::set_fix_width"]
-    pub fn with_width(mut self, w: f32) -> Self {
-        self.set_with(w);
-        self
-    }
-    #[deprecated = "use Geometry::set_fix_width"]
-    pub fn set_with(&mut self, w: f32) {
-        self.width = w;
-        self.geometry.set_fix_width(w);
-    }
-    #[deprecated = "use Geometry::set_fix_width"]
-    pub fn with_height(mut self, h: f32) -> Self {
-        self.set_height(h);
-        self
-    }
-    #[deprecated = "use Geometry::set_fix_height"]
-    pub fn set_height(&mut self, h: f32) {
-        self.height = h;
-        self.geometry.set_fix_height(h);
     }
 
-    #[deprecated = "use Geometry::set_padding"]
+    pub fn with_width(mut self, w: f32) -> Self {
+        self.geometry.set_fix_width(w);
+        self
+    }
+
+    pub fn with_height(mut self, h: f32) -> Self {
+        self.geometry.set_fix_height(h);
+        self
+    }
+
     pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding.clone();
         self.geometry.set_padding(padding);
         self
     }
@@ -129,31 +103,19 @@ impl ScrollWidget {
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui, mut callback: impl FnMut(&mut Ui)) {
-        // self.context_rect = self.fill_render.param.rect.clone();
-        // let cw = self.fill_render.param.rect.width() - self.v_bar.width() - self.padding.horizontal();
-        // let ch = self.fill_render.param.rect.height() - self.h_bar.height() - self.padding.vertical();
-        // let current_layout = VerticalLayout::top_to_bottom().with_size(cw, ch);
-
-        // let mut current_layout = VerticalLayout::top_to_bottom().max_rect(self.context_rect.clone(), self.padding.clone());
-        // current_layout.size_mode = SizeMode::Fix;
         let mut current_layout = self.layout.take().unwrap_or_else(|| LayoutKind::new(VerticalLayout::top_to_bottom()));
         let lw = self.geometry.width() - self.geometry.padding().horizontal() - self.v_bar.geometry().width(); //self.width - self.padding.horizontal() - self.v_bar.width();
         let lh = self.geometry.height() - self.geometry.padding().vertical() - self.h_bar.geometry().height(); //self.height - self.padding.vertical() - self.h_bar.height();
         current_layout.set_size(lw, lh);
-        // layout.set_width();
-        // layout.set_height();
         let previous_layout = ui.layout.replace(current_layout).unwrap();
         //视图内容
         callback(ui);
         let mut current_layout = ui.layout.replace(previous_layout).unwrap();
         let resp = current_layout.update(ui);
         self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
-        // self.fill_render.param.rect.set_size(self.width, self.height);
         self.v_bar.geometry().set_fix_height(self.geometry.height() - self.h_bar.geometry().height() - self.geometry.padding().vertical());
-        // self.v_bar.set_height(self.height - self.h_bar.height() - self.padding.vertical());
         self.v_bar.set_context_height(resp.size.rh);
         self.h_bar.geometry().set_fix_width(self.geometry.width() - self.v_bar.geometry().width() - self.geometry.padding().horizontal());
-        // self.h_bar.set_width(self.width - self.v_bar.width() - self.padding.horizontal());
         self.h_bar.set_context_width(resp.size.rw);
         self.layout = Some(current_layout);
     }
@@ -173,8 +135,6 @@ impl ScrollWidget {
     pub fn reset_context_height(&mut self, h: f32) {
         self.v_bar.set_context_height(h);
         self.bar_offset(0.0, 0.0);
-        // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
-        // self.v_bar.set_context_height(layout.height() + layout.item_space());
     }
 
     fn bar_offset(&mut self, ox: f32, oy: f32) {
@@ -187,13 +147,11 @@ impl ScrollWidget {
     }
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
-        // println!("{:?}-{:?}-{}", ui.update_type, ui.draw_rect, ui.widget_changed as u32);
         if self.a != 0.0 {
             let oy = self.a * 10.0 * 10.0;
             let mut pos = Pos::new();
             pos.x = self.fill_render.param.rect.dx().center();
             pos.y = self.fill_render.param.rect.dy().center();
-            // ui.update_type = UpdateType::Offset(Offset::new(pos).with_y(-oy));
             if self.a.abs() - 0.001 < 0.0 {
                 self.a = 0.0;
             } else if self.a > 0.0 {
@@ -202,8 +160,6 @@ impl ScrollWidget {
                 self.a += 0.001;
             }
             self.bar_offset(0.0, oy);
-            // self.v_bar.update(ui);
-            // if !self.v_bar.scrolling() { self.a = 0.0; }
             ui.context.window.request_redraw();
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
@@ -216,7 +172,6 @@ impl ScrollWidget {
         //背景
         ui.context.render.rectangle.render(&self.fill_render, pass);
         let clip = self.fill_render.param.rect.clone_add_padding(self.geometry.padding());
-        // println!("{:?}", clip);
         pass.set_scissor_rect(clip.dx().min as u32, clip.dy().min as u32, clip.width() as u32, clip.height() as u32);
         let resp = if ui.widget_changed.contains(WidgetChange::Position) {
             self.context_rect = ui.draw_rect.clone();
@@ -224,10 +179,6 @@ impl ScrollWidget {
             self.context_rect.set_height(self.fill_render.param.rect.height() - self.geometry.padding().vertical() - self.h_bar.geometry().height());
             self.context_rect.add_min_x(self.geometry.padding().left);
             self.context_rect.add_min_y(self.geometry.padding().top);
-            // self.context_rect.add_min_x(self.padding.left);
-            // self.context_rect.add_max_x(-self.v_bar.width() - self.padding.right);
-            // self.context_rect.add_min_y(self.padding.left);
-            // self.context_rect.add_max_y(-self.h_bar.height() - self.padding.bottom);
             let previous_rect = ui.draw_rect.clone();
             ui.draw_rect = self.context_rect.clone();
             let resp = self.layout.as_mut().unwrap().update(ui);
@@ -238,8 +189,6 @@ impl ScrollWidget {
         };
         let pass = ui.pass.as_mut().unwrap();
         pass.set_scissor_rect(0, 0, ui.device.surface_config.width, ui.device.surface_config.height);
-        // let resp = self.layout.as_mut().unwrap().update(ui);
-
         if self.vert_scrollable {
             //垂直滚动条
             if ui.widget_changed.contains(WidgetChange::Position) {
@@ -274,11 +223,6 @@ impl ScrollWidget {
             }
         }
 
-        // let pass = ui.pass.as_mut().unwrap();
-        //视图内容
-
-        // self.layout.as_mut().unwrap().redraw(ui);
-
     }
 }
 
@@ -296,13 +240,7 @@ impl Widget for ScrollWidget {
                     let oy = ui.device.device_input.mouse.offset_y();
                     let ox = ui.device.device_input.mouse.offset_x();
                     self.bar_offset(ox, oy);
-
-                    // let layout: &mut VerticalLayout = self.layout.as_mut().unwrap().as_mut_().unwrap();
-                    // layout.set_offset(offset);
                     ui.context.window.request_redraw();
-                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.pressed_pos).with_y(-oy));
-                    // ui.current_rect = self.fill_render.param.rect.clone();
-                    // self.v_bar.update(ui);
                     return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                 }
                 let mut offset = Offset::new(Pos::new());
@@ -332,34 +270,11 @@ impl Widget for ScrollWidget {
                 if ui.device.device_input.hovered_at(&self.fill_render.param.rect) {
                     let oy = ui.device.device_input.mouse.delta_y() * 10.0;
                     self.bar_offset(0.0, oy);
-                    // let roy = self.v_bar.set_vbar_value_by_offset(-oy);
-                    // let rox = self.h_bar.offset();
-                    // let offset = Offset::new(Pos::new())
-                    //     .with_x(if self.horiz_scrollable { rox } else { 0.0 })
-                    //     .with_y(if self.vert_scrollable { roy } else { 0.0 });
-                    // self.layout.as_mut().unwrap().set_offset(offset);
-                    // ui.update_type = UpdateType::Offset(Offset::new(ui.device.device_input.mouse.lastest).with_y());
-                    // self.v_bar.update(ui);
-                    // return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                     ui.context.window.request_redraw();
                 }
             }
-            // UpdateType::Offset(ref mut o) => {
-            //     if !self.fill_render.param.rect.has_position(o.pos) { return; }
-            //     ui.can_offset = true;
-            //     o.target_id = self.layout.as_ref().unwrap().id.to_string();
-            //     self.layout.as_mut().unwrap().update(ui);
-            //     ui.update_type = UpdateType::None;
-            //     ui.can_offset = false;
-            // }
             _ => {}
         }
-        // ui.current_rect = self.context_rect.clone();
-        // self.v_bar.update(ui);
-        // if let Some(o) = ui.update_type.is_offset() {
-        //     if o.y == 0.0 { self.a = 0.0; }
-        //     ui.update_type = UpdateType::None;
-        // }
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
     }
 

@@ -10,7 +10,7 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Offset, Padding, Pos, Radius, Rect};
+use crate::{Border, Offset, Padding, Pos, Radius, Rect, Widget};
 
 ///### 水平布局的使用
 ///```rust
@@ -230,7 +230,7 @@ impl Layout for HorizontalLayout {
 
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
-            space.set_height(0.0);
+            space.geometry().set_height(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }

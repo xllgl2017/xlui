@@ -102,7 +102,7 @@ impl<T: Display + 'static> ComboBox<T> {
     fn add_item(&self, ui: &mut Ui, item: &T) {
         let mut select = SelectItem::new(item.to_string()).padding(Padding::same(3.0))
             .contact(self.selected.clone()).align(Align::LeftCenter);
-        select.set_size(self.popup_rect.width() - 10.0, 25.0);
+        select.geometry().set_fix_size(self.popup_rect.width() - 10.0, 25.0);
         ui.add(select);
     }
 
@@ -178,8 +178,6 @@ impl<T: Display + 'static> ComboBox<T> {
             let mut text_rect = self.fill_render.param.rect.clone();
             text_rect.add_min_x(2.0);
             self.text_buffer.geometry.offset_to_rect(&text_rect);
-            // self.text_buffer.rect = text_rect;
-            // self.text_buffer.geometry.set_pos(self.fill_render.param.rect.dx().min + 2.0, self.fill_render.param.rect.dy().min);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
