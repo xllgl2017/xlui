@@ -66,7 +66,7 @@ impl App for TestShape {
             blur: 1.0,
             color: Color::rgba(0, 0, 0, 30),
         };
-        let style = Popup::popup_style();
+        let style = ui.style.borrow().widgets.popup.clone();
         self.border.color = style.border.inactive.color.clone();
         ui.horizontal(|ui| {
             let rectangle = Rectangle::new(style.clone(), 200.0, 150.0)

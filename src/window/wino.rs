@@ -8,6 +8,8 @@ use crate::{Device, DeviceInput, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
 use std::sync::Arc;
+use std::thread::sleep;
+use std::time::Duration;
 
 pub trait EventLoopHandle {
     fn event(&mut self, event: WindowEvent);
@@ -108,7 +110,11 @@ impl EventLoopHandle for LoopWindow {
                 });
                 self.app_ctx.redraw(&mut self.app)
             }
-            WindowEvent::ReInit => self.app_ctx.update(UpdateType::ReInit, &mut self.app),
+            WindowEvent::ReInit => {
+                //休眠15秒，保证系统底层、设备恢复
+                sleep(Duration::from_secs(15));
+                self.app_ctx.update(UpdateType::ReInit, &mut self.app)
+            }
             WindowEvent::Resize(size) => {
                 self.app_ctx.device.surface_config.width = size.width_u32();
                 self.app_ctx.device.surface_config.height = size.height_u32();
