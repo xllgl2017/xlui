@@ -69,7 +69,7 @@ impl Widget for TabHeader {
 }
 
 pub struct TabItem {
-    label: TabHeader,
+    header: TabHeader,
     layout: LayoutKind,
 }
 
@@ -96,26 +96,27 @@ impl TabWidget {
             fill: RenderParam::new(RectParam::new().with_style(fill_style)),
         }
     }
-    pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) {
+    pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) -> &mut TabHeader {
         if let Some(previous) = self.current {
-            self.items[previous].label.fill.param.style.fill = FillStyle::same(Color::TRANSPARENT);
+            self.items[previous].header.fill.param.style.fill = FillStyle::same(Color::TRANSPARENT);
         }
         self.current = Some(self.items.len());
         let ut = ui.update_type.clone();
         ui.update_type = UpdateType::Init;
-        let mut label = TabHeader::new(name);
-        label.update(ui);
+        let mut header = TabHeader::new(name);
+        header.update(ui);
         let current_layout = VerticalLayout::top_to_bottom().with_padding(Padding::same(2.0));
         let previous_layout = ui.layout.replace(LayoutKind::new(current_layout));
         context(ui);
         let current_layout = ui.layout.take().unwrap();
         ui.layout = previous_layout;
         let item = TabItem {
-            label,
+            header,
             layout: current_layout,
         };
         self.items.push(item);
         ui.update_type = ut;
+        &mut self.items.last_mut().unwrap().header
     }
 
     fn init(&mut self, ui: &mut Ui) {
@@ -158,15 +159,15 @@ impl Widget for TabWidget {
             ui.draw_rect = tab_text_rect.clone();
             let item = &mut self.items[index];
             let clicked = if let UpdateType::MouseRelease = ui.update_type { true } else { false };
-            let resp = item.label.update(ui);
+            let resp = item.header.update(ui);
             width += resp.size.dw + self.space;
             ui.draw_rect.set_size(resp.size.dw, resp.size.dh);
             tab_text_rect.add_min_x(resp.size.dw + self.space);
             if clicked && ui.draw_rect.has_position(ui.device.device_input.mouse.lastest.relative) {
                 let previous = self.current.replace(index);
-                item.label.fill.param.style.fill = FillStyle::same(Color::WHITE);
+                item.header.fill.param.style.fill = FillStyle::same(Color::WHITE);
                 if let Some(previous) = previous && previous != index {
-                    self.items[previous].label.fill.param.style.fill = FillStyle::same(Color::TRANSPARENT);
+                    self.items[previous].header.fill.param.style.fill = FillStyle::same(Color::TRANSPARENT);
                 }
 
                 ui.context.window.request_redraw();
