@@ -101,7 +101,7 @@ pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rec
                Size, margin::Margin};
 pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
                   image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
-                  select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combobox::ComboBox,
+                  select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combo::ComboBox, combo::check::CheckComboBox,
                   rectangle::Rectangle, circle::Circle, triangle::Triangle, tab::TabWidget, table::TableView,
                   table::column::TableColumn, table::TableExt};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};

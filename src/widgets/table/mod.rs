@@ -2,7 +2,6 @@ use crate::layout::{Layout, LayoutItem};
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::column::TableColumn;
 use crate::widgets::table::header::{TableHeader, TableHeaderUi};
 use crate::widgets::table::param::TableParams;

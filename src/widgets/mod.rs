@@ -24,6 +24,7 @@ pub mod processbar;
 pub mod triangle;
 pub mod circle;
 pub mod table;
+pub mod combo;
 // pub mod column;
 // pub mod cell;
 
