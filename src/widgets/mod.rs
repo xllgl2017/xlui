@@ -23,8 +23,13 @@ pub mod space;
 pub mod processbar;
 pub mod triangle;
 pub mod circle;
-pub mod tab;
+pub mod table;
 pub mod combo;
+// pub mod column;
+// pub mod cell;
+
+pub type UiDraw = Box<dyn Fn(&mut Ui)>;
+pub mod tab;
 
 pub trait Widget: Any {
     ///后续更新调用

@@ -122,6 +122,11 @@ impl Geometry {
         self.width = width + self.padding.horizontal();
     }
 
+    pub fn with_height(mut self, height: f32) -> Self {
+        self.set_height(height);
+        self
+    }
+
     pub fn set_height(&mut self, height: f32) {
         self.height = height + self.padding.vertical();
     }
@@ -237,6 +242,11 @@ impl Geometry {
     pub fn set_fix_size(&mut self, w: f32, h: f32) {
         self.set_fix_width(w);
         self.set_fix_height(h);
+    }
+
+    pub fn with_fix_height(mut self, height: f32) -> Self {
+        self.set_fix_height(height);
+        self
     }
 
     pub fn set_fix_height(&mut self, h: f32) {
