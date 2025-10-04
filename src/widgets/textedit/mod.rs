@@ -59,7 +59,7 @@ impl TextEdit {
         fill_style.border.inactive = Border::same(0.0).radius(Radius::same(2));
         fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill_style.border.clicked = fill_style.border.hovered.clone();
-        let param=RectParam::new().with_rect(Rect::new().with_size(200.0,30.0)).with_style(fill_style);
+        let param = RectParam::new().with_rect(Rect::new().with_size(200.0, 30.0)).with_style(fill_style);
         TextEdit {
             id: crate::gen_unique_id(),
             callback: None,
@@ -100,7 +100,7 @@ impl TextEdit {
         self
     }
 
-    pub fn with_width(mut self,w:f32)->Self{
+    pub fn with_width(mut self, w: f32) -> Self {
         self.char_layout.buffer.geometry.set_fix_width(w);
         self
     }
@@ -125,7 +125,7 @@ impl TextEdit {
         self.callback = Some(Callback::create_textedit(f));
         self
     }
-    pub(crate) fn buffer(&mut self)->&mut TextBuffer {
+    pub(crate) fn buffer(&mut self) -> &mut TextBuffer {
         &mut self.char_layout.buffer
     }
 
@@ -161,7 +161,6 @@ impl TextEdit {
             self.cursor_render.update(ui);
             self.select_render.update(ui);
         }
-
     }
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
@@ -323,6 +322,12 @@ impl Widget for TextEdit {
                             { self.changed = true; }
                             #[cfg(target_os = "windows")]
                             { ui.context.window.request_redraw(); }
+                        }
+                        Key::CtrlX => {
+                            let select_text = self.char_layout.select_text(&self.select_render, &self.cursor_render);
+                            ui.context.window.set_clipboard(ClipboardData::Text(select_text));
+                            self.char_layout.remove_by_range(ui, &mut self.cursor_render, &mut self.select_render);
+                            ui.context.window.request_redraw();
                         }
                         _ => {}
                     }

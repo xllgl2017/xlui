@@ -231,6 +231,8 @@ impl X11Window {
                             return (window.id, WindowEvent::KeyPress(Key::CtrlC));
                         } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
                             return (window.id, WindowEvent::KeyPress(Key::CtrlV));
+                        } else if ctrl_press && keysym == x11::keysym::XK_x as u64 {
+                            return (window.id, WindowEvent::KeyPress(Key::CtrlX));
                         }
 
 
