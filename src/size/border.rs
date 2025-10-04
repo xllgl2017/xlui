@@ -23,6 +23,13 @@ impl Border {
         }
     }
 
+    pub fn set_same(&mut self, width: f32) {
+        self.left_width = width;
+        self.right_width = width;
+        self.top_width = width;
+        self.bottom_width = width;
+    }
+
     pub fn color(mut self, color: Color) -> Self {
         self.color = color;
         self

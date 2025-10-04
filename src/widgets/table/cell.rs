@@ -10,29 +10,32 @@ use crate::widgets::table::header::{TableHeader, TableUi};
 use crate::widgets::table::row::TableRowData;
 use crate::widgets::{WidgetChange, WidgetSize};
 use crate::{Border, HorizontalLayout, LayoutKind, Padding, Radius, Rect, TableExt, Widget};
+use crate::size::Geometry;
 
 pub struct TableCell {
     pub(crate) id: String,
     fill_render: RenderParam<RectParam>,
     cell_line: RenderParam<RectParam>,
     layout: Option<LayoutKind>,
+    geometry: Geometry,
 }
 
 impl TableCell {
     pub fn new(width: f32, height: f32) -> TableCell {
         let mut cell_style = ClickStyle::new();
         cell_style.fill = FillStyle::same(Color::rgb(235, 235, 235));
-        cell_style.border = BorderStyle::same(Border::new(0.0).color(Color::BLUE).radius(Radius::same(0)));
+        cell_style.border = BorderStyle::same(Border::same(0.0).color(Color::BLUE).radius(Radius::same(0)));
         let layout = HorizontalLayout::left_to_right().with_size(width, height)
             .with_padding(Padding::same(0.0).left(5.0));
         let mut cell_line_style = ClickStyle::new();
         cell_line_style.fill = FillStyle::same(Color::rgb(160, 160, 160));
-        cell_line_style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0)));
+        cell_line_style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
         TableCell {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_size(width, height), cell_style)),
-            cell_line: RenderParam::new(RectParam::new(Rect::new().with_size(1.0, height), cell_line_style)),
+            fill_render: RenderParam::new(RectParam::new().with_rect(Rect::new().with_size(width, height)).with_style(cell_style)),
+            cell_line: RenderParam::new(RectParam::new().with_rect(Rect::new().with_size(1.0, height)).with_style(cell_line_style)),
             layout: Some(LayoutKind::new(layout)),
+            geometry: Geometry::new().with_size(width, height),
         }
     }
 
@@ -82,7 +85,7 @@ impl Widget for TableCell {
                 rect.add_min_x(-2.0);
                 rect.add_max_x(2.0);
                 if ui.device.device_input.hovered_at(&rect) {
-                    self.cell_line.param.style.border.inactive.width = 2.0;
+                    self.cell_line.param.style.border.inactive.set_same(2.0);
                     self.cell_line.update(ui, false, false);
                     ui.context.window.request_redraw();
                 }
@@ -91,5 +94,9 @@ impl Widget for TableCell {
         }
         self.layout.as_mut().unwrap().update(ui);
         Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }

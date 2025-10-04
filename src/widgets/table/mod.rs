@@ -8,8 +8,6 @@ use crate::widgets::table::header::{TableHeader, TableHeaderUi};
 use crate::widgets::table::param::TableParams;
 use crate::widgets::table::row::TableRow;
 use crate::{Border, Radius, Rect, RecycleLayout, ScrollWidget};
-use crate::cell::Cell;
-use crate::table::header::TableHeaderUi;
 
 mod param;
 pub mod column;
@@ -94,9 +92,9 @@ impl<T: TableExt> TableView<T> {
         fill_style.fill.inactive = Color::TRANSPARENT;
         fill_style.fill.hovered = Color::TRANSPARENT;
         fill_style.fill.clicked = Color::TRANSPARENT;
-        fill_style.border.inactive = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.hovered = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::new(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         area.set_style(fill_style);
         area.show(ui, |ui| {
             self.show_rows(ui);

@@ -9,12 +9,14 @@ use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
 use crate::widgets::{WidgetKind, WidgetSize};
 use crate::{Color, FillStyle, Offset, Pos, Rect, Widget};
+use crate::size::Geometry;
 
 pub struct TableRow {
     id: String,
     fill_render: RenderParam<RectParam>,
     cells: Vec<TableCell>,
     offset: Offset,
+    geometry: Geometry,
 }
 
 impl TableRow {
@@ -25,14 +27,15 @@ impl TableRow {
         }
         TableRow {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new(Rect::new().with_height(row_height), ClickStyle::new())),
+            fill_render: RenderParam::new(RectParam::new()),
             cells,
             offset: Offset::new(Pos::new()),
+            geometry: Geometry::new().with_fix_height(row_height),
         }
     }
 
     pub fn with_width(mut self, w: f32) -> TableRow {
-        self.fill_render.param.rect.set_width(w);
+        self.geometry.set_fix_width(w);
         self
     }
 
@@ -52,6 +55,7 @@ impl TableRow {
             datum.set_column(index);
             cell.show_body(ui, header, datum);
         }
+        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
         if datum.row % 2 == 0 { self.fill_render.param.style.fill = FillStyle::same(Color::rgb(245, 245, 245)) }
 
         let row = WidgetKind::new(ui, self);
@@ -73,7 +77,12 @@ impl Widget for TableRow {
             ui.draw_rect.add_min_x(resp.size.dw);
         }
         ui.draw_rect = previous_rect;
-        Response::new(&self.id, WidgetSize::same(width, self.fill_render.param.rect.height()))
+        self.geometry.set_width(width);
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+    }
+
+    fn geometry(&mut self) -> &mut Geometry {
+        &mut self.geometry
     }
 }
 
