@@ -10,15 +10,15 @@ fn vs_main(@builtin(vertex_index) v: u32) -> @builtin(position) vec4<f32> {
 }
 
 struct Uniforms {
-    center_position:vec2<f32>,
-    radius:vec2<f32>,
-    corner_radii: vec4<f32>,
-    border_widths: vec4<f32>,
-    fill_color: vec4<f32>,
-    border_color: vec4<f32>,
-    screen: vec4<f32>,
-    shadow_params: vec4<f32>,
-    shadow_color: vec4<f32>
+    center_position:vec2<f32>,  //⬅️ 矩形中心(x,y)
+    radius:vec2<f32>,           //⬅️ 半径(w/2,h/2)
+    corner_radii: vec4<f32>,    //⬅️ 圆角(左上、右上、右下、左下)
+    border_widths: vec4<f32>,   //⬅️ 边框(左、右、下、上)
+    fill_color: vec4<f32>,      //⬅️ 填充颜色(rgba)
+    border_color: vec4<f32>,    //⬅️ 边框颜色(rgba)
+    screen: vec4<f32>,          //⬅️ 屏幕大小（宽、高）,缩放比例、填充
+    shadow_params: vec4<f32>,   //⬅️ 阴影(x,y)、模糊半径、强度
+    shadow_color: vec4<f32>     //⬅️ 阴影颜色
 };
 @group(0) @binding(0) var<uniform> u: Uniforms;
 

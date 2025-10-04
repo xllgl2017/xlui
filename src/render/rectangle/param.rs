@@ -25,7 +25,7 @@ pub struct RectDrawParam {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
 struct RectDrawParam2 {
-    center_position: [f32; 2],    //⬅️ 中心(x,y)
+    center_position: [f32; 2],    //⬅️ 矩形中心(x,y)
     radius: [f32; 2],             //⬅️ 半径(w/2,h/2)
     corner_radii: [f32; 4],       //⬅️ 圆角(左上、右上、右下、左下)
     border_widths: [f32; 4],      //⬅️ 边框(左、右、下、上)

@@ -20,6 +20,7 @@ pub enum Key {
     CapsLock,
     CtrlC,
     CtrlV,
+    CtrlX
 }
 
 impl Key {
