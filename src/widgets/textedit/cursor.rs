@@ -37,7 +37,7 @@ impl EditCursor {
             horiz: 0,
             vert: 0,
             render: RenderParam::new(RectParam::new().with_style(cursor_style)),
-            offset: Offset::new(Pos::new()),
+            offset: Offset::new(),
             line_height: 0.0,
             changed: false,
 

@@ -1,11 +1,10 @@
-use crate::size::pos::Pos;
+use crate::text::buffer::TextBuffer;
 use crate::text::cchar::CChar;
 use crate::ui::Ui;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::textedit::EditKind;
 use crate::{Offset, Padding, RichTextExt, TextWrap};
-use crate::text::buffer::TextBuffer;
 
 pub(crate) struct CharBuffer {
     pub(crate) buffer: TextBuffer,
@@ -24,7 +23,7 @@ impl CharBuffer {
             font_size: 0.0,
             line_height: 0.0,
             max_wrap_width: 0.0,
-            offset: Offset::new(Pos::new()),
+            offset: Offset::new(),
             edit_kind: EditKind::Multi,
             looking: false,
         }

@@ -13,9 +13,9 @@ readme = "README.md"
 #name = "test_all"
 #path = "tests/all.rs"
 
-[[bin]]
-name="test_table"
-path = "tests/table.rs"
+#[[bin]]
+#name="test_table"
+#path = "tests/table.rs"
 
 [[example]]
 name = "backend"
@@ -41,9 +41,9 @@ doc-scrape-examples = false
 name = "widget"
 doc-scrape-examples = false
 
-[[bin]]
-name = "test_334"
-path = "tests/hello_world.rs"
+#[[bin]]
+#name = "test_334"
+#path = "tests/hello_world.rs"
 
 [lib]
 name = "xlui"

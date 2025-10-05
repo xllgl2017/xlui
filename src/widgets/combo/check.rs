@@ -2,12 +2,12 @@ use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
+use crate::size::Geometry;
 use crate::widgets::{WidgetChange, WidgetSize};
-use crate::{Align, App, Border, BorderStyle, CheckBox, ClickStyle, Color, FillStyle, Offset, Padding, Popup, Pos, Radius, Rect, TextEdit, Ui, UpdateType, Widget};
+use crate::{Align, App, Border, BorderStyle, CheckBox, ClickStyle, Color, FillStyle, Offset, Padding, Popup, Radius, Rect, TextEdit, Ui, UpdateType, Widget};
 use std::fmt::Display;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
-use crate::size::Geometry;
 
 /// ### CheckComboBox的示例用法
 ///```
@@ -158,7 +158,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
 
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.popup_rect.offset_to_rect(&ui.draw_rect);
-            self.popup_rect.offset_y(&Offset::new(Pos::new()).covered().with_y(self.edit.buffer().geometry.height() + 5.0));
+            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.edit.buffer().geometry.height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
             allow_rect.set_x_min(self.edit.buffer().geometry.right() - 15.0);

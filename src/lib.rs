@@ -143,27 +143,27 @@ const SAMPLE_COUNT: u32 = 4;
 
 #[derive(Clone, Debug)]
 pub struct Offset {
-    #[deprecated]
-    pos: Pos,
+    // #[deprecated]
+    // pos: Pos,
     x: f32,
     y: f32,
     covered: bool,
 }
 
 impl Offset {
-    pub fn new(pos: Pos) -> Offset {
+    pub fn new() -> Offset {
         Offset {
-            pos,
+            // pos,
             x: 0.0,
             y: 0.0,
             covered: false,
         }
     }
 
-    pub fn with_pos(mut self, pos: Pos) -> Offset {
-        self.pos = pos;
-        self
-    }
+    // pub fn with_pos(mut self, pos: Pos) -> Offset {
+    //     self.pos = pos;
+    //     self
+    // }
 
     pub fn with_y(mut self, y: f32) -> Offset {
         self.y = y;

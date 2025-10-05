@@ -23,13 +23,13 @@ impl TableColumn {
         self.width
     }
 
-    pub(crate) fn filter(&self) -> bool {
-        self.filter
-    }
+    // pub(crate) fn filter(&self) -> bool {
+    //     self.filter
+    // }
 
-    pub(crate) fn sort(&self) -> bool {
-        self.sort
-    }
+    // pub(crate) fn sort(&self) -> bool {
+    //     self.sort
+    // }
 
     pub fn with_filter(mut self, filter: bool) -> Self {
         self.filter=filter;

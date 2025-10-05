@@ -4,12 +4,12 @@ use crate::render::{RenderParam, WrcRender};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
-use crate::{Offset, Pos};
-use crate::size::Geometry;
+use crate::Offset;
 
 pub struct ScrollBar {
     id: String,
@@ -42,7 +42,7 @@ impl ScrollBar {
             slider_render: RenderParam::new(RectParam::new().with_size(10.0, 10.0).with_style(slider_style)),
             context_size: 0.0,
             focused: false,
-            offset: Offset::new(Pos::new()),
+            offset: Offset::new(),
             changed: false,
             geometry: Geometry::new().with_size(10.0, 20.0),
         }

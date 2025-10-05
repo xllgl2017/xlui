@@ -8,7 +8,6 @@ use crate::render::{RenderParam, WrcRender};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
-use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
@@ -66,7 +65,7 @@ impl InnerWindow {
             layout: Some(layout),
             popups: Some(Map::new()),
             title_rect: Rect::new().with_size(attr.inner_width_f32(), 22.0),
-            offset: Offset::new(Pos::new()).covered(),
+            offset: Offset::new().covered(),
             press_title: false,
             changed: false,
             on_close: None,
@@ -171,10 +170,10 @@ impl InnerWindow {
             UpdateType::MouseMove => {
                 if self.press_title && ui.device.device_input.mouse.pressed {
                     let (ox, oy) = ui.device.device_input.mouse.offset();
-                    self.fill_render.param.rect.offset(&Offset::new(Pos::new()).with_x(ox).with_y(oy).covered());
+                    self.fill_render.param.rect.offset(&Offset::new().with_x(ox).with_y(oy).covered());
                     self.offset.x += ox;
                     self.offset.y += oy;
-                    self.offset.pos = ui.device.device_input.mouse.lastest.relative;
+                    // self.offset.pos = ui.device.device_input.mouse.lastest.relative;
                     // ui.update_type = UpdateType::Offset(self.offset.clone());
                     // ui.can_offset = true;
                     self.changed = true;

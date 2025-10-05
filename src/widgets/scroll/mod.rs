@@ -140,7 +140,7 @@ impl ScrollWidget {
     fn bar_offset(&mut self, ox: f32, oy: f32) {
         let roy = self.v_bar.set_vbar_value_by_offset(-oy);
         let rox = self.h_bar.set_hbar_value_by_offset(-ox);
-        let offset = Offset::new(Pos::new())
+        let offset = Offset::new()
             .with_x(if self.horiz_scrollable { rox } else { 0.0 })
             .with_y(if self.vert_scrollable { roy } else { 0.0 });
         self.layout.as_mut().unwrap().set_offset(offset);
@@ -243,7 +243,7 @@ impl Widget for ScrollWidget {
                     ui.context.window.request_redraw();
                     return Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()));
                 }
-                let mut offset = Offset::new(Pos::new());
+                let mut offset = Offset::new();
                 if self.vert_scrollable {
                     self.v_bar.update(ui);
                     offset.y = self.v_bar.offset();

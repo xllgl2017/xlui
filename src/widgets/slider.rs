@@ -5,16 +5,15 @@ use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
-use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::Offset;
 use std::ops::Range;
-use crate::size::Geometry;
 
 /// ### Slider的示例用法
 /// ```
@@ -143,7 +142,7 @@ impl Slider {
         //滑块
         self.slider_render.param.rect.set_width(self.geometry.height());
         self.offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
-        self.slider_render.param.rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
+        self.slider_render.param.rect.offset_x(&Offset::new().with_x(self.offset));
         self.slider_render.init_circle(ui, false, false);
     }
 
@@ -164,7 +163,7 @@ impl Slider {
             self.slided_render.param.rect.offset_to_rect(&fill_rect);
             self.slided_render.update(ui, false, false);
             let mut slider_rect = ui.draw_rect.clone();
-            slider_rect.offset_x(&Offset::new(Pos::new()).with_x(self.offset));
+            slider_rect.offset_x(&Offset::new().with_x(self.offset));
 
             slider_rect.set_height(ui.draw_rect.height());
             self.slider_render.param.rect.offset_to_rect(&slider_rect);

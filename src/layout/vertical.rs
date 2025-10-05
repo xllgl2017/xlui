@@ -10,7 +10,7 @@ use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Margin, Offset, Padding, Pos, Radius, Rect, Widget};
+use crate::{Border, Margin, Offset, Padding, Radius, Rect, Widget};
 ///### 垂直布局的使用
 ///```rust
 /// use xlui::*;
@@ -57,7 +57,7 @@ impl VerticalLayout {
             item_space: 5.0,
             geometry: Geometry::new(),
             direction,
-            offset: Offset::new(Pos::new()),
+            offset: Offset::new(),
             fill_render: None,
             marin: Margin::ZERO,
         }
@@ -158,7 +158,7 @@ impl Layout for VerticalLayout {
             _ => {
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
-                    render.param.rect.offset(&Offset::new(Pos::new()).with_y(self.marin.top).with_x(self.marin.left));
+                    render.param.rect.offset(&Offset::new().with_y(self.marin.top).with_x(self.marin.left));
                     // render.param.rect.add_min_x(self.marin.left);
                     // render.param.rect.add_min_y(self.marin.top);
                     render.update(ui, false, false);

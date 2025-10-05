@@ -28,7 +28,7 @@ pub mod combo;
 // pub mod column;
 // pub mod cell;
 
-pub type UiDraw = Box<dyn Fn(&mut Ui)>;
+// pub type UiDraw = Box<dyn Fn(&mut Ui)>;
 pub mod tab;
 
 pub trait Widget: Any {

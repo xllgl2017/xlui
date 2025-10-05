@@ -4,7 +4,7 @@ use crate::map::Map;
 use crate::response::Response;
 use crate::ui::Ui;
 use crate::widgets::WidgetSize;
-use crate::{Offset, Padding, Pos};
+use crate::{Offset, Padding};
 use std::ops::Range;
 
 pub struct RecycleLayout {
@@ -27,7 +27,7 @@ impl RecycleLayout {
             items: Map::new(),
             padding: Padding::same(0.0),
             item_space: 5.0,
-            offset: Offset::new(Pos::new()),
+            offset: Offset::new(),
             total_count: 0,
             draw_count: 10,
             display: 0..0,

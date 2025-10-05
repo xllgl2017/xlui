@@ -61,7 +61,7 @@ impl HorizontalLayout {
             item_space: 5.0,
             direction,
             geometry: Geometry::new(),
-            offset: Offset::new(Pos::new()),
+            offset: Offset::new(),
             fill_render: None,
             window: false,
             pressed: false,

@@ -2,7 +2,6 @@ use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderParam, WrcRender};
 use crate::size::border::Border;
-use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
@@ -10,8 +9,8 @@ use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
-use crate::Offset;
 use crate::window::UserEvent;
+use crate::Offset;
 
 pub struct EditSelection {
     renders: Vec<RenderParam<RectParam>>,
@@ -45,7 +44,7 @@ impl EditSelection {
                 let mut rect = rect.clone();
                 rect.set_x_max(rect.dx().min);
                 rect.set_height(line_height);
-                rect.offset(&Offset::new(Pos::new()).with_y(row as f32 * line_height).covered());
+                rect.offset(&Offset::new().with_y(row as f32 * line_height).covered());
                 let render = RenderParam::new(RectParam::new().with_rect(rect).with_style(select_style.clone()));
                 self.renders.push(render);
             }

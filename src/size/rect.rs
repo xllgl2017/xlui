@@ -259,7 +259,7 @@ impl Rect {
     }
 
     pub fn offset_to_rect(&mut self, rect: &Rect) -> Offset {
-        let mut offset = Offset::new(Pos::new()).covered();
+        let mut offset = Offset::new().covered();
         match rect.x_direction {
             LayoutDirection::Min => {
                 let ox = rect.dx.min - self.ox.min;

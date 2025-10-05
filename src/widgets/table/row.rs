@@ -2,20 +2,19 @@ use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::RenderParam;
 use crate::response::Response;
-use crate::style::ClickStyle;
+use crate::size::Geometry;
 use crate::ui::Ui;
 use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
 use crate::widgets::{WidgetKind, WidgetSize};
-use crate::{Color, FillStyle, Offset, Pos, Rect, Widget};
-use crate::size::Geometry;
+use crate::{Color, FillStyle, Widget};
 
 pub struct TableRow {
     id: String,
     fill_render: RenderParam<RectParam>,
     cells: Vec<TableCell>,
-    offset: Offset,
+    // offset: Offset,
     geometry: Geometry,
 }
 
@@ -29,7 +28,7 @@ impl TableRow {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RectParam::new()),
             cells,
-            offset: Offset::new(Pos::new()),
+            // offset: Offset::new(Pos::new()),
             geometry: Geometry::new().with_fix_height(row_height),
         }
     }
@@ -90,10 +89,10 @@ pub struct TableRowData<T> {
     row: usize,
     column: usize,
     data: T,
-    height: f32,
-    enable: bool,
-    selected: bool,
-    hidden: bool,
+    // height: f32,
+    // enable: bool,
+    // selected: bool,
+    // hidden: bool,
 }
 
 
@@ -102,17 +101,17 @@ impl<T> TableRowData<T> {
         self.column = column;
     }
 
-    pub fn height(&self) -> f32 {
-        self.height
-    }
+    // pub fn height(&self) -> f32 {
+    //     self.height
+    // }
 
-    pub fn data(&self) -> &T {
-        &self.data
-    }
-
-    pub fn data_mut(&mut self) -> &mut T {
-        &mut self.data
-    }
+    // pub fn data(&self) -> &T {
+    //     &self.data
+    // }
+    //
+    // pub fn data_mut(&mut self) -> &mut T {
+    //     &mut self.data
+    // }
 
     pub fn column_index(&self) -> usize {
         self.column
@@ -122,15 +121,15 @@ impl<T> TableRowData<T> {
 }
 
 impl<T: TableExt> TableRowData<T> {
-    pub fn new(t: T, row: usize, height: f32) -> Self {
+    pub fn new(t: T, row: usize, _height: f32) -> Self {
         TableRowData {
             row,
             column: 0,
             data: t,
-            height,
-            enable: false,
-            selected: false,
-            hidden: false,
+            // height,
+            // enable: false,
+            // selected: false,
+            // hidden: false,
         }
     }
 

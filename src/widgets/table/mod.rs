@@ -15,7 +15,7 @@ mod header;
 mod cell;
 
 pub struct TableView<T> {
-    id: String,
+    // id: String,
     lid: String,
     rect: Rect,
     header: TableHeader<T>,
@@ -28,7 +28,7 @@ impl<T: TableExt> TableView<T> {
         let header = TableHeader::from_columns(columns);
         let params = TableParams::new();
         TableView {
-            id: crate::gen_unique_id(),
+            // id: crate::gen_unique_id(),
             lid: "".to_string(),
             rect: Rect::new(),
             header,
@@ -100,7 +100,7 @@ impl<T: TableExt> TableView<T> {
         });
     }
 
-    pub fn update(&mut self, ui: &mut Ui) {}
+    // pub fn update(&mut self, ui: &mut Ui) {}
 }
 
 pub trait TableExt {

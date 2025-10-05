@@ -11,16 +11,16 @@ use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
-use crate::{Align, FillStyle, Offset, Pos};
+use crate::{Align, FillStyle, Offset};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::size::Geometry;
 
 /// ### ComboBox的示例用法
 ///```
@@ -167,7 +167,7 @@ impl<T: Display + 'static> ComboBox<T> {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.fill_render.update(ui, false, false);
             self.popup_rect.offset_to_rect(&ui.draw_rect);
-            self.popup_rect.offset_y(&Offset::new(Pos::new()).covered().with_y(self.fill_render.param.rect.height() + 5.0));
+            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.fill_render.param.rect.height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
             allow_rect.set_x_min(self.fill_render.param.rect.dx().max - 15.0);
