@@ -350,6 +350,7 @@ impl Widget for TextEdit {
                             for c in t.chars() {
                                 self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                             }
+                            ui.context.window.request_redraw();
                         }
                         _ => {}
                     }
