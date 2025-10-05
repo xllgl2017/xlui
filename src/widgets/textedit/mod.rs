@@ -322,10 +322,9 @@ impl Widget for TextEdit {
                                 ClipboardData::Image(_) => {}
                                 ClipboardData::Url(_) => {}
                             }
-                            #[cfg(target_os = "windows")]
-                            { self.changed = true; }
-                            #[cfg(target_os = "windows")]
-                            { ui.context.window.request_redraw(); }
+                            self.changed = true;
+                            ui.send_updates(&self.contact_ids, ContextUpdate::String(self.text()));
+                            ui.context.window.request_redraw();
                         }
                         Key::CtrlX => {
                             let select_text = self.char_layout.select_text(&self.select_render, &self.cursor_render);
