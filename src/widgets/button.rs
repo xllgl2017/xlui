@@ -63,6 +63,7 @@ pub struct Button {
     image: Option<Image>,
     hovered: bool,
     changed: bool,
+    available: bool,
 }
 
 
@@ -77,6 +78,7 @@ impl Button {
             hovered: false,
             changed: false,
             fill_render: RenderParam::new(RectParam::new()),
+            available: true,
         }
     }
 
@@ -117,6 +119,14 @@ impl Button {
     pub fn padding(mut self, padding: Padding) -> Self {
         self.text_buffer.geometry.set_padding(padding);
         self
+    }
+
+    pub fn enable(&mut self) {
+        self.available = true;
+    }
+
+    pub fn disable(&mut self) {
+        self.available = false;
     }
 
     pub fn connect<A: App>(mut self, f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Self {
@@ -213,21 +223,21 @@ impl Widget for Button {
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
                 let has_pos = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
-                if self.hovered != has_pos {
+                if self.hovered != has_pos && self.available {
                     self.hovered = has_pos;
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
             UpdateType::MousePress => {
-                if ui.device.device_input.pressed_at(&self.fill_render.param.rect) {
+                if ui.device.device_input.pressed_at(&self.fill_render.param.rect) && self.available {
                     self.hovered = true;
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
+                if ui.device.device_input.click_at(&self.fill_render.param.rect) && self.available {
                     self.changed = true;
                     let callback = self.callback.take();
                     if let Some(mut callback) = callback {
