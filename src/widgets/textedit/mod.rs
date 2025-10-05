@@ -76,7 +76,6 @@ impl TextEdit {
         }
     }
 
-
     pub fn single_edit(txt: impl ToString) -> TextEdit {
         let mut res = Self::new(txt.to_string());
         res.desire_lines = 1;
@@ -102,6 +101,11 @@ impl TextEdit {
 
     pub fn with_width(mut self, w: f32) -> Self {
         self.char_layout.buffer.geometry.set_fix_width(w);
+        self
+    }
+
+    pub fn with_id(mut self, id: impl ToString) -> Self {
+        self.id = id.to_string();
         self
     }
 

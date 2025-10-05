@@ -1,118 +1,45 @@
-@vertex
-fn vs_main(@builtin(vertex_index) v: u32) -> @builtin(position) vec4<f32> {
-    var pos = array<vec2<f32>, 3>(
-        vec2<f32>(-1.0, -3.0),
-        vec2<f32>(3.0, 1.0),
-        vec2<f32>(-1.0, 1.0)
-    );
-    let p = pos[v];
-    return vec4<f32>(p, 0.0, 1.0);
-}
-
 struct Uniforms {
-    center_position:vec2<f32>,
-    radius:vec2<f32>,
-    corner_radii: vec4<f32>,
-    border_widths: vec4<f32>,
-    fill_color: vec4<f32>,
-    border_color: vec4<f32>,
-    screen: vec4<f32>,
-    shadow_params: vec4<f32>,
-    shadow_color: vec4<f32>
+    rect_min: vec2<f32>,   // 矩形左下角
+    rect_max: vec2<f32>,   // 矩形右上角
+    radius: f32,           // 圆角半径
+    _padding: f32,
+    color: vec4<f32>,      // 矩形颜色
+    resolution: vec2<f32>, // 屏幕分辨率
 };
 @group(0) @binding(0) var<uniform> u: Uniforms;
 
-fn select_corner_radius(p: vec2<f32>, radii: vec4<f32>) -> f32 {
-    // choose corner radius depending on quadrant
-    let right = p.x > 0.0;
-    let top = p.y > 0.0;
-    // order: tl, tr, br, bl
-    return select(
-        select(radii.x, radii.y, right),
-        select(radii.w, radii.z, right),
-        top
+struct VertexOutput {
+    @builtin(position) pos: vec4<f32>,
+    @location(0) frag_pos: vec2<f32>, // 屏幕坐标
+};
+
+@vertex
+fn vs_main(@location(0) pos: vec2<f32>, @location(1) uv: vec2<f32>) -> VertexOutput {
+    var out: VertexOutput;
+    let ndc = vec2<f32>(
+        pos.x / u.resolution.x * 2.0 - 1.0,   // x: 0..width -> -1..1
+        1.0 - pos.y / u.resolution.y * 2.0    // y: 0..height -> 1..-1
     );
+    out.pos = vec4<f32>(ndc, 0.0, 1.0);
+    out.frag_pos = pos; // frag_pos 保留屏幕坐标
+    return out;
 }
 
-fn sd_rounded_rect_with_radius(p: vec2<f32>, half: vec2<f32>, r: f32) -> f32 {
-    let q = abs(p) - (half - vec2<f32>(r, r));
-    let outside = max(q, vec2<f32>(0.0, 0.0));
-    return length(outside) - r;
-}
-
-fn sd_rounded_rect_vary(p: vec2<f32>, half: vec2<f32>, radii: vec4<f32>) -> f32 {
-    // pick corner radius for this point and evaluate SDF using that single radius
-    let r = select_corner_radius(p, radii);
-    return sd_rounded_rect_with_radius(p, half, r);
-}
-
-fn sd_shrunk_rounded_rect(p: vec2<f32>, half: vec2<f32>, radii: vec4<f32>, borders: vec4<f32>) -> f32 {
-    // approximate inner rect for asymmetric borders
-    let left = borders.x;
-    let right = borders.y;
-    let top = borders.z;
-    let bottom = borders.w;
-    let shift = vec2<f32>((right - left) * 0.5, (top - bottom) * 0.5);
-    let p_shifted = p + shift;
-    let half_inner = vec2<f32>(half.x - (left + right) * 0.5, half.y - (top + bottom) * 0.5);
-    let half_inner_clamped = max(half_inner, vec2<f32>(0.0, 0.0));
-    let r_tl = max(0.0, radii.x - max(left, top));
-    let r_tr = max(0.0, radii.y - max(right, top));
-    let r_br = max(0.0, radii.z - max(right, bottom));
-    let r_bl = max(0.0, radii.w - max(left, bottom));
-    let r = select(
-        select(r_tl, r_tr, p_shifted.x > 0.0),
-        select(r_bl, r_br, p_shifted.x > 0.0),
-        p_shifted.y > 0.0
-    );
-    return sd_rounded_rect_with_radius(p_shifted, half_inner_clamped, r);
-}
 
 @fragment
-fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
-    let res = vec2<f32>(u.screen.x, u.screen.y);
-    let uv = frag_coord.xy / res;
-    let center =u.center_position; //vec2<f32>(u.center_half.x, u.center_half.y);
-    let half = u.radius;//vec2<f32>(u.center_half.z, u.center_half.w);
-    let p = (uv * res) - center;
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    // 屏幕坐标系：左下角 origin
+    let p =in.frag_pos;
 
-    // outer and inner SDF
-    let sd_out = sd_rounded_rect_vary(p, half, u.corner_radii);
-    let sd_in = sd_shrunk_rounded_rect(p, half, u.corner_radii, u.border_widths);
+    let min = vec2(0.0,0.0);
+    let max = vec2(100.0,100.0);
+    let r = 5.0;
 
-    // antialias width (in pixels)
-    let aa =0.0;
+    // 使用简单的 signed distance 计算圆角矩形
+    let q = max(max(min - p, p - max), vec2<f32>(0.0));
+    let dist = length(q);
 
-    // base fill and border masks
-    let fill_mask = 1.0 - smoothstep(0.0, aa, sd_in);
-    let outer_mask = 1.0 - smoothstep(0.0, aa, sd_out);
-    let border_mask = outer_mask - fill_mask;
-
-    // shadow: evaluate SDF for the rect shifted by shadow offset, then use smoothstep with blur radius
-    let shadow_off = vec2<f32>(u.shadow_params.x, u.shadow_params.y);
-    let shadow_blur = max(1.0, u.shadow_params.z);
-    let shadow_strength = u.shadow_params.w;
-    let p_shadow = p - shadow_off; // shift rect relative to pixel
-    let sd_shadow = sd_rounded_rect_vary(p_shadow, half, u.corner_radii);
-    // shadow mask is soft - outside of rect (sd_shadow > 0) will form the drop; inside still cast
-    // We'll make shadow strongest near the rect edge and fade with blur
-    let shadow_mask = (1.0 - smoothstep(-shadow_blur, shadow_blur, sd_shadow)) * shadow_strength;
-    // combine shadow color with its alpha mask
-    let shadow_col = vec4<f32>(u.shadow_color.rgb, u.shadow_color.a * shadow_mask);
-    let border_total = u.border_widths.x + u.border_widths.y + u.border_widths.z + u.border_widths.w;
-    // compose fill and border
-    let fill_col = vec4<f32>(u.fill_color.rgb * u.fill_color.a, u.fill_color.a) * fill_mask;
-    let border_col = vec4<f32>(u.border_color.rgb * u.border_color.a, u.border_color.a) * border_mask;
-
-    // Simple over compositing: shadow below, then fill, then border
-    // Start with transparent
-    var out_col = vec4<f32>(0.0, 0.0, 0.0, 0.0);
-    // place shadow (under everything): out = shadow + out*(1-a)
-    out_col = shadow_col + out_col * (1.0 - shadow_col.a);
-    // add fill
-    out_col = fill_col + out_col * (1.0 - fill_col.a);
-    // add border on top
-    out_col = border_col + out_col * (1.0 - border_col.a);
-
-    return out_col;
+    let alpha = 1.0 - smoothstep(r - 1.0, r, dist);
+    if (alpha <= 0.0) { discard; }
+    return vec4(1.0,0.0,0.0,alpha);
 }
