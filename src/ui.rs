@@ -276,6 +276,10 @@ impl<'a, 'p> Ui<'a, 'p> {
             self.context.updates.insert(id.to_string(), ct.clone());
         }
     }
+
+    pub fn get_value(&mut self, cid:impl ToString) -> Option<ContextUpdate> {
+        self.context.updates.remove(&cid.to_string())
+    }
 }
 
 impl<'a, 'p> Ui<'a, 'p> {

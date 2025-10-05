@@ -68,6 +68,14 @@ impl ContextUpdate {
             ContextUpdate::Bool(v) => *value = v.to_string(),
         }
     }
+
+    pub fn to_string(self)->String{
+        match self {
+            ContextUpdate::String(v) => v,
+            ContextUpdate::F32(v) => v.to_string(),
+            ContextUpdate::Bool(v) => v.to_string()
+        }
+    }
 }
 
 #[derive(Clone)]
