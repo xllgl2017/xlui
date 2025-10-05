@@ -220,8 +220,10 @@ impl EditSelection {
         self.has_selected = true;
         if start_vert == cursor.vert { //处于同一行中
             let line = &cchar.buffer.lines[cursor.vert];
-            let x_min = line.get_width_in_char(start_horiz) + cursor.min_pos.x;
-            let x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
+            let mut x_min = line.get_width_in_char(start_horiz) + cursor.min_pos.x;
+            let mut x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
+            if x_max > cursor.max_pos.x { x_max = cursor.max_pos.x; }
+            if x_min < cursor.min_pos.x { x_min = cursor.min_pos.x; }
             self.renders[cursor.vert].param.rect.set_x_min(x_min);
             self.renders[cursor.vert].param.rect.set_x_max(x_max);
         } else {
