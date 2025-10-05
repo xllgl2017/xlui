@@ -332,6 +332,13 @@ impl Widget for TextEdit {
                             self.char_layout.remove_by_range(ui, &mut self.cursor_render, &mut self.select_render);
                             ui.context.window.request_redraw();
                         }
+                        Key::CtrlA => {
+                            let horiz = self.char_layout.buffer.lines.last().unwrap().chars.len();
+                            let vert = self.char_layout.buffer.lines.len() - 1;
+                            self.cursor_render.set_cursor(horiz, vert, &self.char_layout);
+                            self.select_render.select_by_ime(0, 0, &self.char_layout, &self.cursor_render);
+                            ui.context.window.request_redraw();
+                        }
                         _ => {}
                     }
                 }

@@ -7,7 +7,7 @@ use crate::window::x11::ime::flag::Modifiers;
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{Pos, Size, WindowAttribute};
 use std::ffi::CString;
-use std::os::raw::{c_long, c_ulong};
+use std::os::raw::{c_long, c_uint, c_ulong};
 use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
@@ -34,6 +34,7 @@ pub struct X11Window {
     size: RwLock<Size>,
     root: xlib::Window,
     visual_info: xlib::XVisualInfo,
+    modify_keys: Vec<c_uint>,
 }
 
 impl X11Window {
@@ -68,6 +69,7 @@ impl X11Window {
                 size: RwLock::new(attr.inner_size),
                 root,
                 visual_info: *vinfo,
+                modify_keys: vec![],
             };
             xlib::XFree(vinfo as *mut _);
             res.init(attr, ime, screen)?;
@@ -228,11 +230,17 @@ impl X11Window {
                     } else {
                         let ctrl_press = (event.key.state & xlib::ControlMask) != 0;
                         if ctrl_press && keysym == x11::keysym::XK_c as u64 {
+                            self.modify_keys.push(x11::keysym::XK_c);
                             return (window.id, WindowEvent::KeyPress(Key::CtrlC));
                         } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
+                            self.modify_keys.push(x11::keysym::XK_v);
                             return (window.id, WindowEvent::KeyPress(Key::CtrlV));
                         } else if ctrl_press && keysym == x11::keysym::XK_x as u64 {
+                            self.modify_keys.push(x11::keysym::XK_x);
                             return (window.id, WindowEvent::KeyPress(Key::CtrlX));
+                        } else if ctrl_press && keysym == x11::keysym::XK_a as u64 {
+                            self.modify_keys.push(x11::keysym::XK_a);
+                            return (window.id, WindowEvent::KeyPress(Key::CtrlA));
                         }
 
 
@@ -244,6 +252,10 @@ impl X11Window {
                     // let keysym = xlib::XLookupKeysym(&mut event.key, 0);
                     let mut buffer: [i8; 32] = [0; 32];
                     let len = XLookupString(&mut event.key, buffer.as_mut_ptr(), 32, &mut keysym, null_mut());
+                    if let Some(pos) = self.modify_keys.iter().position(|x| *x == keysym as u32) {
+                        self.modify_keys.remove(pos);
+                        return (window.id, WindowEvent::None);
+                    }
                     let handle = window.ime.post_key(keysym as u32, event.key.keycode, Modifiers::Release).unwrap();
                     println!("release-handle-{}-{}", handle, window.ime.is_commited());
                     if !handle {
@@ -251,14 +263,18 @@ impl X11Window {
                             return (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())));
                         }
                         let ctrl_press = (event.key.state & xlib::ControlMask) != 0;
-                        if ctrl_press && keysym == x11::keysym::XK_c as u64 {
-                            return (window.id, WindowEvent::None);
-                        } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
-                            return (window.id, WindowEvent::None);
-                        } else if ctrl_press {
+                        // if ctrl_press && keysym == x11::keysym::XK_c as u64 {
+                        //     return (window.id, WindowEvent::None);
+                        // } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
+                        //     return (window.id, WindowEvent::None);
+                        // } else if ctrl_press {
+                        //     return (window.id, WindowEvent::None);
+                        // }
+                        if !ctrl_press {
+                            return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])));
+                        } else {
                             return (window.id, WindowEvent::None);
                         }
-                        return (window.id, WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])));
                     }
                 }
                 xlib::ButtonRelease => {
