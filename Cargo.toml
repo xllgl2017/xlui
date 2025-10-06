@@ -45,10 +45,6 @@ doc-scrape-examples = false
 #name = "test_334"
 #path = "tests/hello_world.rs"
 
-[[bin]]
-name = "webview"
-path = "benches/webview.rs"
-
 [lib]
 name = "xlui"
 crate-type = ['cdylib', 'rlib']

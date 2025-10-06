@@ -24,7 +24,6 @@ impl Display for TD {
 }
 
 
-#[test]
 fn main() {
     XlUiApp::new().run().unwrap();
 }
