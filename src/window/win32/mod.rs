@@ -1,7 +1,9 @@
 use crate::error::UiResult;
+use crate::key::Key;
 use crate::map::Map;
 use crate::window::event::WindowEvent;
 use crate::window::ime::{IMEData, IME};
+use crate::window::win32::clipboard::Win32Clipboard;
 use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
 use crate::window::{WindowId, WindowKind, WindowType};
@@ -15,8 +17,6 @@ use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, Im
 use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
-use crate::key::Key;
-use crate::window::win32::clipboard::Win32Clipboard;
 
 pub mod tray;
 pub(crate) mod handle;
@@ -162,6 +162,10 @@ impl Win32Window {
                         (window.id, WindowEvent::KeyPress(Key::CtrlC))
                     } else if ctrl_pressed && msg.wParam.0 == 'V' as usize {
                         (window.id, WindowEvent::KeyPress(Key::CtrlV))
+                    } else if ctrl_pressed && msg.wParam.0 == 'A' as usize {
+                        (window.id, WindowEvent::KeyPress(Key::CtrlA))
+                    } else if ctrl_pressed && msg.wParam.0 == 'X' as usize {
+                        (window.id, WindowEvent::KeyPress(Key::CtrlX))
                     } else {
                         match VIRTUAL_KEY(msg.wParam.0 as u16) {
                             VK_HOME => (window.id, WindowEvent::KeyPress(Key::Home)),

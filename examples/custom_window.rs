@@ -1,80 +1,97 @@
-use std::process::exit;
-use xlui::*;
+// Cargo.toml 必须
+// wgpu = "0.25"
+// raw-window-handle = "0.4"
+// pollster = "0.3"
+// windows = { version = "0.48", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Graphics_Dwm"] }
 
-fn main() {
-    let app = XlUiApp::new();
-    //直接调run()
-    app.run().unwrap();
+use std::ptr::null_mut;
+use windows::Win32::{
+    Foundation::*,
+    UI::WindowsAndMessaging::*,
+    Graphics::Dwm::*,
+};
+use raw_window_handle::Win32WindowHandle;
+use wgpu::util::DeviceExt;
+use windows::core::PCWSTR;
+use windows::Win32::Graphics::Gdi::HBRUSH;
+use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::UI::Controls::MARGINS;
+
+// 简单窗口属性
+struct WindowAttr {
+    title: String,
+    width: u32,
+    height: u32,
+    x: i32,
+    y: i32,
 }
 
-struct XlUiApp {}
-
-
-impl XlUiApp {
-    fn new() -> XlUiApp {
-        XlUiApp {}
-    }
-
-    fn close(&mut self, _: &mut Button, _: &mut Ui) {
-        exit(0);
-    }
+// helper: Rust str -> UTF16
+fn to_wstr(s: &str) -> Vec<u16> {
+    use std::os::windows::ffi::OsStrExt;
+    std::ffi::OsStr::new(s).encode_wide().chain(Some(0)).collect()
 }
 
-//实现App trait
-impl App for XlUiApp {
-    fn draw(&mut self, ui: &mut Ui) {
-        let style = FrameStyle {
-            fill: Color::rgb(240, 240, 240),
-            radius: Radius::same(5),
-            shadow: Shadow {
-                offset: [0.0, 0.0],
-                spread: 5.0,
-                blur: 1.0,
-                color: Color::rgba(0, 0, 0, 100),
-            },
-            border: Border::same(2.0).color(Color::rgb(150, 210, 255)),
-        };
-        let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
-        layout.set_padding(Padding::same(2.0));
-        layout.set_margin(Margin::same(0.0));
-        layout.set_style(style);
-        let title_layout = HorizontalLayout::left_to_right().with_size(296.0, 25.0)
-            .with_fill(Color::rgb(210, 210, 210)).moving();
-        ui.add_layout(title_layout, |ui| {
-            ui.image("logo.jpg", (25.0, 25.0));
-            ui.add(Label::new("自定义标题栏").align(Align::Center).height(25.0));
-            ui.add_layout(HorizontalLayout::right_to_left(), |ui| {
-                let mut style = ClickStyle::new();
-                style.fill.inactive = Color::TRANSPARENT;
-                style.fill.hovered = Color::rgba(255, 0, 0, 100);
-                style.fill.clicked = Color::rgba(255, 0, 0, 150);
-                style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
-                let mut btn = Button::new("×").width(20.0).height(20.0).connect(Self::close);
-                btn.set_style(style.clone());
-                ui.add(btn);
-                let mut btn = Button::new("□").width(20.0).height(20.0);
-                style.fill.hovered = Color::rgba(160, 160, 160, 100);
-                style.fill.clicked = Color::rgba(160, 160, 160, 150);
-                btn.set_style(style.clone());
-                ui.add(btn);
-            });
-        });
-        ui.vertical(|ui| {
-            ui.label("sdfgdfg");
-        })
-    }
+fn main() -> windows::core::Result<()> {
+    unsafe {
+        let hinstance = GetModuleHandleW(None)?;
 
-    fn update(&mut self, _: &mut Ui) {}
-
-
-    fn window_attributes(&self) -> WindowAttribute {
-        WindowAttribute {
-            // font: Arc::new(Font::from_family("微软雅黑").with_size(24.0)),
-            inner_size: (300, 520).into(),
-            transparent: true,
-            decorations: false,
-            fill: Color::TRANSPARENT,
+        // 注册窗口类
+        let class_name = to_wstr("transparent_wgpu");
+        let wc = WNDCLASSW {
+            lpfnWndProc: Some(wnd_proc),
+            hInstance: HINSTANCE::from(hinstance),
+            lpszClassName: PCWSTR(class_name.as_ptr()),
+            hCursor: LoadCursorW(None, IDC_ARROW)?,
+            hbrBackground: HBRUSH(null_mut()), // 不擦除背景
             ..Default::default()
+        };
+        RegisterClassW(&wc);
+
+        let attr = WindowAttr {
+            title: "透明 wgpu 窗口".to_string(),
+            width: 800,
+            height: 600,
+            x: 100,
+            y: 100,
+        };
+
+        // 创建透明窗口
+        let hwnd = CreateWindowExW(
+            WS_EX_LAYERED | WS_EX_TOPMOST, // 关键透明
+            PCWSTR(class_name.as_ptr()),
+            PCWSTR(to_wstr(&attr.title).as_ptr()),
+            WS_POPUP | WS_VISIBLE,
+            attr.x,
+            attr.y,
+            attr.width as i32,
+            attr.height as i32,
+            None,
+            None,
+            Some(HINSTANCE::from(hinstance)),
+            None,
+        ).unwrap();
+
+        SetLayeredWindowAttributes(hwnd, COLORREF(0), 255, LWA_ALPHA); // 全透明背景
+        let margins = MARGINS { cxLeftWidth: -1, cxRightWidth: -1, cyTopHeight: -1, cyBottomHeight: -1 };
+        DwmExtendFrameIntoClientArea(hwnd, &margins)?;
+
+        ShowWindow(hwnd, SW_SHOW);
+    }
+
+    Ok(())
+}
+
+// Win32 消息处理
+extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    unsafe {
+        match msg {
+            WM_DESTROY => {
+                PostQuitMessage(0);
+                LRESULT(0)
+            }
+            WM_ERASEBKGND => LRESULT(1), // 不擦背景
+            _ => DefWindowProcW(hwnd, msg, wparam, lparam),
         }
     }
 }

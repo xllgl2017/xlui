@@ -35,7 +35,7 @@ impl App for XlUiApp {
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
-            font: Arc::new(Font::from_file("../xrs/target/res/font/微软雅黑.ttf")
+            font: Arc::new(Font::from_family("微软雅黑")
                 .with_size(24.0)),
             inner_size: (300, 500).into(),
             ..Default::default()
