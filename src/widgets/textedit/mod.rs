@@ -323,7 +323,6 @@ impl Widget for TextEdit {
                                 ClipboardData::Url(_) => {}
                             }
                             self.changed = true;
-                            ui.send_updates(&self.contact_ids, ContextUpdate::String(self.text()));
                             ui.context.window.request_redraw();
                         }
                         Key::CtrlX => {
@@ -350,6 +349,7 @@ impl Widget for TextEdit {
                             for c in t.chars() {
                                 self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                             }
+                            ui.send_updates(&self.contact_ids, ContextUpdate::String(self.text()));
                             ui.context.window.request_redraw();
                         }
                         _ => {}
