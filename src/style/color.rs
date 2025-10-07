@@ -41,6 +41,7 @@ impl Color {
         [self.r as f32 / 255.0, self.g as f32 / 255.0, self.b as f32 / 255.0, self.a as f32 / 255.0]
     }
 
+    #[cfg(feature = "gpu")]
     pub fn as_wgpu_color(&self) -> wgpu::Color {
         wgpu::Color {
             r: self.r as f64 / 255.0,
@@ -50,6 +51,7 @@ impl Color {
         }
     }
 
+    #[cfg(feature = "gpu")]
     pub fn as_glyphon_color(&self) -> glyphon::Color {
         glyphon::Color::rgb(self.r, self.g, self.b)
     }
@@ -60,5 +62,14 @@ impl Color {
 
     pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
         Color { r, g, b, a }
+    }
+
+    pub fn as_rgb_u32(&self) -> u32 {
+        ((self.b as u32) << 16) | ((self.g as u32) << 8) | (self.r as u32)
+    }
+
+    pub fn as_rgba_u32(&self) -> u32 {
+        // (fill.a as u32) << 24 | (fill.r as u32) << 16 | (fill.g as u32) << 8 | (fill.b as u32);
+        ((self.a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
     }
 }

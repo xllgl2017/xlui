@@ -3,7 +3,9 @@ pub mod bar;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutKind};
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -122,6 +124,7 @@ impl ScrollWidget {
 
     fn re_init(&mut self, ui: &mut Ui) {
         //滚动区域
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
         self.v_bar.update(ui);
         self.h_bar.update(ui);
@@ -164,14 +167,17 @@ impl ScrollWidget {
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
         }
-
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
 
         //背景
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
         let clip = self.fill_render.param.rect.clone_add_padding(self.geometry.padding());
+        #[cfg(feature = "gpu")]
         pass.set_scissor_rect(clip.dx().min as u32, clip.dy().min as u32, clip.width() as u32, clip.height() as u32);
         let resp = if ui.widget_changed.contains(WidgetChange::Position) {
             self.context_rect = ui.draw_rect.clone();
@@ -187,7 +193,9 @@ impl ScrollWidget {
         } else {
             self.layout.as_mut().unwrap().update(ui)
         };
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         pass.set_scissor_rect(0, 0, ui.device.surface_config.width, ui.device.surface_config.height);
         if self.vert_scrollable {
             //垂直滚动条

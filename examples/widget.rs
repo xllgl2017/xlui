@@ -95,21 +95,6 @@ impl Display for SV {
 
 impl App for TestWidget {
     fn draw(&mut self, ui: &mut Ui) {
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
         ui.horizontal(|ui| {
             ui.add_space(100.0);
             ui.add(Label::new("当前控件的工作状态".size(24.0).color(Color::ORANGE)));
@@ -157,15 +142,15 @@ impl App for TestWidget {
             ui.add_space(129.0);
             ui.checkbox(true, "变动监测");
         });
-        ui.horizontal(|ui| {
-            ui.radio(true, "SpinBox");
-            ui.add_space(38.0);
-            ui.add(SpinBox::new(50, 1, 1..100).id("sb").contact("s").contact("pbr").connect(Self::spinbox_i32));
-            ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
-            ui.add_space(83.0);
-            ui.checkbox(true, "变动监测");
-            ui.checkbox(true, "泛类");
-        });
+        // ui.horizontal(|ui| {
+        //     ui.radio(true, "SpinBox");
+        //     ui.add_space(38.0);
+        //     ui.add(SpinBox::new(50, 1, 1..100).id("sb").contact("s").contact("pbr").connect(Self::spinbox_i32));
+        //     ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
+        //     ui.add_space(83.0);
+        //     ui.checkbox(true, "变动监测");
+        //     ui.checkbox(true, "泛类");
+        // });
         ui.horizontal(|ui| {
             ui.radio(true, "RadioButton");
             ui.add_space(10.0);
@@ -198,19 +183,19 @@ impl App for TestWidget {
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "滚动");
         });
-        ui.horizontal(|ui| {
-            ui.radio(true, "Image");
-            ui.add_space(50.0);
-            ui.image("logo.jpg", (50.0, 50.0));
-            ui.add(Image::new(include_bytes!("../logo.jpg")).with_size(50.0, 50.0).with_id("test_image"));
-            ui.add_space(182.0);
-            ui.checkbox(true, "bytes图片流");
-        });
-        ui.horizontal(|ui| {
-            ui.radio(true, "ImageButton");
-            ui.add_space(10.0);
-            ui.add(Button::image_and_text("logo.jpg", "Image").width(100.0).height(40.0).connect(Self::image_button_click));
-        });
+        // ui.horizontal(|ui| {
+        //     ui.radio(true, "Image");
+        //     ui.add_space(50.0);
+        //     ui.image("logo.jpg", (50.0, 50.0));
+        //     ui.add(Image::new(include_bytes!("../logo.jpg")).with_size(50.0, 50.0).with_id("test_image"));
+        //     ui.add_space(182.0);
+        //     ui.checkbox(true, "bytes图片流");
+        // });
+        // ui.horizontal(|ui| {
+        //     ui.radio(true, "ImageButton");
+        //     ui.add_space(10.0);
+        //     ui.add(Button::image_and_text("logo.jpg", "Image").width(100.0).height(40.0).connect(Self::image_button_click));
+        // });
         ui.horizontal(|ui| {
             ui.radio(true, "SelectValue");
             ui.add_space(10.0);

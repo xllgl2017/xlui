@@ -1,6 +1,8 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -145,9 +147,11 @@ impl ScrollBar {
     fn init(&mut self, ui: &mut Ui) {
         //背景
         self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
         //滑块
         self.slider_render.param.rect = self.fill_render.param.rect.clone_with_size(&self.slider_render.param.rect);
+        #[cfg(feature = "gpu")]
         self.slider_render.init_rectangle(ui, false, false);
     }
 
@@ -157,23 +161,31 @@ impl ScrollBar {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
             self.slider_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.slider_render.param.rect.offset(&self.offset);
+            #[cfg(feature = "gpu")]
             self.slider_render.update(ui, false, false);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.slider_render.update(ui, false, false);
         }
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
         if self.context_size > self.fill_render.param.rect.height() && self.geometry.height() > self.geometry.width() { //垂直
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(&self.fill_render, pass);
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
         if self.context_size > self.fill_render.param.rect.width() && self.geometry.width() > self.geometry.height() { //垂直
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(&self.fill_render, pass);
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(&self.slider_render, pass);
         }
     }
@@ -203,6 +215,7 @@ impl Widget for ScrollBar {
             _ => {
                 if self.changed {
                     self.changed = false;
+                    #[cfg(feature = "gpu")]
                     self.slider_render.update(ui, false, false);
                 }
             }

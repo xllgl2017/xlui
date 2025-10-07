@@ -8,6 +8,9 @@ use crate::window::winit_app::WInitApplication;
 use crate::window::wino::EventLoopHandle;
 use crate::WindowAttribute;
 use std::any::Any;
+use std::thread::{sleep, spawn};
+use std::time::Duration;
+use windows::Win32::Graphics::Gdi::InvalidateRect;
 #[cfg(not(feature = "winit"))]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 #[cfg(feature = "winit")]
@@ -53,7 +56,9 @@ fn start_winit_app<A: App>(app: A) -> UiResult<()> {
 fn start_win32_app<A: App>(app: A) -> UiResult<()> {
     let mut win32 = Win32Window::new(app)?;
     let window = win32.get_window_by_index(0);
+    let handle = window.handle().clone();
     unsafe { SetWindowLongPtrW(window.handle().win32().hwnd, GWLP_USERDATA, &mut win32 as *mut _ as isize); }
+    handle.request_redraw();
     win32.run()?;
     Ok(())
 }

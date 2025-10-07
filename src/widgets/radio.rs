@@ -1,7 +1,9 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderParam, WrcParam};
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::rect::Rect;
@@ -120,12 +122,14 @@ impl RadioButton {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         //外圆
         self.outer_render.init_circle(ui, self.value, self.value);
         //内圆
         self.inner_render.param.rect.add_min_x(4.0);
         self.inner_render.param.rect.contract_y(4.0);
         self.inner_render.param.rect.set_width(self.inner_render.param.rect.height());
+        #[cfg(feature = "gpu")]
         self.inner_render.init_circle(ui, self.value, self.value);
         //文本
         self.text.init(ui);
@@ -141,6 +145,7 @@ impl RadioButton {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.rect.offset_to_rect(&ui.draw_rect);
             self.outer_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.outer_render.param.rect.width() + 2.0);
@@ -150,9 +155,11 @@ impl RadioButton {
             inner_rect.add_min_x(4.0);
             inner_rect.add_min_y(4.0);
             self.inner_render.param.rect.offset_to_rect(&inner_rect);
+            #[cfg(feature = "gpu")]
             self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
         }
 
+        #[cfg(feature = "gpu")]
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
@@ -161,9 +168,14 @@ impl RadioButton {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.circle.render(&self.outer_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.circle.render(&self.inner_render, pass);
+        self.outer_render.param.draw(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+        self.inner_render.param.draw(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
         self.text.redraw(ui);
     }
 }

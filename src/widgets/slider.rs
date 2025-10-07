@@ -2,7 +2,9 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -133,16 +135,19 @@ impl Slider {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         //背景
         self.fill_render.init_rectangle(ui, false, false);
         //已滑动背景
         let scale = self.value / (self.range.end - self.range.start);
         self.slided_render.param.rect.set_width(self.slided_render.param.rect.width() * scale);
+        #[cfg(feature = "gpu")]
         self.slided_render.init_rectangle(ui, false, false);
         //滑块
         self.slider_render.param.rect.set_width(self.geometry.height());
         self.offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.slider_render.param.rect.offset_x(&Offset::new().with_x(self.offset));
+        #[cfg(feature = "gpu")]
         self.slider_render.init_circle(ui, false, false);
     }
 
@@ -159,14 +164,17 @@ impl Slider {
             let mut fill_rect = ui.draw_rect.clone();
             fill_rect.contract(8.0, 5.0);
             self.fill_render.param.rect.offset_to_rect(&fill_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.slided_render.param.rect.offset_to_rect(&fill_rect);
+            #[cfg(feature = "gpu")]
             self.slided_render.update(ui, false, false);
             let mut slider_rect = ui.draw_rect.clone();
             slider_rect.offset_x(&Offset::new().with_x(self.offset));
 
             slider_rect.set_height(ui.draw_rect.height());
             self.slider_render.param.rect.offset_to_rect(&slider_rect);
+            #[cfg(feature = "gpu")]
             self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
         }
 
@@ -178,22 +186,33 @@ impl Slider {
             }
             let scale = self.value / (self.range.end - self.range.start);
             self.slided_render.param.rect.set_width(self.fill_render.param.rect.width() * scale);
+            #[cfg(feature = "gpu")]
             self.slided_render.update(ui, false, false);
             self.slider_render.param.rect = self.geometry.rect();
             self.slider_render.param.rect.set_width(self.geometry.height());
             let offset = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
             self.offset = self.slider_render.param.rect.offset_x_limit(offset, self.geometry.rect().dx());
+            #[cfg(feature = "gpu")]
             self.slider_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.slided_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.circle.render(&self.slider_render, pass);
+        self.fill_render.param.draw(ui, false, false);
+        self.slided_render.param.draw(ui, false, false);
+        self.slider_render.param.draw(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
+
     }
 }
 

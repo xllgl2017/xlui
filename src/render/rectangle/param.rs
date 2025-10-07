@@ -1,10 +1,11 @@
 use crate::render::WrcParam;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, FrameStyle, Shadow};
-use crate::{BorderStyle, FillStyle, Size};
+use crate::{BorderStyle, FillStyle, Size, Ui};
 
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
 pub struct RectDrawParam {
     pos: [f32; 2],           //⬅️ 左上角顶点位置
     size: [f32; 2],          //⬅️ 矩形的宽高
@@ -23,7 +24,8 @@ pub struct RectDrawParam {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
 struct RectDrawParam2 {
     center_position: [f32; 2],    //⬅️ 矩形中心(x,y)
     radius: [f32; 2],             //⬅️ 半径(w/2,h/2)
@@ -120,7 +122,7 @@ impl RectParam {
         self
     }
 
-    pub fn with_height(mut self,h:f32) -> Self {
+    pub fn with_height(mut self, h: f32) -> Self {
         self.rect.set_height(h);
         self
     }
@@ -130,7 +132,7 @@ impl RectParam {
         self
     }
 
-    pub fn set_style(&mut self,style:ClickStyle){
+    pub fn set_style(&mut self, style: ClickStyle) {
         self.style = style;
     }
 
@@ -146,9 +148,17 @@ impl RectParam {
         self.shadow = shadow;
         self
     }
+
+    #[cfg(not(feature = "gpu"))]
+    pub fn draw(&self, ui: &mut Ui, hovered: bool, press: bool) {
+        let fill = self.style.dyn_fill(press, hovered);
+        let border = self.style.dyn_border(press, hovered);
+        ui.context.window.win32().paint_rect(ui.hdc.unwrap(), fill, border, &self.rect);
+    }
 }
 
 impl WrcParam for RectParam {
+    #[cfg(feature = "gpu")]
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);

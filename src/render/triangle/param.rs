@@ -4,7 +4,8 @@ use crate::size::pos::Pos;
 use crate::style::ClickStyle;
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
 struct TriangleDrawParam {
     p0: [f32; 2],             //⬅️ 顶点位置1
     p1: [f32; 2],             //⬅️ 顶点位置2
@@ -83,6 +84,7 @@ impl TriangleParam {
 }
 
 impl WrcParam for TriangleParam {
+    #[cfg(feature = "gpu")]
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);

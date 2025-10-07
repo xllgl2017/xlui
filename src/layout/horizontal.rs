@@ -2,7 +2,9 @@ use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::style::color::Color;
@@ -163,6 +165,7 @@ impl Layout for HorizontalLayout {
                 if let Some(ref mut render) = self.fill_render {
                     self.geometry.set_size(width, height);
                     render.param.rect.set_size(self.geometry.width(), self.geometry.height());
+                    #[cfg(feature = "gpu")]
                     render.init_rectangle(ui, false, false);
                 }
             }
@@ -189,9 +192,13 @@ impl Layout for HorizontalLayout {
                 }
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
                     render.param.rect.offset_to_rect(&previous_rect);
+                    #[cfg(feature = "gpu")]
                     render.update(ui, false, false);
+                    #[cfg(feature = "gpu")]
                     let pass = ui.pass.as_mut().unwrap();
+                    #[cfg(feature = "gpu")]
                     ui.context.render.rectangle.render(&render, pass);
+                    render.param.draw(ui, false, false);
                 }
 
                 //设置布局padding

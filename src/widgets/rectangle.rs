@@ -1,7 +1,9 @@
 use crate::Border;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::size::rect::Rect;
@@ -46,6 +48,7 @@ impl Rectangle {
     }
 
     fn init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
     }
 
@@ -96,9 +99,11 @@ impl Rectangle {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
         // if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
@@ -107,7 +112,9 @@ impl Rectangle {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
     }
 }

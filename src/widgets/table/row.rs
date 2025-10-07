@@ -39,6 +39,7 @@ impl TableRow {
     }
 
     pub(crate) fn init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
     }
 

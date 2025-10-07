@@ -1,3 +1,5 @@
+#[cfg(all(windows, not(feature = "gpu")))]
+use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
 use crate::{MousePos, Pos, Size};
 use crate::key::Key;
 use crate::window::ClipboardData;
@@ -12,7 +14,10 @@ pub enum WindowEvent {
     MouseWheel(f32),
     MousePress(Pos),
     MouseRelease(Pos),
+    #[cfg(feature = "gpu")]
     Redraw,
+    #[cfg(all(windows, not(feature = "gpu")))]
+    Redraw(PAINTSTRUCT, HDC),
     ReInit,
     Resize(Size),
     ReqClose,

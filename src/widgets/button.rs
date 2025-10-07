@@ -3,7 +3,9 @@ use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::render::image::ImageSource;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::Geometry;
 use crate::size::padding::Padding;
@@ -167,6 +169,7 @@ impl Button {
             self.reset_size(ui);
         }
         //按钮矩形
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
         if let Some(ref mut image) = self.image {
             image.update(ui);
@@ -178,19 +181,24 @@ impl Button {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.geometry.offset_to_rect(&ui.draw_rect);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.update_buffer(ui);
         }
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.param.draw(ui,self.hovered,ui.device.device_input.mouse.pressed);
         match self.image {
             None => self.text_buffer.redraw(ui),
             Some(ref mut image) => {

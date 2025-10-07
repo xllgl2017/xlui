@@ -1,14 +1,20 @@
 use crate::frame::App;
 use crate::key::Key;
 use crate::map::Map;
+#[cfg(feature = "gpu")]
 use crate::render::circle::CircleRender;
+#[cfg(feature = "gpu")]
 use crate::render::image::ImageRender;
+#[cfg(feature = "gpu")]
 use crate::render::rectangle::RectangleRender;
+#[cfg(feature = "gpu")]
 use crate::render::triangle::TriangleRender;
+#[cfg(feature = "gpu")]
 use crate::text::render::TextRender;
 use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
 use crate::{Device, Font, NumCastExt};
+#[cfg(feature = "gpu")]
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -117,15 +123,17 @@ impl Debug for UpdateType {
 }
 
 pub struct Context {
+    #[cfg(feature = "gpu")]
     pub viewport: Viewport,
     pub window: Arc<WindowType>,
     pub font: Arc<Font>,
+    #[cfg(feature = "gpu")]
     pub render: Render,
     pub updates: Map<String, ContextUpdate>,
     pub user_update: (WindowId, UpdateType),
     pub new_window: Option<Box<dyn App>>,
 }
-
+#[cfg(feature = "gpu")]
 pub struct Render {
     pub(crate) rectangle: RectangleRender,
     pub(crate) text: TextRender,
@@ -133,7 +141,7 @@ pub struct Render {
     pub(crate) image: ImageRender,
     pub(crate) triangle: TriangleRender,
 }
-
+#[cfg(feature = "gpu")]
 impl Render {
     pub fn new(device: &Device) -> Render {
         Render {

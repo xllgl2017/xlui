@@ -1,6 +1,8 @@
 use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::Geometry;
 use crate::widgets::{WidgetChange, WidgetSize};
@@ -123,6 +125,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         //背景
         self.allow_render.init_triangle(ui, false, false);
         //文本
@@ -164,6 +167,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
             allow_rect.set_x_min(self.edit.buffer().geometry.right() - 15.0);
             allow_rect.add_min_y(5.0);
             self.allow_render.param.offset_to_rect(&allow_rect);
+            #[cfg(feature = "gpu")]
             self.allow_render.update(ui, false, false);
         }
     }
@@ -171,7 +175,9 @@ impl<T: Display + 'static> CheckComboBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         self.edit.update(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.triangle.render(&self.allow_render, pass);
     }
 

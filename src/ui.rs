@@ -24,7 +24,9 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
+#[cfg(feature = "gpu")]
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -33,14 +35,15 @@ pub struct AppContext {
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) style: Rc<RefCell<Style>>,
     pub(crate) context: Context,
-    previous_time: u128,
-    redraw_thread: JoinHandle<()>,
+    pub(crate) previous_time: u128,
+    pub(crate) redraw_thread: JoinHandle<()>,
     attr: WindowAttribute,
 }
 
 impl AppContext {
     pub fn new(device: Device, context: Context, attr: WindowAttribute) -> AppContext {
-        let layout = VerticalLayout::top_to_bottom().with_size(device.surface_config.width as f32, device.surface_config.height as f32)
+        let size = context.window.size();
+        let layout = VerticalLayout::top_to_bottom().with_size(size.width, size.height)
             .with_space(5.0).with_padding(Padding::same(5.0));
         AppContext {
             device,
@@ -56,11 +59,13 @@ impl AppContext {
     }
 
     pub fn draw(&mut self, app: &mut Box<dyn App>) {
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: Some(self.layout.take().unwrap()),
             popups: self.popups.take(),
@@ -71,6 +76,9 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            paint_struct: None,
+            p: P { text: "" },
+            hdc: None,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -80,11 +88,13 @@ impl AppContext {
 
     #[cfg(not(feature = "winit"))]
     pub fn user_update(&mut self, app: &mut Box<dyn App>) {
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: self.layout.take(),
             popups: None,
@@ -94,18 +104,23 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style:self.style.clone(),
+            style: self.style.clone(),
+            paint_struct: None,
+            p: P { text: "" },
+            hdc: None,
         };
         app.update(&mut ui);
         self.layout = ui.layout.take();
     }
 
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: self.layout.take(),
             popups: None,
@@ -113,10 +128,13 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
+            p: P { text: "" },
 
             draw_rect,
             widget_changed: WidgetChange::None,
-            style:self.style.clone(),
+            style: self.style.clone(),
+            paint_struct: None,
+            hdc: None,
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -157,7 +175,7 @@ impl AppContext {
         self.inner_windows = ui.inner_windows.take();
     }
 
-    pub fn redraw(&mut self, app: &mut Box<dyn App>) {
+    pub fn redraw(&mut self, app: &mut Box<dyn App>, ps: PAINTSTRUCT, hdc: HDC) {
         if !self.redraw_thread.is_finished() { return; }
         if crate::time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
@@ -168,6 +186,7 @@ impl AppContext {
             });
             return;
         }
+        #[cfg(feature = "gpu")]
         let surface_texture = match self.device.surface.get_current_texture() {
             Ok(res) => res,
             Err(e) => {
@@ -175,7 +194,9 @@ impl AppContext {
                 return;
             }
         };
+        #[cfg(feature = "gpu")]
         let view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        #[cfg(feature = "gpu")]
         let msaa_texture = self.device.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
@@ -190,10 +211,11 @@ impl AppContext {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
         });
+        #[cfg(feature = "gpu")]
         let msaa_view = msaa_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-
+        #[cfg(feature = "gpu")]
         let mut encoder = self.device.device.create_command_encoder(&Default::default());
+        #[cfg(feature = "gpu")]
         let render_pass_desc = RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -208,12 +230,15 @@ impl AppContext {
             timestamp_writes: None,
             occlusion_query_set: None,
         };
+        #[cfg(feature = "gpu")]
         let pass = encoder.begin_render_pass(&render_pass_desc);
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: Some(pass),
             layout: self.layout.take(),
             popups: self.popups.take(),
@@ -224,6 +249,10 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            paint_struct: Some(ps),
+            #[cfg(not(feature = "gpu"))]
+            p: P { text: "" },
+            hdc: Some(hdc),
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -243,17 +272,26 @@ impl AppContext {
             inner_window.redraw(&mut ui);
         }
         drop(ui);
+        #[cfg(feature = "gpu")]
         self.device.queue.submit([encoder.finish()]);
+        #[cfg(feature = "gpu")]
         surface_texture.present();
         self.previous_time = crate::time_ms();
     }
+}
+
+pub(crate) struct P<'p> {
+    pub(crate) text: &'p str,
 }
 
 pub struct Ui<'a, 'p> {
     pub(crate) device: &'a Device,
     pub(crate) context: &'a mut Context,
     pub(crate) app: Option<&'a mut Box<dyn App>>,
+    #[cfg(feature = "gpu")]
     pub(crate) pass: Option<wgpu::RenderPass<'p>>,
+    #[cfg(not(feature = "gpu"))]
+    pub(crate) p: P<'p>,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
     pub(crate) update_type: UpdateType,
@@ -263,6 +301,10 @@ pub struct Ui<'a, 'p> {
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
     pub style: Rc<RefCell<Style>>,
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub(crate) paint_struct: Option<PAINTSTRUCT>,
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub(crate) hdc: Option<HDC>,
 }
 
 
@@ -277,7 +319,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         }
     }
 
-    pub fn get_value(&mut self, cid:impl ToString) -> Option<ContextUpdate> {
+    pub fn get_value(&mut self, cid: impl ToString) -> Option<ContextUpdate> {
         self.context.updates.remove(&cid.to_string())
     }
 }

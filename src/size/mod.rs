@@ -42,7 +42,7 @@ impl From<(u32, u32)> for Size {
         }
     }
 }
-
+#[cfg(feature = "gpu")]
 impl From<&wgpu::SurfaceConfiguration> for Size {
     fn from(value: &wgpu::SurfaceConfiguration) -> Self {
         Size {

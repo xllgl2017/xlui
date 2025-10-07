@@ -6,6 +6,7 @@ use crate::ui::Ui;
 use crate::vertex::ImageVertex;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::Size;
+#[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
 
 /// ### Image的示例用法
@@ -37,7 +38,9 @@ pub struct Image {
     geometry: Geometry,
 
     vertices: Vec<ImageVertex>,
+    #[cfg(feature = "gpu")]
     vertex_buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
     index_buffer: Option<wgpu::Buffer>,
     changed: bool,
 }
@@ -49,7 +52,9 @@ impl Image {
             source: source.into(),
             geometry: Geometry::new(),
             vertices: vec![],
+            #[cfg(feature = "gpu")]
             vertex_buffer: None,
+            #[cfg(feature = "gpu")]
             index_buffer: None,
             changed: false,
         }
@@ -61,7 +66,7 @@ impl Image {
 
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.geometry.set_fix_size(width,height);
+        self.geometry.set_fix_size(width, height);
         self
     }
 
@@ -77,9 +82,11 @@ impl Image {
     }
 
     fn init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         self.re_init(ui);
     }
 
+    #[cfg(feature = "gpu")]
     fn re_init(&mut self, ui: &mut Ui) {
         let size = ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
         self.reset_size(size);
@@ -119,17 +126,22 @@ impl Image {
                     3 => v.position = rect.right_top(),
                     _ => {}
                 }
-                v.screen_size = [ui.device.surface_config.width as f32, ui.device.surface_config.height as f32];
+                #[cfg(feature = "gpu")]
+                { v.screen_size = [ui.device.surface_config.width as f32, ui.device.surface_config.height as f32]; }
             }
+            #[cfg(feature = "gpu")]
             ui.device.queue.write_buffer(
                 self.vertex_buffer.as_ref().unwrap(), 0,
                 bytemuck::cast_slice(self.vertices.as_slice()));
+            #[cfg(feature = "gpu")]
             ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
         }
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.image.render(
             &self.source.uri(),
             self.vertex_buffer.as_ref().unwrap(),
@@ -144,6 +156,7 @@ impl Widget for Image {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
+            #[cfg(feature = "gpu")]
             UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }

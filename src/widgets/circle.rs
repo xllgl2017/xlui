@@ -1,6 +1,8 @@
 use crate::frame::context::UpdateType;
 use crate::render::circle::param::CircleParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::size::rect::Rect;
@@ -50,20 +52,25 @@ impl Circle {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.render.update(ui, false, false);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.render.update(ui, false, false);
         }
     }
 
     fn init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         self.render.init_circle(ui, false, false);
         self.changed = false;
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.circle.render(&self.render, pass);
     }
 }

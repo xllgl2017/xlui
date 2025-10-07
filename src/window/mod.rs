@@ -22,9 +22,11 @@ use crate::window::ime::IME;
 use crate::window::wnit::handle::WInitWindowHandle;
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::window::x11::handle::X11WindowHandle;
+#[cfg(feature = "gpu")]
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
+use crate::Size;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -191,8 +193,14 @@ impl WindowType {
             WindowKind::Win32(ref window) => window.clipboard.set_clipboard_data(clipboard).unwrap()
         }
     }
-}
 
+    pub(crate) fn size(&self) -> Size {
+        match self.kind {
+            WindowKind::Win32(ref window) => window.size(),
+        }
+    }
+}
+#[cfg(feature = "gpu")]
 impl HasWindowHandle for WindowType {
     fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
         match self.kind {
@@ -205,7 +213,7 @@ impl HasWindowHandle for WindowType {
         }
     }
 }
-
+#[cfg(feature = "gpu")]
 impl HasDisplayHandle for WindowType {
     fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
         match self.kind {

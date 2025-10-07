@@ -1,4 +1,5 @@
 pub mod buffer;
+#[cfg(feature = "gpu")]
 pub mod render;
 pub mod rich;
 pub mod cchar;
@@ -12,6 +13,7 @@ pub enum TextWrap {
 
 
 impl TextWrap {
+    #[cfg(feature = "gpu")]
     pub fn as_gamma(&self) -> glyphon::Wrap {
         match self {
             TextWrap::NoWrap => glyphon::Wrap::None,

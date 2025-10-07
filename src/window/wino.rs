@@ -1,10 +1,11 @@
-use crate::frame::context::{Context, Render, UpdateType};
+use crate::frame::context::{Context, UpdateType};
 use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
 use crate::window::event::WindowEvent;
 use crate::window::{UserEvent, WindowId, WindowType};
 use crate::{Device, DeviceInput, Size, WindowAttribute};
+#[cfg(feature = "gpu")]
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
 use std::sync::Arc;
@@ -23,7 +24,27 @@ pub struct LoopWindow {
 }
 
 impl LoopWindow {
-    pub async fn create_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: WindowAttribute) -> LoopWindow {
+    pub fn create_native_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: WindowAttribute) -> LoopWindow {
+        let context = Context {
+            window: wt,
+            font: attr.font.clone(),
+            updates: Map::new(),
+            user_update: (WindowId::unique_id(), UpdateType::None),
+            new_window: None,
+        };
+        let device = Device {
+            device_input: DeviceInput::new(),
+        };
+        let mut app_ctx = AppContext::new(device, context, attr);
+        app_ctx.draw(&mut app);
+        LoopWindow {
+            app_ctx,
+            app,
+        }
+    }
+
+    #[cfg(feature = "gpu")]
+    pub async fn create_gpu_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: WindowAttribute) -> LoopWindow {
         let device = Self::rebuild_device(&wt, attr.inner_size).await.unwrap();
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
@@ -43,7 +64,7 @@ impl LoopWindow {
             app,
         }
     }
-
+    #[cfg(feature = "gpu")]
     pub(crate) async fn rebuild_device(window: &Arc<WindowType>, size: Size) -> Result<Device, Box<dyn Error>> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
@@ -113,6 +134,7 @@ impl EventLoopHandle for LoopWindow {
                 self.app_ctx.update(UpdateType::MouseRelease, &mut self.app);
                 self.app_ctx.device.device_input.mouse.a = 0.0;
             }
+            #[cfg(feature = "gpu")]
             WindowEvent::Redraw => {
                 self.app_ctx.context.viewport.update(&self.app_ctx.device.queue, Resolution {
                     width: self.app_ctx.device.surface_config.width,
@@ -120,11 +142,16 @@ impl EventLoopHandle for LoopWindow {
                 });
                 self.app_ctx.redraw(&mut self.app)
             }
+            WindowEvent::Redraw(ps, hdc) => {
+                self.app_ctx.redraw(&mut self.app, ps, hdc)
+            }
+
             WindowEvent::ReInit => {
                 //休眠15秒，保证系统底层、设备恢复
                 sleep(Duration::from_secs(15));
                 self.app_ctx.update(UpdateType::ReInit, &mut self.app)
             }
+            #[cfg(feature = "gpu")]
             WindowEvent::Resize(size) => {
                 self.app_ctx.device.surface_config.width = size.width_u32();
                 self.app_ctx.device.surface_config.height = size.height_u32();

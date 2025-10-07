@@ -64,14 +64,7 @@ struct BorderWidths {
 }
 
 // 绘制圆角矩形函数
-unsafe fn add_round_rect_path(
-    path: &mut GpPath,
-    rect: &RECT,
-    radius_tl: f32,
-    radius_tr: f32,
-    radius_br: f32,
-    radius_bl: f32,
-) {
+unsafe fn add_round_rect_path(path: &mut GpPath, rect: &RECT, radius_tl: f32, radius_tr: f32, radius_br: f32, radius_bl: f32) {
     let x = rect.left as f32;
     let y = rect.top as f32;
     let w = (rect.right - rect.left) as f32;
@@ -80,60 +73,22 @@ unsafe fn add_round_rect_path(
     // top-left arc
     if radius_tl > 0.0 {
         GdipAddPathArc(path, x, y, radius_tl * 2.0, radius_tl * 2.0, 180.0, 90.0);
-        // path.AddArc(x, y, radius_tl * 2.0, radius_tl * 2.0, 180.0, 90.0);
     } else {
         GdipAddPathLine(path, x, y, x, y + h);
-        // path.AddLine(PointF { X: x, Y: y + 0.0 }, PointF { X: x, Y: y });
     }
-    GdipAddPathLine(path, x + radius_tl, y, x + w - radius_tr, y);
     // top edge
-    // path.AddLine(
-    //     PointF {
-    //         X: x + radius_tl,
-    //         Y: y,
-    //     },
-    //     PointF {
-    //         X: x + w - radius_tr,
-    //         Y: y,
-    //     },
-    // );
-
+    GdipAddPathLine(path, x + radius_tl, y, x + w - radius_tr, y);
     // top-right arc
     if radius_tr > 0.0 {
         GdipAddPathArc(path, x + w - 2.0 * radius_tr, y, radius_tr * 2.0, radius_tr * 2.0, 270.0, 90.0);
-        // path.AddArc(
-        //     x + w - 2.0 * radius_tr,
-        //     y,
-        //     radius_tr * 2.0,
-        //     radius_tr * 2.0,
-        //     270.0,
-        //     90.0,
-        // );
     }
 
     // right edge
     GdipAddPathLine(path, x + w, y + radius_tr, x + w, y + h - radius_br);
-    // path.AddLine(
-    //     PointF {
-    //         X: x + w,
-    //         Y: y + radius_tr,
-    //     },
-    //     PointF {
-    //         X: x + w,
-    //         Y: y + h - radius_br,
-    //     },
-    // );
-
     // bottom-right arc
     if radius_br > 0.0 {
-        GdipAddPathArc(path,
-                       x + w - 2.0 * radius_br,
-                       y + h - 2.0 * radius_br,
-                       radius_br * 2.0,
-                       radius_br * 2.0,
-                       0.0,
-                       90.0,
-        );
+        GdipAddPathArc(path, x + w - 2.0 * radius_br, y + h - 2.0 * radius_br, radius_br * 2.0,
+                       radius_br * 2.0, 0.0, 90.0);
     }
 
     // bottom edge
@@ -141,14 +96,8 @@ unsafe fn add_round_rect_path(
 
     // bottom-left arc
     if radius_bl > 0.0 {
-        GdipAddPathArc(path,
-                       x,
-                       y + h - 2.0 * radius_bl,
-                       radius_bl * 2.0,
-                       radius_bl * 2.0,
-                       90.0,
-                       90.0,
-        );
+        GdipAddPathArc(path, x, y + h - 2.0 * radius_bl, radius_bl * 2.0,
+                       radius_bl * 2.0, 90.0, 90.0);
     }
 
     // left edge
@@ -164,7 +113,7 @@ unsafe fn paint_rect(hdc: HDC) {
     GdipCreatePen1(0xFFFF0000, 1.0, UnitPixel, &mut pen); // 红色边框
 
     let mut brush: *mut GpSolidFill = null_mut();
-    GdipCreateSolidFill(0xFF00FFFF, &mut brush); // 青色填充
+    GdipCreateSolidFill(0x2200FFFF, &mut brush); // 青色填充
 
     // 创建路径
     let mut path: *mut GpPath = null_mut();
@@ -244,11 +193,12 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: 
         WM_PAINT => {
             let mut ps = PAINTSTRUCT::default();
             let hdc = BeginPaint(hwnd, &mut ps);
-            // paint_rect(hdc);
+            paint_rect(hdc);
             // 定义圆的矩形边界
             // 定义三角形的三个点
-            paint_triangle(hdc);
-            EndPaint(hwnd, &ps);
+            // paint_triangle(hdc);
+            // paint_text("sdfsdfsdfsdf", hdc, ps);
+            EndPaint(hwnd, &ps).unwrap();
             LRESULT(0)
         }
         WM_DESTROY => {

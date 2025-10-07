@@ -1,5 +1,6 @@
 use crate::ui::Ui;
 use crate::{Device, Size, SAMPLE_COUNT};
+#[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
 
 pub mod rectangle;
@@ -8,30 +9,38 @@ pub mod image;
 pub mod triangle;
 
 pub trait WrcParam {
+    #[cfg(feature = "gpu")]
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8];
 }
 
 pub struct RenderParam<T> {
     pub param: T,
+    #[cfg(feature = "gpu")]
     buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
     bind_group: Option<wgpu::BindGroup>,
 }
+
 
 impl<T: WrcParam> RenderParam<T> {
     pub fn new(param: T) -> RenderParam<T> {
         RenderParam {
             param,
+            #[cfg(feature = "gpu")]
             buffer: None,
+            #[cfg(feature = "gpu")]
             bind_group: None,
         }
     }
 
+    #[cfg(feature = "gpu")]
     pub fn update(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         let data = self.param.as_draw_param(hovered, pressed, size);
         ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
     }
 
+    #[cfg(feature = "gpu")]
     pub fn init_rectangle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         let data = self.param.as_draw_param(hovered, pressed, size);
@@ -40,6 +49,7 @@ impl<T: WrcParam> RenderParam<T> {
         self.bind_group = Some(bind_group);
     }
 
+    #[cfg(feature = "gpu")]
     pub fn init_triangle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         let data = self.param.as_draw_param(hovered, pressed, size);
@@ -48,6 +58,7 @@ impl<T: WrcParam> RenderParam<T> {
         self.bind_group = Some(bind_group);
     }
 
+    #[cfg(feature = "gpu")]
     pub fn init_circle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         let data = self.param.as_draw_param(hovered, pressed, size);
@@ -55,8 +66,10 @@ impl<T: WrcParam> RenderParam<T> {
         self.buffer = Some(buffer);
         self.bind_group = Some(bind_group);
     }
+
 }
 
+#[cfg(feature = "gpu")]
 fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::PipelineLayout, buffers: &[wgpu::VertexBufferLayout]) -> wgpu::RenderPipeline {
     device.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: None,
@@ -89,16 +102,14 @@ fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::Pi
     })
 }
 
-
 pub(crate) trait WrcRender {
+    #[cfg(feature = "gpu")]
     fn pipeline(&self) -> &wgpu::RenderPipeline;
 
-    // fn bind_groups(&self) -> &Map<wgpu::BindGroup>;
-
-    // fn bind_groups_mut(&mut self) -> &mut Map<wgpu::BindGroup>;
-
+    #[cfg(feature = "gpu")]
     fn bind_group_layout(&self) -> &wgpu::BindGroupLayout;
 
+    #[cfg(feature = "gpu")]
     fn init(&mut self, device: &Device, data: &[u8]) -> (wgpu::Buffer, wgpu::BindGroup) {
         let buffer = device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -117,36 +128,11 @@ pub(crate) trait WrcRender {
         (buffer, bind_group)
     }
 
-    // fn create_bind_group(&mut self, device: &Device, buffer: &wgpu::Buffer) -> String {
-    //     let bind_group_entry = wgpu::BindGroupEntry {
-    //         binding: 0,
-    //         resource: buffer.as_entire_binding(),
-    //     };
-    //     let bind_group = device.device.create_bind_group(&wgpu::BindGroupDescriptor {
-    //         layout: self.bind_group_layout(),
-    //         entries: &[bind_group_entry],
-    //         label: None,
-    //     });
-    //     let key = crate::gen_unique_id();
-    //     self.bind_groups_mut().insert(key.clone(), bind_group);
-    //     key
-    // }
-    //
-    // fn create_buffer(&self, device: &Device, param: &[u8]) -> wgpu::Buffer {
-    //     device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-    //         label: None,
-    //         contents: param,
-    //         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    //     })
-    // }
 
+    #[cfg(feature = "gpu")]
     fn render<T>(&self, param: &RenderParam<T>, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(self.pipeline());
         render_pass.set_bind_group(0, param.bind_group.as_ref().unwrap(), &[]);
         render_pass.draw(0..6, 0..1);
     }
-
-    // fn remove(&mut self, key: &String) {
-    //     self.bind_groups_mut().remove(key);
-    // }
 }

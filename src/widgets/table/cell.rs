@@ -1,6 +1,8 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
@@ -44,7 +46,9 @@ impl TableCell {
         let previous_layout = ui.layout.replace(current_layout).unwrap();
         tui.show_header(ui, column);
         self.layout = ui.layout.replace(previous_layout);
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
+        #[cfg(feature = "gpu")]
         self.cell_line.init_rectangle(ui, false, false);
     }
 
@@ -57,20 +61,27 @@ impl TableCell {
         if (row_datum.column_index() % 2 == 0 && row_datum.row_index() % 2 != 0) || (row_datum.column_index() % 2 != 0 && row_datum.row_index() % 2 == 0) {
             self.fill_render.param.style.fill = FillStyle::same(Color::rgb(245, 245, 245))
         }
+        #[cfg(feature = "gpu")]
         self.cell_line.init_rectangle(ui, false, false);
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
     }
     fn redraw(&mut self, ui: &mut Ui) {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             let mut cell_rect = self.fill_render.param.rect.clone();
             cell_rect.set_x_min(cell_rect.dx().max - 2.0);
             self.cell_line.param.rect.offset_to_rect(&cell_rect);
+            #[cfg(feature = "gpu")]
             self.cell_line.update(ui, false, false);
         }
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.cell_line, pass);
         self.layout.as_mut().unwrap().update(ui);
     }
@@ -86,6 +97,7 @@ impl Widget for TableCell {
                 rect.add_max_x(2.0);
                 if ui.device.device_input.hovered_at(&rect) {
                     self.cell_line.param.style.border.inactive.set_same(2.0);
+                    #[cfg(feature = "gpu")]
                     self.cell_line.update(ui, false, false);
                     ui.context.window.request_redraw();
                 }

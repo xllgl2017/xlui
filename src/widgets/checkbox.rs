@@ -1,7 +1,9 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, InnerCallB, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -137,8 +139,10 @@ impl CheckBox {
         //背景
         if let Some(ref mut fill) = self.fill {
             fill.param.rect.set_size(self.geometry.width(), self.geometry.height());
+            #[cfg(feature = "gpu")]
             fill.init_rectangle(ui, false, false);
         }
+        #[cfg(feature = "gpu")]
         //复选框
         self.check_render.init_rectangle(ui, false, self.value);
         //文本
@@ -156,11 +160,13 @@ impl CheckBox {
         if ui.widget_changed.contains(WidgetChange::Position) {
             if let Some(ref mut fill) = self.fill {
                 fill.param.rect.offset_to_rect(&ui.draw_rect);
+                #[cfg(feature = "gpu")]
                 fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             }
             self.geometry.offset_to_rect(&ui.draw_rect);
             let mut rect = self.geometry.rect();
             self.check_render.param.rect.offset_to_rect(&rect);
+            #[cfg(feature = "gpu")]
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.check_text.geometry.offset_to_rect(&rect);
             rect.add_min_x(self.check_render.param.rect.width() + 2.0);
@@ -168,19 +174,26 @@ impl CheckBox {
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
             if let Some(ref mut fill) = self.fill {
+                #[cfg(feature = "gpu")]
                 fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             }
+            #[cfg(feature = "gpu")]
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
-        if let Some(ref fill) = self.fill {
+        if let Some(ref mut fill) = self.fill {
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(fill, pass);
+            fill.param.draw(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
         }
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.check_render, pass);
+        self.check_render.param.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }

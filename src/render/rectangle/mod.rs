@@ -1,12 +1,14 @@
 pub mod param;
+#[cfg(feature = "gpu")]
 use crate::render::WrcRender;
+#[cfg(feature = "gpu")]
 use crate::Device;
-
+#[cfg(feature = "gpu")]
 pub struct RectangleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
 }
-
+#[cfg(feature = "gpu")]
 impl RectangleRender {
     pub fn new(device: &Device) -> RectangleRender {
         let shader = device.device.create_shader_module(wgpu::include_wgsl!("rectangle2.wgsl"));
@@ -36,7 +38,7 @@ impl RectangleRender {
         }
     }
 }
-
+#[cfg(feature = "gpu")]
 impl WrcRender for RectangleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {
         &self.pipeline

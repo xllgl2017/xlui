@@ -1,5 +1,7 @@
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
@@ -35,6 +37,7 @@ impl TabHeader {
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
         self.fill.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
+        #[cfg(feature = "gpu")]
         self.fill.init_rectangle(ui, false, false);
     }
 
@@ -47,13 +50,17 @@ impl TabHeader {
             self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
+
+            #[cfg(feature = "gpu")]
             self.fill.update(ui, false, false);
         }
     }
 
     fn draw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill, pass);
         self.text.redraw(ui);
     }
@@ -143,6 +150,7 @@ impl TabWidget {
 
     fn init(&mut self, ui: &mut Ui) {
         self.fill.param.rect.set_size(self.geometry.width(), self.geometry.height());
+        #[cfg(feature = "gpu")]
         self.fill.init_rectangle(ui, false, false);
     }
 
@@ -169,9 +177,12 @@ impl Widget for TabWidget {
         if let UpdateType::Draw = ui.update_type {
             if ui.widget_changed.contains(WidgetChange::Position) {
                 self.fill.param.rect.offset_to_rect(&context_rect);
+                #[cfg(feature = "gpu")]
                 self.fill.update(ui, false, false);
             }
+            #[cfg(feature = "gpu")]
             let pass = ui.pass.as_mut().unwrap();
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(&self.fill, pass);
         }
         context_rect.add_min_y(1.0);

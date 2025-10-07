@@ -183,12 +183,18 @@ impl Offset {
 
 
 pub struct Device {
+    #[cfg(feature = "gpu")]
     pub device: wgpu::Device,
+    #[cfg(feature = "gpu")]
     pub queue: wgpu::Queue,
+    #[cfg(feature = "gpu")]
     pub cache: glyphon::Cache,
+    #[cfg(feature = "gpu")]
     pub texture_format: wgpu::TextureFormat,
+    #[cfg(feature = "gpu")]
     pub surface_config: wgpu::SurfaceConfiguration,
     pub device_input: DeviceInput,
+    #[cfg(feature = "gpu")]
     pub surface: wgpu::Surface<'static>,
 }
 

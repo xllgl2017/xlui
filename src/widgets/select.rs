@@ -1,7 +1,9 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -75,7 +77,7 @@ impl<T: Display> SelectItem<T> {
     }
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
-        self.text.geometry.set_fix_size(w,h);
+        self.text.geometry.set_fix_size(w, h);
         self
     }
 
@@ -112,6 +114,7 @@ impl<T: Display> SelectItem<T> {
         //背景
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, selected, selected);
     }
 
@@ -129,6 +132,7 @@ impl<T: Display> SelectItem<T> {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
             self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
@@ -136,14 +140,20 @@ impl<T: Display> SelectItem<T> {
         if ui.widget_changed.contains(WidgetChange::Value) {
             let current = self.parent_selected.read().unwrap();
             let selected = current.as_ref() == Some(&self.value.to_string());
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        let current = self.parent_selected.read().unwrap();
+        let selected = current.as_ref() == Some(&self.value.to_string());
+        self.fill_render.param.draw(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
         self.text.redraw(ui);
     }
 }
@@ -175,7 +185,7 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.text.geometry.width(),self.text.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.text.geometry.width(), self.text.geometry.height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

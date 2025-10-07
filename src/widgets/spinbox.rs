@@ -2,7 +2,9 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::pos::Pos;
@@ -137,6 +139,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         p2.x = self.rect.dx().max;
         p2.y = self.up_rect.dy().max;
         self.up_render.param.set_poses(p0, p1, p2);
+        #[cfg(feature = "gpu")]
         self.up_render.init_triangle(ui, false, false);
         self.down_rect.set_x_min(self.rect.dx().max - 14.0);
         self.down_rect.set_x_max(self.rect.dx().max);
@@ -152,6 +155,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         p2.x = self.rect.dx().max;
         p2.y = self.down_rect.dy().min;
         self.down_render.param.set_poses(p0, p1, p2);
+        #[cfg(feature = "gpu")]
         self.down_render.init_triangle(ui, false, false);
     }
 
@@ -213,6 +217,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.up_rect.set_y_min(self.rect.dy().min + 1.0);
             self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
             self.up_render.param.offset_to_rect(&self.up_rect);
+            #[cfg(feature = "gpu")]
             self.up_render.update(ui, false, false);
 
             self.down_rect.set_x_min(self.rect.dx().max - 14.0);
@@ -220,10 +225,13 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
             self.down_rect.set_y_max(self.rect.dy().max - 2.0);
             self.down_render.param.offset_to_rect(&self.down_rect);
+            #[cfg(feature = "gpu")]
             self.down_render.update(ui, false, false);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.down_render.update(ui, self.value <= self.range.start, false);
+            #[cfg(feature = "gpu")]
             self.up_render.update(ui, self.value >= self.range.end, false);
             self.edit.update_text(ui, format!("{:.*}", 2, self.value));
         }
@@ -246,8 +254,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             ui.draw_rect = edit_rect;
         }
         self.edit.redraw(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.triangle.render(&self.down_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.triangle.render(&self.up_render, pass);
     }
 }

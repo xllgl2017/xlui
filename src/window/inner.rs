@@ -4,7 +4,9 @@ use crate::layout::popup::Popup;
 use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -12,7 +14,7 @@ use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FrameStyle, Shadow, Style};
-use crate::ui::Ui;
+use crate::ui::{Ui, P};
 use crate::widgets::button::Button;
 use crate::widgets::WidgetChange;
 use crate::window::attribute::WindowAttribute;
@@ -55,6 +57,7 @@ impl InnerWindow {
         let fill_param = RectParam::new().with_rect(rect.clone()).with_style(ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
         let mut fill_render = RenderParam::new(fill_param);
+        #[cfg(feature = "gpu")]
         fill_render.init_rectangle(ui, false, false);
         let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height())
             .with_padding(Padding::ZERO);
@@ -134,6 +137,7 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: Some(LayoutKind::new(context_layout)),
             popups: self.popups.take(),
@@ -144,7 +148,10 @@ impl InnerWindow {
             // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
-            style:Rc::new(RefCell::new(Style::light_style()))
+            style: Rc::new(RefCell::new(Style::light_style())),
+            paint_struct: None,
+            p: crate::ui::P { text: "" },
+            hdc: None,
         };
 
 
@@ -160,12 +167,14 @@ impl InnerWindow {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
         }
     }
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {
         match ui.update_type {
+            #[cfg(feature = "gpu")]
             UpdateType::ReInit => self.fill_render.init_rectangle(ui, false, false),
             UpdateType::MouseMove => {
                 if self.press_title && ui.device.device_input.mouse.pressed {
@@ -208,6 +217,7 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: oui.pass.take(),
             layout: self.layout.take(),
             popups: self.popups.take(),
@@ -219,6 +229,9 @@ impl InnerWindow {
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
+            paint_struct: oui.paint_struct.take(),
+            p: P { text: "" },
+            hdc: oui.hdc.take(),
         };
 
 
@@ -227,8 +240,11 @@ impl InnerWindow {
         // let mut rect = self.fill_render.param.rect.clone();
         self.title_rect.offset_to_rect(&nui.draw_rect);
         // ui.draw_rect = rect;
+        #[cfg(feature = "gpu")]
         let pass = nui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         nui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.param.draw(&mut nui, false, false);
         self.w.update(&mut nui);
         self.layout = nui.layout.take();
         self.layout.as_mut().unwrap().update(&mut nui);
@@ -236,9 +252,10 @@ impl InnerWindow {
         self.offset.y = 0.0;
         self.popups = nui.popups.take();
 
-        // ui.draw_rect = previous_rect;
-        let pass = nui.pass.take();
-        oui.pass = pass;
+        #[cfg(feature = "gpu")]
+        { oui.pass = nui.pass.take() };
+        oui.hdc = nui.hdc.take();
+        oui.paint_struct = nui.paint_struct.take();
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
@@ -248,6 +265,7 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: self.layout.take(),
             popups: self.popups.take(),
@@ -259,6 +277,9 @@ impl InnerWindow {
             draw_rect: self.fill_render.param.rect.clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
+            paint_struct: None,
+            p: P { text: "" },
+            hdc: None,
         };
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);

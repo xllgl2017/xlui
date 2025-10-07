@@ -1,21 +1,21 @@
 use ab_glyph::{Font as AbFont, PxScale, ScaleFont};
-use glyphon::fontdb::Source;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
+use cosmic_text::fontdb::Source;
 
 pub struct Font {
     family: String,
     data: Arc<Vec<u8>>,
     glyph_font: ab_glyph::FontArc,
-    font: Arc<glyphon::Font>,
+    font: Arc<cosmic_text::Font>,
     size: f32,
 }
 
 impl Font {
     ///根据字体名称调用系统字体
     pub fn from_family(family: &str) -> Font {
-        let mut font_system = glyphon::FontSystem::new();
+        let mut font_system = cosmic_text::FontSystem::new();
         let face = font_system.db().faces().find(|x| {
             for (font_family, _) in &x.families {
                 if font_family == family { return true; };
@@ -51,7 +51,7 @@ impl Font {
         let mut res = Font::default();
         res.data = Arc::new(data);
         res.glyph_font = ab_glyph::FontArc::try_from_vec(res.data.to_vec()).unwrap();
-        let mut font_system = glyphon::FontSystem::new();
+        let mut font_system = cosmic_text::FontSystem::new();
         let id = font_system.db_mut().load_font_source(Source::Binary(res.data.clone()));
         for face in font_system.db().faces() {
             if face.id.to_string() != id[0].to_string() { continue; }

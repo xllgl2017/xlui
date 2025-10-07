@@ -1,3 +1,4 @@
+#[cfg(feature = "gpu")]
 pub mod texture;
 
 use std::hash::{DefaultHasher, Hasher};
@@ -17,6 +18,7 @@ use windows::Win32::UI::Shell::SHCreateMemStream;
 use crate::error::UiResult;
 use crate::{Device, Size, SAMPLE_COUNT};
 use crate::map::Map;
+#[cfg(feature = "gpu")]
 use crate::render::image::texture::ImageTexture;
 use crate::vertex::ImageVertex;
 
@@ -73,14 +75,14 @@ impl<const N: usize> From<&[u8; N]> for ImageSource {
     }
 }
 
-
+#[cfg(feature = "gpu")]
 pub struct ImageRender {
     pipeline: wgpu::RenderPipeline,
     textures: Map<String, ImageTexture>,
     bind_group_layout: wgpu::BindGroupLayout,
 
 }
-
+#[cfg(feature = "gpu")]
 impl ImageRender {
     pub fn new(device: &Device) -> ImageRender {
         let entry_texture = wgpu::BindGroupLayoutEntry {

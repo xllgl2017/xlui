@@ -4,10 +4,10 @@ use crate::window::event::WindowEvent;
 use crate::window::ime::IMEData;
 use crate::window::win32::{Win32Window, CREATE_CHILD, REQ_UPDATE, RE_INIT, TRAY_ICON};
 use crate::window::wino::EventLoopHandle;
-use crate::{Pos, Size};
+use crate::{Color, Pos, Rect, RichTextExt, Size};
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
-use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, ValidateRect, HBITMAP, HGDIOBJ};
+use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateFontW, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetDC, InvalidateRect, ReleaseDC, SelectObject, SetTextColor, ValidateRect, DT_CENTER, DT_SINGLELINE, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HGDIOBJ, PAINTSTRUCT, SRCCOPY};
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY, VK_BACK, VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_HOME, VK_LEFT, VK_RETURN, VK_RIGHT, VK_UP};
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -51,6 +51,37 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
     let icon_path = to_wstr(ip);
     let h_icon = unsafe { LoadImageW(None, PCWSTR(icon_path.as_ptr()), IMAGE_ICON, 32, 32, LR_LOADFROMFILE).unwrap() };
     HICON(h_icon.0)
+}
+
+fn paint_text(text: &str, hdc: HDC, ps: PAINTSTRUCT) {
+    unsafe { SetTextColor(hdc, COLORREF(0x00_00_00)); } // 黑色
+    let font_name = to_wstr("仿宋");
+    let hfont = unsafe {
+        CreateFontW(
+            32,                 // 字体高度（像素）
+            0,                  // 宽度（0 = 自动）
+            0,                  // 角度
+            0,                  // 基线角度
+            500,                // 粗细（FW_BOLD = 700）
+            0,                  // 斜体 (1 = TRUE)
+            0,                  // 下划线
+            0,                  // 删除线
+            FONT_CHARSET(0),                  // 字体集 (DEFAULT_CHARSET)
+            FONT_OUTPUT_PRECISION(0),                  // 输出精度
+            FONT_CLIP_PRECISION(0),                  // 剪辑精度
+            FONT_QUALITY(0),                  // 输出质量
+            0,                  // 字体 pitch & family
+            PCWSTR(font_name.as_ptr()), // 字体名称
+        )
+    };
+    // 选择字体进入 HDC
+    let old_font = unsafe { SelectObject(hdc, HGDIOBJ::from(hfont)) };
+    let mut text = to_wstr(text);
+    // DrawTextW 参数：hdc, text, -1 表示以 null 结尾, 矩形: 0,0,width,height -> 这里用 DT_SINGLELINE + center
+    unsafe { DrawTextW(hdc, text.as_mut_slice(), &mut ps.rcPaint.clone(), DT_CENTER | DT_VCENTER | DT_SINGLELINE); }
+    // 恢复原字体并删除我们创建的字体对象
+    unsafe { SelectObject(hdc, old_font); }
+    unsafe { DeleteObject(HGDIOBJ::from(hfont)); }
 }
 
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -120,8 +151,36 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         }
         WM_PAINT => {
             println!("paint");
-            unsafe { ValidateRect(Option::from(window.handle().win32().hwnd), None).unwrap() };
-            window.handle_event(WindowEvent::Redraw);
+            if !window.app_ctx.redraw_thread.is_finished() || crate::time_ms() - window.app_ctx.previous_time <= 10 { return LRESULT(0); }
+            let mut ps = PAINTSTRUCT::default();
+            let hdc = BeginPaint(hwnd, &mut ps);
+            let mut rect = RECT::default();
+            GetClientRect(hwnd, &mut rect);
+            // 创建兼容的内存 DC 和位图
+            let mem_dc = CreateCompatibleDC(Option::from(hdc));
+            let mem_bmp = CreateCompatibleBitmap(hdc, rect.right - rect.left, rect.bottom - rect.top);
+            SelectObject(mem_dc, HGDIOBJ::from(mem_bmp));
+
+            // ✅ 填充背景颜色
+            let brush = CreateSolidBrush(COLORREF(Color::rgb(240, 240, 240).as_rgb_u32())); // 白色背景
+            FillRect(mem_dc, &rect, brush);
+            DeleteObject(HGDIOBJ::from(brush));
+
+
+            window.handle_event(WindowEvent::Redraw(ps, mem_dc));
+
+            BitBlt(
+                hdc,
+                0, 0,
+                rect.right - rect.left,
+                rect.bottom - rect.top,
+                Option::from(mem_dc),
+                0, 0,
+                SRCCOPY,
+            );
+            DeleteObject(HGDIOBJ::from(mem_bmp));
+            DeleteDC(mem_dc);
+            EndPaint(hwnd, &ps).unwrap();
         }
         WM_KEYDOWN => {
             let ctrl_pressed = (unsafe { GetKeyState(VK_CONTROL.0 as i32) } as u16 & 0x8000) != 0;
@@ -197,6 +256,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                 app.create_child_window(&handle, user_app).unwrap();
             }
         }
+        WM_ERASEBKGND => return LRESULT(1),
         RE_INIT => {
             println!("re_init");
             window.handle_event(WindowEvent::ReInit)

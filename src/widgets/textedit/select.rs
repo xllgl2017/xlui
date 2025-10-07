@@ -1,6 +1,8 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
@@ -49,6 +51,7 @@ impl EditSelection {
                 self.renders.push(render);
             }
         }
+        #[cfg(feature = "gpu")]
         self.renders.iter_mut().for_each(|x| x.init_rectangle(ui, false, false));
     }
 
@@ -71,6 +74,7 @@ impl EditSelection {
         if !self.changed { return; }
         self.changed = false;
         for render in self.renders.iter_mut() {
+            #[cfg(feature = "gpu")]
             render.update(ui, false, false);
         }
     }
@@ -81,10 +85,13 @@ impl EditSelection {
     // }
 
     pub fn render(&mut self, ui: &mut Ui, rows: usize) {
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
         for (index, render) in self.renders.iter().enumerate() {
             if index >= rows { continue; }
+            #[cfg(feature = "gpu")]
             ui.context.render.rectangle.render(render, pass);
+            render.param.draw(ui, false, false);
         }
     }
 
@@ -247,6 +254,7 @@ impl EditSelection {
     pub fn update_position(&mut self, ui: &mut Ui, mut rect: Rect) {
         for render in self.renders.iter_mut() {
             render.param.rect.offset_y_to(rect.dy().min);
+            #[cfg(feature = "gpu")]
             render.update(ui, false, false);
             rect.add_min_y(render.param.rect.height());
         }

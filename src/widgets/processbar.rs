@@ -1,6 +1,8 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -55,7 +57,9 @@ impl ProcessBar {
     fn init(&mut self, ui: &mut Ui) {
         let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
         self.process_render.param.rect.set_width(w);
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
+        #[cfg(feature = "gpu")]
         self.process_render.init_rectangle(ui, false, false);
     }
 
@@ -83,8 +87,10 @@ impl ProcessBar {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.process_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.process_render.update(ui, false, false);
         }
 
@@ -92,16 +98,23 @@ impl ProcessBar {
             if self.value > self.range.end { self.value = self.range.end; }
             let w = self.value * self.fill_render.param.rect.width() / (self.range.end - self.range.start);
             self.process_render.param.rect.set_width(w);
+            #[cfg(feature = "gpu")]
             self.process_render.update(ui, false, false);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.process_render, pass);
+        self.fill_render.param.draw(ui, false, false);
+        self.process_render.param.draw(ui, false, false);
     }
 }
 

@@ -298,6 +298,16 @@ impl Rect {
     pub fn get_oy(&self) -> f32 {
         self.dy.min - self.oy.min
     }
+
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub fn as_win32_rect(&self) -> windows::Win32::Foundation::RECT {
+        windows::Win32::Foundation::RECT {
+            left: self.dx.min as i32,
+            top: self.dy.min as i32,
+            right: self.dx.max as i32,
+            bottom: self.dy.max as i32,
+        }
+    }
 }
 
 impl PartialEq for Rect {

@@ -1,5 +1,7 @@
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::size::border::Border;
 use crate::size::pos::Pos;
 use crate::size::radius::Radius;
@@ -54,6 +56,7 @@ impl EditCursor {
             self.vert = cchar.buffer.lines.len();
             self.horiz = cchar.buffer.lines.last().unwrap().len();
         }
+        #[cfg(feature = "gpu")]
         self.render.init_rectangle(ui, false, false);
     }
 
@@ -66,6 +69,7 @@ impl EditCursor {
         if !self.changed { return; }
         self.changed = false;
         self.render.param.rect.offset(&self.offset);
+        #[cfg(feature = "gpu")]
         self.render.update(ui, false, false);
     }
 
@@ -77,8 +81,11 @@ impl EditCursor {
     // }
 
     pub fn render(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.render, pass);
+        self.render.param.draw(ui, false, false);
     }
 
     // pub fn set_rect(&mut self, rect: Rect) {
@@ -89,6 +96,7 @@ impl EditCursor {
     pub fn update_position(&mut self, ui: &mut Ui, rect: Rect, cchar: &CharBuffer) {
         self.render.param.rect = rect;
         self.render.param.rect.offset(&self.offset);
+        #[cfg(feature = "gpu")]
         self.render.update(ui, false, false);
         self.min_pos.x = cchar.buffer.geometry.x(); //cchar.buffer.rect.dx().min;
         self.min_pos.y = cchar.buffer.geometry.y(); //cchar.buffer.rect.dy().min;

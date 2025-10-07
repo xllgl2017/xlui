@@ -9,9 +9,12 @@ use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{App, TrayMenu, WindowAttribute};
 use std::ops::Index;
 use std::process::exit;
-use std::sync::Arc;
+use std::ptr::null_mut;
+use std::sync::{Arc, RwLock};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, HWND, POINT};
+use windows::Win32::Graphics::Gdi::{GetStockObject, HBRUSH, WHITE_BRUSH};
+use windows::Win32::Graphics::GdiPlus::{GdiplusStartup, GdiplusStartupInput};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -37,9 +40,16 @@ pub struct Win32Window {
     windows: Map<WindowId, LoopWindow>,
 }
 
-
+static mut GDI_PLUS_TOKEN: usize = 0;
 impl Win32Window {
     pub fn new<A: App>(app: A) -> UiResult<Win32Window> {
+        #[cfg(not(feature = "gpu"))]
+        let mut input = GdiplusStartupInput {
+            GdiplusVersion: 1,
+            ..Default::default()
+        };
+        #[cfg(not(feature = "gpu"))]
+        unsafe { GdiplusStartup(&raw mut GDI_PLUS_TOKEN, &mut input, null_mut()); }
         let mut attr = app.window_attributes();
         let handle = Win32Window::create_window(&attr)?;
         let window_type = WindowType {
@@ -50,8 +60,10 @@ impl Win32Window {
         };
         let app = Box::new(app);
         let tray = attr.tray.take();
-        let mut window = pollster::block_on(async { LoopWindow::create_window(app, Arc::new(window_type), attr).await });
-        window.handle_event(WindowEvent::Redraw);
+        #[cfg(feature = "gpu")]
+        let mut window = pollster::block_on(async { LoopWindow::create_gpu_window(app, Arc::new(window_type), attr).await });
+        #[cfg(not(feature = "gpu"))]
+        let mut window = LoopWindow::create_native_window(app, Arc::new(window_type), attr);
         let mut windows = Map::new();
         windows.insert(window.window_id(), window);
         let window = Win32Window {
@@ -105,13 +117,15 @@ impl Win32Window {
     }
 
     fn create_window(attr: &WindowAttribute) -> UiResult<Win32WindowHandle> {
-        let hinstance = unsafe { GetModuleHandleW(None) }?;
+        let hinstance = HINSTANCE::default();
         let class_name = until::to_wstr(&(attr.title.clone()));
         let wc = WNDCLASSW {
             lpfnWndProc: Some(until::wndproc),
-            hInstance: HINSTANCE::from(hinstance),
+            hInstance: hinstance,
             lpszClassName: PCWSTR(class_name.as_ptr()),
             hCursor: unsafe { LoadCursorW(None, IDC_ARROW)? },
+            style: CS_HREDRAW | CS_VREDRAW,
+            hbrBackground: HBRUSH(unsafe { GetStockObject(WHITE_BRUSH) }.0), // 系统白色背景
             ..Default::default()
         };
         unsafe { RegisterClassW(&wc); }
@@ -125,11 +139,11 @@ impl Win32Window {
                 attr.inner_size.width as i32, attr.inner_size.height as i32,
                 None,
                 None,
-                Some(HINSTANCE::from(hinstance)),
+                Some(hinstance),
                 None,
             )
         }?;
-        Ok(Win32WindowHandle { hwnd, clipboard: Win32Clipboard })
+        Ok(Win32WindowHandle { hwnd, clipboard: Win32Clipboard, size: RwLock::new(attr.inner_size.clone()) })
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, app: Box<dyn App>) -> UiResult<()> {
@@ -141,21 +155,31 @@ impl Win32Window {
             type_: WindowType::CHILD,
             ime: parent.ime.clone(),
         });
-        let windows = pollster::block_on(async { LoopWindow::create_window(app, window_type, attr).await });
+        #[cfg(feature = "gpu")]
+        let windows = pollster::block_on(async { LoopWindow::create_gpu_window(app, window_type, attr).await });
+        #[cfg(feature = "gpu")]
         self.windows.insert(windows.window_id(), windows);
         Ok(())
     }
 
     pub fn run(&mut self) -> UiResult<()> {
-        loop {
-            unsafe {
-                let mut msg = std::mem::zeroed::<MSG>();
-                let ret = GetMessageW(&mut msg, None, 0, 0);
-                if ret.0 == 0 { return Err("get message event error".into()); }
-                let _ = TranslateMessage(&msg);
+        let mut msg=MSG::default();
+        unsafe {
+            while GetMessageW(&mut msg, None, 0, 0).into() {
+                TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             }
         }
+        Ok(())
+        // loop {
+        //     unsafe {
+        //         let mut msg = std::mem::zeroed::<MSG>();
+        //         let ret = GetMessageW(&mut msg, None, 0, 0);
+        //         if ret.0 == 0 { return Err("get message event error".into()); }
+        //         let _ = TranslateMessage(&msg);
+        //         DispatchMessageW(&msg);
+        //     }
+        // }
     }
 
     fn add_tray_menu(&self, h_menu: HMENU, id: u32, menu: &TrayMenu, flag: MENU_ITEM_FLAGS) -> UiResult<()> {

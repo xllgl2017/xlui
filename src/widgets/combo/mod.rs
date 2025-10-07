@@ -5,7 +5,9 @@ use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::render::rectangle::param::RectParam;
 use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::RenderParam;
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -132,7 +134,9 @@ impl<T: Display + 'static> ComboBox<T> {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
         fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
+        #[cfg(feature = "gpu")]
         self.fill_render.init_rectangle(ui, false, false);
+        #[cfg(feature = "gpu")]
         self.allow_render.init_triangle(ui, false, false);
         //文本
         self.text_buffer.init(ui);
@@ -165,6 +169,7 @@ impl<T: Display + 'static> ComboBox<T> {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.popup_rect.offset_to_rect(&ui.draw_rect);
             self.popup_rect.offset_y(&Offset::new().covered().with_y(self.fill_render.param.rect.height() + 5.0));
@@ -173,6 +178,7 @@ impl<T: Display + 'static> ComboBox<T> {
             allow_rect.set_x_min(self.fill_render.param.rect.dx().max - 15.0);
             allow_rect.add_min_y(5.0);
             self.allow_render.param.offset_to_rect(&allow_rect);
+            #[cfg(feature = "gpu")]
             self.allow_render.update(ui, false, false);
 
             let mut text_rect = self.fill_render.param.rect.clone();
@@ -187,9 +193,13 @@ impl<T: Display + 'static> ComboBox<T> {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
+        #[cfg(feature = "gpu")]
         ui.context.render.triangle.render(&self.allow_render, pass);
+        self.fill_render.param.draw(ui, false, false);
         self.text_buffer.redraw(ui);
     }
 

@@ -34,7 +34,8 @@ use crate::size::Size;
 // }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
 pub struct ImageVertex {
     pub position: [f32; 2],
     pub tex_coords: [f32; 2],
@@ -58,16 +59,17 @@ impl ImageVertex {
             screen_size: screen.as_gamma_size(),
         }
     }
-
+    #[cfg(feature = "gpu")]
     pub const ATTRIBS: [wgpu::VertexAttribute; 3] =
         wgpu::vertex_attr_array![
             0 => Float32x2, // position
             1 => Float32x2, // color
             2 => Float32x2, // screen_size
         ];
+    #[cfg(feature = "gpu")]
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<ImageVertex>() as wgpu::BufferAddress,
+            array_stride: size_of::<ImageVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &Self::ATTRIBS,
         }
