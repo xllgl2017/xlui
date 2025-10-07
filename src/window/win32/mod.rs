@@ -8,6 +8,7 @@ use crate::window::wino::{EventLoopHandle, LoopWindow};
 use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{App, TrayMenu, WindowAttribute};
 use std::ops::Index;
+use std::process::exit;
 use std::sync::Arc;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, HWND, POINT};
@@ -71,7 +72,9 @@ impl Win32Window {
 
     pub fn close_window(&mut self, hwnd: HWND) -> Option<LoopWindow> {
         let wid = self.get_window_mut_by_hand(hwnd)?.window_id();
-        self.windows.remove(&wid)
+        let window = self.windows.remove(&wid);
+        if self.windows.len() == 0 { exit(0); }
+        window
     }
 
     pub fn show_tray(&self) -> UiResult<()> {
