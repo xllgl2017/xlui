@@ -12,6 +12,8 @@ use std::thread::sleep;
 use std::time::Duration;
 
 pub trait EventLoopHandle {
+    fn window_id(&self) -> WindowId;
+    fn handle(&self) -> &Arc<WindowType>;
     fn event(&mut self, event: WindowEvent);
 }
 
@@ -78,6 +80,14 @@ impl LoopWindow {
 }
 
 impl EventLoopHandle for LoopWindow {
+    fn window_id(&self) -> WindowId {
+        self.app_ctx.context.window.id
+    }
+
+    fn handle(&self) -> &Arc<WindowType> {
+        &self.app_ctx.context.window
+    }
+
     fn event(&mut self, event: WindowEvent) {
         match event {
             WindowEvent::None => {}

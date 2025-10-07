@@ -346,9 +346,8 @@ impl<'a, 'p> Ui<'a, 'p> {
     }
 
     pub fn create_window<W: App>(&mut self, w: W) {
-        let attr = w.window_attributes();
         let app = Box::new(w);
-        self.context.new_window = Some((app, attr));
+        self.context.new_window = Some(app);
         self.context.window.request_update_event(UserEvent::CreateChild);
     }
 

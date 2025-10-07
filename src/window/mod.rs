@@ -8,8 +8,8 @@ pub mod wino;
 pub mod event;
 #[cfg(feature = "winit")]
 pub mod winit_app;
-#[cfg(not(feature = "winit"))]
-pub mod application;
+// #[cfg(not(feature = "winit"))]
+// pub mod application;
 pub mod ime;
 #[cfg(feature = "winit")]
 mod wnit;

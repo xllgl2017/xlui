@@ -56,7 +56,7 @@ impl Application {
 
     pub fn run(mut self) -> UiResult<()> {
         #[cfg(target_os = "windows")]
-        unsafe { SetWindowLongPtrW(self.native_window.last_window().win32().hwnd, GWLP_USERDATA, &self as *const _ as isize); }
+        unsafe { SetWindowLongPtrW(self.native_window.last_window().win32().hwnd, GWLP_USERDATA, &self.native_window as *const _ as isize); }
         loop {
             let (wid, event) = self.native_window.run();
             if let WindowEvent::ReqClose = event {

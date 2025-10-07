@@ -8,7 +8,7 @@ use crate::render::triangle::TriangleRender;
 use crate::text::render::TextRender;
 use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
-use crate::{Device, Font, NumCastExt, WindowAttribute};
+use crate::{Device, Font, NumCastExt};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -123,7 +123,7 @@ pub struct Context {
     pub render: Render,
     pub updates: Map<String, ContextUpdate>,
     pub user_update: (WindowId, UpdateType),
-    pub new_window: Option<(Box<dyn App>, WindowAttribute)>,
+    pub new_window: Option<Box<dyn App>>,
 }
 
 pub struct Render {

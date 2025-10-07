@@ -1,22 +1,20 @@
 use crate::error::UiResult;
-use crate::key::Key;
 use crate::map::Map;
-use crate::window::event::WindowEvent;
-use crate::window::ime::{IMEData, IME};
+use crate::window::ime::IME;
 use crate::window::win32::clipboard::Win32Clipboard;
 use crate::window::win32::handle::Win32WindowHandle;
 use crate::window::win32::tray::Tray;
+use crate::window::wino::{EventLoopHandle, LoopWindow};
 use crate::window::{WindowId, WindowKind, WindowType};
-use crate::{Pos, Size, TrayMenu, WindowAttribute};
+use crate::{App, TrayMenu, WindowAttribute};
+use std::ops::Index;
 use std::sync::Arc;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HINSTANCE, POINT};
-use windows::Win32::Graphics::Gdi::ValidateRect;
+use windows::Win32::Foundation::{HINSTANCE, HWND, POINT};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
-use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
+use crate::window::event::WindowEvent;
 
 pub mod tray;
 pub(crate) mod handle;
@@ -35,32 +33,45 @@ const RESIZE: u32 = WM_USER + 8;
 
 pub struct Win32Window {
     tray: Option<Tray>,
-    handles: Map<WindowId, Arc<WindowType>>,
+    windows: Map<WindowId, LoopWindow>,
 }
 
 
 impl Win32Window {
-    pub fn new(attr: &mut WindowAttribute, ime: Arc<IME>) -> UiResult<Win32Window> {
-        let handle = Win32Window::create_window(attr)?;
+    pub fn new<A: App>(app: A) -> UiResult<Win32Window> {
+        let mut attr = app.window_attributes();
+        let handle = Win32Window::create_window(&attr)?;
         let window_type = WindowType {
             kind: WindowKind::Win32(handle),
             id: WindowId::unique_id(),
             type_: WindowType::ROOT,
-            ime,
+            ime: Arc::new(IME::new_win32()),
         };
-        let mut handles = Map::new();
-        handles.insert(window_type.id, Arc::new(window_type));
-
+        let app = Box::new(app);
+        let tray = attr.tray.take();
+        let mut window = pollster::block_on(async { LoopWindow::create_window(app, Arc::new(window_type), attr).await });
+        window.event(WindowEvent::Redraw);
+        let mut windows = Map::new();
+        windows.insert(window.window_id(), window);
         let window = Win32Window {
-            tray: attr.tray.take(),
-            handles,
+            tray,
+            windows,
         };
         window.show_tray()?;
         Ok(window)
     }
 
-    pub fn last_window(&self) -> Arc<WindowType> {
-        self.handles.last().unwrap().clone()
+    pub fn get_window_by_index(&self, index: usize) -> &LoopWindow {
+        self.windows.index(index)
+    }
+
+    pub fn get_window_mut_by_hand(&mut self, hwnd: HWND) -> Option<&mut LoopWindow> {
+        self.windows.iter_mut().find(|x| x.handle().win32().hwnd == hwnd)
+    }
+
+    pub fn close_window(&mut self, hwnd: HWND) -> Option<LoopWindow> {
+        let wid = self.get_window_mut_by_hand(hwnd)?.window_id();
+        self.windows.remove(&wid)
     }
 
     pub fn show_tray(&self) -> UiResult<()> {
@@ -76,7 +87,7 @@ impl Win32Window {
             tip[..tip_s.len()].copy_from_slice(tip_s.as_ref());
             let mut nid = NOTIFYICONDATAW {
                 cbSize: size_of::<NOTIFYICONDATAW>() as u32,
-                hWnd: self.handles[0].win32().hwnd,
+                hWnd: self.windows[0].handle().win32().hwnd,
                 uID: 1,
                 uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP,
                 uCallbackMessage: TRAY_ICON,
@@ -118,168 +129,28 @@ impl Win32Window {
         Ok(Win32WindowHandle { hwnd, clipboard: Win32Clipboard })
     }
 
-    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, attr: &WindowAttribute) -> UiResult<Arc<WindowType>> {
-        let handle = Win32Window::create_window(attr)?;
+    pub fn create_child_window(&mut self, parent: &Arc<WindowType>, app: Box<dyn App>) -> UiResult<()> {
+        let attr = app.window_attributes();
+        let handle = Win32Window::create_window(&attr)?;
         let window_type = Arc::new(WindowType {
             kind: WindowKind::Win32(handle),
             id: WindowId::unique_id(),
             type_: WindowType::CHILD,
             ime: parent.ime.clone(),
         });
-        self.handles.insert(window_type.id, window_type.clone());
-        Ok(window_type)
+        let windows = pollster::block_on(async { LoopWindow::create_window(app, window_type, attr).await });
+        self.windows.insert(windows.window_id(), windows);
+        Ok(())
     }
 
-    pub fn run(&mut self) -> (WindowId, WindowEvent) {
-        unsafe {
-            let mut msg = std::mem::zeroed::<MSG>();
-            let ret = GetMessageW(&mut msg, None, 0, 0);
-            if ret.0 == 0 { return (self.handles[0].id, WindowEvent::ReqClose); }
-            // println!("ime4-----------{}", msg.message);
-            let window = self.handles.iter().find(|x| x.win32().hwnd == msg.hwnd);
-            if window.is_none() {
+    pub fn run(&mut self) -> UiResult<()> {
+        loop {
+            unsafe {
+                let mut msg = std::mem::zeroed::<MSG>();
+                let ret = GetMessageW(&mut msg, None, 0, 0);
+                if ret.0 == 0 { return Err("get message event error".into()); }
                 let _ = TranslateMessage(&msg);
                 DispatchMessageW(&msg);
-                return (WindowId(0), WindowEvent::None);
-            }
-            let window = window.unwrap();
-            match msg.message {
-                RESIZE => {
-                    let width = until::loword(msg.lParam.0 as u32) as f32;
-                    let height = until::hiword(msg.lParam.0 as u32) as f32;
-                    println!("resize-{}-{}", width, height);
-                    (window.id, WindowEvent::Resize(Size { width, height }))
-                }
-                WM_PAINT => {
-                    println!("paint");
-                    ValidateRect(Option::from(window.win32().hwnd), None).unwrap();
-                    (window.id, WindowEvent::Redraw)
-                    // LRESULT(0)
-                }
-                WM_KEYDOWN => {
-                    let ctrl_pressed = (GetKeyState(VK_CONTROL.0 as i32) as u16 & 0x8000) != 0;
-                    if ctrl_pressed && msg.wParam.0 == 'C' as usize {
-                        (window.id, WindowEvent::KeyPress(Key::CtrlC))
-                    } else if ctrl_pressed && msg.wParam.0 == 'V' as usize {
-                        (window.id, WindowEvent::KeyPress(Key::CtrlV))
-                    } else if ctrl_pressed && msg.wParam.0 == 'A' as usize {
-                        (window.id, WindowEvent::KeyPress(Key::CtrlA))
-                    } else if ctrl_pressed && msg.wParam.0 == 'X' as usize {
-                        (window.id, WindowEvent::KeyPress(Key::CtrlX))
-                    } else {
-                        match VIRTUAL_KEY(msg.wParam.0 as u16) {
-                            VK_HOME => (window.id, WindowEvent::KeyPress(Key::Home)),
-                            VK_END => (window.id, WindowEvent::KeyPress(Key::End)),
-                            VK_RETURN => (window.id, WindowEvent::KeyPress(Key::Enter)),
-                            VK_LEFT => (window.id, WindowEvent::KeyPress(Key::LeftArrow)),
-                            VK_UP => (window.id, WindowEvent::KeyPress(Key::UpArrow)),
-                            VK_DOWN => (window.id, WindowEvent::KeyPress(Key::DownArrow)),
-                            VK_RIGHT => (window.id, WindowEvent::KeyPress(Key::RightArrow)),
-                            VK_DELETE => (window.id, WindowEvent::KeyPress(Key::Delete)),
-                            VK_BACK => (window.id, WindowEvent::KeyPress(Key::Backspace)),
-                            _ => {
-                                let _ = TranslateMessage(&msg);
-                                DispatchMessageW(&msg);
-                                (window.id, WindowEvent::KeyPress(Key::Unknown))
-                            }
-                        }
-                    }
-                }
-                WM_KEYUP => {
-                    match VIRTUAL_KEY(msg.wParam.0 as u16) {
-                        VK_HOME => (window.id, WindowEvent::KeyRelease(Key::Home)),
-                        VK_END => (window.id, WindowEvent::KeyRelease(Key::End)),
-                        VK_RETURN => (window.id, WindowEvent::KeyRelease(Key::Enter)),
-                        VK_LEFT => (window.id, WindowEvent::KeyRelease(Key::LeftArrow)),
-                        VK_UP => (window.id, WindowEvent::KeyRelease(Key::UpArrow)),
-                        VK_DOWN => (window.id, WindowEvent::KeyRelease(Key::DownArrow)),
-                        VK_RIGHT => (window.id, WindowEvent::KeyRelease(Key::RightArrow)),
-                        VK_DELETE => (window.id, WindowEvent::KeyRelease(Key::Delete)),
-                        VK_BACK => (window.id, WindowEvent::KeyRelease(Key::Backspace)),
-                        _ => (window.id, WindowEvent::None)
-                    }
-                }
-                WM_CHAR => {
-                    let ch = std::char::from_u32(msg.wParam.0 as u32).unwrap_or('\0');
-                    println!("Char input: {:?}", ch);
-                    match ch {
-                        '\r' => (window.id, WindowEvent::None),
-                        _ => (window.id, WindowEvent::KeyRelease(Key::Char(ch)))
-                    }
-                }
-                WM_LBUTTONDOWN => {
-                    //切换输入法
-                    // let h_ime = ImmGetContext(window.win32().hwnd);
-                    // let open=ImmGetOpenStatus(h_ime);
-                    // ImmSetOpenStatus(h_ime, !open.as_bool());
-                    // ImmReleaseContext(window.win32().hwnd, h_ime);
-                    let x = until::get_x_lparam(msg.lParam) as f32;
-                    let y = until::get_y_lparam(msg.lParam) as f32;
-                    (window.id, WindowEvent::MousePress(Pos { x, y }))
-                }
-                WM_LBUTTONUP => {
-                    let x = until::get_x_lparam(msg.lParam) as f32;
-                    let y = until::get_y_lparam(msg.lParam) as f32;
-                    (window.id, WindowEvent::MouseRelease(Pos { x, y }))
-                }
-                WM_MOUSEMOVE => {
-                    let x = until::get_x_lparam(msg.lParam) as f32;
-                    let y = until::get_y_lparam(msg.lParam) as f32;
-                    (window.id, WindowEvent::MouseMove((x, y).into()))
-                }
-                WM_MOUSEWHEEL => {
-                    let delta = ((msg.wParam.0 >> 16) & 0xFFFF) as i16;
-                    (window.id, WindowEvent::MouseWheel(delta as f32))
-                }
-                REQ_UPDATE => (window.id, WindowEvent::ReqUpdate),
-                CREATE_CHILD => (window.id, WindowEvent::CreateChild),
-                RE_INIT => {
-                    println!("re_init");
-                    (window.id, WindowEvent::ReInit)
-                }
-                IME => {
-                    // let himc = window.win32().himc.read().unwrap();
-                    let himc = ImmGetContext(window.win32().hwnd);
-                    println!("ime-----{}", msg.lParam.0);
-                    if msg.lParam.0 == 7168 || msg.lParam.0 == 2048 {
-                        let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
-                        if size > 0 {
-                            let len = size as usize / 2;
-                            let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
-                            let s = String::from_utf16_lossy(&buf);
-                            window.ime().ime_commit(s.chars().collect());
-                            println!("ime2: {}", s);
-                            ImmReleaseContext(window.win32().hwnd, himc).unwrap();
-                            return (window.id, WindowEvent::IME(IMEData::Commit(window.ime.ime_done())));
-                        }
-                    }
-                    if msg.lParam.0 == 440 {
-                        let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
-                        if size > 0 {
-                            let len = (size as usize) / 2;
-                            let mut buf: Vec<u16> = vec![0; len];
-                            ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
-                            let s = String::from_utf16_lossy(&buf);
-                            println!("ime1: {}", s);
-                            window.ime().ime_draw(s.chars().collect());
-                            ImmReleaseContext(window.win32().hwnd, himc).unwrap();
-                            return (window.id, WindowEvent::IME(IMEData::Preedit(window.ime.chars())));
-                        }
-                    }
-
-                    (window.id, WindowEvent::None)
-                }
-                REQ_CLOSE => {
-                    let wid = window.id;
-                    let window = self.handles.remove(&wid).unwrap();
-                    (window.id, WindowEvent::ReqClose)
-                }
-                _ => {
-                    let _ = TranslateMessage(&msg);
-                    DispatchMessageW(&msg);
-                    (window.id, WindowEvent::None)
-                }
             }
         }
     }
@@ -330,7 +201,7 @@ impl Win32Window {
                     pt.x,
                     pt.y,
                     Some(0),
-                    self.handles[0].win32().hwnd,
+                    self.windows[0].handle().win32().hwnd,
                     None,
                 ).ok()?;
                 println!("111111111111");
