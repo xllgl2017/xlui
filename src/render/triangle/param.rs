@@ -1,7 +1,9 @@
-use crate::{Rect, Size};
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
+use crate::{Rect, Ui};
+#[cfg(all(windows, not(feature = "gpu")))]
+use windows::Win32::Graphics::GdiPlus::PointF;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -80,6 +82,21 @@ impl TriangleParam {
         // self.p1.y += o.y;
         // self.p2.x += o.x;
         // self.p2.y += o.y;
+    }
+
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub fn as_win32_points(&self) -> [PointF; 3] {
+        [
+            PointF { X: self.p0.x, Y: self.p0.y },
+            PointF { X: self.p1.x, Y: self.p1.y },
+            PointF { X: self.p2.x, Y: self.p2.y },
+        ]
+    }
+
+    pub fn draw(&mut self, ui: &mut Ui, hovered: bool, press: bool) {
+        let fill = self.style.dyn_fill(press, hovered);
+        let border = self.style.dyn_border(press, hovered);
+        ui.context.window.win32().paint_triangle(ui.hdc.unwrap(), self.as_win32_points(), fill, border);
     }
 }
 

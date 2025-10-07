@@ -1,5 +1,6 @@
 use crate::error::UiResult;
-use crate::render::rectangle::param::RectParam;
+use crate::render::image::{load_win32_image_raw, ImageSource};
+use crate::text::cchar::{CChar, LineChar};
 use crate::window::win32::clipboard::Win32Clipboard;
 use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 use crate::window::UserEvent;
@@ -8,19 +9,15 @@ use crate::{Border, Color, Radius, Rect, RichText, Size};
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 #[cfg(feature = "gpu")]
 use std::num::NonZeroIsize;
-use std::ops::Deref;
 use std::ptr::null_mut;
 use std::sync::RwLock;
-use windows::core::{w, PCWSTR};
-use windows::Win32::Foundation::{COLORREF, GENERIC_READ, HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, CreatePen, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, Ellipse, GetCharWidth32W, GetDeviceCaps, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_CENTER, DT_LEFT, DT_SINGLELINE, DT_TOP, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, LOGPIXELSY, PAINTSTRUCT, PS_SOLID, SRCCOPY, TRANSPARENT};
-use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipFillEllipse, GdipFillPath, GdipSetSmoothingMode, GdiplusStartup, GdiplusStartupInput, GpGraphics, GpPath, GpPen, GpSolidFill, SmoothingModeAntiAlias, SmoothingModeNone, UnitPixel};
-use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppPBGRA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
-use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER};
+use windows::core::PCWSTR;
+use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, GetCharWidth32W, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, SRCCOPY, TRANSPARENT};
+use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipDrawPolygon, GdipFillEllipse, GdipFillPath, GdipFillPolygon, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, PointF, SmoothingModeAntiAlias, UnitPixel};
+use windows::Win32::Graphics::Imaging::{GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
 use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, PostMessageW, ShowWindow, SW_HIDE, SW_SHOW, WM_PAINT};
-use crate::render::image::{load_win32_image_raw, ImageSource};
-use crate::text::cchar::{CChar, LineChar};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
@@ -268,23 +265,6 @@ impl Win32WindowHandle {
 
     pub fn paint_image(&self, hdc: HDC, source: &ImageSource, rect: Rect) {
         unsafe {
-            // --- 使用 WIC 加载 PNG/JPG ---
-            // let mut factory: IWICImagingFactory = CoCreateInstance(
-            //     &CLSID_WICImagingFactory,
-            //     None,
-            //     CLSCTX_INPROC_SERVER,
-            // ).unwrap();
-            //
-            //
-            // let file_path = w!("logo.jpg"); // PNG/JPG 文件路径
-            // let mut decoder = factory.CreateDecoderFromFilename(
-            //     file_path,
-            //     None,
-            //     GENERIC_READ,
-            //     WICDecodeMetadataCacheOnLoad,
-            // ).unwrap();
-            //
-            // let mut frame = decoder.GetFrame(0).unwrap();
             let (factory, frame) = load_win32_image_raw(&source).unwrap();
             let scaler = factory.CreateBitmapScaler().unwrap();
             scaler.Initialize(&frame, rect.width() as u32, rect.height() as u32, WICBitmapInterpolationModeFant);
@@ -334,6 +314,30 @@ impl Win32WindowHandle {
             SelectObject(hdc_mem, old_bmp);
             DeleteDC(hdc_mem);
             DeleteObject(HGDIOBJ::from(hbitmap));
+        }
+    }
+
+    pub fn paint_triangle(&self, hdc: HDC, points: [PointF; 3], fill: &Color, border: &Border) {
+        unsafe {
+            // 创建 Graphics 对象
+            let mut graphics: *mut GpGraphics = null_mut();
+            GdipCreateFromHDC(hdc, &mut graphics);
+            // 启用抗锯齿
+            GdipSetSmoothingMode(graphics, SmoothingModeAntiAlias);
+
+            // === 填充 ===
+            let mut brush: *mut GpSolidFill = null_mut();
+            GdipCreateSolidFill(fill.as_rgba_u32(), &mut brush);
+            GdipFillPolygon(graphics, brush.cast(), points.as_ptr(), 3, FillModeAlternate);
+            GdipDeleteBrush(brush.cast());
+
+            // === 边框 ===
+            if border.width() > 0.0 {
+                let mut pen: *mut GpPen = null_mut();
+                GdipCreatePen1(border.color.as_rgba_u32(), border.width(), UnitPixel, &mut pen);
+                GdipDrawPolygon(graphics, pen, points.as_ptr(), 3);
+                GdipDeletePen(pen);
+            }
         }
     }
 }

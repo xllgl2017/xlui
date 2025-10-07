@@ -260,6 +260,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         ui.context.render.triangle.render(&self.down_render, pass);
         #[cfg(feature = "gpu")]
         ui.context.render.triangle.render(&self.up_render, pass);
+        self.down_render.param.draw(ui, self.value <= self.range.start, false);
+        self.up_render.param.draw(ui, self.value >= self.range.end, false);
     }
 }
 

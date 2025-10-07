@@ -13,7 +13,7 @@ use crate::render::triangle::TriangleRender;
 use crate::text::render::TextRender;
 use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
-use crate::{Device, Font, NumCastExt};
+use crate::{Font, NumCastExt};
 #[cfg(feature = "gpu")]
 use glyphon::Viewport;
 use std::fmt::Debug;

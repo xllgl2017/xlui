@@ -1,9 +1,9 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::circle::param::CircleParam;
-use crate::render::{RenderParam, WrcParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
+use crate::render::RenderParam;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::rect::Rect;

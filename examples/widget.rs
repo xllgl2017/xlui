@@ -142,15 +142,15 @@ impl App for TestWidget {
             ui.add_space(129.0);
             ui.checkbox(true, "变动监测");
         });
-        // ui.horizontal(|ui| {
-        //     ui.radio(true, "SpinBox");
-        //     ui.add_space(38.0);
-        //     ui.add(SpinBox::new(50, 1, 1..100).id("sb").contact("s").contact("pbr").connect(Self::spinbox_i32));
-        //     ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
-        //     ui.add_space(83.0);
-        //     ui.checkbox(true, "变动监测");
-        //     ui.checkbox(true, "泛类");
-        // });
+        ui.horizontal(|ui| {
+            ui.radio(true, "SpinBox");
+            ui.add_space(38.0);
+            ui.add(SpinBox::new(50, 1, 1..100).id("sb").contact("s").contact("pbr").connect(Self::spinbox_i32));
+            ui.spinbox(1.0, 0.5, 0.0..10.0).set_callback(Self::spinbox_f32);
+            ui.add_space(83.0);
+            ui.checkbox(true, "变动监测");
+            ui.checkbox(true, "泛类");
+        });
         ui.horizontal(|ui| {
             ui.radio(true, "RadioButton");
             ui.add_space(10.0);
