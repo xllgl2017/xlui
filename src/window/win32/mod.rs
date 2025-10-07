@@ -51,7 +51,7 @@ impl Win32Window {
         let app = Box::new(app);
         let tray = attr.tray.take();
         let mut window = pollster::block_on(async { LoopWindow::create_window(app, Arc::new(window_type), attr).await });
-        window.event(WindowEvent::Redraw);
+        window.handle_event(WindowEvent::Redraw);
         let mut windows = Map::new();
         windows.insert(window.window_id(), window);
         let window = Win32Window {

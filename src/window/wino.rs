@@ -14,7 +14,7 @@ use std::time::Duration;
 pub trait EventLoopHandle {
     fn window_id(&self) -> WindowId;
     fn handle(&self) -> &Arc<WindowType>;
-    fn event(&mut self, event: WindowEvent);
+    fn handle_event(&mut self, event: WindowEvent);
 }
 
 pub struct LoopWindow {
@@ -88,7 +88,7 @@ impl EventLoopHandle for LoopWindow {
         &self.app_ctx.context.window
     }
 
-    fn event(&mut self, event: WindowEvent) {
+    fn handle_event(&mut self, event: WindowEvent) {
         match event {
             WindowEvent::None => {}
             WindowEvent::KeyPress(key) => self.app_ctx.update(UpdateType::KeyPress(key), &mut self.app),

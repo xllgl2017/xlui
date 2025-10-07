@@ -72,7 +72,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             let width = loword(lparam.0 as u32) as f32;
             let height = hiword(lparam.0 as u32) as f32;
             println!("resize-{}-{}", width, height);
-            window.event(WindowEvent::Resize(Size { width, height }));
+            window.handle_event(WindowEvent::Resize(Size { width, height }));
         }
         TRAY_ICON => {
             match lparam.0 as u32 {
@@ -101,7 +101,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                     window.handle().ime().ime_commit(s.chars().collect());
                     println!("ime2: {}", s);
                     unsafe { ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap() };
-                    window.event(WindowEvent::IME(IMEData::Commit(window.handle().ime.ime_done())));
+                    window.handle_event(WindowEvent::IME(IMEData::Commit(window.handle().ime.ime_done())));
                 }
             }
             if lparam.0 == 440 {
@@ -114,82 +114,83 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                     println!("ime1: {}", s);
                     window.handle().ime().ime_draw(s.chars().collect());
                     unsafe { ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap() };
-                    window.event(WindowEvent::IME(IMEData::Preedit(window.handle().ime.chars())));
+                    window.handle_event(WindowEvent::IME(IMEData::Preedit(window.handle().ime.chars())));
                 }
             }
         }
         WM_PAINT => {
             println!("paint");
             unsafe { ValidateRect(Option::from(window.handle().win32().hwnd), None).unwrap() };
-            window.event(WindowEvent::Redraw);
+            window.handle_event(WindowEvent::Redraw);
         }
         WM_KEYDOWN => {
             let ctrl_pressed = (unsafe { GetKeyState(VK_CONTROL.0 as i32) } as u16 & 0x8000) != 0;
             if ctrl_pressed && wparam.0 == 'C' as usize {
-                window.event(WindowEvent::KeyPress(Key::CtrlC));
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlC));
             } else if ctrl_pressed && wparam.0 == 'V' as usize {
-                window.event(WindowEvent::KeyPress(Key::CtrlV));
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlV));
             } else if ctrl_pressed && wparam.0 == 'A' as usize {
-                window.event(WindowEvent::KeyPress(Key::CtrlA));
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlA));
             } else if ctrl_pressed && wparam.0 == 'X' as usize {
-                window.event(WindowEvent::KeyPress(Key::CtrlX));
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlX));
             } else {
                 match VIRTUAL_KEY(wparam.0 as u16) {
-                    VK_HOME => window.event(WindowEvent::KeyPress(Key::Home)),
-                    VK_END => window.event(WindowEvent::KeyPress(Key::End)),
-                    VK_RETURN => window.event(WindowEvent::KeyPress(Key::Enter)),
-                    VK_LEFT => window.event(WindowEvent::KeyPress(Key::LeftArrow)),
-                    VK_UP => window.event(WindowEvent::KeyPress(Key::UpArrow)),
-                    VK_DOWN => window.event(WindowEvent::KeyPress(Key::DownArrow)),
-                    VK_RIGHT => window.event(WindowEvent::KeyPress(Key::RightArrow)),
-                    VK_DELETE => window.event(WindowEvent::KeyPress(Key::Delete)),
-                    VK_BACK => window.event(WindowEvent::KeyPress(Key::Backspace)),
+                    VK_HOME => window.handle_event(WindowEvent::KeyPress(Key::Home)),
+                    VK_END => window.handle_event(WindowEvent::KeyPress(Key::End)),
+                    VK_RETURN => window.handle_event(WindowEvent::KeyPress(Key::Enter)),
+                    VK_LEFT => window.handle_event(WindowEvent::KeyPress(Key::LeftArrow)),
+                    VK_UP => window.handle_event(WindowEvent::KeyPress(Key::UpArrow)),
+                    VK_DOWN => window.handle_event(WindowEvent::KeyPress(Key::DownArrow)),
+                    VK_RIGHT => window.handle_event(WindowEvent::KeyPress(Key::RightArrow)),
+                    VK_DELETE => window.handle_event(WindowEvent::KeyPress(Key::Delete)),
+                    VK_BACK => window.handle_event(WindowEvent::KeyPress(Key::Backspace)),
                     _ => {}
                 }
             }
         }
         WM_KEYUP => {
             match VIRTUAL_KEY(wparam.0 as u16) {
-                VK_HOME => window.event(WindowEvent::KeyRelease(Key::Home)),
-                VK_END => window.event(WindowEvent::KeyRelease(Key::End)),
-                VK_RETURN => window.event(WindowEvent::KeyRelease(Key::Enter)),
-                VK_LEFT => window.event(WindowEvent::KeyRelease(Key::LeftArrow)),
-                VK_UP => window.event(WindowEvent::KeyRelease(Key::UpArrow)),
-                VK_DOWN => window.event(WindowEvent::KeyRelease(Key::DownArrow)),
-                VK_RIGHT => window.event(WindowEvent::KeyRelease(Key::RightArrow)),
-                VK_DELETE => window.event(WindowEvent::KeyRelease(Key::Delete)),
-                VK_BACK => window.event(WindowEvent::KeyRelease(Key::Backspace)),
+                VK_HOME => window.handle_event(WindowEvent::KeyRelease(Key::Home)),
+                VK_END => window.handle_event(WindowEvent::KeyRelease(Key::End)),
+                VK_RETURN => window.handle_event(WindowEvent::KeyRelease(Key::Enter)),
+                VK_LEFT => window.handle_event(WindowEvent::KeyRelease(Key::LeftArrow)),
+                VK_UP => window.handle_event(WindowEvent::KeyRelease(Key::UpArrow)),
+                VK_DOWN => window.handle_event(WindowEvent::KeyRelease(Key::DownArrow)),
+                VK_RIGHT => window.handle_event(WindowEvent::KeyRelease(Key::RightArrow)),
+                VK_DELETE => window.handle_event(WindowEvent::KeyRelease(Key::Delete)),
+                VK_BACK => window.handle_event(WindowEvent::KeyRelease(Key::Backspace)),
                 _ => {}
             }
         }
         WM_CHAR => {
-            let ch = std::char::from_u32(wparam.0 as u32).unwrap_or('\0');
-            println!("Char input: {:?}", ch);
-            match ch {
-                '\r' => window.event(WindowEvent::None),
-                _ => window.event(WindowEvent::KeyRelease(Key::Char(ch)))
+            if let Some(r) = char::from_u32(wparam.0 as u32) && !r.is_control() {
+                println!("Char input: {:?}", r);
+                match r {
+                    '\r' => window.handle_event(WindowEvent::None),
+                    _ => window.handle_event(WindowEvent::KeyRelease(Key::Char(r)))
+                }
             }
         }
         WM_LBUTTONDOWN => {
             let x = get_x_lparam(lparam) as f32;
             let y = get_y_lparam(lparam) as f32;
-            window.event(WindowEvent::MousePress(Pos { x, y }));
+            window.handle_event(WindowEvent::MousePress(Pos { x, y }));
         }
         WM_LBUTTONUP => {
             let x = get_x_lparam(lparam) as f32;
             let y = get_y_lparam(lparam) as f32;
-            window.event(WindowEvent::MouseRelease(Pos { x, y }))
+            window.handle_event(WindowEvent::MouseRelease(Pos { x, y }))
         }
         WM_MOUSEMOVE => {
             let x = get_x_lparam(lparam) as f32;
             let y = get_y_lparam(lparam) as f32;
-            window.event(WindowEvent::MouseMove((x, y).into()))
+            window.handle_event(WindowEvent::MouseMove((x, y).into()))
         }
         WM_MOUSEWHEEL => {
             let delta = ((wparam.0 >> 16) & 0xFFFF) as i16;
-            window.event(WindowEvent::MouseWheel(delta as f32))
+            window.handle_event(WindowEvent::MouseWheel(delta as f32))
         }
-        REQ_UPDATE => window.event(WindowEvent::ReqUpdate),
+        REQ_UPDATE => window.handle_event(WindowEvent::ReqUpdate),
         CREATE_CHILD => {
             if let Some(user_app) = window.app_ctx.context.new_window.take() {
                 let handle = window.handle().clone();
@@ -198,7 +199,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         }
         RE_INIT => {
             println!("re_init");
-            window.event(WindowEvent::ReInit)
+            window.handle_event(WindowEvent::ReInit)
         }
         _ => return unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
     }
