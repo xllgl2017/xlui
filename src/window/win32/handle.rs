@@ -11,12 +11,15 @@ use std::num::NonZeroIsize;
 use std::ops::Deref;
 use std::ptr::null_mut;
 use std::sync::RwLock;
-use windows::core::PCWSTR;
-use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::Graphics::Gdi::{CreateCompatibleDC, CreateFontW, CreatePen, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, Ellipse, GetCharWidth32W, GetDeviceCaps, InvalidateRect, SelectObject, SetBkMode, SetTextColor, DT_CENTER, DT_LEFT, DT_SINGLELINE, DT_TOP, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HDC, HFONT, HGDIOBJ, LOGPIXELSY, PAINTSTRUCT, PS_SOLID, TRANSPARENT};
+use windows::core::{w, PCWSTR};
+use windows::Win32::Foundation::{COLORREF, GENERIC_READ, HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, CreatePen, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, Ellipse, GetCharWidth32W, GetDeviceCaps, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_CENTER, DT_LEFT, DT_SINGLELINE, DT_TOP, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, LOGPIXELSY, PAINTSTRUCT, PS_SOLID, SRCCOPY, TRANSPARENT};
 use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipFillEllipse, GdipFillPath, GdipSetSmoothingMode, GdiplusStartup, GdiplusStartupInput, GpGraphics, GpPath, GpPen, GpSolidFill, SmoothingModeAntiAlias, SmoothingModeNone, UnitPixel};
+use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppPBGRA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
+use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
 use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, PostMessageW, ShowWindow, SW_HIDE, SW_SHOW, WM_PAINT};
+use crate::render::image::{load_win32_image_raw, ImageSource};
 use crate::text::cchar::{CChar, LineChar};
 
 pub struct Win32WindowHandle {
@@ -240,13 +243,13 @@ impl Win32WindowHandle {
             let lines = text.text.replace("\r\n", "\n");;
             let mut res = vec![];
             for line in lines.split("\n") {
-                let wtext = until::to_wstr(line);
+                let mut wtext = until::to_wstr(line);
+                wtext.remove(wtext.len() - 1); //把\0删除
                 let mut line = LineChar::new();
                 // 逐字符测量
                 for &ch in &wtext {
                     let mut w = 0i32;
                     GetCharWidth32W(hdc, ch as u32, ch as u32, &mut w);
-                    println!("{:?} {} {}", char::from_u32(ch as u32), text.text, w);
                     line.push(CChar::new(char::from_u32(ch as u32).unwrap_or(' '), w as f32));
                 }
                 res.push(line);
@@ -260,6 +263,77 @@ impl Win32WindowHandle {
             DeleteDC(hdc);
 
             res
+        }
+    }
+
+    pub fn paint_image(&self, hdc: HDC, source: &ImageSource, rect: Rect) {
+        unsafe {
+            // --- 使用 WIC 加载 PNG/JPG ---
+            // let mut factory: IWICImagingFactory = CoCreateInstance(
+            //     &CLSID_WICImagingFactory,
+            //     None,
+            //     CLSCTX_INPROC_SERVER,
+            // ).unwrap();
+            //
+            //
+            // let file_path = w!("logo.jpg"); // PNG/JPG 文件路径
+            // let mut decoder = factory.CreateDecoderFromFilename(
+            //     file_path,
+            //     None,
+            //     GENERIC_READ,
+            //     WICDecodeMetadataCacheOnLoad,
+            // ).unwrap();
+            //
+            // let mut frame = decoder.GetFrame(0).unwrap();
+            let (factory, frame) = load_win32_image_raw(&source).unwrap();
+            let scaler = factory.CreateBitmapScaler().unwrap();
+            scaler.Initialize(&frame, rect.width() as u32, rect.height() as u32, WICBitmapInterpolationModeFant);
+
+            // 转换为 32bpp BGRA
+            let mut format_converter = factory.CreateFormatConverter().unwrap();
+
+            format_converter.Initialize(
+                &scaler,
+                &GUID_WICPixelFormat32bppPBGRA,
+                WICBitmapDitherTypeNone,
+                None,
+                0.0,
+                WICBitmapPaletteTypeCustom,
+            ).unwrap();
+            let mut width = 0;
+            let mut height = 0;
+            unsafe { format_converter.GetSize(&mut width, &mut height).unwrap(); }
+
+            let mut hbitmap: HBITMAP = HBITMAP::default();
+            let bmi = BITMAPINFO {
+                bmiHeader: BITMAPINFOHEADER {
+                    biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: width as i32,
+                    biHeight: -(height as i32), // top-down
+                    biPlanes: 1,
+                    biBitCount: 32,
+                    biCompression: BI_RGB.0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut bits: *mut std::ffi::c_void = null_mut();
+            hbitmap = CreateDIBSection(Some(hdc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0).unwrap();
+            let stride = (width as f32 * 4.0) as usize;
+            let buf_size = stride * height as usize;
+            let buffer_slice = std::slice::from_raw_parts_mut(bits as *mut u8, buf_size);
+
+
+            // 将 WIC 图像写入 HBITMAP
+            format_converter.CopyPixels(null_mut(), stride as u32, buffer_slice).unwrap();
+
+            // 绘制到窗口
+            let hdc_mem = CreateCompatibleDC(Option::from(hdc));
+            let old_bmp = SelectObject(hdc_mem, HGDIOBJ::from(hbitmap));
+            BitBlt(hdc, rect.dx().min as i32, rect.dy().min as i32, width as i32, height as i32, Option::from(hdc_mem), 0, 0, SRCCOPY);
+            SelectObject(hdc_mem, old_bmp);
+            DeleteDC(hdc_mem);
+            DeleteObject(HGDIOBJ::from(hbitmap));
         }
     }
 }

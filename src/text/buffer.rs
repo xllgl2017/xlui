@@ -1,13 +1,12 @@
 use crate::align::Align;
 use crate::size::Geometry;
-use crate::text::cchar::{CChar, LineChar};
+use crate::text::cchar::LineChar;
 use crate::text::rich::RichText;
 use crate::text::TextWrap;
 use crate::ui::Ui;
-use crate::{Padding, SAMPLE_COUNT};
+use crate::Padding;
 #[cfg(feature = "gpu")]
 use glyphon::Shaping;
-use std::mem;
 #[cfg(feature = "gpu")]
 use wgpu::MultisampleState;
 
@@ -21,7 +20,7 @@ pub struct TextBuffer {
     pub(crate) clip_x: f32,
     pub(crate) clip_y: f32,
     pub(crate) change: bool,
-    pub(crate) align: Align,
+    // pub(crate) align: Align,
     pub(crate) lines: Vec<LineChar>,
 }
 
@@ -37,20 +36,17 @@ impl TextBuffer {
             clip_x: 0.0,
             clip_y: 0.0,
             change: false,
-            align: Align::LeftTop,
+            // align: Align::LeftTop,
             lines: vec![],
         }
     }
 
-
+    #[cfg(feature = "gpu")]
     fn reset(&mut self) {
-        #[cfg(feature = "gpu")]
         if self.buffer.is_none() { return; }
         self.text.width = 0.0;
         self.lines.clear();
-        #[cfg(feature = "gpu")]
         let buffer = self.buffer.as_ref().unwrap();
-        #[cfg(feature = "gpu")]
         for buffer_line in &buffer.lines {
             let mut line = LineChar::new();
             line.auto_wrap = false;
@@ -71,12 +67,16 @@ impl TextBuffer {
         if let Some(line) = self.lines.last_mut() { line.auto_wrap = true; }
     }
 
+    fn reset(&mut self, ui: &mut Ui) {
+        self.lines = ui.context.window.win32().measure_char_widths(&self.text);
+        self.text.width = self.lines[0].width;
+    }
+
     pub fn init(&mut self, ui: &mut Ui) {
         if self.text.size.is_none() { self.text.size = Some(ui.context.font.size()) }
         if self.text.family.is_none() { self.text.family = Some(ui.context.font.family().to_string()) }
         self.text.height = ui.context.font.line_height(self.text.font_size());
-        self.lines = ui.context.window.win32().measure_char_widths(&self.text);
-        self.text.width = self.lines[0].width;
+        self.reset(ui);
         #[cfg(feature = "gpu")]
         {
             let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
@@ -90,54 +90,52 @@ impl TextBuffer {
             self.render = Some(render);
             self.buffer = Some(buffer);
         }
-        #[cfg(feature = "gpu")]
-        self.reset();
         self.geometry.set_size(self.text.width, self.text.height);
         #[cfg(feature = "gpu")]
         self.buffer.as_mut().unwrap().set_size(&mut ui.context.render.text.font_system, Some(self.geometry.width()), Some(self.geometry.height()));
-        let ox = self.geometry.width() - self.text.width - self.geometry.padding().horizontal();
-        let oy = self.geometry.height() - self.text.height - self.geometry.padding().vertical();
-        match self.align {
-            //固定宽度
-            Align::LeftCenter => {
-                self.clip_x = 0.0;
-                self.clip_y = oy / 2.0;
-            }
-            Align::Center => {
-                self.clip_x = ox / 2.0;
-                self.clip_y = oy / 2.0;
-            }
-            Align::RightCenter => {
-                self.clip_x = ox;
-                self.clip_y = oy / 2.0;
-            }
-            //固定高度
-            Align::CenterTop => {
-                self.clip_x = ox / 2.0;
-                self.clip_y = 0.0;
-            }
-            Align::CenterBottom => {
-                self.clip_x = ox / 2.0;
-                self.clip_y = oy
-            }
-            //宽高固定
-            Align::LeftTop => {
-                self.clip_x = 0.0;
-                self.clip_y = 0.0;
-            }
-            Align::LeftBottom => {
-                self.clip_x = 0.0;
-                self.clip_y = oy;
-            }
-            Align::RightTop => {
-                self.clip_x = ox;
-                self.clip_y = 0.0;
-            }
-            Align::RightBottom => {
-                self.clip_x = ox;
-                self.clip_y = oy;
-            }
-        }
+        // let ox = self.geometry.width() - self.text.width - self.geometry.padding().horizontal();
+        // let oy = self.geometry.height() - self.text.height - self.geometry.padding().vertical();
+        // match self.align {
+        //     //固定宽度
+        //     Align::LeftCenter => {
+        //         self.clip_x = 0.0;
+        //         self.clip_y = oy / 2.0;
+        //     }
+        //     Align::Center => {
+        //         self.clip_x = ox / 2.0;
+        //         self.clip_y = oy / 2.0;
+        //     }
+        //     Align::RightCenter => {
+        //         self.clip_x = ox;
+        //         self.clip_y = oy / 2.0;
+        //     }
+        //     //固定高度
+        //     Align::CenterTop => {
+        //         self.clip_x = ox / 2.0;
+        //         self.clip_y = 0.0;
+        //     }
+        //     Align::CenterBottom => {
+        //         self.clip_x = ox / 2.0;
+        //         self.clip_y = oy
+        //     }
+        //     //宽高固定
+        //     Align::LeftTop => {
+        //         self.clip_x = 0.0;
+        //         self.clip_y = 0.0;
+        //     }
+        //     Align::LeftBottom => {
+        //         self.clip_x = 0.0;
+        //         self.clip_y = oy;
+        //     }
+        //     Align::RightTop => {
+        //         self.clip_x = ox;
+        //         self.clip_y = 0.0;
+        //     }
+        //     Align::RightBottom => {
+        //         self.clip_x = ox;
+        //         self.clip_y = oy;
+        //     }
+        // }
     }
 
     #[cfg(feature = "gpu")]
@@ -179,7 +177,7 @@ impl TextBuffer {
     }
 
     pub fn with_align(mut self, align: Align) -> Self {
-        self.align = align;
+        self.geometry.set_align(align);
         self
     }
 
@@ -188,17 +186,24 @@ impl TextBuffer {
         match self.buffer {
             None => self.set_text(text.to_string()),
             Some(_) => {
-                self.change = self.text.text != text;
+                self.change = self.text.text == text;
                 self.text.text = text.to_string();
                 self.update_buffer(ui);
             }
+        }
+        #[cfg(not(feature = "gpu"))]
+        {
+            self.change = self.text.text == text;
+            self.text.text = text.to_string();
+            self.update_buffer(ui);
         }
     }
 
     pub fn update_if_not(&mut self, ui: &mut Ui, text: &str, reset: bool) {
         #[cfg(feature = "gpu")]
         self.buffer.as_mut().unwrap().set_text(&mut ui.context.render.text.font_system, text, &self.text.font_family(), Shaping::Advanced);
-        if reset { self.reset(); }
+        self.text.text = text.to_string();
+        if reset { self.reset(ui); }
     }
 
     pub fn update_buffer(&mut self, ui: &mut Ui) {
@@ -208,15 +213,13 @@ impl TextBuffer {
         self.buffer.as_mut().unwrap().set_text(
             &mut ui.context.render.text.font_system, self.text.text.as_str(),
             &self.text.font_family(), Shaping::Advanced);
-        self.reset();
-        if let Some(line) = self.lines.get(0) {
-            self.geometry.set_width(line.width)
-        }
+        self.reset(ui);
+        self.geometry.set_width(self.lines[0].width)
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {
+        self.change = self.text.wrap == wrap;
         self.text.wrap = wrap;
-        self.reset();
     }
 
     // pub fn height(mut self, height: f32) -> Self {

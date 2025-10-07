@@ -11,6 +11,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::GENERIC_READ;
 #[cfg(target_os = "windows")]
 use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
+use windows::Win32::Graphics::Imaging::IWICBitmapFrameDecode;
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
 #[cfg(target_os = "windows")]
@@ -190,8 +191,7 @@ impl ImageRender {
     }
 }
 
-#[cfg(target_os = "windows")]
-pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
+pub fn load_win32_image_raw(source: &ImageSource) -> UiResult<(IWICImagingFactory, IWICBitmapFrameDecode)> {
     unsafe { CoInitialize(None).ok()?; }
     let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
     let decoder = match source {
@@ -211,6 +211,12 @@ pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
         }
     };
     let frame = unsafe { decoder.GetFrame(0) }?;
+    Ok((factory, frame))
+}
+
+#[cfg(target_os = "windows")]
+pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
+    let (factory, frame) = load_win32_image_raw(&source)?;
     let converter = unsafe { factory.CreateFormatConverter() }?;
     unsafe { converter.Initialize(&frame, &GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, None, 0.0, WICBitmapPaletteTypeCustom)?; }
     let mut width = 0;

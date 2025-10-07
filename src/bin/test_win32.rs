@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
-use windows::Win32::Foundation::{COLORREF, POINT, RECT};
-use windows::Win32::Graphics::Gdi::{CreateFontW, CreatePen, CreateSolidBrush, DeleteObject, Ellipse, GetStockObject, Polygon, SelectObject, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBRUSH, HDC, HGDIOBJ, PS_SOLID, WHITE_BRUSH};
+use windows::Win32::Foundation::{COLORREF, GENERIC_READ, POINT, RECT};
+use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, CreatePen, CreateSolidBrush, DeleteDC, DeleteObject, Ellipse, GetStockObject, Polygon, SelectObject, StretchBlt, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HBRUSH, HDC, HGDIOBJ, PS_SOLID, SRCCOPY, WHITE_BRUSH};
 use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawPath, GdipFillPath, GdipSetSmoothingMode, GdiplusStartup, GdiplusStartupInput, GpGraphics, GpPath, GpPen, GpSolidFill, SmoothingModeAntiAlias, UnitPixel};
 use windows::{
     core::PCWSTR,
@@ -17,6 +17,9 @@ use windows::{
         },
     },
 };
+use windows::core::w;
+use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppPBGRA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
+use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER};
 
 fn to_wide_null(s: &str) -> Vec<u16> {
     let mut v: Vec<u16> = s.encode_utf16().collect();
@@ -193,11 +196,84 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: 
         WM_PAINT => {
             let mut ps = PAINTSTRUCT::default();
             let hdc = BeginPaint(hwnd, &mut ps);
-            paint_rect(hdc);
+            // paint_rect(hdc);
             // 定义圆的矩形边界
             // 定义三角形的三个点
             // paint_triangle(hdc);
             // paint_text("sdfsdfsdfsdf", hdc, ps);
+
+            // --- 使用 WIC 加载 PNG/JPG ---
+            let mut factory: IWICImagingFactory = CoCreateInstance(
+                &CLSID_WICImagingFactory,
+                None,
+                CLSCTX_INPROC_SERVER,
+            ).unwrap();
+
+
+            let file_path = w!("logo.jpg"); // PNG/JPG 文件路径
+            let mut decoder = factory.CreateDecoderFromFilename(
+                file_path,
+                None,
+                GENERIC_READ,
+                WICDecodeMetadataCacheOnLoad,
+            ).unwrap();
+
+            let mut frame = decoder.GetFrame(0).unwrap();
+
+            let scaler = factory.CreateBitmapScaler().unwrap();
+            scaler.Initialize(&frame, 100, 100, WICBitmapInterpolationModeFant);
+
+            // 转换为 32bpp BGRA
+            let mut format_converter = factory.CreateFormatConverter().unwrap();
+
+            format_converter.Initialize(
+                &scaler,
+                &GUID_WICPixelFormat32bppPBGRA,
+                WICBitmapDitherTypeNone,
+                None,
+                0.0,
+                WICBitmapPaletteTypeCustom,
+            ).unwrap();
+            let mut width = 0;
+            let mut height = 0;
+            unsafe { format_converter.GetSize(&mut width, &mut height).unwrap(); }
+
+            let mut hbitmap: HBITMAP = HBITMAP::default();
+            let mut bmi = BITMAPINFO {
+                bmiHeader: BITMAPINFOHEADER {
+                    biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: width as i32,
+                    biHeight: -(height as i32), // top-down
+                    biPlanes: 1,
+                    biBitCount: 32,
+                    biCompression: BI_RGB.0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut bits: *mut std::ffi::c_void = null_mut();
+            hbitmap = CreateDIBSection(Some(hdc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0).unwrap();
+            let stride = (width as f32 * 4.0) as usize;
+            let buf_size = stride * height as usize;
+            let buffer_slice = std::slice::from_raw_parts_mut(bits as *mut u8, buf_size);
+
+
+            // 将 WIC 图像写入 HBITMAP
+            format_converter.CopyPixels(null_mut(), stride as u32, buffer_slice).unwrap();
+
+            // 绘制到窗口
+            let hdc_mem = CreateCompatibleDC(Option::from(hdc));
+            let old_bmp = SelectObject(hdc_mem, HGDIOBJ::from(hbitmap));
+            BitBlt(hdc,
+                   50, 50,
+                   width as i32, height as i32,
+                   Option::from(hdc_mem),
+                   0, 0,
+                   SRCCOPY);
+            SelectObject(hdc_mem, old_bmp);
+            DeleteDC(hdc_mem);
+            DeleteObject(HGDIOBJ::from(hbitmap));
+
             EndPaint(hwnd, &ps).unwrap();
             LRESULT(0)
         }

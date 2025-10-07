@@ -183,19 +183,19 @@ impl App for TestWidget {
             ui.checkbox(true, "变动监测");
             ui.checkbox(true, "滚动");
         });
-        // ui.horizontal(|ui| {
-        //     ui.radio(true, "Image");
-        //     ui.add_space(50.0);
-        //     ui.image("logo.jpg", (50.0, 50.0));
-        //     ui.add(Image::new(include_bytes!("../logo.jpg")).with_size(50.0, 50.0).with_id("test_image"));
-        //     ui.add_space(182.0);
-        //     ui.checkbox(true, "bytes图片流");
-        // });
-        // ui.horizontal(|ui| {
-        //     ui.radio(true, "ImageButton");
-        //     ui.add_space(10.0);
-        //     ui.add(Button::image_and_text("logo.jpg", "Image").width(100.0).height(40.0).connect(Self::image_button_click));
-        // });
+        ui.horizontal(|ui| {
+            ui.radio(true, "Image");
+            ui.add_space(50.0);
+            ui.image("logo.jpg", (50.0, 50.0));
+            ui.add(Image::new(include_bytes!("../logo.jpg")).with_size(50.0, 50.0).with_id("test_image"));
+            ui.add_space(182.0);
+            ui.checkbox(true, "bytes图片流");
+        });
+        ui.horizontal(|ui| {
+            ui.radio(true, "ImageButton");
+            ui.add_space(10.0);
+            ui.add(Button::image_and_text("logo.jpg", "Image").width(100.0).height(40.0).connect(Self::image_button_click));
+        });
         ui.horizontal(|ui| {
             ui.radio(true, "SelectValue");
             ui.add_space(10.0);
