@@ -1,4 +1,5 @@
 use crate::{Device, Size};
+use crate::error::UiResult;
 use crate::render::image::ImageSource;
 
 pub struct ImageTexture {
@@ -7,16 +8,16 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    pub fn new(device: &Device, source: &ImageSource, layout: &wgpu::BindGroupLayout) -> ImageTexture {
+    pub fn new(device: &Device, source: &ImageSource, layout: &wgpu::BindGroupLayout) -> UiResult<ImageTexture> {
         let (rgba, size) = match source {
-            ImageSource::File(fp) => super::load_image_file(fp).unwrap(),
-            ImageSource::Bytes(bytes) => super::load_image_bytes(bytes).unwrap(),
+            ImageSource::File(fp) => super::load_image_file(fp)?,
+            ImageSource::Bytes(bytes) => super::load_image_bytes(bytes)?,
         };
         let bind_group = Self::create_bind_group(device, rgba, size, layout);
-        ImageTexture {
+        Ok(ImageTexture {
             bind_group,
             size,
-        }
+        })
     }
 
     fn create_bind_group(device: &Device, rgba: Vec<u8>, size: Size, group_layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {

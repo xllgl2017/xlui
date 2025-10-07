@@ -81,7 +81,7 @@ impl Image {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
-        let size = ui.context.render.image.insert_image(&ui.device, &self.source);
+        let size = ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         let rect = self.geometry.rect();
@@ -124,7 +124,7 @@ impl Image {
             ui.device.queue.write_buffer(
                 self.vertex_buffer.as_ref().unwrap(), 0,
                 bytemuck::cast_slice(self.vertices.as_slice()));
-            ui.context.render.image.insert_image(&ui.device, &self.source);
+            ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
         }
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {

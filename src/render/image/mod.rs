@@ -164,26 +164,27 @@ impl ImageRender {
         render_pipeline
     }
 
-    pub fn insert_image(&mut self, device: &Device, source: &ImageSource) -> Size {
+    pub fn insert_image(&mut self, device: &Device, source: &ImageSource) -> UiResult<Size> {
         let uri = source.uri();
         match self.textures.get(&uri) {
             None => {
-                let texture = ImageTexture::new(device, source, &self.bind_group_layout);
+                let texture = ImageTexture::new(device, source, &self.bind_group_layout)?;
                 let size = texture.size();
                 self.textures.insert(uri, texture);
-                size
+                Ok(size)
             }
-            Some(texture) => texture.size()
+            Some(texture) => Ok(texture.size())
         }
     }
 
-    pub(crate) fn render(&self, uri: &String, vb: &wgpu::Buffer, ib: &wgpu::Buffer, render_pass: &mut wgpu::RenderPass) {
+    pub(crate) fn render(&self, uri: &String, vb: &wgpu::Buffer, ib: &wgpu::Buffer, render_pass: &mut wgpu::RenderPass) -> Option<()> {
         render_pass.set_pipeline(&self.pipeline);
-        let texture = self.textures.get(uri).unwrap();
+        let texture = self.textures.get(uri)?;
         render_pass.set_bind_group(0, texture.bind_group(), &[]);
         render_pass.set_vertex_buffer(0, vb.slice(..));
         render_pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.draw_indexed(0..6, 0, 0..1);
+        Some(())
     }
 }
 

@@ -54,7 +54,7 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
 }
 
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-    let app = match (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut Win32Window).as_mut() {
+    let app = match unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut Win32Window).as_mut() } {
         None => return unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }, //无法定位application,不做任何处理
         Some(app) => app,
     };
@@ -76,15 +76,11 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         }
         TRAY_ICON => {
             match lparam.0 as u32 {
-                WM_RBUTTONUP => {
-                    let app: &mut Win32Window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut Win32Window).as_mut() }.unwrap();
-                    app.show_tray_menu().unwrap();
-                }
+                WM_RBUTTONUP => app.show_tray_menu().unwrap(),
                 _ => {}
             }
         }
         WM_COMMAND => {
-            let app: &mut Win32Window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut Win32Window).as_mut() }.unwrap();
             if let Some(ref tray) = app.tray {
                 let menu = tray.menus.iter().find(|x| x.id == wparam.0 as u32);
                 if let Some(menu) = menu { (menu.callback)() }
@@ -93,42 +89,42 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         // WM_ERASEBKGND => LRESULT(1), // 不擦背景
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
             // let himc = window.win32().himc.read().unwrap();
-            let himc = ImmGetContext(window.handle().win32().hwnd);
+            let himc = unsafe { ImmGetContext(window.handle().win32().hwnd) };
             println!("ime-----{}", lparam.0);
             if lparam.0 == 7168 || lparam.0 == 2048 {
-                let size = ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0);
+                let size = unsafe { ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0) };
                 if size > 0 {
                     let len = size as usize / 2;
                     let mut buf: Vec<u16> = vec![0; len];
-                    ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                    unsafe { ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32) };
                     let s = String::from_utf16_lossy(&buf);
                     window.handle().ime().ime_commit(s.chars().collect());
                     println!("ime2: {}", s);
-                    ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap();
+                    unsafe { ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap() };
                     window.event(WindowEvent::IME(IMEData::Commit(window.handle().ime.ime_done())));
                 }
             }
             if lparam.0 == 440 {
-                let size = ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0);
+                let size = unsafe { ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0) };
                 if size > 0 {
                     let len = (size as usize) / 2;
                     let mut buf: Vec<u16> = vec![0; len];
-                    ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32);
+                    unsafe { ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32) };
                     let s = String::from_utf16_lossy(&buf);
                     println!("ime1: {}", s);
                     window.handle().ime().ime_draw(s.chars().collect());
-                    ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap();
+                    unsafe { ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap() };
                     window.event(WindowEvent::IME(IMEData::Preedit(window.handle().ime.chars())));
                 }
             }
         }
         WM_PAINT => {
             println!("paint");
-            ValidateRect(Option::from(window.handle().win32().hwnd), None).unwrap();
+            unsafe { ValidateRect(Option::from(window.handle().win32().hwnd), None).unwrap() };
             window.event(WindowEvent::Redraw);
         }
         WM_KEYDOWN => {
-            let ctrl_pressed = (GetKeyState(VK_CONTROL.0 as i32) as u16 & 0x8000) != 0;
+            let ctrl_pressed = (unsafe { GetKeyState(VK_CONTROL.0 as i32) } as u16 & 0x8000) != 0;
             if ctrl_pressed && wparam.0 == 'C' as usize {
                 window.event(WindowEvent::KeyPress(Key::CtrlC));
             } else if ctrl_pressed && wparam.0 == 'V' as usize {
