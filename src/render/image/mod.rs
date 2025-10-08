@@ -11,6 +11,7 @@ use windows::core::PCWSTR;
 use windows::Win32::Foundation::GENERIC_READ;
 #[cfg(target_os = "windows")]
 use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
+#[cfg(target_os = "windows")]
 use windows::Win32::Graphics::Imaging::IWICBitmapFrameDecode;
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
@@ -190,7 +191,7 @@ impl ImageRender {
         Some(())
     }
 }
-
+#[cfg(target_os = "windows")]
 pub fn load_win32_image_raw(source: &ImageSource) -> UiResult<(IWICImagingFactory, IWICBitmapFrameDecode)> {
     unsafe { CoInitialize(None).ok()?; }
     let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };

@@ -1,16 +1,18 @@
 use crate::window::ime::IME;
 use crate::window::x11::clipboard::X11ClipBoard;
 use crate::window::{ClipboardData, UserEvent};
+#[cfg(feature = "gpu")]
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, XlibDisplayHandle, XlibWindowHandle};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
 use std::os::raw::c_long;
 use std::ptr::NonNull;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use x11::xlib;
 use x11::xlib::XMoveWindow;
 use crate::error::UiResult;
+use crate::Size;
 
 pub struct X11WindowHandle {
     display: *mut xlib::Display,
@@ -18,6 +20,7 @@ pub struct X11WindowHandle {
     pub(crate) update_atom: xlib::Atom,
     pub(crate) screen: i32,
     pub(crate) clipboard: X11ClipBoard,
+    size: RwLock<Size>,
 }
 
 
@@ -29,6 +32,7 @@ impl X11WindowHandle {
             update_atom,
             screen,
             clipboard: X11ClipBoard::new(display)?,
+            size: RwLock::new((800, 600).into()),
         })
     }
 
@@ -55,12 +59,14 @@ impl X11WindowHandle {
         unsafe { xlib::XFlush(self.display); }
     }
 
+    #[cfg(feature = "gpu")]
     pub fn window_handle(&self) -> WindowHandle<'_> {
         let xlib_window_handle = XlibWindowHandle::new(self.window);
         let raw_window_handle = RawWindowHandle::Xlib(xlib_window_handle);
         unsafe { WindowHandle::borrow_raw(raw_window_handle) }
     }
 
+    #[cfg(feature = "gpu")]
     pub fn display_handle(&self) -> DisplayHandle<'_> {
         let display = NonNull::new(self.display as *mut c_void);
         let x11_display_handle = XlibDisplayHandle::new(display, self.screen);
@@ -98,6 +104,14 @@ impl X11WindowHandle {
 
     pub fn move_window(&self, x: f32, y: f32) {
         unsafe { XMoveWindow(self.display, self.window, x as i32, y as i32) };
+    }
+
+    pub fn size(&self) -> Size {
+        self.size.read().unwrap().clone()
+    }
+
+    pub fn set_size(&self, size: Size) {
+        *self.size.write().unwrap() = size;
     }
 }
 

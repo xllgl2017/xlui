@@ -26,6 +26,7 @@ use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
 #[cfg(feature = "gpu")]
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+#[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
 
 pub struct AppContext {
@@ -76,11 +77,11 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,
         };
         app.draw(&mut ui);
@@ -108,11 +109,11 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,
         };
         app.update(&mut ui);
@@ -134,14 +135,14 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,
         };
         app.update(&mut ui);
@@ -183,7 +184,7 @@ impl AppContext {
         self.inner_windows = ui.inner_windows.take();
     }
 
-    pub fn redraw(&mut self, app: &mut Box<dyn App>, ps: Option<PAINTSTRUCT>, hdc: Option<HDC>) {
+    pub fn redraw(&mut self, app: &mut Box<dyn App>) { //ps: Option<PAINTSTRUCT>, hdc: Option<HDC>
         if !self.redraw_thread.is_finished() { return; }
         if crate::time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
@@ -257,11 +258,11 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: ps,
             #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
-            #[cfg(all(windows,not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             hdc: hdc,
         };
         app.update(&mut ui);

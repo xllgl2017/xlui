@@ -14,7 +14,7 @@ pub enum WindowEvent {
     MouseWheel(f32),
     MousePress(Pos),
     MouseRelease(Pos),
-    #[cfg(feature = "gpu")]
+    #[cfg(any(target_os = "linux", feature = "gpu"))]
     Redraw,
     #[cfg(all(windows, not(feature = "gpu")))]
     Redraw(PAINTSTRUCT, HDC),

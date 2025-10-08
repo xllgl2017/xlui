@@ -143,7 +143,7 @@ impl EventLoopHandle for LoopWindow {
                     width: self.app_ctx.device.surface_config.width,
                     height: self.app_ctx.device.surface_config.height,
                 });
-                self.app_ctx.redraw(&mut self.app, None, None);
+                self.app_ctx.redraw(&mut self.app);//, None, None
             }
             #[cfg(all(windows, not(feature = "gpu")))]
             WindowEvent::Redraw(ps, hdc) => {

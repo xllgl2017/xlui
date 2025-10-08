@@ -151,7 +151,7 @@ impl InnerWindow {
             style: Rc::new(RefCell::new(Style::light_style())),
             #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows, not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             p: crate::ui::P { text: "" },
             #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,
@@ -234,7 +234,7 @@ impl InnerWindow {
             style: Rc::new(RefCell::new(Style::light_style())),
             #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: oui.paint_struct.take(),
-            #[cfg(all(windows, not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
             #[cfg(all(windows, not(feature = "gpu")))]
             hdc: oui.hdc.take(),
@@ -287,7 +287,7 @@ impl InnerWindow {
             style: Rc::new(RefCell::new(Style::light_style())),
             #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows, not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
             #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,

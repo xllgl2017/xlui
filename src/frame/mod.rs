@@ -1,6 +1,6 @@
 use crate::error::UiResult;
 use crate::ui::Ui;
-#[cfg(not(feature = "winit"))]
+#[cfg(all(windows, not(feature = "gpu")))]
 use crate::window::win32::Win32Window;
 #[cfg(feature = "winit")]
 use crate::window::winit_app::WInitApplication;
@@ -8,10 +8,11 @@ use crate::window::winit_app::WInitApplication;
 use crate::window::wino::EventLoopHandle;
 use crate::WindowAttribute;
 use std::any::Any;
-#[cfg(not(feature = "winit"))]
+#[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 #[cfg(feature = "winit")]
 use winit::event_loop::{ControlFlow, EventLoop};
+use crate::window::x11::X11Window;
 
 pub mod context;
 
@@ -33,6 +34,8 @@ pub trait App: Any + 'static {
         return start_winit_app(self);
         #[cfg(all(windows, not(feature = "winit")))]
         return start_win32_app(self);
+        #[cfg(all(target_os = "linux", not(feature = "winit")))]
+        return start_x11_app(self);
     }
 }
 
@@ -59,3 +62,10 @@ fn start_win32_app<A: App>(app: A) -> UiResult<()> {
     win32.run()?;
     Ok(())
 }
+
+#[cfg(all(target_os = "linux", not(feature = "winit")))]
+fn start_x11_app<A: App>(app: A) -> UiResult<()> {
+    let mut x11 = X11Window::new(app)?;
+    x11.run()
+}
+

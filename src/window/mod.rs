@@ -1,7 +1,7 @@
 pub mod attribute;
 pub mod inner;
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
-mod x11;
+pub mod x11;
 #[cfg(not(feature = "winit"))]
 pub mod wino;
 #[cfg(not(feature = "winit"))]
@@ -200,6 +200,7 @@ impl WindowType {
             WindowKind::Win32(ref window) => window.size(),
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.size(),
+            WindowKind::X11(ref window)=>window.size()
         }
     }
 }
