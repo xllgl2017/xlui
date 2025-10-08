@@ -76,8 +76,11 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            #[cfg(all(windows,not(feature = "gpu")))]
             paint_struct: None,
+            #[cfg(all(windows,not(feature = "gpu")))]
             p: P { text: "" },
+            #[cfg(all(windows,not(feature = "gpu")))]
             hdc: None,
         };
         app.draw(&mut ui);
@@ -105,8 +108,11 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            #[cfg(all(windows,not(feature = "gpu")))]
             paint_struct: None,
+            #[cfg(all(windows,not(feature = "gpu")))]
             p: P { text: "" },
+            #[cfg(all(windows,not(feature = "gpu")))]
             hdc: None,
         };
         app.update(&mut ui);
@@ -128,12 +134,14 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
+            #[cfg(all(windows,not(feature = "gpu")))]
             p: P { text: "" },
-
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            #[cfg(all(windows,not(feature = "gpu")))]
             paint_struct: None,
+            #[cfg(all(windows,not(feature = "gpu")))]
             hdc: None,
         };
         app.update(&mut ui);
@@ -142,7 +150,7 @@ impl AppContext {
         let inner_windows = self.inner_windows.as_ref().unwrap();
         for i in 0..inner_windows.len() {
             let win = &inner_windows[inner_windows.len() - i - 1];
-            if self.device.device_input.hovered_at(&win.fill_render.param.rect) || win.press_title {
+            if self.device.device_input.hovered_at(win.fill_render.rect()) || win.press_title {
                 event_win = Some(win.id);
                 break;
             }
@@ -175,7 +183,7 @@ impl AppContext {
         self.inner_windows = ui.inner_windows.take();
     }
 
-    pub fn redraw(&mut self, app: &mut Box<dyn App>, ps: PAINTSTRUCT, hdc: HDC) {
+    pub fn redraw(&mut self, app: &mut Box<dyn App>, ps: Option<PAINTSTRUCT>, hdc: Option<HDC>) {
         if !self.redraw_thread.is_finished() { return; }
         if crate::time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
@@ -249,10 +257,12 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            paint_struct: Some(ps),
+            #[cfg(all(windows,not(feature = "gpu")))]
+            paint_struct: ps,
             #[cfg(not(feature = "gpu"))]
             p: P { text: "" },
-            hdc: Some(hdc),
+            #[cfg(all(windows,not(feature = "gpu")))]
+            hdc: hdc,
         };
         app.update(&mut ui);
         ui.app = Some(app);

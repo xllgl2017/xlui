@@ -1,6 +1,6 @@
 use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -38,7 +38,7 @@ pub struct CheckComboBox<T> {
     data: Vec<T>,
     popup_rect: Rect,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)>>,
-    allow_render: RenderParam<TriangleParam>,
+    allow_render: RenderParam,
 
     selected: Arc<RwLock<Vec<String>>>,
     changed: Arc<AtomicBool>,
@@ -51,6 +51,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
         fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         let mut allow_style = ClickStyle::new();
         allow_style.fill = FillStyle::same(Color::BLACK);
+        let allow_param = TriangleParam::new((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into(), allow_style);
         CheckComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
@@ -61,7 +62,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
             selected: Arc::new(RwLock::new(vec![])),
 
             changed: Arc::new(AtomicBool::new(false)),
-            allow_render: RenderParam::new(TriangleParam::new((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into(), allow_style)),
+            allow_render: RenderParam::new(RenderKind::Triangle(allow_param)),
         }
     }
 
@@ -90,7 +91,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
             state.store(true, Ordering::SeqCst);
         });
         item.geometry_mut().an(Align::LeftCenter).pd(Padding::same(3.0));
-        item.style_mut().param.set_style(ClickStyle {
+        item.style_mut().set_style(ClickStyle {
             fill: FillStyle {
                 inactive: Color::TRANSPARENT,
                 hovered: Color::rgba(153, 193, 241, 220),
@@ -127,7 +128,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
     fn re_init(&mut self, ui: &mut Ui) {
         #[cfg(feature = "gpu")]
         //背景
-        self.allow_render.init_triangle(ui, false, false);
+        self.allow_render.init(ui, false, false);
         //文本
         self.edit.update(ui);
     }
@@ -164,9 +165,9 @@ impl<T: Display + 'static> CheckComboBox<T> {
             self.popup_rect.offset_y(&Offset::new().covered().with_y(self.edit.buffer().geometry.height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
-            allow_rect.set_x_min(self.edit.buffer().geometry.right() - 15.0);
+            allow_rect.set_x_min(allow_rect.dx().min + self.edit.geometry().width() - 15.0);
             allow_rect.add_min_y(5.0);
-            self.allow_render.param.offset_to_rect(&allow_rect);
+            self.allow_render.offset_to_rect(&allow_rect);
             #[cfg(feature = "gpu")]
             self.allow_render.update(ui, false, false);
         }
@@ -175,10 +176,11 @@ impl<T: Display + 'static> CheckComboBox<T> {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         self.edit.update(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.triangle.render(&self.allow_render, pass);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.triangle.render(&self.allow_render, pass);
+        self.allow_render.draw(ui, false, false);
     }
 
     //初始化时设置当前item，默认为None

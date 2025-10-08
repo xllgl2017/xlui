@@ -117,11 +117,11 @@ impl Win32Window {
     }
 
     fn create_window(attr: &WindowAttribute) -> UiResult<Win32WindowHandle> {
-        let hinstance = HINSTANCE::default();
+        let hinstance = unsafe { GetModuleHandleW(None) }?;
         let class_name = until::to_wstr(&(attr.title.clone()));
         let wc = WNDCLASSW {
             lpfnWndProc: Some(until::wndproc),
-            hInstance: hinstance,
+            hInstance: HINSTANCE::from(hinstance),
             lpszClassName: PCWSTR(class_name.as_ptr()),
             hCursor: unsafe { LoadCursorW(None, IDC_ARROW)? },
             style: CS_HREDRAW | CS_VREDRAW,
@@ -139,7 +139,7 @@ impl Win32Window {
                 attr.inner_size.width as i32, attr.inner_size.height as i32,
                 None,
                 None,
-                Some(hinstance),
+                Some(HINSTANCE::from(hinstance)),
                 None,
             )
         }?;

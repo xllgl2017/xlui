@@ -17,7 +17,7 @@ use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection
 use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipDrawPolygon, GdipFillEllipse, GdipFillPath, GdipFillPolygon, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, PointF, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, SmoothingModeHighQuality, UnitPixel};
 use windows::Win32::Graphics::Imaging::{GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
-use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, PostMessageW, ShowWindow, SW_HIDE, SW_SHOW, WM_PAINT};
+use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,

@@ -87,7 +87,7 @@ impl Window {
             width: self.app_ctx.device.surface_config.width,
             height: self.app_ctx.device.surface_config.height,
         });
-        self.app_ctx.redraw(&mut self.app);
+        self.app_ctx.redraw(&mut self.app, None, None);
     }
 
     pub(crate) fn resize(&mut self, new_size: Size) {

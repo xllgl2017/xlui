@@ -3,7 +3,7 @@ use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::render::image::ImageSource;
 use crate::render::rectangle::param::RectParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -61,7 +61,7 @@ pub struct Button {
     pub(crate) text_buffer: TextBuffer,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Button, &mut Ui)>>,
     inner_callback: Option<Box<dyn FnMut()>>,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
     image: Option<Image>,
     hovered: bool,
     changed: bool,
@@ -79,7 +79,7 @@ impl Button {
             image: None,
             hovered: false,
             changed: false,
-            fill_render: RenderParam::new(RectParam::new()),
+            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
             available: true,
         }
     }
@@ -93,9 +93,9 @@ impl Button {
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text_buffer.geometry.set_padding(Padding::same(2.0));
         self.text_buffer.init(ui);
-        self.fill_render.param.rect.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
+        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
         if let Some(ref mut image) = self.image {
-            let ih = self.fill_render.param.rect.height() - self.text_buffer.geometry.padding().vertical();
+            let ih = self.fill_render.rect().height() - self.text_buffer.geometry.padding().vertical();
             image.geometry().set_fix_size(ih, ih);
             self.text_buffer.geometry.set_fix_width(self.text_buffer.geometry.width() - ih);
             self.text_buffer.init(ui);
@@ -145,7 +145,7 @@ impl Button {
     }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
-        self.fill_render.param.style = style;
+        self.fill_render.set_style(style);
         self
     }
 
@@ -161,7 +161,7 @@ impl Button {
 
 
     pub fn set_style(&mut self, style: ClickStyle) {
-        self.fill_render.param.style = style;
+        self.fill_render.set_style(style);
     }
 
     fn init(&mut self, ui: &mut Ui, init: bool) {
@@ -170,7 +170,7 @@ impl Button {
         }
         //按钮矩形
         #[cfg(feature = "gpu")]
-        self.fill_render.init_rectangle(ui, false, false);
+        self.fill_render.init(ui, false, false);
         if let Some(ref mut image) = self.image {
             image.update(ui);
         }
@@ -180,7 +180,7 @@ impl Button {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.geometry.offset_to_rect(&ui.draw_rect);
@@ -194,11 +194,11 @@ impl Button {
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.fill_render.param.draw(ui,self.hovered,ui.device.device_input.mouse.pressed);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
         match self.image {
             None => self.text_buffer.redraw(ui),
             Some(ref mut image) => {
@@ -230,7 +230,7 @@ impl Widget for Button {
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
-                let has_pos = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
+                let has_pos = ui.device.device_input.hovered_at(self.fill_render.rect());
                 if self.hovered != has_pos && self.available {
                     self.hovered = has_pos;
                     self.changed = true;
@@ -238,14 +238,14 @@ impl Widget for Button {
                 }
             }
             UpdateType::MousePress => {
-                if ui.device.device_input.pressed_at(&self.fill_render.param.rect) && self.available {
+                if ui.device.device_input.pressed_at(self.fill_render.rect()) && self.available {
                     self.hovered = true;
                     self.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.fill_render.param.rect) && self.available {
+                if ui.device.device_input.click_at(self.fill_render.rect()) && self.available {
                     self.changed = true;
                     let callback = self.callback.take();
                     if let Some(mut callback) = callback {
@@ -263,7 +263,7 @@ impl Widget for Button {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

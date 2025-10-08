@@ -3,7 +3,7 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::key::Key;
 use crate::layout::LayoutDirection;
 use crate::render::rectangle::param::RectParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -40,7 +40,7 @@ pub struct TextEdit {
     id: String,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, String)>>,
     contact_ids: Vec<String>,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
     select_render: EditSelection,
     cursor_render: EditCursor,
     changed: bool,
@@ -66,7 +66,7 @@ impl TextEdit {
             id: crate::gen_unique_id(),
             callback: None,
             contact_ids: vec![],
-            fill_render: RenderParam::new(param),
+            fill_render: RenderParam::new(RenderKind::Rectangle(param)),
             select_render: EditSelection::new(),
             cursor_render: EditCursor::new(),
             changed: false,
@@ -141,14 +141,14 @@ impl TextEdit {
         let height = line_height * self.desire_lines as f32 + 6.0;
         self.char_layout.buffer.geometry.set_fix_height(height);
         self.char_layout.buffer.init(ui); //计算行高
-        self.fill_render.param.rect.set_size(self.char_layout.buffer.geometry.width(), height);
+        self.fill_render.rect_mut().set_size(self.char_layout.buffer.geometry.width(), height);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.char_layout.buffer.geometry.offset_to_rect(&ui.draw_rect);
@@ -157,7 +157,7 @@ impl TextEdit {
             cursor_rect.set_height(self.char_layout.buffer.text.height);
             self.cursor_render.update_position(ui, cursor_rect, &self.char_layout);
             self.select_render.update_position(ui, self.char_layout.buffer.geometry.rect());
-            let mut psd_rect = self.fill_render.param.rect.clone();
+            let mut psd_rect = self.fill_render.rect_mut().clone();
             psd_rect.set_x_direction(LayoutDirection::Max);
             psd_rect.add_min_y(2.0);
             self.psd_buffer.geometry.offset_to_rect(&psd_rect);
@@ -181,7 +181,7 @@ impl TextEdit {
             self.psd_buffer.init(ui);
         }
         #[cfg(feature = "gpu")]
-        self.fill_render.init_rectangle(ui, false, false);
+        self.fill_render.init(ui, false, false);
         self.cursor_render.init(&self.char_layout, ui, init);
         self.select_render.init(self.desire_lines, &self.char_layout.buffer.geometry.rect(), self.char_layout.buffer.text.height, ui, init);
     }
@@ -248,11 +248,11 @@ impl TextEdit {
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.fill_render.param.draw(ui, false, false);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(ui, false, false);
         self.select_render.render(ui, self.char_layout.buffer.lines.len());
         if self.focused { self.cursor_render.render(ui); }
         self.char_layout.buffer.redraw(ui);
@@ -276,7 +276,7 @@ impl Widget for TextEdit {
                     ui.context.window.request_redraw();
                 }
 
-                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
+                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
@@ -284,7 +284,7 @@ impl Widget for TextEdit {
                 }
             }
             UpdateType::MousePress => {
-                self.focused = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
+                self.focused = ui.device.device_input.pressed_at(self.fill_render.rect());
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
                     // ui.context.window.win32().request_ime();
@@ -393,7 +393,7 @@ impl Widget for TextEdit {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

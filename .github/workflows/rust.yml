@@ -36,7 +36,7 @@ jobs:
       - name: Check Native
         run: cargo check
       - name: Check WInit
-        run: cargo check --features winit
+        run: cargo check --features winit,gpu
       - name: Doc tests
         run: cargo test --doc --all
   check-windows:

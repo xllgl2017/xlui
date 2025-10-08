@@ -1,7 +1,9 @@
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
-use crate::{Rect, Ui};
+use crate::{Offset, Rect, Ui};
+#[cfg(feature = "gpu")]
+use crate::Size;
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::GdiPlus::PointF;
 
@@ -20,7 +22,7 @@ struct TriangleDrawParam {
 }
 
 pub struct TriangleParam {
-    rect: Rect,
+    pub(crate) rect: Rect,
     p0: Pos,
     p1: Pos,
     p2: Pos,
@@ -71,17 +73,22 @@ impl TriangleParam {
         self.p2 = p2;
     }
 
-    pub fn offset_to_rect(&mut self, rect: &Rect) {
+    pub fn offset_to_rect(&mut self, rect: &Rect) -> Offset {
         let offset = self.rect.offset_to_rect(rect);
         self.p0.offset(offset.x, offset.y);
         self.p1.offset(offset.x, offset.y);
         self.p2.offset(offset.x, offset.y);
+        offset
         // self.p0.x += o.x;
         // self.p0.y += o.y;
         // self.p1.x += o.x;
         // self.p1.y += o.y;
         // self.p2.x += o.x;
         // self.p2.y += o.y;
+    }
+
+    pub fn set_style(&mut self, style: ClickStyle) {
+        self.style = style;
     }
 
     #[cfg(all(windows, not(feature = "gpu")))]
@@ -91,12 +98,6 @@ impl TriangleParam {
             PointF { X: self.p1.x, Y: self.p1.y },
             PointF { X: self.p2.x, Y: self.p2.y },
         ]
-    }
-
-    pub fn draw(&mut self, ui: &mut Ui, hovered: bool, press: bool) {
-        let fill = self.style.dyn_fill(press, hovered);
-        let border = self.style.dyn_border(press, hovered);
-        ui.context.window.win32().paint_triangle(ui.hdc.unwrap(), self.as_win32_points(), fill, border);
     }
 }
 

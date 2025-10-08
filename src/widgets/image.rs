@@ -148,6 +148,7 @@ impl Image {
             self.index_buffer.as_ref().unwrap(),
             pass,
         );
+        #[cfg(all(windows, not(feature = "gpu")))]
         ui.context.window.win32().paint_image(ui.hdc.unwrap(), &self.source, self.geometry.rect())
     }
 }

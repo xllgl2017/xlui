@@ -26,7 +26,7 @@ use crate::window::x11::handle::X11WindowHandle;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
-use crate::Size;
+use crate::{RichTextExt, Size};
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -196,7 +196,10 @@ impl WindowType {
 
     pub(crate) fn size(&self) -> Size {
         match self.kind {
+            #[cfg(all(windows, not(feature = "gpu")))]
             WindowKind::Win32(ref window) => window.size(),
+            #[cfg(feature = "winit")]
+            WindowKind::Winit(ref window) => window.size(),
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::render::circle::param::CircleParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::Response;
@@ -12,7 +12,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct Circle {
     id: String,
-    render: RenderParam<CircleParam>,
+    render: RenderParam,
     changed: bool,
     geometry: Geometry,
 }
@@ -25,7 +25,7 @@ impl Circle {
         Circle {
             id: crate::gen_unique_id(),
             geometry: Geometry::new().with_size(rect.width(), rect.height()),
-            render: RenderParam::new(CircleParam::new(rect, ClickStyle::new())),
+            render: RenderParam::new(RenderKind::Circle(CircleParam::new(rect, ClickStyle::new()))),
             changed: false,
 
         }
@@ -38,12 +38,12 @@ impl Circle {
 
     pub fn set_style(&mut self, style: ClickStyle) {
         self.changed = true;
-        self.render.param.style = style;
+        self.render.set_style(style);
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
         self.changed = true;
-        &mut self.render.param.style
+        self.render.style_mut()
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -51,7 +51,7 @@ impl Circle {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
-            self.render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.render.rect_mut().offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
             self.render.update(ui, false, false);
         }
@@ -63,7 +63,7 @@ impl Circle {
 
     fn init(&mut self, ui: &mut Ui) {
         #[cfg(feature = "gpu")]
-        self.render.init_circle(ui, false, false);
+        self.render.init(ui, false, false);
         self.changed = false;
     }
     fn redraw(&mut self, ui: &mut Ui) {
@@ -83,7 +83,7 @@ impl Widget for Circle {
             UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.render.param.rect.width(), self.render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(),self.geometry.height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

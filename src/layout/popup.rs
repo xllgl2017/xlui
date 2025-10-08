@@ -1,6 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::Response;
@@ -16,7 +16,7 @@ use crate::size::Geometry;
 pub struct Popup {
     pub(crate) id: String,
     scroll_area: ScrollWidget,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
     open: bool,
     requests: Vec<bool>,
     changed: bool,
@@ -34,9 +34,9 @@ impl Popup {
 
         let fill_param = RectParam::new().with_style(ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
-        let mut fill_render = RenderParam::new(fill_param);
+        let mut fill_render = RenderParam::new(RenderKind::Rectangle(fill_param));
         #[cfg(feature = "gpu")]
-        fill_render.init_rectangle(ui, false, false);
+        fill_render.init(ui, false, false);
         let area = ScrollWidget::vertical().with_size(width, height).padding(Padding::same(5.0));
         Popup {
             id: crate::gen_unique_id(),
@@ -51,19 +51,19 @@ impl Popup {
 
     pub fn show(mut self, ui: &mut Ui, context: impl FnMut(&mut Ui)) {
         #[cfg(feature = "gpu")]
-        self.fill_render.init_rectangle(ui, false, false);
+        self.fill_render.init(ui, false, false);
         self.scroll_area.draw(ui, context);
         self.scroll_area.update(ui);
         ui.popups.as_mut().unwrap().insert(self.id.clone(), self);
     }
 
     pub fn set_rect(&mut self, rect: Rect) {
-        self.fill_render.param.rect = rect;
+        *self.fill_render.rect_mut() = rect;
         self.changed = true;
     }
 
     pub fn rect(&self) -> &Rect {
-        &self.fill_render.param.rect
+        self.fill_render.rect()
     }
 
     pub fn update_buffer(&mut self, ui: &mut Ui) {
@@ -77,13 +77,13 @@ impl Popup {
 
     fn redraw(&mut self, ui: &mut Ui) {
         if !self.open { return; }
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.fill_render.param.draw(ui, false, false);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(ui, false, false);
         let previous_rect = ui.draw_rect.clone();
-        ui.draw_rect = self.fill_render.param.rect.clone();
+        ui.draw_rect = self.fill_render.rect().clone();
         self.scroll_area.redraw(ui);
         ui.draw_rect = previous_rect;
     }
@@ -113,12 +113,12 @@ impl Widget for Popup {
             _ => if self.open {
                 self.scroll_area.update(ui);
                 if let UpdateType::MouseRelease = ui.update_type {
-                    if !ui.device.device_input.click_at(&self.fill_render.param.rect) {
+                    if !ui.device.device_input.click_at(&self.fill_render.rect()) {
                         self.requests.push(false);
                         ui.context.window.request_redraw();
                     }
                 }
-                if ui.device.device_input.hovered_at(&self.fill_render.param.rect) { ui.update_type = UpdateType::None; }
+                if ui.device.device_input.hovered_at(&self.fill_render.rect()) { ui.update_type = UpdateType::None; }
             }
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

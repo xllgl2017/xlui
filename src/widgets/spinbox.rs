@@ -2,7 +2,7 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::{Callback, Response};
@@ -51,8 +51,8 @@ pub struct SpinBox<T> {
     gap: T,
     range: Range<T>,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, T)>>,
-    up_render: RenderParam<TriangleParam>,
-    down_render: RenderParam<TriangleParam>,
+    up_render: RenderParam,
+    down_render: RenderParam,
     up_rect: Rect,
     down_rect: Rect,
     changed: bool,
@@ -70,6 +70,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         style.fill.inactive = color;
         style.fill.hovered = inactive_color;
         style.border = BorderStyle::same(Border::same(0.0));
+        let up_param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style.clone());
+        let down_param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style);
         SpinBox {
             id: crate::gen_unique_id(),
             edit: TextEdit::single_edit(format!("{:.*}", 2, v)),
@@ -79,8 +81,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             gap: g,
             range: r,
             callback: None,
-            up_render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style.clone())),
-            down_render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style)),
+            up_render: RenderParam::new(RenderKind::Triangle(up_param)),
+            down_render: RenderParam::new(RenderKind::Triangle(down_param)),
             up_rect: Rect::new(),
             down_rect: Rect::new(),
             changed: false,
@@ -138,9 +140,9 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         let mut p2 = Pos::new();
         p2.x = self.rect.dx().max;
         p2.y = self.up_rect.dy().max;
-        self.up_render.param.set_poses(p0, p1, p2);
+        self.up_render.set_poses(p0, p1, p2);
         #[cfg(feature = "gpu")]
-        self.up_render.init_triangle(ui, false, false);
+        self.up_render.init(ui, false, false);
         self.down_rect.set_x_min(self.rect.dx().max - 14.0);
         self.down_rect.set_x_max(self.rect.dx().max);
         self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
@@ -154,9 +156,9 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         let mut p2 = Pos::new();
         p2.x = self.rect.dx().max;
         p2.y = self.down_rect.dy().min;
-        self.down_render.param.set_poses(p0, p1, p2);
+        self.down_render.set_poses(p0, p1, p2);
         #[cfg(feature = "gpu")]
-        self.down_render.init_triangle(ui, false, false);
+        self.down_render.init(ui, false, false);
     }
 
     fn call(&mut self, ui: &mut Ui) {
@@ -216,7 +218,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.up_rect.set_x_max(self.rect.dx().max);
             self.up_rect.set_y_min(self.rect.dy().min + 1.0);
             self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
-            self.up_render.param.offset_to_rect(&self.up_rect);
+            self.up_render.offset_to_rect(&self.up_rect);
             #[cfg(feature = "gpu")]
             self.up_render.update(ui, false, false);
 
@@ -224,7 +226,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.down_rect.set_x_max(self.rect.dx().max);
             self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
             self.down_rect.set_y_max(self.rect.dy().max - 2.0);
-            self.down_render.param.offset_to_rect(&self.down_rect);
+            self.down_render.offset_to_rect(&self.down_rect);
             #[cfg(feature = "gpu")]
             self.down_render.update(ui, false, false);
         }
@@ -254,14 +256,14 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             ui.draw_rect = edit_rect;
         }
         self.edit.redraw(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.triangle.render(&self.down_render, pass);
-        #[cfg(feature = "gpu")]
-        ui.context.render.triangle.render(&self.up_render, pass);
-        self.down_render.param.draw(ui, self.value <= self.range.start, false);
-        self.up_render.param.draw(ui, self.value >= self.range.end, false);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.triangle.render(&self.down_render, pass);
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.triangle.render(&self.up_render, pass);
+        self.down_render.draw(ui, self.value <= self.range.start, false);
+        self.up_render.draw(ui, self.value >= self.range.end, false);
     }
 }
 
@@ -273,12 +275,12 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MousePress => {
-                if ui.device.device_input.pressed_at(&self.down_rect) {
+                if ui.device.device_input.pressed_at(self.down_render.rect()) {
                     self.edit.focused = false;
                     self.press_down = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
-                } else if ui.device.device_input.pressed_at(&self.up_rect) {
+                } else if ui.device.device_input.pressed_at(self.up_render.rect()) {
                     self.edit.focused = false;
                     self.press_up = true;
                     self.press_time = crate::time_ms();

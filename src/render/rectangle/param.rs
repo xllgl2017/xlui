@@ -1,4 +1,4 @@
-use crate::render::WrcParam;
+use crate::render::{WrcParam, WrcRender};
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, FrameStyle, Shadow};
 use crate::{BorderStyle, FillStyle, Size, Ui};
@@ -147,13 +147,6 @@ impl RectParam {
     pub fn with_shadow(mut self, shadow: Shadow) -> RectParam {
         self.shadow = shadow;
         self
-    }
-
-    #[cfg(not(feature = "gpu"))]
-    pub fn draw(&self, ui: &mut Ui, hovered: bool, press: bool) {
-        let fill = self.style.dyn_fill(press, hovered);
-        let border = self.style.dyn_border(press, hovered);
-        ui.context.window.win32().paint_rect(ui.hdc.unwrap(), fill, border, &self.rect);
     }
 }
 

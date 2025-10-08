@@ -40,11 +40,10 @@ impl CircleParam {
         }
     }
 
-    pub fn draw(&mut self, ui: &mut Ui, hovered: bool, press: bool) {
-        let fill = self.style.dyn_fill(press, hovered);
-        let border = self.style.dyn_border(press, hovered);
-        ui.context.window.win32().paint_circle(ui.hdc.unwrap(), &self.rect, fill, border);
+    pub fn set_style(&mut self, style: ClickStyle) {
+        self.style = style;
     }
+
 }
 
 impl WrcParam for CircleParam {

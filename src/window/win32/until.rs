@@ -152,35 +152,37 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         WM_PAINT => {
             println!("paint");
             if !window.app_ctx.redraw_thread.is_finished() || crate::time_ms() - window.app_ctx.previous_time <= 10 { return LRESULT(0); }
-            let mut ps = PAINTSTRUCT::default();
-            let hdc = BeginPaint(hwnd, &mut ps);
-            let mut rect = RECT::default();
-            GetClientRect(hwnd, &mut rect);
-            // 创建兼容的内存 DC 和位图
-            let mem_dc = CreateCompatibleDC(Option::from(hdc));
-            let mem_bmp = CreateCompatibleBitmap(hdc, rect.right - rect.left, rect.bottom - rect.top);
-            SelectObject(mem_dc, HGDIOBJ::from(mem_bmp));
+            #[cfg(not(feature = "gpu"))]
+            {
+                let mut ps = PAINTSTRUCT::default();
+                let hdc = BeginPaint(hwnd, &mut ps);
+                let mut rect = RECT::default();
+                GetClientRect(hwnd, &mut rect);
+                // 创建兼容的内存 DC 和位图
+                let mem_dc = CreateCompatibleDC(Option::from(hdc));
+                let mem_bmp = CreateCompatibleBitmap(hdc, rect.right - rect.left, rect.bottom - rect.top);
+                SelectObject(mem_dc, HGDIOBJ::from(mem_bmp));
 
-            // ✅ 填充背景颜色
-            let brush = CreateSolidBrush(COLORREF(Color::rgb(240, 240, 240).as_rgb_u32())); // 白色背景
-            FillRect(mem_dc, &rect, brush);
-            DeleteObject(HGDIOBJ::from(brush));
-
-
-            window.handle_event(WindowEvent::Redraw(ps, mem_dc));
-
-            BitBlt(
-                hdc,
-                0, 0,
-                rect.right - rect.left,
-                rect.bottom - rect.top,
-                Option::from(mem_dc),
-                0, 0,
-                SRCCOPY,
-            );
-            DeleteObject(HGDIOBJ::from(mem_bmp));
-            DeleteDC(mem_dc);
-            EndPaint(hwnd, &ps).unwrap();
+                // ✅ 填充背景颜色
+                let brush = CreateSolidBrush(COLORREF(Color::rgb(240, 240, 240).as_rgb_u32())); // 白色背景
+                FillRect(mem_dc, &rect, brush);
+                DeleteObject(HGDIOBJ::from(brush));
+                window.handle_event(WindowEvent::Redraw(ps, mem_dc));
+                BitBlt(
+                    hdc,
+                    0, 0,
+                    rect.right - rect.left,
+                    rect.bottom - rect.top,
+                    Option::from(mem_dc),
+                    0, 0,
+                    SRCCOPY,
+                );
+                DeleteObject(HGDIOBJ::from(mem_bmp));
+                DeleteDC(mem_dc);
+                EndPaint(hwnd, &ps).unwrap();
+            }
+            #[cfg(feature = "gpu")]
+            window.handle_event(WindowEvent::Redraw)
         }
         WM_KEYDOWN => {
             let ctrl_pressed = (unsafe { GetKeyState(VK_CONTROL.0 as i32) } as u16 & 0x8000) != 0;

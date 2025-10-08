@@ -15,6 +15,8 @@ use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
 use crate::{Font, NumCastExt};
 #[cfg(feature = "gpu")]
+use crate::Device;
+#[cfg(feature = "gpu")]
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -75,7 +77,7 @@ impl ContextUpdate {
         }
     }
 
-    pub fn to_string(self)->String{
+    pub fn to_string(self) -> String {
         match self {
             ContextUpdate::String(v) => v,
             ContextUpdate::F32(v) => v.to_string(),

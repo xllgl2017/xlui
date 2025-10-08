@@ -1,7 +1,7 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::response::Response;
@@ -41,7 +41,7 @@ pub struct SelectItem<T> {
     text: TextBuffer,
     value: T,
     parent_selected: Arc<RwLock<Option<String>>>,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
 
     callback: Option<Box<dyn FnMut(&mut Option<T>)>>,
     hovered: bool,
@@ -63,7 +63,7 @@ impl<T: Display> SelectItem<T> {
             text: TextBuffer::new(value.to_string()).with_align(Align::LeftCenter).padding(Padding::same(2.0)),
             value,
             parent_selected: Arc::new(RwLock::new(None)),
-            fill_render: RenderParam::new(RectParam::new().with_style(fill_style)),
+            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
             callback: None,
             hovered: false,
             selected: false,
@@ -73,7 +73,7 @@ impl<T: Display> SelectItem<T> {
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill_render.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
+        self.fill_render.rect_mut().set_size(self.text.geometry.width(), self.text.geometry.height());
     }
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
@@ -115,7 +115,7 @@ impl<T: Display> SelectItem<T> {
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
         #[cfg(feature = "gpu")]
-        self.fill_render.init_rectangle(ui, selected, selected);
+        self.fill_render.init(ui, selected, selected);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -131,7 +131,7 @@ impl<T: Display> SelectItem<T> {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
             self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
             self.text.geometry.offset_to_rect(&ui.draw_rect);
@@ -147,13 +147,13 @@ impl<T: Display> SelectItem<T> {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
-        self.fill_render.param.draw(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
+        self.fill_render.draw(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
         self.text.redraw(ui);
     }
 }
@@ -165,7 +165,7 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
+                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
@@ -173,7 +173,7 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
                 }
             }
             UpdateType::MouseRelease => {
-                let clicked = ui.device.device_input.click_at(&self.fill_render.param.rect);
+                let clicked = ui.device.device_input.click_at(self.fill_render.rect());
                 if clicked {
                     self.selected = true;
                     self.changed = true;

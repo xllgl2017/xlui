@@ -1,4 +1,6 @@
 use crate::frame::context::{Context, UpdateType};
+#[cfg(feature = "gpu")]
+use crate::frame::context::Render;
 use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
@@ -24,6 +26,7 @@ pub struct LoopWindow {
 }
 
 impl LoopWindow {
+    #[cfg(not(feature = "gpu"))]
     pub fn create_native_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: WindowAttribute) -> LoopWindow {
         let context = Context {
             window: wt,
@@ -70,7 +73,7 @@ impl LoopWindow {
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
         let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
         let cache = Cache::new(&device);
-        let surface = instance.create_surface(window.clone())?;
+        let surface = instance.create_surface(window.clone()).unwrap();
         let cap = surface.get_capabilities(&adapter);
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -140,10 +143,11 @@ impl EventLoopHandle for LoopWindow {
                     width: self.app_ctx.device.surface_config.width,
                     height: self.app_ctx.device.surface_config.height,
                 });
-                self.app_ctx.redraw(&mut self.app)
+                self.app_ctx.redraw(&mut self.app, None, None);
             }
+            #[cfg(all(windows, not(feature = "gpu")))]
             WindowEvent::Redraw(ps, hdc) => {
-                self.app_ctx.redraw(&mut self.app, ps, hdc)
+                self.app_ctx.redraw(&mut self.app, Some(ps), Some(hdc))
             }
 
             WindowEvent::ReInit => {

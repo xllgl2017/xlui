@@ -1,5 +1,5 @@
 use crate::render::rectangle::param::RectParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 use crate::size::border::Border;
@@ -18,7 +18,7 @@ pub struct EditCursor {
     pub(crate) max_pos: Pos,
     pub(crate) horiz: usize,
     pub(crate) vert: usize,
-    render: RenderParam<RectParam>,
+    render: RenderParam,
     pub(crate) offset: Offset,
     line_height: f32,
     pub(crate) changed: bool,
@@ -38,7 +38,7 @@ impl EditCursor {
             max_pos: Pos::new(),
             horiz: 0,
             vert: 0,
-            render: RenderParam::new(RectParam::new().with_style(cursor_style)),
+            render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(cursor_style))),
             offset: Offset::new(),
             line_height: 0.0,
             changed: false,
@@ -57,7 +57,7 @@ impl EditCursor {
             self.horiz = cchar.buffer.lines.last().unwrap().len();
         }
         #[cfg(feature = "gpu")]
-        self.render.init_rectangle(ui, false, false);
+        self.render.init(ui, false, false);
     }
 
     pub fn reset_x(&mut self, cchar: &CharBuffer) {
@@ -68,7 +68,7 @@ impl EditCursor {
     pub fn update(&mut self, ui: &mut Ui) {
         if !self.changed { return; }
         self.changed = false;
-        self.render.param.rect.offset(&self.offset);
+        self.render.rect_mut().offset(&self.offset);
         #[cfg(feature = "gpu")]
         self.render.update(ui, false, false);
     }
@@ -81,11 +81,11 @@ impl EditCursor {
     // }
 
     pub fn render(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.render, pass);
-        self.render.param.draw(ui, false, false);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.render, pass);
+        self.render.draw(ui, false, false);
     }
 
     // pub fn set_rect(&mut self, rect: Rect) {
@@ -94,8 +94,8 @@ impl EditCursor {
     // }
 
     pub fn update_position(&mut self, ui: &mut Ui, rect: Rect, cchar: &CharBuffer) {
-        self.render.param.rect = rect;
-        self.render.param.rect.offset(&self.offset);
+        *self.render.rect_mut() = rect;
+        self.render.rect_mut().offset(&self.offset);
         #[cfg(feature = "gpu")]
         self.render.update(ui, false, false);
         self.min_pos.x = cchar.buffer.geometry.x(); //cchar.buffer.rect.dx().min;
