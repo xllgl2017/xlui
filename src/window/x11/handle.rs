@@ -31,7 +31,9 @@ use x11::xrender::{XGlyphInfo, XRenderColor};
 #[cfg(not(feature = "gpu"))]
 use crate::ui::PaintParam;
 #[cfg(not(feature = "gpu"))]
-use crate::window::x11::ffi::{Cairo, CairoSurface,FontSlant, FontWeight};
+use crate::window::x11::ffi::{Cairo, CairoSurface, FontSlant, FontWeight};
+#[cfg(not(feature = "gpu"))]
+use crate::window::x11::ffi::CairoAntialias;
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,
@@ -223,6 +225,7 @@ impl X11WindowHandle {
         let y1 = rect.dy().min;
         let x2 = rect.dx().max;
         let y2 = rect.dy().max;
+        cairo.set_antialias(CairoAntialias::Good);
         cairo.new_path();
         cairo.arc(
             (x2 - border.radius.right_top as f32) as f64,

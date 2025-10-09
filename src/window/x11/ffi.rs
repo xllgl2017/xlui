@@ -45,6 +45,17 @@ unsafe extern "C" {
     fn cairo_scale(cr: *mut Cairo, sx: f64, sy: f64);
     fn cairo_paint(cr: *mut Cairo);
     fn cairo_translate(cr: *mut Cairo, tx: f64, ty: f64);
+    fn cairo_set_antialias(cr: *mut Cairo, antialias: i32);
+}
+
+pub enum CairoAntialias {
+    Default = 0,
+    None = 1,
+    Gray = 2,
+    Subpixel = 3,
+    Fast = 4,
+    Good = 5,
+    Best = 6,
 }
 
 // #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -191,6 +202,10 @@ impl Cairo {
 
     pub fn translate(&mut self, tx: f64, ty: f64) {
         unsafe { cairo_translate(self, tx, ty) }
+    }
+
+    pub fn set_antialias(&mut self, antialias: CairoAntialias) {
+        unsafe { cairo_set_antialias(self, antialias as i32) }
     }
 }
 

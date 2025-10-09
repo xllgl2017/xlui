@@ -49,19 +49,11 @@ impl TabHeader {
             ui.widget_changed |= WidgetChange::Value;
             self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-
-            #[cfg(feature = "gpu")]
-            self.fill.update(ui, false, false);
-        }
     }
 
     fn draw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill, pass);
+        self.fill.draw(ui, false, false);
         self.text.redraw(ui);
     }
 }
@@ -177,13 +169,8 @@ impl Widget for TabWidget {
         if let UpdateType::Draw = ui.update_type {
             if ui.widget_changed.contains(WidgetChange::Position) {
                 self.fill.rect_mut().offset_to_rect(&context_rect);
-                #[cfg(feature = "gpu")]
-                self.fill.update(ui, false, false);
             }
-            #[cfg(feature = "gpu")]
-            let pass = ui.pass.as_mut().unwrap();
-            #[cfg(feature = "gpu")]
-            ui.context.render.rectangle.render(&self.fill, pass);
+            self.fill.draw(ui, false, false);
         }
         context_rect.add_min_y(1.0);
         let mut tab_text_rect = ui.draw_rect.clone();
