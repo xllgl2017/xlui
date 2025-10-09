@@ -1,8 +1,6 @@
 use crate::key::Key;
 use crate::render::triangle::param::TriangleParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::Geometry;
 use crate::widgets::{WidgetChange, WidgetSize};

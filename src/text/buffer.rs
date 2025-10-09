@@ -1,5 +1,3 @@
-#[cfg(feature = "gpu")]
-use std::mem;
 use crate::align::Align;
 use crate::size::Geometry;
 #[cfg(feature = "gpu")]
@@ -13,6 +11,8 @@ use crate::Padding;
 use crate::SAMPLE_COUNT;
 #[cfg(feature = "gpu")]
 use glyphon::Shaping;
+#[cfg(feature = "gpu")]
+use std::mem;
 #[cfg(feature = "gpu")]
 use wgpu::MultisampleState;
 
@@ -75,7 +75,9 @@ impl TextBuffer {
 
     #[cfg(not(feature = "gpu"))]
     fn reset(&mut self, ui: &mut Ui) {
-        self.lines = ui.context.window.win32().measure_char_widths(&self.text);
+        #[cfg(target_os = "windows")]
+        { self.lines = ui.context.window.win32().measure_char_widths(&self.text); }
+        self.lines = ui.context.window.x11().measure_char_widths(&self.text);
         self.text.width = self.lines[0].width;
     }
 
@@ -88,7 +90,6 @@ impl TextBuffer {
         self.reset(ui);
         #[cfg(feature = "gpu")]
         {
-
             let mut buffer = glyphon::Buffer::new(&mut ui.context.render.text.font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
             buffer.set_wrap(&mut ui.context.render.text.font_system, self.text.wrap.as_gamma());
             buffer.set_text(&mut ui.context.render.text.font_system, &self.text.text, &self.text.font_family(), Shaping::Advanced);
@@ -176,10 +177,16 @@ impl TextBuffer {
         self.render.as_mut().unwrap().render(&mut ui.context.render.text.atlas, &ui.context.viewport, pass).unwrap()
     }
 
-    #[cfg(not(feature = "gpu"))]
+    #[cfg(all(windows, not(feature = "gpu")))]
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         let hdc = ui.hdc.unwrap();
         ui.context.window.win32().paint_text(hdc, &self.text, self.geometry.rect());
+    }
+
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
+        let param = &mut ui.paint.as_mut().unwrap();
+        ui.context.window.x11().paint_text(param, &self.text, self.geometry.rect()).unwrap();
     }
 
     pub fn set_text(&mut self, text: String) {
@@ -217,7 +224,7 @@ impl TextBuffer {
         if reset {
             #[cfg(feature = "gpu")]
             self.reset();
-            #[cfg(not(feature = "gpu"))]
+            #[cfg(all(windows, not(feature = "gpu")))]
             self.reset(ui);
         }
     }
@@ -231,7 +238,7 @@ impl TextBuffer {
             &self.text.font_family(), Shaping::Advanced);
         #[cfg(feature = "gpu")]
         self.reset();
-        #[cfg(not(feature = "gpu"))]
+        #[cfg(all(windows, not(feature = "gpu")))]
         self.reset(ui);
         self.geometry.set_width(self.lines[0].width)
     }

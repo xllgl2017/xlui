@@ -2,12 +2,13 @@
 use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
 use crate::{MousePos, Pos, Size};
 use crate::key::Key;
+#[cfg(not(feature = "gpu"))]
+use crate::ui::PaintParam;
 use crate::window::ClipboardData;
 use crate::window::ime::IMEData;
 
 #[derive(Debug)]
 pub enum WindowEvent {
-    None,
     KeyPress(Key),
     KeyRelease(Key),
     MouseMove(MousePos),
@@ -16,14 +17,12 @@ pub enum WindowEvent {
     MouseRelease(Pos),
     #[cfg(feature = "gpu")]
     Redraw,
-    #[cfg(all(windows, not(feature = "gpu")))]
-    Redraw(PAINTSTRUCT, HDC),
+    #[cfg(not(feature = "gpu"))]
+    Redraw(PaintParam<'static>),
     ReInit,
     Resize(Size),
-    ReqClose,
     ReqUpdate,
     IME(IMEData),
-    CreateChild,
     Clipboard(ClipboardData),
     UserUpdate,
 }

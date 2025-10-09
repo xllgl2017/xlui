@@ -4,9 +4,9 @@ use crate::layout::popup::Popup;
 use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
+use crate::render::{RenderKind, RenderParam};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -14,7 +14,7 @@ use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FrameStyle, Shadow, Style};
-use crate::ui::{Ui, P};
+use crate::ui::Ui;
 use crate::widgets::button::Button;
 use crate::widgets::WidgetChange;
 use crate::window::attribute::WindowAttribute;
@@ -151,10 +151,11 @@ impl InnerWindow {
             style: Rc::new(RefCell::new(Style::light_style())),
             #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows, not(feature = "gpu")))]
-            p: crate::ui::P { text: "" },
+            // #[cfg(not(feature = "gpu"))]
+            // p: crate::ui::P { text: "" },
             #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,
+            paint: None,
         };
 
 
@@ -234,10 +235,11 @@ impl InnerWindow {
             style: Rc::new(RefCell::new(Style::light_style())),
             #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: oui.paint_struct.take(),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            p: P { text: "" },
+            // #[cfg(not(feature = "gpu"))]
+            // p: P { text: "" },
             #[cfg(all(windows, not(feature = "gpu")))]
             hdc: oui.hdc.take(),
+            paint: oui.paint.take(),
         };
 
 
@@ -260,10 +262,12 @@ impl InnerWindow {
 
         #[cfg(feature = "gpu")]
         { oui.pass = nui.pass.take() };
-        #[cfg(all(windows, not(feature = "gpu")))]
-        { oui.hdc = nui.hdc.take(); }
-        #[cfg(all(windows, not(feature = "gpu")))]
-        { oui.paint_struct = nui.paint_struct.take(); }
+        // #[cfg(all(windows, not(feature = "gpu")))]
+        // { oui.hdc = nui.hdc.take(); }
+        // #[cfg(all(windows, not(feature = "gpu")))]
+        // { oui.paint_struct = nui.paint_struct.take(); }
+        #[cfg(not(feature = "gpu"))]
+        { oui.paint = nui.paint.take(); }
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
@@ -287,10 +291,11 @@ impl InnerWindow {
             style: Rc::new(RefCell::new(Style::light_style())),
             #[cfg(all(windows, not(feature = "gpu")))]
             paint_struct: None,
-            #[cfg(all(windows, not(feature = "gpu")))]
-            p: P { text: "" },
+            // #[cfg(not(feature = "gpu"))]
+            // p: P { text: "" },
             #[cfg(all(windows, not(feature = "gpu")))]
             hdc: None,
+            paint:None
         };
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);

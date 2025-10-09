@@ -1,9 +1,9 @@
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
-use crate::{Offset, Rect, Ui};
 #[cfg(feature = "gpu")]
 use crate::Size;
+use crate::{Offset, Rect};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::GdiPlus::PointF;
 
@@ -23,9 +23,9 @@ struct TriangleDrawParam {
 
 pub struct TriangleParam {
     pub(crate) rect: Rect,
-    p0: Pos,
-    p1: Pos,
-    p2: Pos,
+    pub(crate) p0: Pos,
+    pub(crate) p1: Pos,
+    pub(crate) p2: Pos,
     pub(crate) style: ClickStyle,
     draw: TriangleDrawParam,
 }

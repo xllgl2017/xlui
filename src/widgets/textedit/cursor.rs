@@ -1,7 +1,5 @@
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::size::border::Border;
 use crate::size::pos::Pos;
 use crate::size::radius::Radius;

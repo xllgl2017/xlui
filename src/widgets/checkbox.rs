@@ -2,8 +2,6 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::{Callback, InnerCallB, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;

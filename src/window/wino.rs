@@ -1,18 +1,22 @@
 use crate::frame::context::{Context, UpdateType};
-#[cfg(feature = "gpu")]
 use crate::frame::context::Render;
 use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
 use crate::window::event::WindowEvent;
-use crate::window::{UserEvent, WindowId, WindowType};
-use crate::{Device, DeviceInput, Size, WindowAttribute};
+#[cfg(feature = "gpu")]
+use crate::window::UserEvent;
+use crate::window::{WindowId, WindowType};
+use crate::*;
 #[cfg(feature = "gpu")]
 use glyphon::{Cache, Resolution, Viewport};
+#[cfg(feature = "gpu")]
 use std::error::Error;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
+#[cfg(not(feature = "gpu"))]
+use crate::render::image::ImageRender;
 
 pub trait EventLoopHandle {
     fn window_id(&self) -> WindowId;
@@ -31,6 +35,7 @@ impl LoopWindow {
         let context = Context {
             window: wt,
             font: attr.font.clone(),
+            render: Render { image: ImageRender::new() },
             updates: Map::new(),
             user_update: (WindowId::unique_id(), UpdateType::None),
             new_window: None,
@@ -114,7 +119,6 @@ impl EventLoopHandle for LoopWindow {
 
     fn handle_event(&mut self, event: WindowEvent) {
         match event {
-            WindowEvent::None => {}
             WindowEvent::KeyPress(key) => self.app_ctx.update(UpdateType::KeyPress(key), &mut self.app),
             WindowEvent::KeyRelease(key) => self.app_ctx.update(UpdateType::KeyRelease(key), &mut self.app),
             WindowEvent::MouseMove(pos) => {
@@ -143,11 +147,11 @@ impl EventLoopHandle for LoopWindow {
                     width: self.app_ctx.device.surface_config.width,
                     height: self.app_ctx.device.surface_config.height,
                 });
-                self.app_ctx.redraw(&mut self.app, None, None);
+                self.app_ctx.redraw(&mut self.app, None); //, None, None
             }
-            #[cfg(all(windows, not(feature = "gpu")))]
-            WindowEvent::Redraw(ps, hdc) => {
-                self.app_ctx.redraw(&mut self.app, Some(ps), Some(hdc))
+            #[cfg(not(feature = "gpu"))]
+            WindowEvent::Redraw(paint) => {
+                self.app_ctx.redraw(&mut self.app, Some(paint))
             }
 
             WindowEvent::ReInit => {
@@ -167,6 +171,7 @@ impl EventLoopHandle for LoopWindow {
             WindowEvent::IME(data) => self.app_ctx.update(UpdateType::IME(data), &mut self.app),
             WindowEvent::Clipboard(data) => self.app_ctx.update(UpdateType::Clipboard(data), &mut self.app),
             WindowEvent::UserUpdate => self.app_ctx.user_update(&mut self.app),
+            #[cfg(not(feature = "gpu"))]
             _ => {}
         }
     }
