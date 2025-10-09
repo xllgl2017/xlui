@@ -36,7 +36,7 @@ fn fs_main(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
 
     let outer = params.radius;
     let inner = params.radius - params.border_thickness;
-    let aa = 1.0;
+    let aa = fwidth(dist)*0.6;
 
     // 抗锯齿边缘
     let outer_fade = smoothstep(outer + aa, outer - aa, dist); // 外边界 fade out
