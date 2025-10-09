@@ -101,8 +101,7 @@ impl X11Window {
     }
 
     fn init(&mut self, attr: &WindowAttribute, visual_info: XVisualInfo, ime: Arc<IME>, screen: i32) -> UiResult<WindowType> {
-        let colormap = unsafe { xlib::XCreateColormap(self.display, self.root, visual_info.visual, AllocNone) };
-        let handle = self.create_window(screen, colormap, visual_info, attr)?;
+        let handle = self.create_window(screen, visual_info, attr)?;
         let window = WindowType {
             kind: WindowKind::X11(handle),
             id: WindowId::unique_id(),
@@ -113,8 +112,9 @@ impl X11Window {
         Ok(window)
     }
 
-    fn create_window(&mut self, screen: i32, colormap: u64, visual_info: XVisualInfo, attr: &WindowAttribute) -> UiResult<X11WindowHandle> {
+    fn create_window(&mut self, screen: i32, visual_info: XVisualInfo, attr: &WindowAttribute) -> UiResult<X11WindowHandle> {
         unsafe {
+            let colormap = xlib::XCreateColormap(self.display, self.root, visual_info.visual, AllocNone);
             let mut swa: xlib::XSetWindowAttributes = std::mem::zeroed();
             swa.colormap = colormap;
             swa.border_pixel = if attr.transparent { 0 } else { xlib::XWhitePixel(self.display, screen) };
@@ -185,7 +185,7 @@ impl X11Window {
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, app: Box<dyn App>) -> UiResult<()> {
         let attr = app.window_attributes();
-        let mut handle = self.create_window(parent.x11().screen, parent.x11().colormap, parent.x11().visual_info, &attr)?;
+        let mut handle = self.create_window(parent.x11().screen, parent.x11().visual_info, &attr)?;
         handle.update_atom = parent.x11().update_atom;
         let window = Arc::from(WindowType {
             id: WindowId::unique_id(),
