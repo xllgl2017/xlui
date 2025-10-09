@@ -4,8 +4,6 @@ use crate::key::Key;
 use crate::layout::LayoutDirection;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -20,7 +18,7 @@ use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::window::ime::IMEData;
 use crate::window::ClipboardData;
-use crate::{App, TextWrap};
+use crate::{App, FillStyle, TextWrap};
 use std::mem;
 use crate::size::Geometry;
 
@@ -55,9 +53,7 @@ pub struct TextEdit {
 impl TextEdit {
     fn new(text: impl ToString) -> TextEdit {
         let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::WHITE;
-        fill_style.fill.hovered = Color::WHITE;
-        fill_style.fill.clicked = Color::WHITE;
+        fill_style.fill = FillStyle::same(Color::WHITE);
         fill_style.border.inactive = Border::same(0.0).radius(Radius::same(2));
         fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill_style.border.clicked = fill_style.border.hovered.clone();

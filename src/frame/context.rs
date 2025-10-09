@@ -3,7 +3,6 @@ use crate::key::Key;
 use crate::map::Map;
 #[cfg(feature = "gpu")]
 use crate::render::circle::CircleRender;
-#[cfg(feature = "gpu")]
 use crate::render::image::ImageRender;
 #[cfg(feature = "gpu")]
 use crate::render::rectangle::RectangleRender;
@@ -129,18 +128,21 @@ pub struct Context {
     pub viewport: Viewport,
     pub window: Arc<WindowType>,
     pub font: Arc<Font>,
-    #[cfg(feature = "gpu")]
     pub render: Render,
     pub updates: Map<String, ContextUpdate>,
     pub user_update: (WindowId, UpdateType),
     pub new_window: Option<Box<dyn App>>,
 }
-#[cfg(feature = "gpu")]
+
 pub struct Render {
+    #[cfg(feature = "gpu")]
     pub(crate) rectangle: RectangleRender,
+    #[cfg(feature = "gpu")]
     pub(crate) text: TextRender,
+    #[cfg(feature = "gpu")]
     pub(crate) circle: CircleRender,
     pub(crate) image: ImageRender,
+    #[cfg(feature = "gpu")]
     pub(crate) triangle: TriangleRender,
 }
 #[cfg(feature = "gpu")]

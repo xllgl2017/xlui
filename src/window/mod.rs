@@ -8,8 +8,6 @@ pub mod wino;
 pub mod event;
 #[cfg(feature = "winit")]
 pub mod winit_app;
-// #[cfg(not(feature = "winit"))]
-// pub mod application;
 pub mod ime;
 #[cfg(feature = "winit")]
 mod wnit;
@@ -26,7 +24,7 @@ use crate::window::x11::handle::X11WindowHandle;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
-use crate::{RichTextExt, Size};
+use crate::*;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -200,7 +198,8 @@ impl WindowType {
             WindowKind::Win32(ref window) => window.size(),
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.size(),
-            WindowKind::X11(ref window)=>window.size()
+            #[cfg(all(target_os = "linux", not(feature = "winit")))]
+            WindowKind::X11(ref window) => window.size()
         }
     }
 }
@@ -230,3 +229,4 @@ impl HasDisplayHandle for WindowType {
         }
     }
 }
+

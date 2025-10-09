@@ -1,5 +1,5 @@
 use crate::ui::Ui;
-use crate::{ClickStyle, Device, FrameStyle, Pos, Rect, Shadow, Size, SAMPLE_COUNT};
+use crate::*;
 #[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
 use crate::render::circle::param::CircleParam;
@@ -101,7 +101,7 @@ impl RenderParam {
     pub fn rect_param_mut(&mut self) -> &mut RectParam {
         match self.kind {
             RenderKind::Rectangle(ref mut param) => param,
-            _=>panic!("not rect")
+            _ => panic!("not rect")
         }
     }
 
@@ -180,9 +180,11 @@ impl RenderParam {
                 let border = param.style.dyn_border(pressed, hovered);
                 #[cfg(windows)]
                 ui.context.window.win32().paint_rect(ui.hdc.unwrap(), fill, border, &param.rect);
+                #[cfg(target_os = "linux")]
+                ui.context.window.x11().paint_rect(ui.paint.as_mut().unwrap().cairo, fill, border, &param.rect);
             }
             #[cfg(feature = "gpu")]
-            RenderKind::Rectangle(ref param) => {
+            RenderKind::Rectangle(_) => {
                 self.update(ui, hovered, pressed);
                 let pass = ui.pass.as_mut().unwrap();
                 ui.context.render.rectangle.render(&self, pass);
@@ -193,6 +195,8 @@ impl RenderParam {
                 let border = param.style.dyn_border(pressed, hovered);
                 #[cfg(windows)]
                 ui.context.window.win32().paint_circle(ui.hdc.unwrap(), &param.rect, fill, border);
+                #[cfg(target_os = "linux")]
+                ui.context.window.x11().paint_circle(ui.paint.as_mut().unwrap().cairo, fill, border, &param.rect);
             }
             #[cfg(not(feature = "gpu"))]
             RenderKind::Triangle(ref param) => {
@@ -200,15 +204,17 @@ impl RenderParam {
                 let border = param.style.dyn_border(pressed, hovered);
                 #[cfg(windows)]
                 ui.context.window.win32().paint_triangle(ui.hdc.unwrap(), param.as_win32_points(), fill, border);
+                #[cfg(target_os = "linux")]
+                ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, fill, border);
             }
             #[cfg(feature = "gpu")]
-            RenderKind::Circle(ref param) => {
+            RenderKind::Circle(_) => {
                 self.update(ui, hovered, pressed);
                 let pass = ui.pass.as_mut().unwrap();
                 ui.context.render.circle.render(&self, pass);
             }
             #[cfg(feature = "gpu")]
-            RenderKind::Triangle(ref param) => {
+            RenderKind::Triangle(_) => {
                 self.update(ui, hovered, pressed);
                 let pass = ui.pass.as_mut().unwrap();
                 ui.context.render.triangle.render(&self, pass);

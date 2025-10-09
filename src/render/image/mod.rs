@@ -1,4 +1,3 @@
-#[cfg(feature = "gpu")]
 pub mod texture;
 
 use std::hash::{DefaultHasher, Hasher};
@@ -18,10 +17,10 @@ use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::Shell::SHCreateMemStream;
 use crate::error::UiResult;
-use crate::{Device, Size, SAMPLE_COUNT};
+use crate::*;
 use crate::map::Map;
-#[cfg(feature = "gpu")]
 use crate::render::image::texture::ImageTexture;
+#[cfg(feature = "gpu")]
 use crate::vertex::ImageVertex;
 
 pub enum ImageSource {
@@ -77,15 +76,17 @@ impl<const N: usize> From<&[u8; N]> for ImageSource {
     }
 }
 
-#[cfg(feature = "gpu")]
 pub struct ImageRender {
+    #[cfg(feature = "gpu")]
     pipeline: wgpu::RenderPipeline,
     textures: Map<String, ImageTexture>,
+    #[cfg(feature = "gpu")]
     bind_group_layout: wgpu::BindGroupLayout,
 
 }
-#[cfg(feature = "gpu")]
+
 impl ImageRender {
+    #[cfg(feature = "gpu")]
     pub fn new(device: &Device) -> ImageRender {
         let entry_texture = wgpu::BindGroupLayoutEntry {
             binding: 0,
@@ -117,7 +118,13 @@ impl ImageRender {
         }
     }
 
-
+    #[cfg(not(feature = "gpu"))]
+    pub fn new() -> ImageRender {
+        ImageRender {
+            textures: Map::new(),
+        }
+    }
+    #[cfg(feature = "gpu")]
     fn create_pipeline(device: &Device, group_layout: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
         let shader = device.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
@@ -168,6 +175,7 @@ impl ImageRender {
         render_pipeline
     }
 
+    #[cfg(feature = "gpu")]
     pub fn insert_image(&mut self, device: &Device, source: &ImageSource) -> UiResult<Size> {
         let uri = source.uri();
         match self.textures.get(&uri) {
@@ -180,7 +188,21 @@ impl ImageRender {
             Some(texture) => Ok(texture.size())
         }
     }
+    #[cfg(not(feature = "gpu"))]
+    pub fn insert_image(&mut self, source: &ImageSource) -> UiResult<Size> {
+        let uri = source.uri();
+        match self.textures.get(&uri) {
+            None => {
+                let texture = ImageTexture::new(source)?;
+                let size = texture.size();
+                self.textures.insert(uri, texture);
+                Ok(size)
+            }
+            Some(texture) => Ok(texture.size())
+        }
+    }
 
+    #[cfg(feature = "gpu")]
     pub(crate) fn render(&self, uri: &String, vb: &wgpu::Buffer, ib: &wgpu::Buffer, render_pass: &mut wgpu::RenderPass) -> Option<()> {
         render_pass.set_pipeline(&self.pipeline);
         let texture = self.textures.get(uri)?;
@@ -189,6 +211,11 @@ impl ImageRender {
         render_pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.draw_indexed(0..6, 0, 0..1);
         Some(())
+    }
+
+    #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+    pub(crate) fn get_texture_mut(&mut self, uri: &String) -> Option<&mut ImageTexture> {
+        self.textures.get_mut(uri)
     }
 }
 #[cfg(target_os = "windows")]

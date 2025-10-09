@@ -1,300 +1,225 @@
 use std::ffi::CString;
+use std::marker::{PhantomData, PhantomPinned};
 use std::ptr;
-use x11::xft::{XftColor, XftColorAllocValue, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftFontOpenName};
 use x11::xlib::*;
-use x11::xrender::XRenderColor;
 
 #[link(name = "X11")]
 unsafe extern "C" {}
 
-#[link(name = "Xft")]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Debug, Copy)]
+pub enum FontSlant {
+    Normal = 0,
+    Italic = 1,
+    Oblique = 2,
+}
+
+pub enum FontWeight {
+    Normal = 0,
+    Bold = 1,
+}
+
+unsafe extern "C" {
+    fn cairo_surface_reference(surface: *mut CairoSurface) -> *mut CairoSurface;
+    fn cairo_create(target: *mut CairoSurface) -> *mut Cairo;
+    fn cairo_new_path(cr: *mut Cairo);
+    fn cairo_arc(cr: *mut Cairo, xc: f64, yc: f64, radius: f64, angle1: f64, angle2: f64);
+    fn cairo_close_path(cr: *mut Cairo);
+    fn cairo_xlib_surface_create(dpy: *mut Display, drawable: Drawable, visual: *mut Visual, width: i32, height: i32) -> *mut CairoSurface;
+    fn cairo_surface_flush(surface: *mut CairoSurface);
+    fn cairo_set_source_rgba(cr: *mut Cairo, red: f64, green: f64, blue: f64, alpha: f64);
+    fn cairo_fill(cr: *mut Cairo);
+    fn cairo_fill_preserve(cr: *mut Cairo);
+    fn cairo_set_line_width(cr: *mut Cairo, width: f64);
+    fn cairo_stroke(cr: *mut Cairo);
+    fn cairo_select_font_face(
+        cr: *mut Cairo,
+        family: *const i8,
+        slant: i32,
+        weight: i32,
+    );
+    fn cairo_set_font_size(
+        cr: *mut Cairo,
+        size: f64,
+    );
+    fn cairo_move_to(
+        cr: *mut Cairo,
+        x: f64,
+        y: f64,
+    );
+    fn cairo_show_text(
+        cr: *mut Cairo,
+        utf8: *const i8,
+    );
+}
+
+#[repr(C)]
+pub struct Cairo {
+    _data: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+
+impl Cairo {
+    pub fn new<'a>(surface: *mut CairoSurface) -> Option<&'a mut Cairo> {
+        let cairo = unsafe { cairo_create(surface) };
+        unsafe { cairo.as_mut() }
+    }
+
+    pub fn arc(&mut self, xc: f64, yc: f64, radius: f64, angle1: f64, angle2: f64) {
+        unsafe { cairo_arc(self, xc, yc, radius, angle1, angle2) }
+    }
+
+    pub fn close_path(&mut self) {
+        unsafe { cairo_close_path(self) }
+    }
+
+    pub fn new_path(&mut self) {
+        unsafe { cairo_new_path(self) }
+    }
+
+    pub fn fill_preserve(&mut self) {
+        unsafe { cairo_fill_preserve(self) }
+    }
+
+    pub fn set_line_width(&mut self, width: f64) {
+        unsafe { cairo_set_line_width(self, width) }
+    }
+
+    pub fn stroke(&mut self) {
+        unsafe { cairo_stroke(self) }
+    }
+
+    pub fn set_source_rgba(&mut self, red: f64, green: f64, blue: f64, alpha: f64) {
+        unsafe { cairo_set_source_rgba(self, red, green, blue, alpha) }
+    }
+
+    pub fn select_font_face(&mut self, family: &str, slant: FontSlant, weight: FontWeight) {
+        let family = CString::new(family).unwrap();
+        unsafe { cairo_select_font_face(self, family.as_ptr(), slant as i32, weight as i32); }
+    }
+
+    pub fn set_font_size(&mut self, size: f64) {
+        unsafe { cairo_set_font_size(self, size) }
+    }
+
+    pub fn move_to(&mut self, x: f64, y: f64) {
+        unsafe { cairo_move_to(self, x, y) }
+    }
+
+    pub fn show_text(&mut self, utf8: &str) {
+        let text = CString::new(utf8).unwrap();
+        unsafe { cairo_show_text(self, text.as_ptr()) }
+    }
+}
+
+#[repr(C)]
+pub struct CairoSurface {
+    _data: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+
+#[link(name = "cairo")]
 unsafe extern "C" {}
 
-fn create_x11_window() -> (*mut Display, Window, i32) {
+
+fn main() {
     unsafe {
         let display = XOpenDisplay(ptr::null());
         if display.is_null() {
-            panic!("Failed to open X display");
+            panic!("Cannot open display");
         }
-
         let screen = XDefaultScreen(display);
         let root = XRootWindow(display, screen);
-        let white = XWhitePixel(display, screen);
-        let black = XBlackPixel(display, screen);
 
-        let win = XCreateSimpleWindow(
+        let window = XCreateSimpleWindow(
             display,
             root,
-            0,
-            0,
-            800,
-            600,
+            100,
+            100,
+            400,
+            300,
             1,
-            black,
-            white,
+            XBlackPixel(display, screen),
+            XWhitePixel(display, screen),
         );
 
-        XStoreName(display, win, b"X11 + Xft Text\0".as_ptr() as *const i8);
-        XSelectInput(display, win, ExposureMask | KeyPressMask);
-        XMapWindow(display, win);
-        (display, win, screen)
-    }
-}
+        XSelectInput(display, window, ExposureMask | KeyPressMask);
+        XMapWindow(display, window);
+        let surface = cairo_xlib_surface_create(display, window, XDefaultVisual(display, screen), 400, 300);
+        let cr = Cairo::new(surface).unwrap();
 
-
-fn create_xft_resources(display: *mut Display, win: Window) -> (*mut XftDraw, *mut XftFont, XftColor) {
-    unsafe {
-        let screen = XDefaultScreen(display);
-        let visual = XDefaultVisual(display, screen);
-        let colormap = XDefaultColormap(display, screen);
-
-        // 创建 XftDraw 对象
-        let draw = XftDrawCreate(display, win, visual, colormap);
-        if draw.is_null() {
-            panic!("Failed to create XftDraw");
-        }
-        let font = CString::new("仿宋").unwrap();
-        // 加载字体
-        let font = XftFontOpenName(display, screen, font.as_ptr() as *const i8);
-        if font.is_null() {
-            panic!("Failed to open font");
-        }
-
-        // 创建颜色（黑色）
-        let mut xft_color: XftColor = std::mem::zeroed();
-        let mut render_color: XRenderColor = XRenderColor {
-            red: 0x0000,
-            green: 0x0000,
-            blue: 0x0000,
-            alpha: 0xffff,
-        };
-
-        if XftColorAllocValue(display, visual, colormap, &mut render_color, &mut xft_color) == 0 {
-            panic!("Failed to alloc color");
-        }
-
-        (draw, font, xft_color)
-    }
-}
-
-
-fn draw_text(display: *mut Display, draw: *mut XftDraw, font: *mut XftFont, color: &mut XftColor, x: i32, y: i32, text: &str) {
-    unsafe {
-        let c_str = std::ffi::CString::new(text).unwrap();
-        XftDrawStringUtf8(
-            draw,
-            color,
-            font,
-            x,
-            y,
-            c_str.as_ptr() as *const u8,
-            text.len() as i32,
-        );
-        XFlush(display);
-    }
-}
-
-fn set_gc_color(display: *mut Display, gc: GC, screen: i32, r: u8, g: u8, b: u8) {
-    unsafe {
-        let cmap = XDefaultColormap(display, screen);
-        let mut color: XColor = std::mem::zeroed();
-        let name = format!("#{:02x}{:02x}{:02x}", r, g, b);
-        let cname = CString::new(name).unwrap();
-        // Alloc named color; if fail, fallback to simple pixel
-        if XParseColor(display, cmap, cname.as_ptr() as *const i8, &mut color) != 0 {
-            XAllocColor(display, cmap, &mut color);
-            XSetForeground(display, gc, color.pixel);
-        } else {
-            // fallback: compose pixel from r/g/b into 24-bit value (may not be perfect)
-            let pixel = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
-            XSetForeground(display, gc, pixel.into());
-        }
-    }
-}
-
-/// Draw a filled rounded rectangle on `drawable` using `gc`.
-/// x,y : top-left, w/h : size, rx/ry : corner radius (in pixels)
-unsafe fn fill_rounded_rect(display: *mut Display, drawable: Drawable, gc: GC, x: i32, y: i32, w: u32, h: u32, rx: u32, ry: u32) {
-    let rx = rx.min(w / 2);
-    let ry = ry.min(h / 2);
-
-    // center rect
-    if w > 2 * rx && h > 2 * ry {
-        XFillRectangle(display, drawable, gc, x + rx as i32, y + ry as i32, w - 2 * rx, h - 2 * ry);
-    }
-
-    // top rect
-    if w > 2 * rx {
-        XFillRectangle(display, drawable, gc, x + rx as i32, y, w - 2 * rx, ry);
-        // bottom rect
-        XFillRectangle(display, drawable, gc, x + rx as i32, y + (h - ry) as i32, w - 2 * rx, ry);
-    }
-
-    // left rect
-    if h > 2 * ry {
-        XFillRectangle(display, drawable, gc, x, y + ry as i32, rx, h - 2 * ry);
-        // right rect
-        XFillRectangle(display, drawable, gc, x + (w - rx) as i32, y + ry as i32, rx, h - 2 * ry);
-    }
-
-    // four corner arcs (filled)
-    // XFillArc expects width,height for the full ellipse; start angle in 64ths of degrees
-    if rx > 0 && ry > 0 {
-        // top-left
-        XFillArc(
-            display,
-            drawable,
-            gc,
-            x,
-            y,
-            2 * rx,
-            2 * ry,
-            90 * 64,
-            90 * 64,
-        );
-        // top-right
-        XFillArc(
-            display,
-            drawable,
-            gc,
-            x + (w - 2 * rx) as i32,
-            y,
-            2 * rx,
-            2 * ry,
-            0 * 64,
-            90 * 64,
-        );
-        // bottom-right
-        XFillArc(
-            display,
-            drawable,
-            gc,
-            x + (w - 2 * rx) as i32,
-            y + (h - 2 * ry) as i32,
-            2 * rx,
-            2 * ry,
-            270 * 64,
-            90 * 64,
-        );
-        // bottom-left
-        XFillArc(
-            display,
-            drawable,
-            gc,
-            x,
-            y + (h - 2 * ry) as i32,
-            2 * rx,
-            2 * ry,
-            180 * 64,
-            90 * 64,
-        );
-    }
-}
-
-/// Draw rounded rectangle with border by painting outer rounded rect with border color,
-/// then inset and paint inner rounded rect with fill color (carving out the center).
-unsafe fn draw_rounded_rect_with_border(
-    display: *mut Display,
-    drawable: Drawable,
-    screen: i32,
-    gc_border: GC,
-    gc_fill: GC,
-    x: i32,
-    y: i32,
-    w: u32,
-    h: u32,
-    rx: u32,
-    ry: u32,
-    border: u32,
-) {
-    if w == 0 || h == 0 {
-        return;
-    }
-    // draw outer (border color) as filled rounded rect
-    fill_rounded_rect(display, drawable, gc_border, x, y, w, h, rx, ry);
-
-    // compute inner rect (inset by border)
-    if border == 0 {
-        return;
-    }
-    let inset = border as i32;
-    let ix = x + inset;
-    let iy = y + inset;
-    let iw = if (w as i32 - 2 * inset) > 0 {
-        (w as i32 - 2 * inset) as u32
-    } else {
-        0
-    };
-    let ih = if (h as i32 - 2 * inset) > 0 {
-        (h as i32 - 2 * inset) as u32
-    } else {
-        0
-    };
-
-    if iw > 0 && ih > 0 {
-        // inner radii = outer radii - inset (not less than 0)
-        let irx = if rx as i32 - inset > 0 { (rx as i32 - inset) as u32 } else { 0 };
-        let iry = if ry as i32 - inset > 0 { (ry as i32 - inset) as u32 } else { 0 };
-        // paint inner with fill color -> leaves border visible
-        fill_rounded_rect(display, drawable, gc_fill, ix, iy, iw, ih, irx, iry);
-    }
-}
-
-fn main() {
-    let (display, win, screen) = create_x11_window();
-    let (draw, font, mut color) = create_xft_resources(display, win);
-    let gc_border = unsafe { XCreateGC(display, win, 0, ptr::null_mut()) };
-    let gc_fill = unsafe { XCreateGC(display, win, 0, ptr::null_mut()) };
-    // background GC if needed
-    let gc_bg = unsafe { XCreateGC(display, win, 0, ptr::null_mut()) };
-
-    set_gc_color(display, gc_border, screen, 0x1f, 0x77, 0xb4); // border color (blue-ish)
-    set_gc_color(display, gc_fill, screen, 0xff, 0xff, 0xff);   // fill color (white)
-    set_gc_color(display, gc_bg, screen, 0xff, 0xff, 0xff);     // background (same as fill here)
-
-    unsafe {
-        let mut event: XEvent = std::mem::zeroed();
         loop {
+            let mut event: XEvent = std::mem::zeroed();
             XNextEvent(display, &mut event);
 
             match event.get_type() {
                 Expose => {
-                    // draw_text(display, draw, font, &mut color, 50, 100, "Hello X11 + Xft 中文测试");
-                    XFillRectangle(
-                        display,
-                        win,
-                        gc_bg,
-                        0,
-                        0,
-                        100 as u32,
-                        100 as u32,
-                    );
+                    draw_text(cr, "test 中文", 100.0, 100.0, 14.0);
 
-                    set_gc_color(display, gc_border, screen, 0x2c, 0xa0, 0x2c); // green border
-                    set_gc_color(display, gc_fill, screen, 0xf8, 0xff, 0xf8);   // fill slightly off-white
-                    draw_rounded_rect_with_border(
-                        display,
-                        win,
-                        screen,
-                        gc_border,
-                        gc_fill,
-                        300, 60,
-                        240, 180,
-                        40, 40,
-                        4,
-                    );
-
-
-                    XFlush(display);
+                    // draw_rounded_rect(cr, 50.0, 50.0, 300.0, 200.0, 30.0);
+                    cairo_surface_flush(surface);
                 }
                 KeyPress => break,
                 _ => {}
             }
         }
 
-        // 释放资源
-        XftDrawDestroy(draw);
-        XftFontClose(display, font);
+        XDestroyWindow(display, window);
         XCloseDisplay(display);
     }
+}
+
+fn draw_text(cr: &mut Cairo, text: &str, x: f64, y: f64, font_size: f64) {
+    cr.select_font_face("仿宋", FontSlant::Normal, FontWeight::Normal);
+    cr.set_font_size(font_size);
+    cr.set_source_rgba(0.0, 0.0, 0.0, 1.0);
+    cr.move_to(x, y);
+    cr.show_text(text);
+}
+
+/// Cairo 绘制抗锯齿圆角矩形
+fn draw_rounded_rect(cr: &mut Cairo, x: f64, y: f64, width: f64, height: f64, radius: f64) {
+    let x1 = x;
+    let y1 = y;
+    let x2 = x + width;
+    let y2 = y + height;
+    cr.new_path();
+    cr.arc(x2 - radius, y1 + radius, radius, -90_f64.to_radians(), 0_f64.to_radians());
+    cr.arc(x2 - radius, y2 - radius, radius, 0_f64.to_radians(), 90_f64.to_radians());
+    cr.arc(x1 + radius, y2 - radius, radius, 90_f64.to_radians(), 180_f64.to_radians());
+    cr.arc(x1 + radius, y1 + radius, radius, 180_f64.to_radians(), 270_f64.to_radians());
+    cr.close_path();
+    cr.set_source_rgba(0.5, 0.3, 0.2, 0.4);
+    cr.fill_preserve();
+    cr.set_line_width(2.0);
+    cr.set_source_rgba(0.5, 0.8, 0.6, 0.7);
+    cr.stroke();
+    // cr.new_path();
+    // unsafe {
+    //     cairo_new_path(cr);
+    //     // cairo_arc(cr, x1, y1, x2, y2, radius);
+    //     cairo_arc(cr, x2 - radius, y1 + radius, radius, -90_f64.to_radians(), 0_f64.to_radians());
+    //     cairo_arc(cr, x2 - radius, y2 - radius, radius, 0_f64.to_radians(), 90_f64.to_radians());
+    //     cairo_arc(cr, x1 + radius, y2 - radius, radius, 90_f64.to_radians(), 180_f64.to_radians());
+    //     cairo_arc(cr, x1 + radius, y1 + radius, radius, 180_f64.to_radians(), 270_f64.to_radians());
+    //     cairo_close_path(cr);
+    //     cairo_set_source_rgba(cr, 0.5, 0.3, 0.2, 0.4);
+    //     cairo_fill_preserve(cr);
+    //     cairo_set_line_width(cr, 2.0);
+    //     cairo_set_source_rgba(cr, 0.5, 0.8, 0.6, 0.7);
+    //     cairo_stroke(cr);
+    //
+    //
+    //     // cairo_fill(cr);
+    //     // cr.set_source_rgb(0.5, 0.3, 0.2);
+    //     // cr.cairo();
+    // }
+    // cr.arc(x2 - radius, y1 + radius, radius, -90_f64.to_radians(), 0_f64.to_radians());
+    // cr.arc(x2 - radius, y2 - radius, radius, 0_f64.to_radians(), 90_f64.to_radians());
+    // cr.arc(x1 + radius, y2 - radius, radius, 90_f64.to_radians(), 180_f64.to_radians());
+    // cr.arc(x1 + radius, y1 + radius, radius, 180_f64.to_radians(), 270_f64.to_radians());
+
+    // cr.close_path();
+
+    // cr.set_source_rgb(0.5, 0.3, 0.2);
+    // cr.fill();
 }

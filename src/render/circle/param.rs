@@ -1,7 +1,7 @@
 use crate::render::WrcParam;
-use crate::{Size, Ui};
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
+use crate::Size;
 
 #[repr(C)]
 #[derive(Clone, Copy)]

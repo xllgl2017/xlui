@@ -1,5 +1,3 @@
-#[cfg(feature = "gpu")]
-use std::mem;
 use crate::align::Align;
 use crate::size::Geometry;
 #[cfg(feature = "gpu")]
@@ -13,6 +11,8 @@ use crate::Padding;
 use crate::SAMPLE_COUNT;
 #[cfg(feature = "gpu")]
 use glyphon::Shaping;
+#[cfg(feature = "gpu")]
+use std::mem;
 #[cfg(feature = "gpu")]
 use wgpu::MultisampleState;
 
@@ -73,9 +73,11 @@ impl TextBuffer {
         if let Some(line) = self.lines.last_mut() { line.auto_wrap = true; }
     }
 
-    #[cfg(all(windows, not(feature = "gpu")))]
+    #[cfg(not(feature = "gpu"))]
     fn reset(&mut self, ui: &mut Ui) {
-        self.lines = ui.context.window.win32().measure_char_widths(&self.text);
+        #[cfg(target_os = "windows")]
+        { self.lines = ui.context.window.win32().measure_char_widths(&self.text); }
+        self.lines = ui.context.window.x11().measure_char_widths(&self.text);
         self.text.width = self.lines[0].width;
     }
 
@@ -84,7 +86,7 @@ impl TextBuffer {
         if self.text.family.is_none() { self.text.family = Some(ui.context.font.family().to_string()) }
         self.text.height = ui.context.font.line_height(self.text.font_size());
 
-        #[cfg(all(windows, not(feature = "gpu")))]
+        #[cfg(not(feature = "gpu"))]
         self.reset(ui);
         #[cfg(feature = "gpu")]
         {
@@ -181,8 +183,11 @@ impl TextBuffer {
         ui.context.window.win32().paint_text(hdc, &self.text, self.geometry.rect());
     }
 
-    #[cfg(not(feature = "gpu"))]
-    pub(crate) fn redraw(&mut self, ui: &mut Ui) {}
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+    pub(crate) fn redraw(&mut self, ui: &mut Ui) {
+        let param = &mut ui.paint.as_mut().unwrap();
+        ui.context.window.x11().paint_text(param, &self.text, self.geometry.rect()).unwrap();
+    }
 
     pub fn set_text(&mut self, text: String) {
         self.change = self.text.text != text;

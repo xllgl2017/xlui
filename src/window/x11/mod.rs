@@ -1,25 +1,36 @@
 use crate::error::UiResult;
 use crate::key::Key;
+use crate::map::Map;
+#[cfg(not(feature = "gpu"))]
+use crate::ui::PaintParam;
 use crate::window::event::WindowEvent;
 use crate::window::ime::{IMEData, IME};
+use crate::window::wino::{EventLoopHandle, LoopWindow};
+use crate::window::x11::clipboard::X11ClipBoard;
 use crate::window::x11::handle::X11WindowHandle;
 use crate::window::x11::ime::flag::{Capabilities, Modifiers};
 use crate::window::{WindowId, WindowKind, WindowType};
-use crate::{App, Pos, Size, WindowAttribute};
+use crate::*;
 use std::ffi::CString;
 use std::os::raw::{c_long, c_uint, c_ulong};
+use std::process::exit;
 use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use std::{mem, ptr};
-use std::process::exit;
+#[cfg(not(feature = "gpu"))]
+use std::thread::{sleep, spawn};
+#[cfg(not(feature = "gpu"))]
+use std::time::Duration;
 use x11::xlib;
-use x11::xlib::{AllocNone, XCloseDisplay, XLookupString};
-use crate::map::Map;
-use crate::window::wino::{EventLoopHandle, LoopWindow};
+use x11::xlib::{AllocNone, XCloseDisplay, XLookupString, XVisualInfo};
+#[cfg(not(feature = "gpu"))]
+use crate::window::x11::ffi::{Cairo, CairoSurface};
 
 pub mod ime;
 pub mod handle;
 mod clipboard;
+#[cfg(not(feature = "gpu"))]
+pub mod ffi;
 
 #[repr(C)]
 struct X11WmHints {
@@ -36,7 +47,6 @@ pub struct X11Window {
     wm_delete_atom: xlib::Atom,
     size: RwLock<Size>,
     root: xlib::Window,
-    visual_info: xlib::XVisualInfo,
     modify_keys: Vec<c_uint>,
 }
 
@@ -68,19 +78,19 @@ impl X11Window {
                 &mut n,
             );
             if vinfo.is_null() { return Err("No ARGB visual found".into()); }
-            let p = CString::new("@im=none").unwrap();
+            let p = CString::new("@im=none")?;
             xlib::XSetLocaleModifiers(p.as_ptr());
+            let visual_info = *vinfo;
             let mut res = Self {
                 display,
                 windows: Map::new(),
                 wm_delete_atom: wm_delete,
                 size: RwLock::new(attr.inner_size),
                 root,
-                visual_info: *vinfo,
                 modify_keys: vec![],
             };
             xlib::XFree(vinfo as *mut _);
-            let handle = res.init(&attr, ime, screen)?;
+            let handle = res.init(&attr, visual_info, ime, screen)?;
             #[cfg(not(feature = "gpu"))]
             let window = LoopWindow::create_native_window(Box::new(app), Arc::new(handle), attr);
             #[cfg(feature = "gpu")]
@@ -90,8 +100,9 @@ impl X11Window {
         }
     }
 
-    fn init(&mut self, attr: &WindowAttribute, ime: Arc<IME>, screen: i32) -> UiResult<WindowType> {
-        let handle = self.create_window(screen, attr)?;
+    fn init(&mut self, attr: &WindowAttribute, visual_info: XVisualInfo, ime: Arc<IME>, screen: i32) -> UiResult<WindowType> {
+        let colormap = unsafe { xlib::XCreateColormap(self.display, self.root, visual_info.visual, AllocNone) };
+        let handle = self.create_window(screen, colormap, visual_info, attr)?;
         let window = WindowType {
             kind: WindowKind::X11(handle),
             id: WindowId::unique_id(),
@@ -102,9 +113,8 @@ impl X11Window {
         Ok(window)
     }
 
-    fn create_window(&mut self, screen: i32, attr: &WindowAttribute) -> UiResult<X11WindowHandle> {
+    fn create_window(&mut self, screen: i32, colormap: u64, visual_info: XVisualInfo, attr: &WindowAttribute) -> UiResult<X11WindowHandle> {
         unsafe {
-            let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, AllocNone);
             let mut swa: xlib::XSetWindowAttributes = std::mem::zeroed();
             swa.colormap = colormap;
             swa.border_pixel = if attr.transparent { 0 } else { xlib::XWhitePixel(self.display, screen) };
@@ -114,9 +124,9 @@ impl X11Window {
                 self.root,
                 attr.position[0], attr.position[1], attr.inner_size.width_u32(), attr.inner_size.height_u32(),
                 1,
-                self.visual_info.depth,
+                visual_info.depth,
                 xlib::InputOutput as u32,
-                self.visual_info.visual,
+                visual_info.visual,
                 xlib::CWColormap | xlib::CWBorderPixel | xlib::CWBackPixel,
                 &mut swa,
             );
@@ -157,13 +167,25 @@ impl X11Window {
             xlib::XMapWindow(self.display, child);
             xlib::XFlush(self.display);
             xlib::XSetWMProtocols(self.display, child, &mut self.wm_delete_atom, 1);
-            X11WindowHandle::new(self.display, child, 0, screen)
+            Ok(X11WindowHandle {
+                display: self.display,
+                window: child,
+                update_atom: 0,
+                screen,
+                clipboard: X11ClipBoard::new(self.display)?,
+                visual_info,
+                size: RwLock::new(attr.inner_size.clone()),
+                #[cfg(not(feature = "gpu"))]
+                root: self.root,
+                colormap,
+            })
+            // X11WindowHandle::new(self.display, child, 0, screen)
         }
     }
 
     pub fn create_child_window(&mut self, parent: &Arc<WindowType>, app: Box<dyn App>) -> UiResult<()> {
         let attr = app.window_attributes();
-        let mut handle = self.create_window(parent.x11().screen, &attr)?;
+        let mut handle = self.create_window(parent.x11().screen, parent.x11().colormap, parent.x11().visual_info, &attr)?;
         handle.update_atom = parent.x11().update_atom;
         let window = Arc::from(WindowType {
             id: WindowId::unique_id(),
@@ -192,7 +214,58 @@ impl X11Window {
                 if window.handle().ime.is_working() { window.handle().ime.update(); }
                 let typ = event.get_type();
                 match typ {
-                    xlib::Expose => window.handle_event(WindowEvent::Redraw),
+                    xlib::Expose => {
+                        #[cfg(not(feature = "gpu"))]
+                        {
+                            if crate::time_ms() - window.app_ctx.previous_time <= 10 {
+                                let handle = window.handle().clone();
+                                if window.app_ctx.redraw_thread.is_finished() {
+                                    window.app_ctx.redraw_thread = spawn(move || {
+                                        sleep(Duration::from_millis(10));
+                                        handle.request_redraw();
+                                    });
+                                }
+
+                                continue;
+                            }
+                            let width = event.expose.width;
+                            let height = event.expose.height;
+                            let pixmap = xlib::XCreatePixmap(self.display, window.handle().x11().window, width as u32, height as u32, window.handle().x11().visual_info.depth as u32);
+                            let gc = xlib::XCreateGC(self.display, pixmap, 0, null_mut());
+                            // 设置背景颜色，例如浅灰色
+                            let color = Color::rgb(240, 240, 240).as_rgba_u32(); // RGB (192,192,192)
+                            xlib::XSetForeground(self.display, gc, color as u64);
+                            // 填充整个窗口
+                            xlib::XFillRectangle(self.display, pixmap, gc, 0, 0, width as u32, height as u32);
+                            let surface = CairoSurface::new(self.display, pixmap, window.handle().x11().visual_info.visual, width, height);
+                            let cairo = Cairo::new(surface).unwrap();
+                            let draw_param = PaintParam {
+                                cairo,
+                                window: pixmap,
+                            };
+
+
+                            // let draw = XftDrawCreate(self.display, window.handle().x11().window, window.handle().x11().visual_info.visual, window.handle().x11().colormap);
+                            // if draw.is_null() { return Err("Failed to create XftDraw".into()); }
+                            // let pixmap = xlib::XCreatePixmap(self.display, window.handle().x11().window, width as u32, height as u32, window.handle().x11().visual_info.depth as u32);
+                            // let gc = xlib::XCreateGC(self.display, pixmap, 0, null_mut());
+                            // // 设置背景颜色，例如浅灰色
+                            // let color = Color::WHITE.as_rgba_u32(); // RGB (192,192,192)
+                            // xlib::XSetForeground(self.display, gc, color as u64);
+                            // // 获取窗口大小（Expose 时可从 event.xexpose 获取）
+
+
+                            window.handle_event(WindowEvent::Redraw(draw_param));
+
+                            // 一次性把 pixmap 显示到窗口
+                            xlib::XCopyArea(self.display, pixmap, window.handle().x11().window, gc, 0, 0, width as u32, height as u32, 0, 0);
+                            xlib::XFreePixmap(self.display, pixmap);
+                            // XftDrawDestroy(draw);
+                            xlib::XFreeGC(self.display, gc);
+                        }
+                        #[cfg(feature = "gpu")]
+                        window.handle_event(WindowEvent::Redraw);
+                    }
                     xlib::FocusIn => {
                         window.handle().ime.focus_in();
                         println!("focus in window");
@@ -221,12 +294,18 @@ impl X11Window {
                         if xclient.message_type == window.handle().x11().update_atom {
                             match xclient.data.get_long(0) {
                                 0 => window.handle_event(WindowEvent::ReqUpdate),
-                                1 => window.handle_event(WindowEvent::CreateChild),
+                                1 => {
+                                    let app = window.app_ctx.context.new_window.take().unwrap();
+                                    let handle = window.handle().clone();
+                                    self.create_child_window(&handle, app)?;
+                                    continue;
+                                }
                                 2 => window.handle_event(WindowEvent::ReInit),
                                 3 => window.handle_event(WindowEvent::UserUpdate),
                                 _ => {}
                             };
                         } else if xclient.data.get_long(0) as xlib::Atom == self.wm_delete_atom {
+                            if window.handle().type_ == WindowType::ROOT { exit(0); }
                             let wid = self.windows.iter().find(|x| x.handle().x11().window == event.expose.window);
                             if let Some(wid) = wid { self.windows.remove(&wid.window_id()); }
                             if self.windows.len() == 0 { exit(0); }

@@ -1,11 +1,11 @@
-use crate::render::{WrcParam, WrcRender};
+use crate::render::WrcParam;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, FrameStyle, Shadow};
-use crate::{BorderStyle, FillStyle, Size, Ui};
+use crate::*;
 
+#[cfg(feature = "gpu")]
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
+#[derive(Clone, Copy, Debug,bytemuck::Pod, bytemuck::Zeroable)]
 pub struct RectDrawParam {
     pos: [f32; 2],           //⬅️ 左上角顶点位置
     size: [f32; 2],          //⬅️ 矩形的宽高
