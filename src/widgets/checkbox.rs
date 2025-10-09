@@ -170,27 +170,13 @@ impl CheckBox {
             rect.add_min_x(self.check_render.rect().width() + 2.0);
             self.text.geometry.offset_to_rect(&rect);
         }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            if let Some(ref mut fill) = self.fill {
-                #[cfg(feature = "gpu")]
-                fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-            }
-            #[cfg(feature = "gpu")]
-            self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-        }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
         if let Some(ref mut fill) = self.fill {
-            // #[cfg(feature = "gpu")]
-            // ui.context.render.rectangle.render(fill, pass);
             fill.draw(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
         }
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.check_render, pass);
         self.check_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }

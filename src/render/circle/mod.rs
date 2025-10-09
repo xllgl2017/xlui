@@ -1,5 +1,6 @@
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
+#[cfg(feature = "gpu")]
 use crate::Device;
 #[cfg(feature = "gpu")]
 use wgpu::include_wgsl;

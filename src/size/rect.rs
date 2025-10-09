@@ -70,16 +70,19 @@ impl Rect {
     pub fn size(&self) -> (f32, f32) {
         (self.width(), self.height())
     }
-
+    #[cfg(feature = "gpu")]
     pub(crate) fn left_bottom(&self) -> [f32; 2] {
         [self.dx.min, self.dy.max]
     }
+    #[cfg(feature = "gpu")]
     pub(crate) fn right_bottom(&self) -> [f32; 2] {
         [self.dx.max, self.dy.max]
     }
+    #[cfg(feature = "gpu")]
     pub(crate) fn right_top(&self) -> [f32; 2] {
         [self.dx.max, self.dy.min]
     }
+    #[cfg(feature = "gpu")]
     pub(crate) fn left_top(&self) -> [f32; 2] {
         [self.dx.min, self.dy.min]
     }

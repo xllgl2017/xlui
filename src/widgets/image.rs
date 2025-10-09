@@ -3,6 +3,7 @@ use crate::render::image::ImageSource;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::ui::Ui;
+#[cfg(feature = "gpu")]
 use crate::vertex::ImageVertex;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::Size;
@@ -36,7 +37,7 @@ pub struct Image {
     id: String,
     source: ImageSource,
     geometry: Geometry,
-
+    #[cfg(feature = "gpu")]
     vertices: Vec<ImageVertex>,
     #[cfg(feature = "gpu")]
     vertex_buffer: Option<wgpu::Buffer>,
@@ -51,6 +52,7 @@ impl Image {
             id: crate::gen_unique_id(),
             source: source.into(),
             geometry: Geometry::new(),
+            #[cfg(feature = "gpu")]
             vertices: vec![],
             #[cfg(feature = "gpu")]
             vertex_buffer: None,
@@ -117,7 +119,9 @@ impl Image {
         self.changed = false;
         if !ui.widget_changed.unchanged() {
             self.geometry.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             let rect = self.geometry.rect();
+            #[cfg(feature = "gpu")]
             for (index, v) in self.vertices.iter_mut().enumerate() {
                 match index {
                     0 => v.position = rect.left_top(),

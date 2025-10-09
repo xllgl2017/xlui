@@ -162,7 +162,7 @@ impl TextEdit {
         if ui.widget_changed.contains(WidgetChange::Value) {
             #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
-            self.cursor_render.update(ui);
+            self.cursor_render.update();
             self.select_render.update(ui);
         }
     }

@@ -76,11 +76,6 @@ impl ItemWidget {
         self
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        self.fill_render.init(ui, false, false);
-    }
-
     fn update_buffer(&mut self, ui: &mut Ui) {
         let current = self.current.read().unwrap();
         if current.as_ref() != Some(&self.data_str) && self.selected {
@@ -133,9 +128,11 @@ impl Widget for ItemWidget {
         // self.layout.as_mut().unwrap().update(ui);注意这里不能直接调widgets的update
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init => self.fill_render.init(ui, false, false),
             UpdateType::ReInit => {
-                self.init(ui);
+                #[cfg(feature = "gpu")]
+                self.fill_render.init(ui, false, false);
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseMove => {

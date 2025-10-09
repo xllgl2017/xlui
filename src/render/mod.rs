@@ -11,8 +11,8 @@ pub mod circle;
 pub mod image;
 pub mod triangle;
 
+#[cfg(feature = "gpu")]
 pub trait WrcParam {
-    #[cfg(feature = "gpu")]
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8];
 }
 
@@ -256,14 +256,13 @@ fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::Pi
     })
 }
 
+#[cfg(feature = "gpu")]
 pub(crate) trait WrcRender {
-    #[cfg(feature = "gpu")]
+
     fn pipeline(&self) -> &wgpu::RenderPipeline;
 
-    #[cfg(feature = "gpu")]
     fn bind_group_layout(&self) -> &wgpu::BindGroupLayout;
 
-    #[cfg(feature = "gpu")]
     fn init(&mut self, device: &Device, data: &[u8]) -> (wgpu::Buffer, wgpu::BindGroup) {
         let buffer = device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -282,8 +281,6 @@ pub(crate) trait WrcRender {
         (buffer, bind_group)
     }
 
-
-    #[cfg(feature = "gpu")]
     fn render(&self, param: &RenderParam, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(self.pipeline());
         render_pass.set_bind_group(0, param.bind_group.as_ref().unwrap(), &[]);

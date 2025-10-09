@@ -1,7 +1,5 @@
 use crate::frame::context::UpdateType;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::render::triangle::param::TriangleParam;
 use crate::response::Response;
 use crate::size::Geometry;
@@ -72,11 +70,6 @@ impl Triangle {
         self.render.set_style(style);
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        self.render.init(ui, false, false);
-    }
-
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
@@ -109,8 +102,8 @@ impl Widget for Triangle {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init | UpdateType::ReInit => self.render.init(ui, false, false),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

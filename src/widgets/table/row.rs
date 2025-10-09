@@ -1,4 +1,3 @@
-use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
 use crate::response::Response;
@@ -8,13 +7,12 @@ use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
 use crate::widgets::{WidgetKind, WidgetSize};
-use crate::{Color, FillStyle, Widget};
+use crate::*;
 
 pub struct TableRow {
     id: String,
     fill_render: RenderParam,
     cells: Vec<TableCell>,
-    // offset: Offset,
     geometry: Geometry,
 }
 
@@ -28,7 +26,6 @@ impl TableRow {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
             cells,
-            // offset: Offset::new(Pos::new()),
             geometry: Geometry::new().with_fix_height(row_height),
         }
     }
@@ -37,12 +34,6 @@ impl TableRow {
         self.geometry.set_fix_width(w);
         self
     }
-
-    pub(crate) fn init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        self.fill_render.init(ui, false, false);
-    }
-
 
     pub fn show_header<T: TableExt>(mut self, ui: &mut Ui, header: &TableHeader<T>) -> WidgetKind {
         self.cells = header.show(ui);
@@ -66,7 +57,8 @@ impl TableRow {
 impl Widget for TableRow {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
-            UpdateType::Init | UpdateType::ReInit => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init | UpdateType::ReInit => self.fill_render.init(ui, false, false),
             _ => {}
         }
         let mut width = 0.0;

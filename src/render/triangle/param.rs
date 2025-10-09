@@ -1,3 +1,4 @@
+#[cfg(feature = "gpu")]
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
@@ -7,9 +8,9 @@ use crate::{Offset, Rect};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::GdiPlus::PointF;
 
+#[cfg(feature = "gpu")]
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
+#[derive(Debug, Copy, Clone,bytemuck::Pod, bytemuck::Zeroable)]
 struct TriangleDrawParam {
     p0: [f32; 2],             //⬅️ 顶点位置1
     p1: [f32; 2],             //⬅️ 顶点位置2
@@ -27,13 +28,17 @@ pub struct TriangleParam {
     pub(crate) p1: Pos,
     pub(crate) p2: Pos,
     pub(crate) style: ClickStyle,
+    #[cfg(feature = "gpu")]
     draw: TriangleDrawParam,
 }
 
 impl TriangleParam {
     pub fn new(p0: Pos, p1: Pos, p2: Pos, style: ClickStyle) -> Self {
+        #[cfg(feature = "gpu")]
         let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
+        #[cfg(feature = "gpu")]
         let border = style.dyn_border(false, false);
+        #[cfg(feature = "gpu")]
         let draw = TriangleDrawParam {
             p0: [p0.x, p0.y],
             p1: [p1.x, p1.y],
@@ -56,6 +61,7 @@ impl TriangleParam {
             p1,
             p2,
             style,
+            #[cfg(feature = "gpu")]
             draw,
             rect,
         }
@@ -101,8 +107,8 @@ impl TriangleParam {
     }
 }
 
+#[cfg(feature = "gpu")]
 impl WrcParam for TriangleParam {
-    #[cfg(feature = "gpu")]
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         let border = self.style.dyn_border(mouse_down, hovered);

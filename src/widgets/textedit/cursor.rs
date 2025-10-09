@@ -63,12 +63,10 @@ impl EditCursor {
         self.changed = true;
     }
 
-    pub fn update(&mut self, ui: &mut Ui) {
+    pub fn update(&mut self) {
         if !self.changed { return; }
         self.changed = false;
         self.render.rect_mut().offset(&self.offset);
-        #[cfg(feature = "gpu")]
-        self.render.update(ui, false, false);
     }
 
     // pub fn offset(&mut self, offset: &Offset) {

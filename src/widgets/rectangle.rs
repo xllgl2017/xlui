@@ -2,8 +2,6 @@ use crate::Border;
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::size::rect::Rect;
@@ -46,11 +44,6 @@ impl Rectangle {
             hovered: false,
             changed: false,
         }
-    }
-
-    fn init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        self.fill_render.init(ui, false, false);
     }
 
     pub fn with_id(mut self, id: impl ToString) -> Self {
@@ -120,7 +113,8 @@ impl Widget for Rectangle {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init | UpdateType::ReInit => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init | UpdateType::ReInit => self.fill_render.init(ui, false, false),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
                 if self.hovered != hovered {
@@ -128,11 +122,6 @@ impl Widget for Rectangle {
                     self.changed = true;
                 }
             }
-            // UpdateType::Offset(ref o) => {
-            //     if !ui.can_offset { return Response::new(&self.id, &self.fill_render.param.rect); }
-            //     self.fill_render.param.rect.offset(o);
-            //     self.changed = true;
-            // }
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

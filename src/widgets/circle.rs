@@ -1,8 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::render::circle::param::CircleParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::size::rect::Rect;
@@ -61,11 +59,6 @@ impl Circle {
         }
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        self.render.init(ui, false, false);
-        self.changed = false;
-    }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         self.render.draw(ui, false, false);
@@ -76,8 +69,8 @@ impl Widget for Circle {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init|UpdateType::ReInit => self.render.init(ui, false, false),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

@@ -77,6 +77,7 @@ use std::time::SystemTime;
 
 mod widgets;
 mod align;
+#[cfg(feature = "gpu")]
 mod vertex;
 mod layout;
 mod text;
@@ -137,7 +138,7 @@ macro_rules! impl_num_cast_ext {
 // 支持的类型
 impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
-
+#[cfg(feature = "gpu")]
 const SAMPLE_COUNT: u32 = 4;
 
 
