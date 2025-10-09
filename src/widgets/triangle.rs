@@ -100,10 +100,7 @@ impl Triangle {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.triangle.render(&self.render, pass);
+        self.render.draw(ui, false, false);
     }
 }
 

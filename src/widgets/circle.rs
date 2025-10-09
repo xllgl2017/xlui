@@ -68,10 +68,7 @@ impl Circle {
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.circle.render(&self.render, pass);
+        self.render.draw(ui, false, false);
     }
 }
 
@@ -83,7 +80,7 @@ impl Widget for Circle {
             UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(),self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

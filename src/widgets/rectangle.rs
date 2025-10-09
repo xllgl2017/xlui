@@ -38,7 +38,7 @@ pub struct Rectangle {
 
 impl Rectangle {
     pub fn new(style: ClickStyle, width: f32, height: f32) -> Self {
-        let param=RectParam::new().with_size(width, height).with_style(style);
+        let param = RectParam::new().with_size(width, height).with_style(style);
         Rectangle {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RenderKind::Rectangle(param)),
@@ -112,10 +112,7 @@ impl Rectangle {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
     }
 }
 
