@@ -287,7 +287,7 @@ pub(crate) struct PaintParam<'p> {
     pub(crate) paint_struct: PAINTSTRUCT,
     #[cfg(all(windows, not(feature = "gpu")))]
     pub(crate) hdc: HDC,
-    #[cfg(target_os = "windows")]
+    #[cfg(feature = "gpu")]
     pub(crate) _s: &'p str,
 }
 
