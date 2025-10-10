@@ -31,7 +31,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-apt-
       - name: Install mold
-        run: sudo apt-get install mold libx11-dev libdbus-1-dev libxft-dev -y
+        run: sudo apt-get install mold libx11-dev libdbus-1-dev libxft-dev libcairo2-dev -y
 
       - name: Check Native
         run: cargo check
