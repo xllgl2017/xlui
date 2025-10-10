@@ -1,7 +1,9 @@
 use crate::frame::context::UpdateType;
 use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
 use crate::response::Response;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
@@ -12,7 +14,7 @@ use crate::size::Geometry;
 
 pub struct ItemWidget {
     id: String,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
     hovered: bool,
     layout: Option<LayoutKind>,
     data_str: String,
@@ -27,7 +29,7 @@ impl ItemWidget {
     pub fn new(layout: LayoutKind, data_str: String) -> Self {
         ItemWidget {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new()),
+            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
             hovered: false,
             layout: Some(layout),
             data_str,
@@ -45,7 +47,7 @@ impl ItemWidget {
     // }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
-        self.fill_render.param.style = style;
+        self.fill_render.set_style(style);
         self
     }
 
@@ -55,7 +57,7 @@ impl ItemWidget {
         self.layout = ui.layout.replace(previous_layout);
         let resp = self.layout.as_mut().unwrap().update(ui);
         self.geometry.set_size(resp.size.dw, resp.size.dh);
-        self.fill_render.param.rect.set_size(resp.size.dw, resp.size.dh);
+        self.fill_render.rect_mut().set_size(resp.size.dw, resp.size.dh);
         // ui.add(self);
     }
 
@@ -74,10 +76,6 @@ impl ItemWidget {
         self
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        self.fill_render.init_rectangle(ui, false, false);
-    }
-
     fn update_buffer(&mut self, ui: &mut Ui) {
         let current = self.current.read().unwrap();
         if current.as_ref() != Some(&self.data_str) && self.selected {
@@ -89,11 +87,13 @@ impl ItemWidget {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
         }
     }
@@ -115,7 +115,9 @@ impl ItemWidget {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.rectangle.render(&self.fill_render, pass);
         self.layout.as_mut().unwrap().update(ui);
     }
@@ -126,13 +128,15 @@ impl Widget for ItemWidget {
         // self.layout.as_mut().unwrap().update(ui);注意这里不能直接调widgets的update
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init => self.fill_render.init(ui, false, false),
             UpdateType::ReInit => {
-                self.init(ui);
+                #[cfg(feature = "gpu")]
+                self.fill_render.init(ui, false, false);
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
+                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
@@ -141,7 +145,7 @@ impl Widget for ItemWidget {
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
+                if ui.device.device_input.click_at(self.fill_render.rect()) {
                     self.selected = true;
                     if let Some(ref mut callback) = self.callback {
                         callback(&self.data_str, ui);

@@ -16,15 +16,23 @@ use crate::widgets::space::Space;
 use crate::widgets::{Widget, WidgetChange, WidgetKind};
 use crate::window::inner::InnerWindow;
 use crate::window::{UserEvent, WindowId, WindowType};
-use crate::{Button, Device, Image, Label, NumCastExt, RadioButton, SelectItem, Slider, SpinBox, WindowAttribute, SAMPLE_COUNT};
-use std::fmt::Display;
+use crate::*;
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::{AddAssign, Range, SubAssign};
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use std::thread::{sleep, spawn, JoinHandle};
+#[cfg(feature = "gpu")]
+use std::thread::sleep;
+use std::thread::{spawn, JoinHandle};
+#[cfg(feature = "gpu")]
 use std::time::Duration;
+#[cfg(feature = "gpu")]
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
+#[cfg(all(windows, not(feature = "gpu")))]
+use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
+#[cfg(all(target_os = "linux", not(feature = "gpu")))]
+use crate::window::x11::ffi::Cairo;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -33,14 +41,15 @@ pub struct AppContext {
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
     pub(crate) style: Rc<RefCell<Style>>,
     pub(crate) context: Context,
-    previous_time: u128,
-    redraw_thread: JoinHandle<()>,
+    pub(crate) previous_time: u128,
+    pub(crate) redraw_thread: JoinHandle<()>,
     attr: WindowAttribute,
 }
 
 impl AppContext {
     pub fn new(device: Device, context: Context, attr: WindowAttribute) -> AppContext {
-        let layout = VerticalLayout::top_to_bottom().with_size(device.surface_config.width as f32, device.surface_config.height as f32)
+        let size = context.window.size();
+        let layout = VerticalLayout::top_to_bottom().with_size(size.width, size.height)
             .with_space(5.0).with_padding(Padding::same(5.0));
         AppContext {
             device,
@@ -56,11 +65,13 @@ impl AppContext {
     }
 
     pub fn draw(&mut self, app: &mut Box<dyn App>) {
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: Some(self.layout.take().unwrap()),
             popups: self.popups.take(),
@@ -71,6 +82,7 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            paint: None,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -80,11 +92,13 @@ impl AppContext {
 
     #[cfg(not(feature = "winit"))]
     pub fn user_update(&mut self, app: &mut Box<dyn App>) {
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: self.layout.take(),
             popups: None,
@@ -94,18 +108,21 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style:self.style.clone(),
+            style: self.style.clone(),
+            paint: None,
         };
         app.update(&mut ui);
         self.layout = ui.layout.take();
     }
 
     pub fn update(&mut self, ut: UpdateType, app: &mut Box<dyn App>) {
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: self.layout.take(),
             popups: None,
@@ -113,10 +130,10 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-
             draw_rect,
             widget_changed: WidgetChange::None,
-            style:self.style.clone(),
+            style: self.style.clone(),
+            paint: None,
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -124,7 +141,7 @@ impl AppContext {
         let inner_windows = self.inner_windows.as_ref().unwrap();
         for i in 0..inner_windows.len() {
             let win = &inner_windows[inner_windows.len() - i - 1];
-            if self.device.device_input.hovered_at(&win.fill_render.param.rect) || win.press_title {
+            if self.device.device_input.hovered_at(win.fill_render.rect()) || win.press_title {
                 event_win = Some(win.id);
                 break;
             }
@@ -157,8 +174,10 @@ impl AppContext {
         self.inner_windows = ui.inner_windows.take();
     }
 
-    pub fn redraw(&mut self, app: &mut Box<dyn App>) {
+    pub fn redraw(&mut self, app: &mut Box<dyn App>, paint: Option<PaintParam>) { //ps: Option<PAINTSTRUCT>, hdc: Option<HDC>
+        #[cfg(feature = "gpu")]
         if !self.redraw_thread.is_finished() { return; }
+        #[cfg(feature = "gpu")]
         if crate::time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
             let t = self.previous_time;
@@ -168,6 +187,7 @@ impl AppContext {
             });
             return;
         }
+        #[cfg(feature = "gpu")]
         let surface_texture = match self.device.surface.get_current_texture() {
             Ok(res) => res,
             Err(e) => {
@@ -175,7 +195,9 @@ impl AppContext {
                 return;
             }
         };
+        #[cfg(feature = "gpu")]
         let view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        #[cfg(feature = "gpu")]
         let msaa_texture = self.device.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
@@ -190,10 +212,11 @@ impl AppContext {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
         });
+        #[cfg(feature = "gpu")]
         let msaa_view = msaa_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-
+        #[cfg(feature = "gpu")]
         let mut encoder = self.device.device.create_command_encoder(&Default::default());
+        #[cfg(feature = "gpu")]
         let render_pass_desc = RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -208,12 +231,15 @@ impl AppContext {
             timestamp_writes: None,
             occlusion_query_set: None,
         };
+        #[cfg(feature = "gpu")]
         let pass = encoder.begin_render_pass(&render_pass_desc);
-        let draw_rect = Rect::new().with_size(self.device.surface_config.width as f32, self.device.surface_config.height as f32);
+        let size = self.context.window.size();
+        let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: Some(pass),
             layout: self.layout.take(),
             popups: self.popups.take(),
@@ -224,6 +250,7 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
+            paint,
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -243,16 +270,39 @@ impl AppContext {
             inner_window.redraw(&mut ui);
         }
         drop(ui);
+        #[cfg(feature = "gpu")]
         self.device.queue.submit([encoder.finish()]);
+        #[cfg(feature = "gpu")]
         surface_texture.present();
         self.previous_time = crate::time_ms();
     }
 }
 
+pub(crate) struct PaintParam<'p> {
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+    pub(crate) cairo: &'p mut Cairo,
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+    pub(crate) window: x11::xlib::Window,
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub(crate) paint_struct: PAINTSTRUCT,
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub(crate) hdc: HDC,
+    #[cfg(any(all(target_os = "linux", feature = "gpu"), target_os = "windows"))]
+    pub(crate) _s: &'p str,
+}
+
+impl<'a> Debug for PaintParam<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str("PaintParam")
+    }
+}
+
+
 pub struct Ui<'a, 'p> {
     pub(crate) device: &'a Device,
     pub(crate) context: &'a mut Context,
     pub(crate) app: Option<&'a mut Box<dyn App>>,
+    #[cfg(feature = "gpu")]
     pub(crate) pass: Option<wgpu::RenderPass<'p>>,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
@@ -263,6 +313,7 @@ pub struct Ui<'a, 'p> {
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
     pub style: Rc<RefCell<Style>>,
+    pub(crate) paint: Option<PaintParam<'p>>,
 }
 
 
@@ -277,7 +328,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         }
     }
 
-    pub fn get_value(&mut self, cid:impl ToString) -> Option<ContextUpdate> {
+    pub fn get_value(&mut self, cid: impl ToString) -> Option<ContextUpdate> {
         self.context.updates.remove(&cid.to_string())
     }
 }
@@ -346,9 +397,8 @@ impl<'a, 'p> Ui<'a, 'p> {
     }
 
     pub fn create_window<W: App>(&mut self, w: W) {
-        let attr = w.window_attributes();
         let app = Box::new(w);
-        self.context.new_window = Some((app, attr));
+        self.context.new_window = Some(app);
         self.context.window.request_update_event(UserEvent::CreateChild);
     }
 

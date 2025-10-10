@@ -1,14 +1,17 @@
 pub mod param;
 
+#[cfg(feature = "gpu")]
 use crate::render::WrcRender;
+#[cfg(feature = "gpu")]
 use crate::Device;
+#[cfg(feature = "gpu")]
 use wgpu::{include_wgsl, BindGroupLayout, RenderPipeline};
-
+#[cfg(feature = "gpu")]
 pub struct TriangleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
 }
-
+#[cfg(feature = "gpu")]
 impl TriangleRender {
     pub fn new(device: &Device) -> TriangleRender {
         let shader = device.device.create_shader_module(include_wgsl!("triangle.wgsl"));
@@ -38,7 +41,7 @@ impl TriangleRender {
         }
     }
 }
-
+#[cfg(feature = "gpu")]
 impl WrcRender for TriangleRender {
     fn pipeline(&self) -> &RenderPipeline {
         &self.pipeline

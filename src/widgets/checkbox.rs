@@ -1,7 +1,7 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::response::{Callback, InnerCallB, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -50,11 +50,11 @@ pub struct CheckBox {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
     inner_callback: Option<InnerCallB>,
     geometry: Geometry,
-    check_render: RenderParam<RectParam>,
+    check_render: RenderParam,
     hovered: bool,
     contact_ids: Vec<String>,
     changed: bool,
-    fill: Option<RenderParam<RectParam>>,
+    fill: Option<RenderParam>,
 }
 
 impl CheckBox {
@@ -75,7 +75,7 @@ impl CheckBox {
             callback: None,
             inner_callback: None,
             geometry: Geometry::new(),
-            check_render: RenderParam::new(param),
+            check_render: RenderParam::new(RenderKind::Rectangle(param)),
             hovered: false,
             contact_ids: vec![],
             changed: false,
@@ -136,14 +136,16 @@ impl CheckBox {
     fn re_init(&mut self, ui: &mut Ui) {
         //背景
         if let Some(ref mut fill) = self.fill {
-            fill.param.rect.set_size(self.geometry.width(), self.geometry.height());
-            fill.init_rectangle(ui, false, false);
+            fill.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+            #[cfg(feature = "gpu")]
+            fill.init(ui, false, false);
         }
+        #[cfg(feature = "gpu")]
         //复选框
-        self.check_render.init_rectangle(ui, false, self.value);
+        self.check_render.init(ui, false, self.value);
         //文本
         self.check_text.init(ui);
-        self.check_text.geometry.offset_to_rect(&self.check_render.param.rect);
+        self.check_text.geometry.offset_to_rect(self.check_render.rect());
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -155,38 +157,33 @@ impl CheckBox {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             if let Some(ref mut fill) = self.fill {
-                fill.param.rect.offset_to_rect(&ui.draw_rect);
+                fill.offset_to_rect(&ui.draw_rect);
+                #[cfg(feature = "gpu")]
                 fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             }
             self.geometry.offset_to_rect(&ui.draw_rect);
             let mut rect = self.geometry.rect();
-            self.check_render.param.rect.offset_to_rect(&rect);
+            self.check_render.offset_to_rect(&rect);
+            #[cfg(feature = "gpu")]
             self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.check_text.geometry.offset_to_rect(&rect);
-            rect.add_min_x(self.check_render.param.rect.width() + 2.0);
+            rect.add_min_x(self.check_render.rect().width() + 2.0);
             self.text.geometry.offset_to_rect(&rect);
-        }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            if let Some(ref mut fill) = self.fill {
-                fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-            }
-            self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        if let Some(ref fill) = self.fill {
-            ui.context.render.rectangle.render(fill, pass);
+        if let Some(ref mut fill) = self.fill {
+            fill.draw(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
         }
-        ui.context.render.rectangle.render(&self.check_render, pass);
+        self.check_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }
 
-    pub fn style_mut(&mut self) -> &mut RenderParam<RectParam> {
-        self.fill.get_or_insert_with(|| RenderParam::new(RectParam::new()))
+    pub fn style_mut(&mut self) -> &mut RenderParam {
+        self.fill.get_or_insert_with(|| RenderParam::new(RenderKind::Rectangle(RectParam::new())))
     }
 
     pub fn geometry_mut(&mut self) -> &mut Geometry {

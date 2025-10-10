@@ -1,10 +1,13 @@
+#[cfg(feature = "gpu")]
 use crate::render::WrcParam;
-use crate::Size;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
+#[cfg(feature = "gpu")]
+use crate::Size;
 
+#[cfg(feature = "gpu")]
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Clone, Copy,bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CircleDrawParam {
     center: [f32; 2],          // ⬅️ 圆心坐标（像素坐标）
     radius: f32,               // ⬅️ 圆半径
@@ -16,15 +19,21 @@ pub struct CircleDrawParam {
 pub struct CircleParam {
     pub(crate) rect: Rect,
     pub(crate) style: ClickStyle,
+    #[cfg(feature = "gpu")]
     draw: CircleDrawParam,
 }
 
 impl CircleParam {
     pub fn new(rect: Rect, style: ClickStyle) -> Self {
+        #[cfg(feature = "gpu")]
         let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
+        #[cfg(feature = "gpu")]
         let border = style.dyn_border(false, false);
+        #[cfg(feature = "gpu")]
         let center = [rect.dx().center(), rect.dy().center()];
+        #[cfg(feature = "gpu")]
         let radius = rect.height() / 2.0;
+        #[cfg(feature = "gpu")]
         let draw = CircleDrawParam {
             center,
             radius,
@@ -35,11 +44,18 @@ impl CircleParam {
         Self {
             rect,
             style,
+            #[cfg(feature = "gpu")]
             draw,
         }
     }
+
+    pub fn set_style(&mut self, style: ClickStyle) {
+        self.style = style;
+    }
+
 }
 
+#[cfg(feature = "gpu")]
 impl WrcParam for CircleParam {
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();

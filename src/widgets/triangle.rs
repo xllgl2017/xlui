@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::render::triangle::param::TriangleParam;
 use crate::response::Response;
 use crate::size::Geometry;
@@ -11,7 +11,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 
 pub struct Triangle {
     id: String,
-    render: RenderParam<TriangleParam>,
+    render: RenderParam,
     changed: bool,
     geometry: Geometry,
 }
@@ -19,9 +19,10 @@ pub struct Triangle {
 
 impl Triangle {
     pub fn new() -> Self {
+        let param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), ClickStyle::new());
         Triangle {
             id: crate::gen_unique_id(),
-            render: RenderParam::new(TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), ClickStyle::new())),
+            render: RenderParam::new(RenderKind::Triangle(param)),
             changed: false,
             geometry: Geometry::new(),
         }
@@ -55,22 +56,18 @@ impl Triangle {
         rect.set_x_max(x_max);
         rect.set_y_min(y_min);
         rect.set_y_max(y_max);
-        self.render.param.set_poses(p0, p1, p2);
+        self.render.set_poses(p0, p1, p2);
         self.geometry.set_size(rect.width(), rect.height());
         self.geometry.offset_to_rect(&rect);
     }
 
     pub fn with_style(mut self, style: ClickStyle) -> Self {
-        self.render.param.style = style;
+        self.render.set_style(style);
         self
     }
 
     pub fn set_style(&mut self, style: ClickStyle) {
-        self.render.param.style = style;
-    }
-
-    fn init(&mut self, ui: &mut Ui) {
-        self.render.init_triangle(ui, false, false);
+        self.render.set_style(style);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -78,24 +75,25 @@ impl Triangle {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
-            self.render.param.offset_to_rect(&ui.draw_rect);
+            self.render.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.render.update(ui, false, false);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.render.update(ui, false, false);
         }
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
         self.changed = true;
-        &mut self.render.param.style
+        self.render.style_mut()
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.triangle.render(&self.render, pass);
+        self.render.draw(ui, false, false);
     }
 }
 
@@ -104,8 +102,8 @@ impl Widget for Triangle {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init | UpdateType::ReInit => self.render.init(ui, false, false),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

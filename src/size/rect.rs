@@ -70,16 +70,19 @@ impl Rect {
     pub fn size(&self) -> (f32, f32) {
         (self.width(), self.height())
     }
-
+    #[cfg(feature = "gpu")]
     pub(crate) fn left_bottom(&self) -> [f32; 2] {
         [self.dx.min, self.dy.max]
     }
+    #[cfg(feature = "gpu")]
     pub(crate) fn right_bottom(&self) -> [f32; 2] {
         [self.dx.max, self.dy.max]
     }
+    #[cfg(feature = "gpu")]
     pub(crate) fn right_top(&self) -> [f32; 2] {
         [self.dx.max, self.dy.min]
     }
+    #[cfg(feature = "gpu")]
     pub(crate) fn left_top(&self) -> [f32; 2] {
         [self.dx.min, self.dy.min]
     }
@@ -297,6 +300,16 @@ impl Rect {
     }
     pub fn get_oy(&self) -> f32 {
         self.dy.min - self.oy.min
+    }
+
+    #[cfg(all(windows, not(feature = "gpu")))]
+    pub fn as_win32_rect(&self) -> windows::Win32::Foundation::RECT {
+        windows::Win32::Foundation::RECT {
+            left: self.dx.min as i32,
+            top: self.dy.min as i32,
+            right: self.dx.max as i32,
+            bottom: self.dy.max as i32,
+        }
     }
 }
 

@@ -5,7 +5,7 @@ use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::render::rectangle::param::RectParam;
 use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -49,8 +49,8 @@ pub struct ComboBox<T> {
     popup_rect: Rect,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)>>,
 
-    fill_render: RenderParam<RectParam>,
-    allow_render: RenderParam<TriangleParam>,
+    fill_render: RenderParam,
+    allow_render: RenderParam,
 
     selected: Arc<RwLock<Option<String>>>,
 
@@ -65,6 +65,8 @@ impl<T: Display + 'static> ComboBox<T> {
         fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         let mut allow_style = ClickStyle::new();
         allow_style.fill = FillStyle::same(Color::BLACK);
+        let fill_param = RectParam::new().with_size(100.0, 20.0).with_style(fill_style);
+        let allow_param = TriangleParam::new((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into(), allow_style);
         ComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
@@ -72,12 +74,12 @@ impl<T: Display + 'static> ComboBox<T> {
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
             callback: None,
-            fill_render: RenderParam::new(RectParam::new().with_size(100.0, 20.0).with_style(fill_style)),
+            fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
 
             changed: false,
-            allow_render: RenderParam::new(TriangleParam::new((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into(), allow_style)),
+            allow_render: RenderParam::new(RenderKind::Triangle(allow_param)),
         }
     }
 
@@ -85,7 +87,7 @@ impl<T: Display + 'static> ComboBox<T> {
         self.text_buffer.geometry.set_min_width(100.0);
         self.text_buffer.geometry.set_max_width(100.0);
         self.text_buffer.init(ui);
-        self.fill_render.param.rect.set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
+        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
@@ -132,8 +134,10 @@ impl<T: Display + 'static> ComboBox<T> {
         let mut fill_style = ClickStyle::new();
         fill_style.fill.inactive = Color::rgb(230, 230, 230);
         fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
-        self.fill_render.init_rectangle(ui, false, false);
-        self.allow_render.init_triangle(ui, false, false);
+        #[cfg(feature = "gpu")]
+        self.fill_render.init(ui, false, false);
+        #[cfg(feature = "gpu")]
+        self.allow_render.init(ui, false, false);
         //文本
         self.text_buffer.init(ui);
     }
@@ -164,18 +168,20 @@ impl<T: Display + 'static> ComboBox<T> {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.popup_rect.offset_to_rect(&ui.draw_rect);
-            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.fill_render.param.rect.height() + 5.0));
+            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.fill_render.rect_mut().height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
-            allow_rect.set_x_min(self.fill_render.param.rect.dx().max - 15.0);
+            allow_rect.set_x_min(allow_rect.dx().min + self.fill_render.rect().width() - 15.0);
             allow_rect.add_min_y(5.0);
-            self.allow_render.param.offset_to_rect(&allow_rect);
+            self.allow_render.offset_to_rect(&allow_rect);
+            #[cfg(feature = "gpu")]
             self.allow_render.update(ui, false, false);
 
-            let mut text_rect = self.fill_render.param.rect.clone();
+            let mut text_rect = self.fill_render.rect_mut().clone();
             text_rect.add_min_x(2.0);
             self.text_buffer.geometry.offset_to_rect(&text_rect);
         }
@@ -187,9 +193,14 @@ impl<T: Display + 'static> ComboBox<T> {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        ui.context.render.triangle.render(&self.allow_render, pass);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.triangle.render(&self.allow_render, pass);
+        self.fill_render.draw(ui, false, false);
+        self.allow_render.draw(ui, false, false);
         self.text_buffer.redraw(ui);
     }
 
@@ -210,7 +221,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.fill_render.param.rect) {
+                if ui.device.device_input.click_at(self.fill_render.rect()) {
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
                     popup.toggle();
                     ui.update_type = UpdateType::None;
@@ -219,7 +230,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

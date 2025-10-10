@@ -72,6 +72,7 @@ impl RichText {
         self.size.unwrap()
     }
 
+    #[cfg(feature = "gpu")]
     pub(crate) fn font_family(&self) -> glyphon::Attrs<'_> {
         let family = self.family.as_ref().unwrap();
         let glyphon_family = glyphon::Family::Name(&family);

@@ -2,7 +2,7 @@ use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::style::color::Color;
@@ -45,7 +45,7 @@ pub struct VerticalLayout {
     offset: Offset,
     geometry: Geometry,
     direction: LayoutDirection,
-    fill_render: Option<RenderParam<RectParam>>,
+    fill_render: Option<RenderParam>,
     marin: Margin,
 }
 
@@ -85,7 +85,7 @@ impl VerticalLayout {
         let mut style = ClickStyle::new();
         style.fill = FillStyle::same(color);
         style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
-        let fill_render = RenderParam::new(RectParam::new().with_style(style));
+        let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
         self.fill_render = Some(fill_render);
         self
     }
@@ -94,10 +94,10 @@ impl VerticalLayout {
     pub fn set_style(&mut self, style: FrameStyle) {
         match self.fill_render {
             None => {
-                let fill_render = RenderParam::new(RectParam::new_frame(Rect::new(), style));
+                let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
                 self.fill_render = Some(fill_render);
             }
-            Some(ref mut render) => render.param.set_frame(style),
+            Some(ref mut render) => render.set_frame_style(style),
         }
     }
 
@@ -151,19 +151,24 @@ impl Layout for VerticalLayout {
                 if let Some(ref mut render) = self.fill_render {
                     self.geometry.set_size(width, height);
                     // let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
-                    render.param.rect.set_size(self.geometry.width() - self.marin.horizontal(), self.geometry.height() - self.marin.vertical());
-                    render.init_rectangle(ui, false, false);
+                    render.rect_mut().set_size(self.geometry.width() - self.marin.horizontal(), self.geometry.height() - self.marin.vertical());
+                    #[cfg(feature = "gpu")]
+                    render.init(ui, false, false);
                 }
             }
             _ => {
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
-                    render.param.rect.offset_to_rect(&previous_rect);
-                    render.param.rect.offset(&Offset::new().with_y(self.marin.top).with_x(self.marin.left));
+                    render.rect_mut().offset_to_rect(&previous_rect);
+                    render.rect_mut().offset(&Offset::new().with_y(self.marin.top).with_x(self.marin.left));
                     // render.param.rect.add_min_x(self.marin.left);
                     // render.param.rect.add_min_y(self.marin.top);
-                    render.update(ui, false, false);
-                    let pass = ui.pass.as_mut().unwrap();
-                    ui.context.render.rectangle.render(&render, pass);
+                    // #[cfg(feature = "gpu")]
+                    // render.update(ui, false, false);
+                    // #[cfg(feature = "gpu")]
+                    // let pass = ui.pass.as_mut().unwrap();
+                    // #[cfg(feature = "gpu")]
+                    // ui.context.render.rectangle.render(&render, pass);
+                    render.draw(ui, false, false);
                 }
                 self.geometry.set_size(previous_rect.width(), previous_rect.height());
                 // let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
@@ -194,8 +199,8 @@ impl Layout for VerticalLayout {
         self.geometry.set_size(width, height);
         // let (dw, dh) = self.size_mode.size(width, height);
         Response::new(&self.id, WidgetSize {
-            dw:self.geometry.width()+self.marin.horizontal(),
-            dh:self.geometry.height()+self.marin.vertical(),
+            dw: self.geometry.width() + self.marin.horizontal(),
+            dh: self.geometry.height() + self.marin.vertical(),
             rw: width,
             rh: height,
         })

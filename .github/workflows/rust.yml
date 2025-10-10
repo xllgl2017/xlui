@@ -31,12 +31,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-apt-
       - name: Install mold
-        run: sudo apt-get install mold libx11-dev libdbus-1-dev -y
+        run: sudo apt-get install mold libx11-dev libdbus-1-dev libxft-dev libcairo2-dev -y
 
       - name: Check Native
         run: cargo check
       - name: Check WInit
-        run: cargo check --features winit
+        run: cargo check --features winit,gpu
       - name: Doc tests
         run: cargo test --doc --all
   check-windows:
@@ -55,5 +55,5 @@ jobs:
       - name: Check Native
         run: cargo check
       - name: Check WInit
-        run: cargo check --features winit
+        run: cargo check --features winit,gpu
 

@@ -95,21 +95,6 @@ impl Display for SV {
 
 impl App for TestWidget {
     fn draw(&mut self, ui: &mut Ui) {
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
-        ui.button("sdsdf");
         ui.horizontal(|ui| {
             ui.add_space(100.0);
             ui.add(Label::new("当前控件的工作状态".size(24.0).color(Color::ORANGE)));
@@ -147,7 +132,7 @@ impl App for TestWidget {
             ui.add_space(30.0);
             let mut cb = CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check).with_size(100.0, 25.0);
             let style = cb.style_mut();
-            style.param.set_style(ClickStyle {
+            style.set_style(ClickStyle {
                 fill: FillStyle::same(Color::rgb(2, 165, 154)),
                 border: BorderStyle::same(Border::same(1.0).color(Color::BLACK).radius(Radius::same(2))),
             });

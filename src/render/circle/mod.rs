@@ -1,14 +1,17 @@
+#[cfg(feature = "gpu")]
 use crate::render::WrcRender;
+#[cfg(feature = "gpu")]
 use crate::Device;
+#[cfg(feature = "gpu")]
 use wgpu::include_wgsl;
 
 pub mod param;
-
+#[cfg(feature = "gpu")]
 pub struct CircleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
 }
-
+#[cfg(feature = "gpu")]
 impl CircleRender {
     pub fn new(device: &Device) -> Self {
         let shader = device.device.create_shader_module(include_wgsl!("circle.wgsl"));
@@ -41,7 +44,7 @@ impl CircleRender {
         }
     }
 }
-
+#[cfg(feature = "gpu")]
 impl WrcRender for CircleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {
         &self.pipeline

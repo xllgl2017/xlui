@@ -42,7 +42,7 @@ impl From<(u32, u32)> for Size {
         }
     }
 }
-
+#[cfg(feature = "gpu")]
 impl From<&wgpu::SurfaceConfiguration> for Size {
     fn from(value: &wgpu::SurfaceConfiguration) -> Self {
         Size {
@@ -130,7 +130,7 @@ impl Geometry {
     pub fn set_height(&mut self, height: f32) {
         self.height = height + self.padding.vertical();
     }
-
+    #[cfg(feature = "gpu")]
     pub(crate) fn is_fix_width(&self) -> bool {
         self.fix_width.is_some()
     }
@@ -194,6 +194,7 @@ impl Geometry {
         x
     }
 
+    #[cfg(feature = "gpu")]
     pub(crate) fn x_i32(&self) -> i32 {
         self.x() as i32
     }
@@ -226,7 +227,7 @@ impl Geometry {
     pub(crate) fn right(&self) -> f32 {
         self.x + self.width() - self.padding.right
     }
-
+    #[cfg(feature = "gpu")]
     pub(crate) fn right_i32(&self) -> i32 {
         self.right() as i32
     }

@@ -3,9 +3,11 @@ use crate::render::image::ImageSource;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::ui::Ui;
+#[cfg(feature = "gpu")]
 use crate::vertex::ImageVertex;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::Size;
+#[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
 
 /// ### Image的示例用法
@@ -35,9 +37,11 @@ pub struct Image {
     id: String,
     source: ImageSource,
     geometry: Geometry,
-
+    #[cfg(feature = "gpu")]
     vertices: Vec<ImageVertex>,
+    #[cfg(feature = "gpu")]
     vertex_buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
     index_buffer: Option<wgpu::Buffer>,
     changed: bool,
 }
@@ -48,8 +52,11 @@ impl Image {
             id: crate::gen_unique_id(),
             source: source.into(),
             geometry: Geometry::new(),
+            #[cfg(feature = "gpu")]
             vertices: vec![],
+            #[cfg(feature = "gpu")]
             vertex_buffer: None,
+            #[cfg(feature = "gpu")]
             index_buffer: None,
             changed: false,
         }
@@ -61,7 +68,7 @@ impl Image {
 
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
-        self.geometry.set_fix_size(width,height);
+        self.geometry.set_fix_size(width, height);
         self
     }
 
@@ -77,11 +84,13 @@ impl Image {
     }
 
     fn init(&mut self, ui: &mut Ui) {
+        #[cfg(feature = "gpu")]
         self.re_init(ui);
     }
 
+    #[cfg(feature = "gpu")]
     fn re_init(&mut self, ui: &mut Ui) {
-        let size = ui.context.render.image.insert_image(&ui.device, &self.source);
+        let size = ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         let rect = self.geometry.rect();
@@ -110,7 +119,9 @@ impl Image {
         self.changed = false;
         if !ui.widget_changed.unchanged() {
             self.geometry.offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             let rect = self.geometry.rect();
+            #[cfg(feature = "gpu")]
             for (index, v) in self.vertices.iter_mut().enumerate() {
                 match index {
                     0 => v.position = rect.left_top(),
@@ -119,23 +130,36 @@ impl Image {
                     3 => v.position = rect.right_top(),
                     _ => {}
                 }
-                v.screen_size = [ui.device.surface_config.width as f32, ui.device.surface_config.height as f32];
+                #[cfg(feature = "gpu")]
+                { v.screen_size = [ui.device.surface_config.width as f32, ui.device.surface_config.height as f32]; }
             }
+            #[cfg(feature = "gpu")]
             ui.device.queue.write_buffer(
                 self.vertex_buffer.as_ref().unwrap(), 0,
                 bytemuck::cast_slice(self.vertices.as_slice()));
-            ui.context.render.image.insert_image(&ui.device, &self.source);
+            #[cfg(feature = "gpu")]
+            ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
+            #[cfg(not(feature = "gpu"))]
+            ui.context.render.image.insert_image(&self.source).unwrap();
         }
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
+        #[cfg(feature = "gpu")]
         let pass = ui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         ui.context.render.image.render(
             &self.source.uri(),
             self.vertex_buffer.as_ref().unwrap(),
             self.index_buffer.as_ref().unwrap(),
             pass,
         );
+        #[cfg(all(windows, not(feature = "gpu")))]
+        ui.context.window.win32().paint_image(ui.paint.as_mut().unwrap().hdc, &self.source, self.geometry.rect());
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        let texture = ui.context.render.image.get_texture_mut(&self.source.uri()).unwrap();
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        ui.context.window.x11().paint_image(ui.paint.as_mut().unwrap().cairo, texture, self.geometry.rect());
     }
 }
 
@@ -144,6 +168,7 @@ impl Widget for Image {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
+            #[cfg(feature = "gpu")]
             UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }

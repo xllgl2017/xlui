@@ -1,8 +1,19 @@
+use std::thread::{sleep, spawn};
+use std::time::Duration;
 use crate::error::UiResult;
-use crate::window::win32::{Win32Window, IME, REQ_CLOSE, RESIZE, TRAY_ICON};
+use crate::key::Key;
+#[cfg(not(feature = "gpu"))]
+use crate::ui::PaintParam;
+use crate::window::event::WindowEvent;
+use crate::window::ime::IMEData;
+use crate::window::win32::{Win32Window, CREATE_CHILD, REQ_UPDATE, RE_INIT, TRAY_ICON};
+use crate::window::wino::EventLoopHandle;
+use crate::*;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
-use windows::Win32::Graphics::Gdi::{CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, GetDC, ReleaseDC, SelectObject, HBITMAP, HGDIOBJ};
+use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateFontW, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetDC, ReleaseDC, SelectObject, SetTextColor, DT_CENTER, DT_SINGLELINE, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HGDIOBJ, PAINTSTRUCT, SRCCOPY};
+use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
+use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY, VK_BACK, VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_HOME, VK_LEFT, VK_RETURN, VK_RIGHT, VK_UP};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 pub fn to_wstr(s: &str) -> Vec<u16> {
@@ -46,41 +57,229 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
     HICON(h_icon.0)
 }
 
+fn paint_text(text: &str, hdc: HDC, ps: PAINTSTRUCT)->UiResult<()> {
+    unsafe { SetTextColor(hdc, COLORREF(0x00_00_00)); } // 黑色
+    let font_name = to_wstr("仿宋");
+    let hfont = unsafe {
+        CreateFontW(
+            32,                 // 字体高度（像素）
+            0,                  // 宽度（0 = 自动）
+            0,                  // 角度
+            0,                  // 基线角度
+            500,                // 粗细（FW_BOLD = 700）
+            0,                  // 斜体 (1 = TRUE)
+            0,                  // 下划线
+            0,                  // 删除线
+            FONT_CHARSET(0),                  // 字体集 (DEFAULT_CHARSET)
+            FONT_OUTPUT_PRECISION(0),                  // 输出精度
+            FONT_CLIP_PRECISION(0),                  // 剪辑精度
+            FONT_QUALITY(0),                  // 输出质量
+            0,                  // 字体 pitch & family
+            PCWSTR(font_name.as_ptr()), // 字体名称
+        )
+    };
+    // 选择字体进入 HDC
+    let old_font = unsafe { SelectObject(hdc, HGDIOBJ::from(hfont)) };
+    let mut text = to_wstr(text);
+    // DrawTextW 参数：hdc, text, -1 表示以 null 结尾, 矩形: 0,0,width,height -> 这里用 DT_SINGLELINE + center
+    unsafe { DrawTextW(hdc, text.as_mut_slice(), &mut ps.rcPaint.clone(), DT_CENTER | DT_VCENTER | DT_SINGLELINE); }
+    // 恢复原字体并删除我们创建的字体对象
+    unsafe { SelectObject(hdc, old_font); }
+    unsafe { DeleteObject(HGDIOBJ::from(hfont)).ok()?; }
+    Ok(())
+}
+
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    let app = match unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut Win32Window).as_mut() } {
+        None => return unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }, //无法定位application,不做任何处理
+        Some(app) => app,
+    };
+    let window = match app.get_window_mut_by_hand(hwnd) {
+        None => return unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }, //无法定位当前的window,不做任何处理
+        Some(window) => window,
+    };
     match msg {
         WM_CLOSE => {
             println!("req quit-{:?}", hwnd);
-            unsafe { PostMessageW(Some(hwnd), REQ_CLOSE, WPARAM(0), LPARAM(0)).unwrap() };
-            LRESULT(0)
+            app.close_window(hwnd);
         }
         WM_SIZE => {
             println!("resize");
-            unsafe { PostMessageW(Some(hwnd), RESIZE, WPARAM(msg as usize), lparam).unwrap() };
-            LRESULT(0)
+            let width = loword(lparam.0 as u32) as f32;
+            let height = hiword(lparam.0 as u32) as f32;
+            println!("resize-{}-{}", width, height);
+            window.handle_event(WindowEvent::Resize(Size { width, height }));
         }
         TRAY_ICON => {
             match lparam.0 as u32 {
-                WM_RBUTTONUP => {
-                    let app: &Win32Window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window).as_ref() }.unwrap();
-                    app.show_tray_menu().unwrap();
-                }
+                WM_RBUTTONUP => app.show_tray_menu().unwrap(),
                 _ => {}
             }
-            LRESULT(0)
         }
         WM_COMMAND => {
-            let app: &Win32Window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const Win32Window).as_ref() }.unwrap();
             if let Some(ref tray) = app.tray {
                 let menu = tray.menus.iter().find(|x| x.id == wparam.0 as u32);
                 if let Some(menu) = menu { (menu.callback)() }
             }
-            LRESULT(0)
         }
         // WM_ERASEBKGND => LRESULT(1), // 不擦背景
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
-            unsafe { PostMessageW(Some(hwnd), IME, WPARAM(msg as usize), lparam).unwrap() };
-            LRESULT(0)
+            let himc = unsafe { ImmGetContext(window.handle().win32().hwnd) };
+            println!("ime-----{}", lparam.0);
+            if lparam.0 == 7168 || lparam.0 == 2048 {
+                let size = unsafe { ImmGetCompositionStringW(himc, GCS_RESULTSTR, None, 0) };
+                if size > 0 {
+                    let len = size as usize / 2;
+                    let mut buf: Vec<u16> = vec![0; len];
+                    unsafe { ImmGetCompositionStringW(himc, GCS_RESULTSTR, Some(buf.as_mut_ptr() as *mut _), size as u32) };
+                    let s = String::from_utf16_lossy(&buf);
+                    window.handle().ime().ime_commit(s.chars().collect());
+                    println!("ime2: {}", s);
+                    unsafe { ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap() };
+                    window.handle_event(WindowEvent::IME(IMEData::Commit(window.handle().ime.ime_done())));
+                }
+            }
+            if lparam.0 == 440 {
+                let size = unsafe { ImmGetCompositionStringW(himc, GCS_COMPSTR, None, 0) };
+                if size > 0 {
+                    let len = (size as usize) / 2;
+                    let mut buf: Vec<u16> = vec![0; len];
+                    unsafe { ImmGetCompositionStringW(himc, GCS_COMPSTR, Some(buf.as_mut_ptr() as *mut _), size as u32) };
+                    let s = String::from_utf16_lossy(&buf);
+                    println!("ime1: {}", s);
+                    window.handle().ime().ime_draw(s.chars().collect());
+                    unsafe { ImmReleaseContext(window.handle().win32().hwnd, himc).unwrap() };
+                    window.handle_event(WindowEvent::IME(IMEData::Preedit(window.handle().ime.chars())));
+                }
+            }
         }
-        _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
+        WM_PAINT => {
+            if crate::time_ms() - window.app_ctx.previous_time <= 10 || !window.app_ctx.redraw_thread.is_finished() {
+                let handle = window.handle().clone();
+                if window.app_ctx.redraw_thread.is_finished() {
+                    window.app_ctx.redraw_thread = spawn(move || {
+                        sleep(Duration::from_millis(10));
+                        handle.request_redraw();
+                    });
+                }
+                return LRESULT(1);
+            }
+            println!("paint");
+            #[cfg(not(feature = "gpu"))]
+            {
+                let mut ps = PAINTSTRUCT::default();
+                let hdc = BeginPaint(hwnd, &mut ps);
+                let mut rect = RECT::default();
+                GetClientRect(hwnd, &mut rect);
+                // 创建兼容的内存 DC 和位图
+                let mem_dc = CreateCompatibleDC(Option::from(hdc));
+                let mem_bmp = CreateCompatibleBitmap(hdc, rect.right - rect.left, rect.bottom - rect.top);
+                SelectObject(mem_dc, HGDIOBJ::from(mem_bmp));
+
+                // ✅ 填充背景颜色
+                let brush = CreateSolidBrush(COLORREF(Color::rgb(240, 240, 240).as_rgb_u32())); // 白色背景
+                FillRect(mem_dc, &rect, brush);
+                DeleteObject(HGDIOBJ::from(brush));
+                let paint = PaintParam {
+                    paint_struct: ps,
+                    hdc: mem_dc,
+                    _s: "",
+                };
+                window.handle_event(WindowEvent::Redraw(paint));
+                BitBlt(
+                    hdc,
+                    0, 0,
+                    rect.right - rect.left,
+                    rect.bottom - rect.top,
+                    Option::from(mem_dc),
+                    0, 0,
+                    SRCCOPY,
+                );
+                DeleteObject(HGDIOBJ::from(mem_bmp));
+                DeleteDC(mem_dc);
+                EndPaint(hwnd, &ps).unwrap();
+            }
+            #[cfg(feature = "gpu")]
+            window.handle_event(WindowEvent::Redraw)
+        }
+        WM_KEYDOWN => {
+            let ctrl_pressed = (unsafe { GetKeyState(VK_CONTROL.0 as i32) } as u16 & 0x8000) != 0;
+            if ctrl_pressed && wparam.0 == 'C' as usize {
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlC));
+            } else if ctrl_pressed && wparam.0 == 'V' as usize {
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlV));
+            } else if ctrl_pressed && wparam.0 == 'A' as usize {
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlA));
+            } else if ctrl_pressed && wparam.0 == 'X' as usize {
+                window.handle_event(WindowEvent::KeyPress(Key::CtrlX));
+            } else {
+                match VIRTUAL_KEY(wparam.0 as u16) {
+                    VK_HOME => window.handle_event(WindowEvent::KeyPress(Key::Home)),
+                    VK_END => window.handle_event(WindowEvent::KeyPress(Key::End)),
+                    VK_RETURN => window.handle_event(WindowEvent::KeyPress(Key::Enter)),
+                    VK_LEFT => window.handle_event(WindowEvent::KeyPress(Key::LeftArrow)),
+                    VK_UP => window.handle_event(WindowEvent::KeyPress(Key::UpArrow)),
+                    VK_DOWN => window.handle_event(WindowEvent::KeyPress(Key::DownArrow)),
+                    VK_RIGHT => window.handle_event(WindowEvent::KeyPress(Key::RightArrow)),
+                    VK_DELETE => window.handle_event(WindowEvent::KeyPress(Key::Delete)),
+                    VK_BACK => window.handle_event(WindowEvent::KeyPress(Key::Backspace)),
+                    _ => {}
+                }
+            }
+        }
+        WM_KEYUP => {
+            match VIRTUAL_KEY(wparam.0 as u16) {
+                VK_HOME => window.handle_event(WindowEvent::KeyRelease(Key::Home)),
+                VK_END => window.handle_event(WindowEvent::KeyRelease(Key::End)),
+                VK_RETURN => window.handle_event(WindowEvent::KeyRelease(Key::Enter)),
+                VK_LEFT => window.handle_event(WindowEvent::KeyRelease(Key::LeftArrow)),
+                VK_UP => window.handle_event(WindowEvent::KeyRelease(Key::UpArrow)),
+                VK_DOWN => window.handle_event(WindowEvent::KeyRelease(Key::DownArrow)),
+                VK_RIGHT => window.handle_event(WindowEvent::KeyRelease(Key::RightArrow)),
+                VK_DELETE => window.handle_event(WindowEvent::KeyRelease(Key::Delete)),
+                VK_BACK => window.handle_event(WindowEvent::KeyRelease(Key::Backspace)),
+                _ => {}
+            }
+        }
+        WM_CHAR => {
+            if let Some(r) = char::from_u32(wparam.0 as u32) && !r.is_control() && r != '\r' {
+                println!("Char input: {:?}", r);
+                window.handle_event(WindowEvent::KeyRelease(Key::Char(r)));
+            }
+        }
+        WM_LBUTTONDOWN => {
+            let x = get_x_lparam(lparam) as f32;
+            let y = get_y_lparam(lparam) as f32;
+            window.handle_event(WindowEvent::MousePress(Pos { x, y }));
+        }
+        WM_LBUTTONUP => {
+            let x = get_x_lparam(lparam) as f32;
+            let y = get_y_lparam(lparam) as f32;
+            window.handle_event(WindowEvent::MouseRelease(Pos { x, y }))
+        }
+        WM_MOUSEMOVE => {
+            let x = get_x_lparam(lparam) as f32;
+            let y = get_y_lparam(lparam) as f32;
+            window.handle_event(WindowEvent::MouseMove((x, y).into()))
+        }
+        WM_MOUSEWHEEL => {
+            let delta = ((wparam.0 >> 16) & 0xFFFF) as i16;
+            window.handle_event(WindowEvent::MouseWheel(delta as f32))
+        }
+        REQ_UPDATE => window.handle_event(WindowEvent::ReqUpdate),
+        CREATE_CHILD => {
+            if let Some(user_app) = window.app_ctx.context.new_window.take() {
+                let handle = window.handle().clone();
+                app.create_child_window(&handle, user_app).unwrap();
+            }
+        }
+        WM_ERASEBKGND => return LRESULT(1),
+        RE_INIT => {
+            println!("re_init");
+            window.handle_event(WindowEvent::ReInit)
+        }
+        _ => return unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
     }
+
+    LRESULT(0)
 }

@@ -4,7 +4,9 @@ use crate::layout::popup::Popup;
 use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+#[cfg(feature = "gpu")]
+use crate::render::WrcRender;
+use crate::render::{RenderKind, RenderParam};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -26,7 +28,7 @@ use std::sync::Arc;
 
 pub struct InnerWindow {
     pub(crate) id: WindowId,
-    pub fill_render: RenderParam<RectParam>,
+    pub fill_render: RenderParam,
     attr: WindowAttribute,
     title_rect: Rect,
     offset: Offset,
@@ -54,8 +56,9 @@ impl InnerWindow {
         rect.offset_to(attr.pos_x_f32(), attr.pos_y_f32());
         let fill_param = RectParam::new().with_rect(rect.clone()).with_style(ui.style.borrow().widgets.popup.clone())
             .with_shadow(shadow);
-        let mut fill_render = RenderParam::new(fill_param);
-        fill_render.init_rectangle(ui, false, false);
+        let mut fill_render = RenderParam::new(RenderKind::Rectangle(fill_param));
+        #[cfg(feature = "gpu")]
+        fill_render.init(ui, false, false);
         let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height())
             .with_padding(Padding::ZERO);
         let layout = LayoutKind::new(layout);
@@ -91,7 +94,7 @@ impl InnerWindow {
         // style.fill = FillStyle::same();
         // style.border = BorderStyle::same(Border::new(0.0).radius(Radius::same(0).with_left_top(1).with_right_top(1)));
         let mut title_layout = HorizontalLayout::left_to_right()
-            .with_size(self.fill_render.param.rect.width(), 22.0)
+            .with_size(self.fill_render.rect().width(), 22.0)
             .with_padding(Padding::ZERO.top(1.0).left(1.0));
         title_layout.set_style(style);
         let title_layout = LayoutKind::new(title_layout);
@@ -134,6 +137,7 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: Some(LayoutKind::new(context_layout)),
             popups: self.popups.take(),
@@ -142,9 +146,16 @@ impl InnerWindow {
             inner_windows: None,
             request_update: None,
             // offset: Offset::new(Pos::new()),
-            draw_rect: self.fill_render.param.rect.clone(),
+            draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
-            style:Rc::new(RefCell::new(Style::light_style()))
+            style: Rc::new(RefCell::new(Style::light_style())),
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // paint_struct: None,
+            // #[cfg(not(feature = "gpu"))]
+            // p: crate::ui::P { text: "" },
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // hdc: None,
+            paint: None,
         };
 
 
@@ -160,17 +171,19 @@ impl InnerWindow {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
         }
     }
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {
         match ui.update_type {
-            UpdateType::ReInit => self.fill_render.init_rectangle(ui, false, false),
+            #[cfg(feature = "gpu")]
+            UpdateType::ReInit => self.fill_render.init(ui, false, false),
             UpdateType::MouseMove => {
                 if self.press_title && ui.device.device_input.mouse.pressed {
                     let (ox, oy) = ui.device.device_input.mouse.offset();
-                    self.fill_render.param.rect.offset(&Offset::new().with_x(ox).with_y(oy).covered());
+                    self.fill_render.rect_mut().offset(&Offset::new().with_x(ox).with_y(oy).covered());
                     self.offset.x += ox;
                     self.offset.y += oy;
                     // self.offset.pos = ui.device.device_input.mouse.lastest.relative;
@@ -182,7 +195,7 @@ impl InnerWindow {
                 }
             }
             UpdateType::MousePress => {
-                self.top = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
+                self.top = ui.device.device_input.pressed_at(self.fill_render.rect());
                 self.press_title = ui.device.device_input.pressed_at(&self.title_rect) && self.top;
                 ui.context.window.request_redraw();
                 if self.press_title { return false; }
@@ -208,6 +221,7 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: oui.pass.take(),
             layout: self.layout.take(),
             popups: self.popups.take(),
@@ -216,9 +230,16 @@ impl InnerWindow {
             inner_windows: None,
             request_update: None,
             // offset: Offset::new(Pos::new()),
-            draw_rect: self.fill_render.param.rect.clone(),
+            draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // paint_struct: oui.paint_struct.take(),
+            // #[cfg(not(feature = "gpu"))]
+            // p: P { text: "" },
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // hdc: oui.hdc.take(),
+            paint: oui.paint.take(),
         };
 
 
@@ -227,8 +248,11 @@ impl InnerWindow {
         // let mut rect = self.fill_render.param.rect.clone();
         self.title_rect.offset_to_rect(&nui.draw_rect);
         // ui.draw_rect = rect;
+        #[cfg(feature = "gpu")]
         let pass = nui.pass.as_mut().unwrap();
+        #[cfg(feature = "gpu")]
         nui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(&mut nui, false, false);
         self.w.update(&mut nui);
         self.layout = nui.layout.take();
         self.layout.as_mut().unwrap().update(&mut nui);
@@ -236,18 +260,24 @@ impl InnerWindow {
         self.offset.y = 0.0;
         self.popups = nui.popups.take();
 
-        // ui.draw_rect = previous_rect;
-        let pass = nui.pass.take();
-        oui.pass = pass;
+        #[cfg(feature = "gpu")]
+        { oui.pass = nui.pass.take() };
+        // #[cfg(all(windows, not(feature = "gpu")))]
+        // { oui.hdc = nui.hdc.take(); }
+        // #[cfg(all(windows, not(feature = "gpu")))]
+        // { oui.paint_struct = nui.paint_struct.take(); }
+        #[cfg(not(feature = "gpu"))]
+        { oui.paint = nui.paint.take(); }
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
         if self.window_update(oui) { return; }
-        if !oui.device.device_input.hovered_at(&self.fill_render.param.rect) && !self.press_title { return; }
+        if !oui.device.device_input.hovered_at(self.fill_render.rect()) && !self.press_title { return; }
         let mut nui = Ui {
             device: oui.device,
             context: oui.context,
             app: None,
+            #[cfg(feature = "gpu")]
             pass: None,
             layout: self.layout.take(),
             popups: self.popups.take(),
@@ -256,9 +286,16 @@ impl InnerWindow {
             inner_windows: self.inner_windows.take(),
             request_update: None,
             // offset: Offset::new(Pos::new()),
-            draw_rect: self.fill_render.param.rect.clone(),
+            draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // paint_struct: None,
+            // #[cfg(not(feature = "gpu"))]
+            // p: P { text: "" },
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // hdc: None,
+            paint:None
         };
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);

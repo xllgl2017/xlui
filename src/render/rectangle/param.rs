@@ -1,10 +1,12 @@
+#[cfg(feature = "gpu")]
 use crate::render::WrcParam;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, FrameStyle, Shadow};
-use crate::{BorderStyle, FillStyle, Size};
+use crate::*;
 
+#[cfg(feature = "gpu")]
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct RectDrawParam {
     pos: [f32; 2],           //⬅️ 左上角顶点位置
     size: [f32; 2],          //⬅️ 矩形的宽高
@@ -21,9 +23,9 @@ pub struct RectDrawParam {
     shadow_color: [f32; 4],  //⬅️ 阴影颜色
     fill_color: [f32; 4],    //⬅️ 填充颜色
 }
-
+#[cfg(feature = "gpu")]
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable, Debug)]
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct RectDrawParam2 {
     center_position: [f32; 2],    //⬅️ 矩形中心(x,y)
     radius: [f32; 2],             //⬅️ 半径(w/2,h/2)
@@ -40,6 +42,7 @@ pub struct RectParam {
     pub(crate) rect: Rect,
     pub(crate) style: ClickStyle,
     pub(crate) shadow: Shadow,
+    #[cfg(feature = "gpu")]
     draw: RectDrawParam2,
 }
 
@@ -88,6 +91,7 @@ impl RectParam {
             rect: Rect::new(),
             style: ClickStyle::new(),
             shadow: Shadow::new(),
+            #[cfg(feature = "gpu")]
             draw: RectDrawParam2 {
                 center_position: [0.0; 2],
                 radius: [0.0; 2],
@@ -120,7 +124,7 @@ impl RectParam {
         self
     }
 
-    pub fn with_height(mut self,h:f32) -> Self {
+    pub fn with_height(mut self, h: f32) -> Self {
         self.rect.set_height(h);
         self
     }
@@ -130,7 +134,7 @@ impl RectParam {
         self
     }
 
-    pub fn set_style(&mut self,style:ClickStyle){
+    pub fn set_style(&mut self, style: ClickStyle) {
         self.style = style;
     }
 
@@ -147,7 +151,7 @@ impl RectParam {
         self
     }
 }
-
+#[cfg(feature = "gpu")]
 impl WrcParam for RectParam {
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();

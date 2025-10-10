@@ -1,6 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
@@ -13,7 +13,7 @@ use crate::window::UserEvent;
 use crate::Offset;
 
 pub struct EditSelection {
-    renders: Vec<RenderParam<RectParam>>,
+    renders: Vec<RenderParam>,
     changed: bool,
     pub(crate) has_selected: bool,
     pub(crate) start_vert: usize,
@@ -45,21 +45,24 @@ impl EditSelection {
                 rect.set_x_max(rect.dx().min);
                 rect.set_height(line_height);
                 rect.offset(&Offset::new().with_y(row as f32 * line_height).covered());
-                let render = RenderParam::new(RectParam::new().with_rect(rect).with_style(select_style.clone()));
+                let param = RectParam::new().with_rect(rect).with_style(select_style.clone());
+                let render = RenderParam::new(RenderKind::Rectangle(param));
                 self.renders.push(render);
             }
         }
-        self.renders.iter_mut().for_each(|x| x.init_rectangle(ui, false, false));
+        #[cfg(feature = "gpu")]
+        self.renders.iter_mut().for_each(|x| x.init(ui, false, false));
     }
 
     pub fn set_by_cursor(&mut self, cursor: &EditCursor) {
         let x = cursor.cursor_min();
         for (index, render) in self.renders.iter_mut().enumerate() {
             if index == cursor.vert {
-                render.param.rect.set_x_min(x);
-                render.param.rect.set_x_max(x);
+                render.rect_mut().set_x_min(x);
+                render.rect_mut().set_x_max(x);
             } else {
-                render.param.rect.set_x_max(render.param.rect.dx().min);
+                let min = render.rect().dx().min;
+                render.rect_mut().set_x_max(min);
             }
         }
         self.start_vert = cursor.vert;
@@ -71,6 +74,7 @@ impl EditSelection {
         if !self.changed { return; }
         self.changed = false;
         for render in self.renders.iter_mut() {
+            #[cfg(feature = "gpu")]
             render.update(ui, false, false);
         }
     }
@@ -81,16 +85,20 @@ impl EditSelection {
     // }
 
     pub fn render(&mut self, ui: &mut Ui, rows: usize) {
-        let pass = ui.pass.as_mut().unwrap();
-        for (index, render) in self.renders.iter().enumerate() {
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        for (index, render) in self.renders.iter_mut().enumerate() {
             if index >= rows { continue; }
-            ui.context.render.rectangle.render(render, pass);
+            // #[cfg(feature = "gpu")]
+            // ui.context.render.rectangle.render(render, pass);
+            render.draw(ui, false, false);
         }
     }
 
     pub fn reset(&mut self, cursor: &EditCursor) {
         for render in self.renders.iter_mut() {
-            render.param.rect.set_x_max(render.param.rect.dx().min);
+            let min = render.rect().dx().min;
+            render.rect_mut().set_x_max(min);
         }
         self.start_vert = cursor.vert;
         self.start_horiz = cursor.horiz;
@@ -106,52 +114,55 @@ impl EditSelection {
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index == self.start_vert {
                     let line = &cchar.buffer.lines[index];
-                    render.param.rect.set_x_min(line.get_width_in_char(self.start_horiz) + cursor.min_pos.x);
-                    render.param.rect.set_x_max(line.width + cursor.min_pos.x);
+                    render.rect_mut().set_x_min(line.get_width_in_char(self.start_horiz) + cursor.min_pos.x);
+                    render.rect_mut().set_x_max(line.width + cursor.min_pos.x);
                 } else if index == cursor.vert {
-                    render.param.rect.set_x_min(cursor.min_pos.x);
-                    render.param.rect.set_x_max(cursor.cursor_min());
+                    render.rect_mut().set_x_min(cursor.min_pos.x);
+                    render.rect_mut().set_x_max(cursor.cursor_min());
                 } else if index > self.start_vert && index < cursor.vert {
                     let line = &cchar.buffer.lines[index];
-                    render.param.rect.set_x_min(cursor.min_pos.x);
-                    render.param.rect.set_x_max(cursor.min_pos.x + line.width);
+                    render.rect_mut().set_x_min(cursor.min_pos.x);
+                    render.rect_mut().set_x_max(cursor.min_pos.x + line.width);
                 } else {
-                    render.param.rect.set_x_max(render.param.rect.dx().min);
+                    let min = render.rect().dx().min;
+                    render.rect_mut().set_x_max(min);
                 }
             }
         } else if cursor.vert < self.start_vert { //向上选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index == self.start_vert {
-                    render.param.rect.set_x_min(cursor.min_pos.x);
+                    render.rect_mut().set_x_min(cursor.min_pos.x);
                 } else if index == cursor.vert {
                     let line = &cchar.buffer.lines[index];
-                    render.param.rect.set_x_min(cursor.cursor_min());
-                    render.param.rect.set_x_max(cursor.min_pos.x + line.width);
+                    render.rect_mut().set_x_min(cursor.cursor_min());
+                    render.rect_mut().set_x_max(cursor.min_pos.x + line.width);
                 } else if index > cursor.vert && index < self.start_vert {
                     let line = &cchar.buffer.lines[index];
-                    render.param.rect.set_x_min(cursor.min_pos.x);
-                    render.param.rect.set_x_max(cursor.min_pos.x + line.width);
+                    render.rect_mut().set_x_min(cursor.min_pos.x);
+                    render.rect_mut().set_x_max(cursor.min_pos.x + line.width);
                 } else {
-                    render.param.rect.set_x_max(render.param.rect.dx().min);
+                    let min = render.rect().dx().min;
+                    render.rect_mut().set_x_max(min);
                 }
             }
         } else { //同行选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index != cursor.vert {
-                    render.param.rect.set_x_max(render.param.rect.dx().min);
+                    let min = render.rect().dx().min;
+                    render.rect_mut().set_x_max(min);
                     continue;
                 }
                 let line = &cchar.buffer.lines[self.start_vert];
                 if cursor.horiz > self.start_horiz { //向右选择
                     let ox = line.get_width_in_char(self.start_horiz) + cchar.offset.x;
                     let ox = if cursor.min_pos.x + ox < cursor.min_pos.x { cursor.min_pos.x } else { cursor.min_pos.x + ox };
-                    render.param.rect.set_x_min(ox);
-                    render.param.rect.set_x_max(cursor.cursor_min());
+                    render.rect_mut().set_x_min(ox);
+                    render.rect_mut().set_x_max(cursor.cursor_min());
                 } else if cursor.horiz < self.start_horiz { //向左选择
-                    render.param.rect.set_x_min(cursor.cursor_min());
+                    render.rect_mut().set_x_min(cursor.cursor_min());
                     let ox = line.get_width_in_char(self.start_horiz) + cchar.offset.x;
                     let ox = if cursor.min_pos.x + ox > cursor.max_pos.x { cursor.max_pos.x } else { cursor.min_pos.x + ox };
-                    render.param.rect.set_x_max(ox);
+                    render.rect_mut().set_x_max(ox);
                 }
                 if pos.x > cursor.max_pos.x {
                     let wid = ui.context.window.id();
@@ -223,20 +234,20 @@ impl EditSelection {
             let mut x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
             if x_max > cursor.max_pos.x { x_max = cursor.max_pos.x; }
             if x_min < cursor.min_pos.x { x_min = cursor.min_pos.x; }
-            self.renders[cursor.vert].param.rect.set_x_min(x_min);
-            self.renders[cursor.vert].param.rect.set_x_max(x_max);
+            self.renders[cursor.vert].rect_mut().set_x_min(x_min);
+            self.renders[cursor.vert].rect_mut().set_x_max(x_max);
         } else {
             let start_line = &cchar.buffer.lines[start_vert];
             let end_line = &cchar.buffer.lines[cursor.vert];
             let sm = start_line.get_width_in_char(start_horiz) + cursor.min_pos.x;
-            self.renders[start_vert].param.rect.set_x_min(sm);
-            self.renders[start_vert].param.rect.set_x_max(cursor.max_pos.x);
-            self.renders[cursor.vert].param.rect.set_x_min(cursor.min_pos.x);
+            self.renders[start_vert].rect_mut().set_x_min(sm);
+            self.renders[start_vert].rect_mut().set_x_max(cursor.max_pos.x);
+            self.renders[cursor.vert].rect_mut().set_x_min(cursor.min_pos.x);
             let em = end_line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
-            self.renders[cursor.vert].param.rect.set_x_max(em);
+            self.renders[cursor.vert].rect_mut().set_x_max(em);
             for v in start_vert + 1..cursor.vert {
-                self.renders[v].param.rect.set_x_min(cursor.min_pos.x);
-                self.renders[v].param.rect.set_x_max(cursor.max_pos.x);
+                self.renders[v].rect_mut().set_x_min(cursor.min_pos.x);
+                self.renders[v].rect_mut().set_x_max(cursor.max_pos.x);
             }
         }
 
@@ -246,9 +257,10 @@ impl EditSelection {
 
     pub fn update_position(&mut self, ui: &mut Ui, mut rect: Rect) {
         for render in self.renders.iter_mut() {
-            render.param.rect.offset_y_to(rect.dy().min);
+            render.rect_mut().offset_y_to(rect.dy().min);
+            #[cfg(feature = "gpu")]
             render.update(ui, false, false);
-            rect.add_min_y(render.param.rect.height());
+            rect.add_min_y(render.rect().height());
         }
     }
 }

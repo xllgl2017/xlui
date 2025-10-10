@@ -1,6 +1,5 @@
-use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
-use crate::render::RenderParam;
+use crate::render::{RenderKind, RenderParam};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::ui::Ui;
@@ -8,13 +7,12 @@ use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
 use crate::widgets::{WidgetKind, WidgetSize};
-use crate::{Color, FillStyle, Widget};
+use crate::*;
 
 pub struct TableRow {
     id: String,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
     cells: Vec<TableCell>,
-    // offset: Offset,
     geometry: Geometry,
 }
 
@@ -26,9 +24,8 @@ impl TableRow {
         }
         TableRow {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RectParam::new()),
+            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
             cells,
-            // offset: Offset::new(Pos::new()),
             geometry: Geometry::new().with_fix_height(row_height),
         }
     }
@@ -37,11 +34,6 @@ impl TableRow {
         self.geometry.set_fix_width(w);
         self
     }
-
-    pub(crate) fn init(&mut self, ui: &mut Ui) {
-        self.fill_render.init_rectangle(ui, false, false);
-    }
-
 
     pub fn show_header<T: TableExt>(mut self, ui: &mut Ui, header: &TableHeader<T>) -> WidgetKind {
         self.cells = header.show(ui);
@@ -54,8 +46,8 @@ impl TableRow {
             datum.set_column(index);
             cell.show_body(ui, header, datum);
         }
-        self.fill_render.param.rect.set_size(self.geometry.width(), self.geometry.height());
-        if datum.row % 2 == 0 { self.fill_render.param.style.fill = FillStyle::same(Color::rgb(245, 245, 245)) }
+        self.fill_render.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+        if datum.row % 2 == 0 { self.fill_render.style_mut().fill = FillStyle::same(Color::rgb(245, 245, 245)) }
 
         let row = WidgetKind::new(ui, self);
         row
@@ -65,7 +57,8 @@ impl TableRow {
 impl Widget for TableRow {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
-            UpdateType::Init | UpdateType::ReInit => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::Init | UpdateType::ReInit => self.fill_render.init(ui, false, false),
             _ => {}
         }
         let mut width = 0.0;

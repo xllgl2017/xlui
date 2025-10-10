@@ -3,7 +3,7 @@ use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::key::Key;
 use crate::layout::LayoutDirection;
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -18,7 +18,7 @@ use crate::widgets::textedit::select::EditSelection;
 use crate::widgets::{Widget, WidgetChange, WidgetSize};
 use crate::window::ime::IMEData;
 use crate::window::ClipboardData;
-use crate::{App, TextWrap};
+use crate::{App, FillStyle, TextWrap};
 use std::mem;
 use crate::size::Geometry;
 
@@ -38,7 +38,7 @@ pub struct TextEdit {
     id: String,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, String)>>,
     contact_ids: Vec<String>,
-    fill_render: RenderParam<RectParam>,
+    fill_render: RenderParam,
     select_render: EditSelection,
     cursor_render: EditCursor,
     changed: bool,
@@ -53,9 +53,7 @@ pub struct TextEdit {
 impl TextEdit {
     fn new(text: impl ToString) -> TextEdit {
         let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::WHITE;
-        fill_style.fill.hovered = Color::WHITE;
-        fill_style.fill.clicked = Color::WHITE;
+        fill_style.fill = FillStyle::same(Color::WHITE);
         fill_style.border.inactive = Border::same(0.0).radius(Radius::same(2));
         fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         fill_style.border.clicked = fill_style.border.hovered.clone();
@@ -64,7 +62,7 @@ impl TextEdit {
             id: crate::gen_unique_id(),
             callback: None,
             contact_ids: vec![],
-            fill_render: RenderParam::new(param),
+            fill_render: RenderParam::new(RenderKind::Rectangle(param)),
             select_render: EditSelection::new(),
             cursor_render: EditCursor::new(),
             changed: false,
@@ -139,14 +137,15 @@ impl TextEdit {
         let height = line_height * self.desire_lines as f32 + 6.0;
         self.char_layout.buffer.geometry.set_fix_height(height);
         self.char_layout.buffer.init(ui); //计算行高
-        self.fill_render.param.rect.set_size(self.char_layout.buffer.geometry.width(), height);
+        self.fill_render.rect_mut().set_size(self.char_layout.buffer.geometry.width(), height);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, false, false);
             self.char_layout.buffer.geometry.offset_to_rect(&ui.draw_rect);
             let mut cursor_rect = self.char_layout.buffer.geometry.rect();
@@ -154,15 +153,16 @@ impl TextEdit {
             cursor_rect.set_height(self.char_layout.buffer.text.height);
             self.cursor_render.update_position(ui, cursor_rect, &self.char_layout);
             self.select_render.update_position(ui, self.char_layout.buffer.geometry.rect());
-            let mut psd_rect = self.fill_render.param.rect.clone();
+            let mut psd_rect = self.fill_render.rect_mut().clone();
             psd_rect.set_x_direction(LayoutDirection::Max);
             psd_rect.add_min_y(2.0);
             self.psd_buffer.geometry.offset_to_rect(&psd_rect);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
+            #[cfg(feature = "gpu")]
             self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
-            self.cursor_render.update(ui);
+            self.cursor_render.update();
             self.select_render.update(ui);
         }
     }
@@ -176,7 +176,8 @@ impl TextEdit {
             if let EditKind::Password = self.char_layout.edit_kind { self.char_layout.rebuild_text(ui); }
             self.psd_buffer.init(ui);
         }
-        self.fill_render.init_rectangle(ui, false, false);
+        #[cfg(feature = "gpu")]
+        self.fill_render.init(ui, false, false);
         self.cursor_render.init(&self.char_layout, ui, init);
         self.select_render.init(self.desire_lines, &self.char_layout.buffer.geometry.rect(), self.char_layout.buffer.text.height, ui, init);
     }
@@ -243,8 +244,11 @@ impl TextEdit {
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill_render, pass);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(ui, false, false);
         self.select_render.render(ui, self.char_layout.buffer.lines.len());
         if self.focused { self.cursor_render.render(ui); }
         self.char_layout.buffer.redraw(ui);
@@ -268,7 +272,7 @@ impl Widget for TextEdit {
                     ui.context.window.request_redraw();
                 }
 
-                let hovered = ui.device.device_input.hovered_at(&self.fill_render.param.rect);
+                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
                 if self.hovered != hovered {
                     self.hovered = hovered;
                     self.changed = true;
@@ -276,7 +280,8 @@ impl Widget for TextEdit {
                 }
             }
             UpdateType::MousePress => {
-                self.focused = ui.device.device_input.pressed_at(&self.fill_render.param.rect);
+                let old_focused = self.focused;
+                self.focused = ui.device.device_input.pressed_at(self.fill_render.rect());
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
                     // ui.context.window.win32().request_ime();
@@ -285,7 +290,7 @@ impl Widget for TextEdit {
                     self.select_render.set_by_cursor(&self.cursor_render);
                 }
                 self.changed = true;
-                ui.context.window.request_redraw();
+                if self.focused != old_focused { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.psd_buffer.geometry.rect()) && let EditKind::Password = self.char_layout.edit_kind {
@@ -385,7 +390,7 @@ impl Widget for TextEdit {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.param.rect.width(), self.fill_render.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

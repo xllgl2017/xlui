@@ -1,5 +1,5 @@
 use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderParam, WrcRender};
+use crate::render::{RenderKind, RenderParam};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
@@ -9,7 +9,7 @@ use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind
 pub struct TabHeader {
     id: String,
     text: TextBuffer,
-    fill: RenderParam<RectParam>,
+    fill: RenderParam,
     changed: bool,
 }
 
@@ -23,38 +23,35 @@ impl TabHeader {
         TabHeader {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0).padding(Padding::same(3.0)),
-            fill: RenderParam::new(RectParam::new().with_height(25.0).with_style(tab_style)),
+            fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_height(25.0).with_style(tab_style))),
             changed: false,
         }
     }
 
     pub fn set_style(&mut self, style: ClickStyle) {
-        self.fill.param.style = style;
+        self.fill.set_style(style);
     }
 
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill.param.rect.set_size(self.text.geometry.width(), self.text.geometry.height());
-        self.fill.init_rectangle(ui, false, false);
+        self.fill.rect_mut().set_size(self.text.geometry.width(), self.text.geometry.height());
+        #[cfg(feature = "gpu")]
+        self.fill.init(ui, false, false);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if self.changed { ui.widget_changed |= WidgetChange::Value; }
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill.param.rect.offset_to_rect(&ui.draw_rect);
+            self.fill.rect_mut().offset_to_rect(&ui.draw_rect);
             ui.widget_changed |= WidgetChange::Value;
             self.text.geometry.offset_to_rect(&ui.draw_rect);
-        }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            self.fill.update(ui, false, false);
         }
     }
 
     fn draw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        let pass = ui.pass.as_mut().unwrap();
-        ui.context.render.rectangle.render(&self.fill, pass);
+        self.fill.draw(ui, false, false);
         self.text.redraw(ui);
     }
 }
@@ -66,7 +63,7 @@ impl Widget for TabHeader {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill.param.rect.width(), self.fill.param.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.fill.rect_mut().width(), self.fill.rect_mut().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {
@@ -101,7 +98,7 @@ pub struct TabWidget {
     space: f32,
     items: Vec<TabItem>,
     geometry: Geometry,
-    fill: RenderParam<RectParam>,
+    fill: RenderParam,
 }
 
 impl TabWidget {
@@ -115,12 +112,12 @@ impl TabWidget {
             space: 2.0,
             items: vec![],
             geometry: Geometry::new(),
-            fill: RenderParam::new(RectParam::new().with_style(fill_style)),
+            fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
         }
     }
     pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) -> &mut TabHeader {
         if let Some(previous) = self.current {
-            self.items[previous].header.fill.param.style.fill = FillStyle::same(Color::TRANSPARENT);
+            self.items[previous].header.fill.style_mut().fill = FillStyle::same(Color::TRANSPARENT);
         }
         self.current = Some(self.items.len());
         let ut = ui.update_type.clone();
@@ -142,8 +139,9 @@ impl TabWidget {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        self.fill.param.rect.set_size(self.geometry.width(), self.geometry.height());
-        self.fill.init_rectangle(ui, false, false);
+        self.fill.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+        #[cfg(feature = "gpu")]
+        self.fill.init(ui, false, false);
     }
 
     pub fn with_width(mut self, w: f32) -> Self {
@@ -168,11 +166,9 @@ impl Widget for TabWidget {
         context_rect.add_min_y(24.0);
         if let UpdateType::Draw = ui.update_type {
             if ui.widget_changed.contains(WidgetChange::Position) {
-                self.fill.param.rect.offset_to_rect(&context_rect);
-                self.fill.update(ui, false, false);
+                self.fill.rect_mut().offset_to_rect(&context_rect);
             }
-            let pass = ui.pass.as_mut().unwrap();
-            ui.context.render.rectangle.render(&self.fill, pass);
+            self.fill.draw(ui, false, false);
         }
         context_rect.add_min_y(1.0);
         let mut tab_text_rect = ui.draw_rect.clone();
@@ -187,9 +183,9 @@ impl Widget for TabWidget {
             tab_text_rect.add_min_x(resp.size.dw + self.space);
             if clicked && ui.draw_rect.has_position(ui.device.device_input.mouse.lastest.relative) {
                 let previous = self.current.replace(index);
-                item.header.fill.param.style.fill = FillStyle::same(Color::WHITE);
+                item.header.fill.style_mut().fill = FillStyle::same(Color::WHITE);
                 if let Some(previous) = previous && previous != index {
-                    self.items[previous].header.fill.param.style.fill = FillStyle::same(Color::TRANSPARENT);
+                    self.items[previous].header.fill.style_mut().fill = FillStyle::same(Color::TRANSPARENT);
                 }
 
                 ui.context.window.request_redraw();

@@ -1,24 +1,52 @@
-use crate::{Device, Size};
+use crate::*;
+use crate::error::UiResult;
 use crate::render::image::ImageSource;
 
 pub struct ImageTexture {
     size: Size,
+    #[cfg(feature = "gpu")]
     bind_group: wgpu::BindGroup,
+    #[cfg(not(feature = "gpu"))]
+    rgba8: Vec<u8>,
 }
 
 impl ImageTexture {
-    pub fn new(device: &Device, source: &ImageSource, layout: &wgpu::BindGroupLayout) -> ImageTexture {
+    #[cfg(feature = "gpu")]
+    pub fn new(device: &Device, source: &ImageSource, layout: &wgpu::BindGroupLayout) -> UiResult<ImageTexture> {
         let (rgba, size) = match source {
-            ImageSource::File(fp) => super::load_image_file(fp).unwrap(),
-            ImageSource::Bytes(bytes) => super::load_image_bytes(bytes).unwrap(),
+            ImageSource::File(fp) => super::load_image_file(fp)?,
+            ImageSource::Bytes(bytes) => super::load_image_bytes(bytes)?,
         };
         let bind_group = Self::create_bind_group(device, rgba, size, layout);
-        ImageTexture {
+        Ok(ImageTexture {
             bind_group,
             size,
+        })
+    }
+    #[cfg(not(feature = "gpu"))]
+    pub fn new(source: &ImageSource) -> UiResult<ImageTexture> {
+        let (mut rgba, size) = match source {
+            ImageSource::File(fp) => super::load_image_file(fp)?,
+            ImageSource::Bytes(bytes) => super::load_image_bytes(bytes)?,
+        };
+        #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+        for pixel in rgba.chunks_exact_mut(4){
+            let r = pixel[0];
+            let g = pixel[1];
+            let b = pixel[2];
+            let a = pixel[3];
+            pixel[0] = b; // B
+            pixel[1] = g; // G
+            pixel[2] = r; // R
+            pixel[3] = a; // A
         }
+        Ok(ImageTexture {
+            rgba8: rgba,
+            size,
+        })
     }
 
+    #[cfg(feature = "gpu")]
     fn create_bind_group(device: &Device, rgba: Vec<u8>, size: Size, group_layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
         let size = wgpu::Extent3d {
             width: size.width_u32(),
@@ -79,7 +107,13 @@ impl ImageTexture {
         self.size
     }
 
+    #[cfg(feature = "gpu")]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
+    }
+
+    #[cfg(not(feature = "gpu"))]
+    pub fn raw_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.rgba8
     }
 }

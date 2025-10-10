@@ -77,6 +77,7 @@ use std::time::SystemTime;
 
 mod widgets;
 mod align;
+#[cfg(feature = "gpu")]
 mod vertex;
 mod layout;
 mod text;
@@ -137,7 +138,7 @@ macro_rules! impl_num_cast_ext {
 // 支持的类型
 impl_num_cast_ext!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
-
+#[cfg(feature = "gpu")]
 const SAMPLE_COUNT: u32 = 4;
 
 
@@ -183,12 +184,18 @@ impl Offset {
 
 
 pub struct Device {
+    #[cfg(feature = "gpu")]
     pub device: wgpu::Device,
+    #[cfg(feature = "gpu")]
     pub queue: wgpu::Queue,
+    #[cfg(feature = "gpu")]
     pub cache: glyphon::Cache,
+    #[cfg(feature = "gpu")]
     pub texture_format: wgpu::TextureFormat,
+    #[cfg(feature = "gpu")]
     pub surface_config: wgpu::SurfaceConfiguration,
     pub device_input: DeviceInput,
+    #[cfg(feature = "gpu")]
     pub surface: wgpu::Surface<'static>,
 }
 

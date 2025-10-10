@@ -11,13 +11,16 @@ use windows::Win32::Foundation::GENERIC_READ;
 #[cfg(target_os = "windows")]
 use windows::Win32::Graphics::Imaging::{CLSID_WICImagingFactory, GUID_WICPixelFormat32bppRGBA, IWICImagingFactory, WICBitmapDitherTypeNone, WICBitmapPaletteTypeCustom, WICDecodeMetadataCacheOnLoad};
 #[cfg(target_os = "windows")]
+use windows::Win32::Graphics::Imaging::IWICBitmapFrameDecode;
+#[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER};
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::Shell::SHCreateMemStream;
 use crate::error::UiResult;
-use crate::{Device, Size, SAMPLE_COUNT};
+use crate::*;
 use crate::map::Map;
 use crate::render::image::texture::ImageTexture;
+#[cfg(feature = "gpu")]
 use crate::vertex::ImageVertex;
 
 pub enum ImageSource {
@@ -73,15 +76,17 @@ impl<const N: usize> From<&[u8; N]> for ImageSource {
     }
 }
 
-
 pub struct ImageRender {
+    #[cfg(feature = "gpu")]
     pipeline: wgpu::RenderPipeline,
     textures: Map<String, ImageTexture>,
+    #[cfg(feature = "gpu")]
     bind_group_layout: wgpu::BindGroupLayout,
 
 }
 
 impl ImageRender {
+    #[cfg(feature = "gpu")]
     pub fn new(device: &Device) -> ImageRender {
         let entry_texture = wgpu::BindGroupLayoutEntry {
             binding: 0,
@@ -113,7 +118,13 @@ impl ImageRender {
         }
     }
 
-
+    #[cfg(not(feature = "gpu"))]
+    pub fn new() -> ImageRender {
+        ImageRender {
+            textures: Map::new(),
+        }
+    }
+    #[cfg(feature = "gpu")]
     fn create_pipeline(device: &Device, group_layout: &wgpu::BindGroupLayout) -> wgpu::RenderPipeline {
         let shader = device.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
@@ -164,31 +175,51 @@ impl ImageRender {
         render_pipeline
     }
 
-    pub fn insert_image(&mut self, device: &Device, source: &ImageSource) -> Size {
+    #[cfg(feature = "gpu")]
+    pub fn insert_image(&mut self, device: &Device, source: &ImageSource) -> UiResult<Size> {
         let uri = source.uri();
         match self.textures.get(&uri) {
             None => {
-                let texture = ImageTexture::new(device, source, &self.bind_group_layout);
+                let texture = ImageTexture::new(device, source, &self.bind_group_layout)?;
                 let size = texture.size();
                 self.textures.insert(uri, texture);
-                size
+                Ok(size)
             }
-            Some(texture) => texture.size()
+            Some(texture) => Ok(texture.size())
+        }
+    }
+    #[cfg(not(feature = "gpu"))]
+    pub fn insert_image(&mut self, source: &ImageSource) -> UiResult<Size> {
+        let uri = source.uri();
+        match self.textures.get(&uri) {
+            None => {
+                let texture = ImageTexture::new(source)?;
+                let size = texture.size();
+                self.textures.insert(uri, texture);
+                Ok(size)
+            }
+            Some(texture) => Ok(texture.size())
         }
     }
 
-    pub(crate) fn render(&self, uri: &String, vb: &wgpu::Buffer, ib: &wgpu::Buffer, render_pass: &mut wgpu::RenderPass) {
+    #[cfg(feature = "gpu")]
+    pub(crate) fn render(&self, uri: &String, vb: &wgpu::Buffer, ib: &wgpu::Buffer, render_pass: &mut wgpu::RenderPass) -> Option<()> {
         render_pass.set_pipeline(&self.pipeline);
-        let texture = self.textures.get(uri).unwrap();
+        let texture = self.textures.get(uri)?;
         render_pass.set_bind_group(0, texture.bind_group(), &[]);
         render_pass.set_vertex_buffer(0, vb.slice(..));
         render_pass.set_index_buffer(ib.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.draw_indexed(0..6, 0, 0..1);
+        Some(())
+    }
+
+    #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+    pub(crate) fn get_texture_mut(&mut self, uri: &String) -> Option<&mut ImageTexture> {
+        self.textures.get_mut(uri)
     }
 }
-
 #[cfg(target_os = "windows")]
-pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
+pub fn load_win32_image_raw(source: &ImageSource) -> UiResult<(IWICImagingFactory, IWICBitmapFrameDecode)> {
     unsafe { CoInitialize(None).ok()?; }
     let factory: IWICImagingFactory = unsafe { CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)? };
     let decoder = match source {
@@ -208,6 +239,12 @@ pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
         }
     };
     let frame = unsafe { decoder.GetFrame(0) }?;
+    Ok((factory, frame))
+}
+
+#[cfg(target_os = "windows")]
+pub fn load_win32_image(source: ImageSource) -> UiResult<(Vec<u8>, Size)> {
+    let (factory, frame) = load_win32_image_raw(&source)?;
     let converter = unsafe { factory.CreateFormatConverter() }?;
     unsafe { converter.Initialize(&frame, &GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, None, 0.0, WICBitmapPaletteTypeCustom)?; }
     let mut width = 0;

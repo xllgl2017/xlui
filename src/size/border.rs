@@ -39,4 +39,8 @@ impl Border {
         self.radius = radius;
         self
     }
+
+    pub fn width(&self) -> f32 {
+        self.top_width
+    }
 }

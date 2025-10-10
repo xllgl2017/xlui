@@ -81,11 +81,11 @@ fn fs_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     let sd_in = sd_shrunk_rounded_rect(p, half, u.corner_radii, u.border_widths);
 
     // antialias width (in pixels)
-    var aa = 0.0;
-    let has_border = any(u.border_widths > vec4<f32>(0.5));
-    if (has_border&&half.x<10){
-        aa=1.0;
-    }
+    var aa = fwidth(distance(uv,center))*0.8;//0.0;
+//    let has_border = any(u.border_widths > vec4<f32>(0.5));
+//    if (has_border&&half.x<10){
+//        aa=1.0;
+//    }
 
     // base fill and border masks
     let fill_mask = 1.0 - smoothstep(0.0, aa, sd_in);

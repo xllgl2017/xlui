@@ -2,6 +2,7 @@ use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowH
 use crate::error::UiResult;
 use crate::window::{UserEvent, WindowId};
 use winit::dpi::PhysicalSize;
+use crate::Size;
 
 pub struct WInitWindowHandle {
     window: winit::window::Window,
@@ -41,5 +42,10 @@ impl WInitWindowHandle {
 
     pub fn display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
         self.window.display_handle()
+    }
+
+    pub fn size(&self) -> Size {
+        let size = self.window.inner_size();
+        (size.width, size.height).into()
     }
 }
