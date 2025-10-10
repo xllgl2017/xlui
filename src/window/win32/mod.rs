@@ -9,16 +9,17 @@ use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{App, TrayMenu, WindowAttribute};
 use std::ops::Index;
 use std::process::exit;
+#[cfg(not(feature = "gpu"))]
 use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HINSTANCE, HWND, POINT};
 use windows::Win32::Graphics::Gdi::{GetStockObject, HBRUSH, WHITE_BRUSH};
+#[cfg(not(feature = "gpu"))]
 use windows::Win32::Graphics::GdiPlus::{GdiplusStartup, GdiplusStartupInput};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
-use crate::window::event::WindowEvent;
 
 pub mod tray;
 pub(crate) mod handle;
@@ -29,17 +30,17 @@ const TRAY_ICON: u32 = WM_USER + 1;
 const REQ_UPDATE: u32 = WM_USER + 2;
 const CREATE_CHILD: u32 = WM_USER + 3;
 const RE_INIT: u32 = WM_USER + 4;
-const IME: u32 = WM_USER + 5;
-const REQ_CLOSE: u32 = WM_USER + 6;
+// const IME: u32 = WM_USER + 5;
+// const REQ_CLOSE: u32 = WM_USER + 6;
 const USER_UPDATE: u32 = WM_USER + 7;
-const RESIZE: u32 = WM_USER + 8;
+// const RESIZE: u32 = WM_USER + 8;
 
 
 pub struct Win32Window {
     tray: Option<Tray>,
     windows: Map<WindowId, LoopWindow>,
 }
-
+#[cfg(not(feature = "gpu"))]
 static mut GDI_PLUS_TOKEN: usize = 0;
 impl Win32Window {
     pub fn new<A: App>(app: A) -> UiResult<Win32Window> {
@@ -85,6 +86,9 @@ impl Win32Window {
     pub fn close_window(&mut self, hwnd: HWND) -> Option<LoopWindow> {
         let wid = self.get_window_mut_by_hand(hwnd)?.window_id();
         let window = self.windows.remove(&wid);
+        if let Some(ref window) = window {
+            if window.handle().type_ == WindowType::ROOT { exit(0); }
+        }
         if self.windows.len() == 0 { exit(0); }
         window
     }
@@ -156,30 +160,23 @@ impl Win32Window {
             ime: parent.ime.clone(),
         });
         #[cfg(feature = "gpu")]
-        let windows = pollster::block_on(async { LoopWindow::create_gpu_window(app, window_type, attr).await });
-        #[cfg(feature = "gpu")]
-        self.windows.insert(windows.window_id(), windows);
+        let window = pollster::block_on(async { LoopWindow::create_gpu_window(app, window_type, attr).await });
+        #[cfg(not(feature = "gpu"))]
+        let window = LoopWindow::create_native_window(app, window_type, attr);
+        unsafe { unsafe { SetWindowLongPtrW(window.handle().win32().hwnd, GWLP_USERDATA, self as *mut _ as isize); } }
+        self.windows.insert(window.window_id(), window);
         Ok(())
     }
 
     pub fn run(&mut self) -> UiResult<()> {
-        let mut msg=MSG::default();
+        let mut msg = MSG::default();
         unsafe {
             while GetMessageW(&mut msg, None, 0, 0).into() {
-                TranslateMessage(&msg);
+                let _ = TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             }
         }
         Ok(())
-        // loop {
-        //     unsafe {
-        //         let mut msg = std::mem::zeroed::<MSG>();
-        //         let ret = GetMessageW(&mut msg, None, 0, 0);
-        //         if ret.0 == 0 { return Err("get message event error".into()); }
-        //         let _ = TranslateMessage(&msg);
-        //         DispatchMessageW(&msg);
-        //     }
-        // }
     }
 
     fn add_tray_menu(&self, h_menu: HMENU, id: u32, menu: &TrayMenu, flag: MENU_ITEM_FLAGS) -> UiResult<()> {

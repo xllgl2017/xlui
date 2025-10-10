@@ -12,7 +12,7 @@
 
 | 适配情况 |   目标系统    |    平台UI     |    渲染    |     窗口管理      | 备注 |
 |:----:|:---------:|:-----------:|:--------:|:-------------:|:--:|
-|  ✅   |   Linux   | x11,wayland |   wgpu   |   x11,winit   |    |
+|  ✅   |   Linux   | x11,wayland | x11,wgpu |   x11,winit   |    |
 |  ✅   |  Windows  |    10,11    | gdi,wgpu | windows,winit |    |
 |  ⬜️  |   MacOS   |      -      |   wgpu   |     winit     |    |
 |  ⬜️  |  Android  |     11+     |   wgpu   |     winit     |    |

@@ -1,5 +1,3 @@
-#[cfg(all(windows, not(feature = "gpu")))]
-use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
 use crate::{MousePos, Pos, Size};
 use crate::key::Key;
 #[cfg(not(feature = "gpu"))]

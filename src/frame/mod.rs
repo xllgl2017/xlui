@@ -1,15 +1,17 @@
 use crate::error::UiResult;
 use crate::ui::Ui;
-#[cfg(all(windows, not(feature = "gpu")))]
+#[cfg(all(windows, not(feature = "winit")))]
 use crate::window::win32::Win32Window;
 #[cfg(feature = "winit")]
 use crate::window::winit_app::WInitApplication;
 use crate::WindowAttribute;
 use std::any::Any;
-#[cfg(all(windows, not(feature = "gpu")))]
+#[cfg(all(windows, not(feature = "winit")))]
 use windows::Win32::UI::WindowsAndMessaging::{SetWindowLongPtrW, GWLP_USERDATA};
 #[cfg(feature = "winit")]
 use winit::event_loop::{ControlFlow, EventLoop};
+#[cfg(all(windows, not(feature = "winit")))]
+use crate::window::wino::EventLoopHandle;
 #[cfg(all(target_os = "linux", not(feature = "winit")))]
 use crate::window::x11::X11Window;
 

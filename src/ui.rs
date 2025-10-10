@@ -31,7 +31,7 @@ use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
-#[cfg(not(feature = "gpu"))]
+#[cfg(all(target_os = "linux", not(feature = "gpu")))]
 use crate::window::x11::ffi::Cairo;
 
 pub struct AppContext {
@@ -83,12 +83,6 @@ impl AppContext {
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
             paint: None,
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: None,
-            // #[cfg(not(feature = "gpu"))]
-            // p: P { text: "" },
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: None,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -115,12 +109,6 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: None,
-            // #[cfg(not(feature = "gpu"))]
-            // p: P { text: "" },
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: None,
             paint: None,
         };
         app.update(&mut ui);
@@ -142,15 +130,9 @@ impl AppContext {
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            // #[cfg(not(feature = "gpu"))]
-            // p: P { text: "" },
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: None,
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: None,
             paint: None,
         };
         app.update(&mut ui);
@@ -268,12 +250,6 @@ impl AppContext {
             draw_rect,
             widget_changed: WidgetChange::None,
             style: self.style.clone(),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: ps,
-            // #[cfg(not(feature = "gpu"))]
-            // p: P { text: "" },
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: hdc,
             paint,
         };
         app.update(&mut ui);
@@ -308,11 +284,11 @@ pub(crate) struct PaintParam<'p> {
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) window: x11::xlib::Window,
     #[cfg(all(windows, not(feature = "gpu")))]
-    pub(crate) paint_struct: Option<PAINTSTRUCT>,
+    pub(crate) paint_struct: PAINTSTRUCT,
     #[cfg(all(windows, not(feature = "gpu")))]
-    pub(crate) hdc: Option<HDC>,
-    #[cfg(feature = "gpu")]
-    _s: &'p str,
+    pub(crate) hdc: HDC,
+    #[cfg(target_os = "windows")]
+    pub(crate) _s: &'p str,
 }
 
 impl<'a> Debug for PaintParam<'a> {

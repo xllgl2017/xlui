@@ -1,23 +1,27 @@
 use crate::error::UiResult;
+#[cfg(not(feature = "gpu"))]
 use crate::render::image::{load_win32_image_raw, ImageSource};
+#[cfg(not(feature = "gpu"))]
 use crate::text::cchar::{CChar, LineChar};
 use crate::window::win32::clipboard::Win32Clipboard;
 use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 use crate::window::UserEvent;
-use crate::{Border, Color, Radius, Rect, RichText, Size};
+use crate::*;
 #[cfg(feature = "gpu")]
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 #[cfg(feature = "gpu")]
 use std::num::NonZeroIsize;
+#[cfg(feature = "gpu")]
+use crate::window::win32::{GetWindowLongPtrW, GWLP_HINSTANCE};
 use std::ptr::null_mut;
 use std::sync::RwLock;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, GetCharWidth32W, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, SRCCOPY, TRANSPARENT};
-use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipDrawPolygon, GdipFillEllipse, GdipFillPath, GdipFillPolygon, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, PointF, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, SmoothingModeHighQuality, UnitPixel};
+use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipDrawPolygon, GdipFillEllipse, GdipFillPath, GdipFillPolygon, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, PointF, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, UnitPixel};
 use windows::Win32::Graphics::Imaging::{GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
-use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, GetWindowLongPtrW, PostMessageW, ShowWindow, GWLP_HINSTANCE, SW_HIDE, SW_SHOW, WM_PAINT};
+use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, PostMessageW, ShowWindow, SW_HIDE, SW_SHOW, WM_PAINT};
 
 pub struct Win32WindowHandle {
     pub(crate) hwnd: HWND,
@@ -82,7 +86,7 @@ impl Win32WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_text(&self, hdc: HDC, text: &RichText, rect: Rect) {
+    pub fn paint_text(&self, hdc: HDC, text: &RichText, rect: Rect) -> UiResult<()> {
         unsafe {
             SetBkMode(hdc, TRANSPARENT);
 
@@ -95,7 +99,8 @@ impl Win32WindowHandle {
             DrawTextW(hdc, text.as_mut_slice(), &mut rect.as_win32_rect(), DT_SINGLELINE | DT_TOP | DT_LEFT);
             // 恢复原字体并删除我们创建的字体对象
             SelectObject(hdc, old_font);
-            DeleteObject(HGDIOBJ::from(hfont));
+            DeleteObject(HGDIOBJ::from(hfont)).ok()?;
+            Ok(())
         }
     }
 
@@ -183,7 +188,7 @@ impl Win32WindowHandle {
             GdipSetSmoothingMode(graphics, SmoothingModeAntiAlias);
 
             // 创建填充刷（支持 alpha）
-            let fill_color = (fill.a as u32) << 24 | (fill.r as u32) << 16 | (fill.g as u32) << 8 | (fill.b as u32);
+            // let fill_color = (fill.a as u32) << 24 | (fill.r as u32) << 16 | (fill.g as u32) << 8 | (fill.b as u32);
             let mut brush: *mut GpSolidFill = null_mut();
             GdipCreateSolidFill(fill.as_rgba_u32(), &mut brush);
 
@@ -207,6 +212,7 @@ impl Win32WindowHandle {
 
     pub fn size(&self) -> Size { self.size.read().unwrap().clone() }
 
+    #[cfg(not(feature = "gpu"))]
     fn create_font(&self, height: i32, family: &str) -> HFONT {
         let font_name = until::to_wstr(family);
         // 创建字体
@@ -231,7 +237,8 @@ impl Win32WindowHandle {
         hfont
     }
 
-    pub fn measure_char_widths(&self, text: &RichText) -> Vec<LineChar> {
+    #[cfg(not(feature = "gpu"))]
+    pub fn measure_char_widths(&self, text: &RichText) -> UiResult<Vec<LineChar>> {
         unsafe {
             // 创建内存 DC（不依赖窗口）
             let hdc = CreateCompatibleDC(None);
@@ -246,7 +253,7 @@ impl Win32WindowHandle {
                 // 逐字符测量
                 for &ch in &wtext {
                     let mut w = 0i32;
-                    GetCharWidth32W(hdc, ch as u32, ch as u32, &mut w);
+                    GetCharWidth32W(hdc, ch as u32, ch as u32, &mut w).ok()?;
                     line.push(CChar::new(char::from_u32(ch as u32).unwrap_or(' '), w as f32));
                 }
                 res.push(line);
@@ -256,21 +263,22 @@ impl Win32WindowHandle {
 
             // 清理
             SelectObject(hdc, old_font);
-            DeleteObject(HGDIOBJ::from(hfont));
-            DeleteDC(hdc);
+            DeleteObject(HGDIOBJ::from(hfont)).ok()?;
+            DeleteDC(hdc).ok()?;
 
-            res
+            Ok(res)
         }
     }
 
-    pub fn paint_image(&self, hdc: HDC, source: &ImageSource, rect: Rect) {
+    #[cfg(not(feature = "gpu"))]
+    pub fn paint_image(&self, hdc: HDC, source: &ImageSource, rect: Rect)->UiResult<()> {
         unsafe {
-            let (factory, frame) = load_win32_image_raw(&source).unwrap();
+            let (factory, frame) = load_win32_image_raw(&source)?;
             let scaler = factory.CreateBitmapScaler().unwrap();
-            scaler.Initialize(&frame, rect.width() as u32, rect.height() as u32, WICBitmapInterpolationModeFant);
+            scaler.Initialize(&frame, rect.width() as u32, rect.height() as u32, WICBitmapInterpolationModeFant)?;
 
             // 转换为 32bpp BGRA
-            let mut format_converter = factory.CreateFormatConverter().unwrap();
+            let mut format_converter = factory.CreateFormatConverter()?;
 
             format_converter.Initialize(
                 &scaler,
@@ -282,7 +290,7 @@ impl Win32WindowHandle {
             ).unwrap();
             let mut width = 0;
             let mut height = 0;
-            unsafe { format_converter.GetSize(&mut width, &mut height).unwrap(); }
+            unsafe { format_converter.GetSize(&mut width, &mut height)?; }
 
             let mut hbitmap: HBITMAP = HBITMAP::default();
             let bmi = BITMAPINFO {
@@ -298,25 +306,27 @@ impl Win32WindowHandle {
                 ..Default::default()
             };
             let mut bits: *mut std::ffi::c_void = null_mut();
-            hbitmap = CreateDIBSection(Some(hdc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0).unwrap();
+            hbitmap = CreateDIBSection(Some(hdc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0)?;
             let stride = (width as f32 * 4.0) as usize;
             let buf_size = stride * height as usize;
             let buffer_slice = std::slice::from_raw_parts_mut(bits as *mut u8, buf_size);
 
 
             // 将 WIC 图像写入 HBITMAP
-            format_converter.CopyPixels(null_mut(), stride as u32, buffer_slice).unwrap();
+            format_converter.CopyPixels(null_mut(), stride as u32, buffer_slice)?;
 
             // 绘制到窗口
             let hdc_mem = CreateCompatibleDC(Option::from(hdc));
             let old_bmp = SelectObject(hdc_mem, HGDIOBJ::from(hbitmap));
-            BitBlt(hdc, rect.dx().min as i32, rect.dy().min as i32, width as i32, height as i32, Option::from(hdc_mem), 0, 0, SRCCOPY);
+            BitBlt(hdc, rect.dx().min as i32, rect.dy().min as i32, width as i32, height as i32, Option::from(hdc_mem), 0, 0, SRCCOPY)?;
             SelectObject(hdc_mem, old_bmp);
-            DeleteDC(hdc_mem);
-            DeleteObject(HGDIOBJ::from(hbitmap));
+            DeleteDC(hdc_mem).ok()?;
+            DeleteObject(HGDIOBJ::from(hbitmap)).ok()?;
+            Ok(())
         }
     }
 
+    #[cfg(not(feature = "gpu"))]
     pub fn paint_triangle(&self, hdc: HDC, points: [PointF; 3], fill: &Color, border: &Border) {
         unsafe {
             // 创建 Graphics 对象

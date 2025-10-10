@@ -194,7 +194,7 @@ impl WindowType {
 
     pub(crate) fn size(&self) -> Size {
         match self.kind {
-            #[cfg(all(windows, not(feature = "gpu")))]
+            #[cfg(all(windows, not(feature = "winit")))]
             WindowKind::Win32(ref window) => window.size(),
             #[cfg(feature = "winit")]
             WindowKind::Winit(ref window) => window.size(),

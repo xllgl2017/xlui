@@ -280,6 +280,7 @@ impl Widget for TextEdit {
                 }
             }
             UpdateType::MousePress => {
+                let old_focused = self.focused;
                 self.focused = ui.device.device_input.pressed_at(self.fill_render.rect());
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
@@ -289,7 +290,7 @@ impl Widget for TextEdit {
                     self.select_render.set_by_cursor(&self.cursor_render);
                 }
                 self.changed = true;
-                ui.context.window.request_redraw();
+                if self.focused != old_focused { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
                 if ui.device.device_input.click_at(&self.psd_buffer.geometry.rect()) && let EditKind::Password = self.char_layout.edit_kind {

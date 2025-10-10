@@ -179,7 +179,7 @@ impl RenderParam {
                 let fill = param.style.dyn_fill(pressed, hovered);
                 let border = param.style.dyn_border(pressed, hovered);
                 #[cfg(windows)]
-                ui.context.window.win32().paint_rect(ui.hdc.unwrap(), fill, border, &param.rect);
+                ui.context.window.win32().paint_rect(ui.paint.as_mut().unwrap().hdc, fill, border, &param.rect);
                 #[cfg(target_os = "linux")]
                 ui.context.window.x11().paint_rect(ui.paint.as_mut().unwrap().cairo, fill, border, &param.rect);
             }
@@ -194,7 +194,7 @@ impl RenderParam {
                 let fill = param.style.dyn_fill(pressed, hovered);
                 let border = param.style.dyn_border(pressed, hovered);
                 #[cfg(windows)]
-                ui.context.window.win32().paint_circle(ui.hdc.unwrap(), &param.rect, fill, border);
+                ui.context.window.win32().paint_circle(ui.paint.as_mut().unwrap().hdc, &param.rect, fill, border);
                 #[cfg(target_os = "linux")]
                 ui.context.window.x11().paint_circle(ui.paint.as_mut().unwrap().cairo, fill, border, &param.rect);
             }
@@ -203,7 +203,7 @@ impl RenderParam {
                 let fill = param.style.dyn_fill(pressed, hovered);
                 let border = param.style.dyn_border(pressed, hovered);
                 #[cfg(windows)]
-                ui.context.window.win32().paint_triangle(ui.hdc.unwrap(), param.as_win32_points(), fill, border);
+                ui.context.window.win32().paint_triangle(ui.paint.as_mut().unwrap().hdc, param.as_win32_points(), fill, border);
                 #[cfg(target_os = "linux")]
                 ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, fill, border);
             }
@@ -258,7 +258,6 @@ fn create_pipeline(device: &Device, shader: wgpu::ShaderModule, layout: wgpu::Pi
 
 #[cfg(feature = "gpu")]
 pub(crate) trait WrcRender {
-
     fn pipeline(&self) -> &wgpu::RenderPipeline;
 
     fn bind_group_layout(&self) -> &wgpu::BindGroupLayout;

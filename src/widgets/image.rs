@@ -155,10 +155,10 @@ impl Image {
             pass,
         );
         #[cfg(all(windows, not(feature = "gpu")))]
-        ui.context.window.win32().paint_image(ui.hdc.unwrap(), &self.source, self.geometry.rect());
-        #[cfg(not(feature = "gpu"))]
+        ui.context.window.win32().paint_image(ui.paint.as_mut().unwrap().hdc, &self.source, self.geometry.rect());
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
         let texture = ui.context.render.image.get_texture_mut(&self.source.uri()).unwrap();
-        #[cfg(not(feature = "gpu"))]
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
         ui.context.window.x11().paint_image(ui.paint.as_mut().unwrap().cairo, texture, self.geometry.rect());
     }
 }

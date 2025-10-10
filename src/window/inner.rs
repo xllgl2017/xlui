@@ -149,12 +149,12 @@ impl InnerWindow {
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: None,
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // paint_struct: None,
             // #[cfg(not(feature = "gpu"))]
             // p: crate::ui::P { text: "" },
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: None,
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // hdc: None,
             paint: None,
         };
 
@@ -233,12 +233,12 @@ impl InnerWindow {
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: oui.paint_struct.take(),
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // paint_struct: oui.paint_struct.take(),
             // #[cfg(not(feature = "gpu"))]
             // p: P { text: "" },
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: oui.hdc.take(),
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // hdc: oui.hdc.take(),
             paint: oui.paint.take(),
         };
 
@@ -289,12 +289,12 @@ impl InnerWindow {
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            #[cfg(all(windows, not(feature = "gpu")))]
-            paint_struct: None,
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // paint_struct: None,
             // #[cfg(not(feature = "gpu"))]
             // p: P { text: "" },
-            #[cfg(all(windows, not(feature = "gpu")))]
-            hdc: None,
+            // #[cfg(all(windows, not(feature = "gpu")))]
+            // hdc: None,
             paint:None
         };
         self.w.update(&mut nui);

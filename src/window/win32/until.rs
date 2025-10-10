@@ -1,13 +1,17 @@
+use std::thread::{sleep, spawn};
+use std::time::Duration;
 use crate::error::UiResult;
 use crate::key::Key;
+#[cfg(not(feature = "gpu"))]
+use crate::ui::PaintParam;
 use crate::window::event::WindowEvent;
 use crate::window::ime::IMEData;
 use crate::window::win32::{Win32Window, CREATE_CHILD, REQ_UPDATE, RE_INIT, TRAY_ICON};
 use crate::window::wino::EventLoopHandle;
-use crate::{Color, Pos, Rect, RichTextExt, Size};
+use crate::*;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, RECT, WPARAM};
-use windows::Win32::Graphics::Gdi::{BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateFontW, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetDC, InvalidateRect, ReleaseDC, SelectObject, SetTextColor, ValidateRect, DT_CENTER, DT_SINGLELINE, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HGDIOBJ, PAINTSTRUCT, SRCCOPY};
+use windows::Win32::Graphics::Gdi::{BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateFontW, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetDC, ReleaseDC, SelectObject, SetTextColor, DT_CENTER, DT_SINGLELINE, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HGDIOBJ, PAINTSTRUCT, SRCCOPY};
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY, VK_BACK, VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_HOME, VK_LEFT, VK_RETURN, VK_RIGHT, VK_UP};
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -53,7 +57,7 @@ pub unsafe fn load_tray_icon(ip: &str) -> HICON {
     HICON(h_icon.0)
 }
 
-fn paint_text(text: &str, hdc: HDC, ps: PAINTSTRUCT) {
+fn paint_text(text: &str, hdc: HDC, ps: PAINTSTRUCT)->UiResult<()> {
     unsafe { SetTextColor(hdc, COLORREF(0x00_00_00)); } // 黑色
     let font_name = to_wstr("仿宋");
     let hfont = unsafe {
@@ -81,7 +85,8 @@ fn paint_text(text: &str, hdc: HDC, ps: PAINTSTRUCT) {
     unsafe { DrawTextW(hdc, text.as_mut_slice(), &mut ps.rcPaint.clone(), DT_CENTER | DT_VCENTER | DT_SINGLELINE); }
     // 恢复原字体并删除我们创建的字体对象
     unsafe { SelectObject(hdc, old_font); }
-    unsafe { DeleteObject(HGDIOBJ::from(hfont)); }
+    unsafe { DeleteObject(HGDIOBJ::from(hfont)).ok()?; }
+    Ok(())
 }
 
 pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -119,7 +124,6 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
         }
         // WM_ERASEBKGND => LRESULT(1), // 不擦背景
         WM_IME_STARTCOMPOSITION | WM_IME_ENDCOMPOSITION | WM_IME_COMPOSITION => {
-            // let himc = window.win32().himc.read().unwrap();
             let himc = unsafe { ImmGetContext(window.handle().win32().hwnd) };
             println!("ime-----{}", lparam.0);
             if lparam.0 == 7168 || lparam.0 == 2048 {
@@ -150,8 +154,17 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             }
         }
         WM_PAINT => {
+            if crate::time_ms() - window.app_ctx.previous_time <= 10 || !window.app_ctx.redraw_thread.is_finished() {
+                let handle = window.handle().clone();
+                if window.app_ctx.redraw_thread.is_finished() {
+                    window.app_ctx.redraw_thread = spawn(move || {
+                        sleep(Duration::from_millis(10));
+                        handle.request_redraw();
+                    });
+                }
+                return LRESULT(1);
+            }
             println!("paint");
-            if !window.app_ctx.redraw_thread.is_finished() || crate::time_ms() - window.app_ctx.previous_time <= 10 { return LRESULT(0); }
             #[cfg(not(feature = "gpu"))]
             {
                 let mut ps = PAINTSTRUCT::default();
@@ -167,7 +180,12 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                 let brush = CreateSolidBrush(COLORREF(Color::rgb(240, 240, 240).as_rgb_u32())); // 白色背景
                 FillRect(mem_dc, &rect, brush);
                 DeleteObject(HGDIOBJ::from(brush));
-                window.handle_event(WindowEvent::Redraw(ps, mem_dc));
+                let paint = PaintParam {
+                    paint_struct: ps,
+                    hdc: mem_dc,
+                    _s: "",
+                };
+                window.handle_event(WindowEvent::Redraw(paint));
                 BitBlt(
                     hdc,
                     0, 0,
@@ -224,12 +242,9 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
             }
         }
         WM_CHAR => {
-            if let Some(r) = char::from_u32(wparam.0 as u32) && !r.is_control() {
+            if let Some(r) = char::from_u32(wparam.0 as u32) && !r.is_control() && r != '\r' {
                 println!("Char input: {:?}", r);
-                match r {
-                    '\r' => window.handle_event(WindowEvent::None),
-                    _ => window.handle_event(WindowEvent::KeyRelease(Key::Char(r)))
-                }
+                window.handle_event(WindowEvent::KeyRelease(Key::Char(r)));
             }
         }
         WM_LBUTTONDOWN => {
