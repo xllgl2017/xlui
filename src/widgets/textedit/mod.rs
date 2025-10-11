@@ -244,7 +244,7 @@ impl TextEdit {
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill_render.draw(ui, false, false);
+        self.fill_render.draw(ui, self.hovered, self.focused);
         self.select_render.render(ui, self.char_layout.buffer.lines.len());
         if self.focused { self.cursor_render.render(ui); }
         self.char_layout.buffer.redraw(ui);
@@ -289,13 +289,16 @@ impl Widget for TextEdit {
                 if self.focused != old_focused { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.psd_buffer.geometry.rect()) && let EditKind::Password = self.char_layout.edit_kind {
+                let clicked = ui.device.device_input.click_at(&self.psd_buffer.geometry.rect());
+                if clicked && let EditKind::Password = self.char_layout.edit_kind {
                     self.char_layout.looking = !self.char_layout.looking;
                     self.psd_buffer.update_buffer_text(ui, if self.char_layout.looking { "🔓" } else { "🔒" });
                     self.char_layout.rebuild_text(ui);
                     self.cursor_render.reset_x(&self.char_layout);
-                    ui.context.window.request_redraw();
                     self.changed = true;
+                }
+                if clicked || (self.focused && !clicked) {
+                    ui.context.window.request_redraw();
                 }
             }
             #[cfg(not(feature = "winit"))]
@@ -335,6 +338,17 @@ impl Widget for TextEdit {
                         Key::CtrlA => {
                             let horiz = self.char_layout.buffer.lines.last().unwrap().chars.len();
                             let vert = self.char_layout.buffer.lines.len() - 1;
+                            if self.char_layout.buffer.lines.len() == 1 {
+                                let mut width = self.char_layout.buffer.geometry.x();
+                                self.char_layout.offset.x = 0.0;
+                                for char in self.char_layout.buffer.lines[0].chars.iter() {
+                                    if char.width + width > self.cursor_render.max_pos.x {
+                                        self.char_layout.offset.x -= char.width;
+                                    }
+                                    width += char.width;
+                                }
+                                self.char_layout.buffer.clip_x = self.char_layout.offset.x;
+                            }
                             self.cursor_render.set_cursor(horiz, vert, &self.char_layout);
                             self.select_render.select_by_ime(0, 0, &self.char_layout, &self.cursor_render);
                             ui.context.window.request_redraw();

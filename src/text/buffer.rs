@@ -187,7 +187,7 @@ impl TextBuffer {
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         let param = &mut ui.paint.as_mut().unwrap();
-        ui.context.window.x11().paint_text(param, &self.text, &self.lines, self.geometry.rect()).unwrap();
+        ui.context.window.x11().paint_text(param, &self.text, &self.lines, self.geometry.rect(), self.clip_x, self.clip_y).unwrap();
     }
 
     pub fn set_text(&mut self, text: String) {

@@ -143,7 +143,7 @@ impl X11WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_text(&self, paint: &mut PaintParam, text: &RichText, lines: &Vec<LineChar>, rect: Rect) -> UiResult<()> {
+    pub fn paint_text(&self, paint: &mut PaintParam, text: &RichText, lines: &Vec<LineChar>, rect: Rect, clip_x: f32, clip_y: f32) -> UiResult<()> {
         unsafe {
             // let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, xlib::AllocNone);
             // 创建 XftDraw 对象
@@ -176,10 +176,9 @@ impl X11WindowHandle {
             XftDrawSetClipRectangles(draw, 0, 0, &clip_rect as *const XRectangle, 1);
             let font_ascent = font.as_ref().ok_or("获取字体ascent失败")?.ascent;
             let line_height = text.height as i32;
-            let x = rect.dx().min as i32;
-            let mut y = rect.dy().min as i32 + font_ascent;
+            let x = (rect.dx().min + clip_x) as i32;
+            let mut y = (rect.dy().min + clip_y) as i32 + font_ascent;
             for line in lines {
-                println!("{} {} {} {:?}", line.line_text, x, y, rect);
                 let c_str = CString::new(line.line_text.clone())?;
                 XftDrawStringUtf8(
                     draw, &mut xft_color, font,
