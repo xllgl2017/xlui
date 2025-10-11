@@ -83,11 +83,6 @@ impl Image {
         self.changed = true;
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        self.re_init(ui);
-    }
-
     #[cfg(feature = "gpu")]
     fn re_init(&mut self, ui: &mut Ui) {
         let size = ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
@@ -167,9 +162,8 @@ impl Widget for Image {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init|UpdateType::ReInit => self.reinit(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

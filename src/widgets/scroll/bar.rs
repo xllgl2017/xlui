@@ -65,6 +65,7 @@ impl ScrollBar {
     }
 
     pub fn set_vbar_value_by_offset(&mut self, offset: f32) -> f32 {
+        if self.context_size < self.fill_render.rect().height() { return 0.0; }
         let oy = self.slider_offset_y(offset);
         let roy = self.slider_render.rect_mut().offset_y_limit(self.offset.y + oy, self.fill_render.rect().dy());
         self.offset.y = roy;
@@ -73,6 +74,7 @@ impl ScrollBar {
     }
 
     pub fn set_hbar_value_by_offset(&mut self, offset: f32) -> f32 {
+        if self.context_size < self.fill_render.rect().width() { return 0.0; }
         let ox = self.slider_offset_x(offset);
         let rox = self.slider_render.rect_mut().offset_x_limit(self.offset.x + ox, self.fill_render.rect().dx());
         self.offset.x = rox;
@@ -182,7 +184,7 @@ impl ScrollBar {
             // #[cfg(feature = "gpu")]
             // ui.context.render.rectangle.render(&self.slider_render, pass);
             self.fill_render.draw(ui, false, false);
-            self.slider_render.draw(ui,false, false);
+            self.slider_render.draw(ui, false, false);
         }
         if self.context_size > self.fill_render.rect().width() && self.geometry.width() > self.geometry.height() { //垂直
             // #[cfg(feature = "gpu")]
@@ -190,7 +192,7 @@ impl ScrollBar {
             // #[cfg(feature = "gpu")]
             // ui.context.render.rectangle.render(&self.slider_render, pass);
             self.fill_render.draw(ui, false, false);
-            self.slider_render.draw(ui,false, false);
+            self.slider_render.draw(ui, false, false);
         }
     }
 }
