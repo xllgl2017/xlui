@@ -54,7 +54,7 @@ impl TextBuffer {
         self.lines.clear();
         let buffer = self.buffer.as_ref().unwrap();
         for buffer_line in &buffer.lines {
-            let mut line = LineChar::new();
+            let mut line = LineChar::new(buffer_line.text());
             line.auto_wrap = false;
             for layout in buffer_line.layout_opt().unwrap() {
                 for glyph in &layout.glyphs {
@@ -239,6 +239,7 @@ impl TextBuffer {
             &self.text.font_family(), Shaping::Advanced);
         #[cfg(feature = "gpu")]
         self.reset();
+        #[cfg(not(feature = "gpu"))]
         self.reset(ui);
         self.geometry.set_width(self.lines[0].width)
     }

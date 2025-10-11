@@ -163,7 +163,7 @@ impl Widget for Image {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::Init|UpdateType::ReInit => self.reinit(ui),
+            UpdateType::Init|UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))

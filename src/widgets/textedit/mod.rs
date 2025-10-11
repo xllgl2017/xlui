@@ -145,8 +145,8 @@ impl TextEdit {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
+            // #[cfg(feature = "gpu")]
+            // self.fill_render.update(ui, false, false);
             self.char_layout.buffer.geometry.offset_to_rect(&ui.draw_rect);
             let mut cursor_rect = self.char_layout.buffer.geometry.rect();
             cursor_rect.set_width(2.0);
@@ -160,8 +160,8 @@ impl TextEdit {
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
+            // #[cfg(feature = "gpu")]
+            // self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
             self.cursor_render.update();
             self.select_render.update(ui);
         }

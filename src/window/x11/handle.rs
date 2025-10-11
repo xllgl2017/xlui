@@ -22,6 +22,7 @@ use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 #[cfg(not(feature = "gpu"))]
 use x11::xft::{XftColor, XftColorAllocValue, XftDrawCreate, XftDrawDestroy, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName, XftTextExtentsUtf8};
+#[cfg(not(feature = "gpu"))]
 use x11::xft::XftFont;
 use x11::xlib;
 use x11::xlib::{XFreeColormap, XMoveWindow};
@@ -217,6 +218,7 @@ impl X11WindowHandle {
         Ok(res)
     }
 
+    #[cfg(not(feature = "gpu"))]
     fn measure_line(&self, line: &str, xft_font: *mut XftFont, extents: &mut XGlyphInfo) -> UiResult<LineChar> {
         let mut line_char = LineChar::new(line);
         for ch in line.chars() {
@@ -225,6 +227,7 @@ impl X11WindowHandle {
         Ok(line_char)
     }
 
+    #[cfg(not(feature = "gpu"))]
     fn measure_char(&self, ch: char, xft_font: *mut XftFont, extents: &mut XGlyphInfo) -> UiResult<CChar> {
         let char_str = ch.to_string();
         let char_len = char_str.len() as i32;
