@@ -28,7 +28,7 @@ impl WInitWindowHandle {
 
     pub fn set_ime_position(&self, x: f32, y: f32) {
         let pos = winit::dpi::LogicalPosition::new(x, y);
-        let size = winit::dpi::LogicalSize::new(100.0, 100.0);
+        let size = winit::dpi::LogicalSize::new(0.0, 0.0);
         self.window.set_ime_cursor_area(pos, size);
     }
 
