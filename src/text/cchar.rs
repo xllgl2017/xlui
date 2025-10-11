@@ -16,14 +16,16 @@ impl CChar {
 #[derive(Default, Debug)]
 pub struct LineChar {
     pub(crate) chars: Vec<CChar>,
+    pub(crate) line_text: String,
     pub(crate) auto_wrap: bool,
     pub(crate) width: f32,
 }
 
 impl LineChar {
-    pub fn new() -> LineChar {
+    pub fn new(text: &str) -> LineChar {
         LineChar {
             chars: vec![],
+            line_text: text.to_string(),
             auto_wrap: true,
             width: 0.0,
         }

@@ -22,6 +22,7 @@ use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 #[cfg(not(feature = "gpu"))]
 use x11::xft::{XftColor, XftColorAllocValue, XftDrawCreate, XftDrawDestroy, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName, XftTextExtentsUtf8};
+use x11::xft::XftFont;
 use x11::xlib;
 use x11::xlib::{XFreeColormap, XMoveWindow};
 #[cfg(not(feature = "gpu"))]
@@ -142,7 +143,7 @@ impl X11WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_text(&self, paint: &mut PaintParam, text: &RichText, rect: Rect) -> UiResult<()> {
+    pub fn paint_text(&self, paint: &mut PaintParam, text: &RichText, lines: &Vec<LineChar>, rect: Rect) -> UiResult<()> {
         unsafe {
             // let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, xlib::AllocNone);
             // 创建 XftDraw 对象
@@ -173,15 +174,25 @@ impl X11WindowHandle {
             };
             // 设置裁剪区域
             XftDrawSetClipRectangles(draw, 0, 0, &clip_rect as *const XRectangle, 1);
+            let font_ascent = font.as_ref().ok_or("获取字体ascent失败")?.ascent;
+            let line_height = text.height as i32;
+            let x = rect.dx().min as i32;
+            let mut y = rect.dy().min as i32 + font_ascent;
+            for line in lines {
+                println!("{} {} {} {:?}", line.line_text, x, y, rect);
+                let c_str = CString::new(line.line_text.clone())?;
+                XftDrawStringUtf8(
+                    draw, &mut xft_color, font,
+                    x, y,
+                    c_str.as_ptr() as *const u8,
+                    line.line_text.len() as i32,
+                );
+                y += line_height;
+            }
 
-            let c_str = CString::new(text.text.clone())?;
-            XftDrawStringUtf8(
-                draw, &mut xft_color, font,
-                rect.dx().min as i32,
-                rect.dy().min as i32 + font.as_ref().unwrap().ascent,
-                c_str.as_ptr() as *const u8,
-                text.text.len() as i32,
-            );
+
+            // let c_str = CString::new(text.text.clone())?;
+
             // 恢复裁剪（清空剪裁区域）
             XftDrawSetClip(draw, std::ptr::null_mut());
             XftFontClose(self.display, font);
@@ -191,32 +202,39 @@ impl X11WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn measure_char_widths(&self, text: &RichText) -> Vec<LineChar> {
+    pub fn measure_text(&self, text: &RichText) -> UiResult<Vec<LineChar>> {
         // 打开字体
-        let font_name = CString::new(format!("{}:pixelsize={}", text.family.as_ref().unwrap(), text.font_size() as i32)).unwrap();
+        let family = text.family.as_ref().ok_or("字体未设置")?;
+        let font_size = text.font_size() as i32;
+        let font_name = CString::new(format!("{}:pixelsize={}", family, font_size))?;
         let xft_font = unsafe { XftFontOpenName(self.display, self.screen, font_name.as_ptr()) };
         let mut extents: XGlyphInfo = unsafe { mem::zeroed() };
         let mut res = vec![];
-        for line in text.text.split("\n") {
-            let mut line_char = LineChar::new();
-            for ch in line.chars() {
-                let utf8 = ch.to_string();
-                let cstr = CString::new(utf8.clone()).unwrap();
-                unsafe {
-                    XftTextExtentsUtf8(
-                        self.display,
-                        xft_font,
-                        cstr.as_ptr() as *const u8,
-                        utf8.len() as i32,
-                        &mut extents,
-                    );
-                }
-                line_char.push(CChar::new(ch, extents.xOff as f32));
-                // println!("{} {} {} {} {} {}", utf8, extents.xOff, extents.x, extents.yOff, extents.height, extents.width);
-            }
-            res.push(line_char);
+        let text = text.text.replace("\r\n", "\n");
+        for line in text.split("\n") {
+            res.push(self.measure_line(line, xft_font, &mut extents)?);
         }
-        res
+        unsafe { XftFontClose(self.display, xft_font) };
+        Ok(res)
+    }
+
+    fn measure_line(&self, line: &str, xft_font: *mut XftFont, extents: &mut XGlyphInfo) -> UiResult<LineChar> {
+        let mut line_char = LineChar::new(line);
+        for ch in line.chars() {
+            line_char.push(self.measure_char(ch, xft_font, extents)?);
+        }
+        Ok(line_char)
+    }
+
+    fn measure_char(&self, ch: char, xft_font: *mut XftFont, extents: &mut XGlyphInfo) -> UiResult<CChar> {
+        let char_str = ch.to_string();
+        let char_len = char_str.len() as i32;
+        let c_char_str = CString::new(char_str)?;
+        let c_char_ptr = c_char_str.as_ptr() as *const u8;
+        unsafe {
+            XftTextExtentsUtf8(self.display, xft_font, c_char_ptr, char_len, extents);
+        }
+        Ok(CChar::new(ch, extents.xOff as f32))
     }
 
     #[cfg(not(feature = "gpu"))]

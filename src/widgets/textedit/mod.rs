@@ -244,10 +244,6 @@ impl TextEdit {
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
         self.fill_render.draw(ui, false, false);
         self.select_render.render(ui, self.char_layout.buffer.lines.len());
         if self.focused { self.cursor_render.render(ui); }

@@ -78,7 +78,7 @@ impl TextBuffer {
         #[cfg(target_os = "windows")]
         { self.lines = ui.context.window.win32().measure_char_widths(&self.text).unwrap(); }
         #[cfg(target_os = "linux")]
-        { self.lines = ui.context.window.x11().measure_char_widths(&self.text); }
+        { self.lines = ui.context.window.x11().measure_text(&self.text).unwrap(); }
         self.text.width = self.lines[0].width;
     }
 
@@ -187,7 +187,7 @@ impl TextBuffer {
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         let param = &mut ui.paint.as_mut().unwrap();
-        ui.context.window.x11().paint_text(param, &self.text, self.geometry.rect()).unwrap();
+        ui.context.window.x11().paint_text(param, &self.text, &self.lines, self.geometry.rect()).unwrap();
     }
 
     pub fn set_text(&mut self, text: String) {
@@ -239,7 +239,6 @@ impl TextBuffer {
             &self.text.font_family(), Shaping::Advanced);
         #[cfg(feature = "gpu")]
         self.reset();
-        #[cfg(all(windows, not(feature = "gpu")))]
         self.reset(ui);
         self.geometry.set_width(self.lines[0].width)
     }
