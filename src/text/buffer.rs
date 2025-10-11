@@ -225,7 +225,7 @@ impl TextBuffer {
         if reset {
             #[cfg(feature = "gpu")]
             self.reset();
-            #[cfg(all(windows, not(feature = "gpu")))]
+            #[cfg(not(feature = "gpu"))]
             self.reset(ui);
         }
     }
