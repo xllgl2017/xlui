@@ -36,7 +36,8 @@ impl WindowId {
 
     #[cfg(feature = "winit")]
     pub fn from_winit_id(id: winit::window::WindowId) -> Self {
-        let id = format!("{:?}", id).replace("WindowId(", "").replace(")", "");
+        let mut id = format!("{:?}", id).replace("WindowId(", "").replace(")", "");
+        if id.len() >= 8 { id = id[..8].to_string(); }
         WindowId(id.parse().unwrap())
     }
 }

@@ -48,7 +48,7 @@ impl Bus {
         let display = env::var("DISPLAY").unwrap_or(":0.0".to_string());
         let mut displays = display.split(":");
         let mut host = displays.next().ok_or("获取显示主机错误")?.to_string();
-        if host == "" { host = "unix".to_string(); }
+        if host == "" { host = if env::var("WAYLAND_DISPLAY").is_ok() { "unix-wayland" } else { "unix" }.to_string(); }
         let num = displays.next().ok_or("获取显示编号错误")?.split(".").next().ok_or("获取显示编号1错误")?;
         let config_home = env::var("XDG_CONFIG_HOME").or_else(|_| {
             let mut home = env::var("HOME").or(Err("无法获取config路径"))?;
@@ -57,6 +57,7 @@ impl Bus {
         })?;
         let machine_id = Bus::get_machine_id()?;
         let addr_fp = format!("{}/ibus/bus/{}-{}-{}", config_home, machine_id, host, num);
+        println!("{:?}", addr_fp);
         let addr_file = File::open(&addr_fp)?;
         let reader = BufReader::new(addr_file);
         let prefix = "IBUS_ADDRESS=";
@@ -67,11 +68,11 @@ impl Bus {
                 Some(addr) => return Ok(addr.to_string())
             }
         }
+
         Err(format!("找不到Dbus addr: {}", prefix).into())
     }
 
     pub fn ctx(&self) -> &Context {
         &self.ctx
     }
-
 }
