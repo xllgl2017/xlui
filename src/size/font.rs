@@ -170,13 +170,14 @@ impl Font {
         let mut res = vec![];
         let xft_font = self.get_xft_font(handle, text.family.as_ref().ok_or("字体为空")?, text.font_size())?;
         let text = text.text.replace("\r\n", "\n");
-
         for line in text.split("\n") {
             let mut lines = self.measure_line(line, handle, xft_font, wrap, max_wrap)?;
             res.append(&mut lines);
         }
-        println!("{:#?}", res);
         unsafe { XftFontClose(handle.x11().display, xft_font) };
+        if let Some(last) = res.last_mut() {
+            last.auto_wrap = true;
+        }
         Ok(res)
     }
 
@@ -199,7 +200,7 @@ impl Font {
         Ok(res)
     }
 
-    fn measure_char(&self, ch: char, handle: &Arc<WindowType>, xft_font: *mut XftFont) -> UiResult<CChar> {
+    pub(crate) fn measure_char(&self, ch: char, handle: &Arc<WindowType>, xft_font: *mut XftFont) -> UiResult<CChar> {
         let char_str = ch.to_string();
         let char_len = char_str.len() as i32;
         let c_char_str = CString::new(char_str)?;

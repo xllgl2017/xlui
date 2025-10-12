@@ -109,7 +109,6 @@ impl CharBuffer {
         if let EditKind::Password = self.edit_kind && !self.looking {
             let text = vec!["●"; text.chars().count()];
             self.buffer.update_if_not(ui, &text.join(""), false);
-            // self.buffer.update_buffer_text(ui, &text.join(""));
             self.buffer.lines.iter_mut().for_each(|line| {
                 let mut width = 0.0;
                 line.chars.iter_mut().for_each(|x| {
@@ -119,7 +118,6 @@ impl CharBuffer {
                 line.width = width;
             });
         } else {
-            // self.buffer.update_buffer_text(ui, &text)
             self.buffer.update_if_not(ui, &text, true);
         }
     }

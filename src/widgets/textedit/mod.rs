@@ -132,8 +132,7 @@ impl TextEdit {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        // if self.char_layout.buffer.text.size.is_none() { self.char_layout.buffer.text.size = Some(ui.context.font.size()) }
-        let line_height = self.char_layout.buffer.line_height(ui).unwrap(); //ui.context.font.line_height(self.char_layout.buffer.text.font_size());
+        let line_height = self.char_layout.buffer.line_height(ui).unwrap();
         let height = line_height * self.desire_lines as f32 + 6.0;
         self.char_layout.buffer.geometry.set_fix_height(height);
         self.char_layout.buffer.init(ui); //计算行高
@@ -145,8 +144,6 @@ impl TextEdit {
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            // #[cfg(feature = "gpu")]
-            // self.fill_render.update(ui, false, false);
             self.char_layout.buffer.geometry.offset_to_rect(&ui.draw_rect);
             let mut cursor_rect = self.char_layout.buffer.geometry.rect();
             cursor_rect.set_width(2.0);
@@ -160,8 +157,6 @@ impl TextEdit {
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
-            // #[cfg(feature = "gpu")]
-            // self.fill_render.update(ui, self.hovered || self.focused, ui.device.device_input.mouse.pressed);
             self.cursor_render.update();
             self.select_render.update(ui);
         }
@@ -209,6 +204,7 @@ impl TextEdit {
             }
             Key::Delete => self.char_layout.remove_chars_after_cursor(ui, &mut self.cursor_render, &mut self.select_render),
             Key::Char(c) => {
+                println!("1输入字符: {:?}", c);
                 self.char_layout.inset_char(c, ui, &mut self.cursor_render, &mut self.select_render);
                 self.char_layout.buffer.clip_x = self.char_layout.offset.x;
             }
@@ -280,7 +276,6 @@ impl Widget for TextEdit {
                 self.focused = ui.device.device_input.pressed_at(self.fill_render.rect());
                 ui.context.window.ime().request_ime(self.focused);
                 if self.focused {
-                    // ui.context.window.win32().request_ime();
                     let pos = ui.device.device_input.mouse.lastest.relative;
                     self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);

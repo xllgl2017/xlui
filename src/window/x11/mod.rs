@@ -354,22 +354,15 @@ impl X11Window {
                         if !handle {
                             if window.handle().ime.is_commited() {
                                 window.handle_event(WindowEvent::IME(IMEData::Commit(window.handle().ime.ime_done())));
+                                continue;
                             }
                             let ctrl_press = (event.key.state & xlib::ControlMask) != 0;
-                            // if ctrl_press && keysym == x11::keysym::XK_c as u64 {
-                            //     window.handle_event(WindowEvent::None);
-                            // } else if ctrl_press && (keysym == x11::keysym::XK_v as u64) {
-                            //     window.handle_event(WindowEvent::None);
-                            // } else if ctrl_press {
-                            //     window.handle_event(WindowEvent::None);
-                            // }
                             if !ctrl_press {
                                 window.handle_event(WindowEvent::KeyRelease(Key::from_c_ulong(event.key.keycode, &buffer[..len as usize])));
                             }
                         }
                     }
                     xlib::ButtonRelease => {
-                        // window.x11().clipboard.request_get_clipboard(window.x11().window, window.x11().clipboard.utf8_atom);
                         let xb: xlib::XButtonEvent = event.button;
                         match xb.button {
                             1 => window.handle_event(WindowEvent::MouseRelease(Pos { x: xb.x as f32, y: xb.y as f32 })),

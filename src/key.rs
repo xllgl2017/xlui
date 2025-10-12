@@ -46,7 +46,6 @@ impl Key {
                 if buffer.len() == 0 { return Key::Unknown; }
                 let slice = buffer.iter().map(|x| *x as u8).collect::<Vec<_>>();
                 let char = String::from_utf8(slice).unwrap();
-                println!("输入字符: {:?}", char);
                 Key::Char(char.chars().next().unwrap())
             }
         }
