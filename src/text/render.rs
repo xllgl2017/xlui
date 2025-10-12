@@ -3,7 +3,7 @@ use crate::Device;
 pub struct TextRender {
     pub(crate) atlas: glyphon::TextAtlas,
     pub(crate) cache: glyphon::SwashCache,
-    pub(crate) font_system: glyphon::FontSystem,
+
 }
 
 
@@ -14,7 +14,6 @@ impl TextRender {
         TextRender {
             atlas,
             cache,
-            font_system: glyphon::FontSystem::new(),
         }
     }
 }

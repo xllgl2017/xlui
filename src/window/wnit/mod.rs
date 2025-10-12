@@ -5,7 +5,7 @@ use crate::frame::App;
 use crate::map::Map;
 use crate::ui::AppContext;
 use crate::window::{UserEvent, WindowType};
-use crate::{Device, DeviceInput, Size, WindowAttribute};
+use crate::{Device, DeviceInput, Font, Size, WindowAttribute};
 use glyphon::{Cache, Resolution, Viewport};
 use std::error::Error;
 use std::sync::Arc;
@@ -27,7 +27,7 @@ impl Window {
         }).await?;
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
-            font: attr.font.clone(),
+            font: Font::from(&attr.font),
             user_update: (window.id, UpdateType::None),
             viewport,
             window,

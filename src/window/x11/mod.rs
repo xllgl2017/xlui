@@ -175,8 +175,6 @@ impl X11Window {
                 clipboard: X11ClipBoard::new(self.display)?,
                 visual_info,
                 size: RwLock::new(attr.inner_size.clone()),
-                #[cfg(not(feature = "gpu"))]
-                root: self.root,
                 colormap,
             })
             // X11WindowHandle::new(self.display, child, 0, screen)

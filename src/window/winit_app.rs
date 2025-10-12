@@ -8,7 +8,6 @@ use glyphon::Viewport;
 use std::collections::HashMap;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use winit::keyboard::{Key, NamedKey};
@@ -49,7 +48,6 @@ impl<A: App + 'static> ApplicationHandler<(super::WindowId, UserEvent)> for WIni
         let winit_window = event_loop.create_window(attr.as_winit_attributes()).unwrap();
         println!("{}", format!("winit id: {:?}", winit_window.id()));
         winit_window.set_ime_allowed(true);
-        // winit_window.set_ime_cursor_area(PhysicalPosition::new(400, 300), PhysicalSize::new(100, 100));
         winit_window.set_ime_purpose(ImePurpose::Normal);
         let id = super::WindowId::from_winit_id(winit_window.id());
         let handle = WInitWindowHandle::new(winit_window, event);

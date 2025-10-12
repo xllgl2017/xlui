@@ -27,7 +27,7 @@ pub struct WindowAttribute {
     #[cfg(feature = "winit")]
     pub window_level: WindowLevel,
     ///全局字体
-    pub font: Arc<Font>,
+    pub font: Font,
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub tray: Option<Tray>,
     ///窗口填充色
@@ -89,7 +89,7 @@ impl Default for WindowAttribute {
             window_icon: Arc::new(include_bytes!("../../logo.jpg").to_vec()),
             #[cfg(feature = "winit")]
             window_level: WindowLevel::Normal,
-            font: Arc::new(Font::default()),
+            font: Font::default().unwrap(),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             tray: None,
             fill:Color::rgb(240, 240, 240),

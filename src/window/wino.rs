@@ -34,7 +34,7 @@ impl LoopWindow {
     pub fn create_native_window(mut app: Box<dyn App>, wt: Arc<WindowType>, attr: WindowAttribute) -> LoopWindow {
         let context = Context {
             window: wt,
-            font: attr.font.clone(),
+            font: Font::from(&attr.font),
             render: Render { image: ImageRender::new() },
             updates: Map::new(),
             user_update: (WindowId::unique_id(), UpdateType::None),
@@ -57,7 +57,7 @@ impl LoopWindow {
         device.surface.configure(&device.device, &device.surface_config);
         let viewport = Viewport::new(&device.device, &device.cache);
         let context = Context {
-            font: attr.font.clone(),
+            font: Font::from(&attr.font),
             viewport,
             window: wt,
             render: Render::new(&device),

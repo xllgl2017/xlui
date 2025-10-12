@@ -132,8 +132,8 @@ impl TextEdit {
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
-        if self.char_layout.buffer.text.size.is_none() { self.char_layout.buffer.text.size = Some(ui.context.font.size()) }
-        let line_height = ui.context.font.line_height(self.char_layout.buffer.text.font_size());
+        // if self.char_layout.buffer.text.size.is_none() { self.char_layout.buffer.text.size = Some(ui.context.font.size()) }
+        let line_height = self.char_layout.buffer.line_height(ui).unwrap(); //ui.context.font.line_height(self.char_layout.buffer.text.font_size());
         let height = line_height * self.desire_lines as f32 + 6.0;
         self.char_layout.buffer.geometry.set_fix_height(height);
         self.char_layout.buffer.init(ui); //计算行高

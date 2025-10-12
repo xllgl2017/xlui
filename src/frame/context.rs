@@ -12,9 +12,9 @@ use crate::render::triangle::TriangleRender;
 use crate::text::render::TextRender;
 use crate::window::ime::IMEData;
 use crate::window::{ClipboardData, WindowId, WindowType};
-use crate::{Font, NumCastExt};
 #[cfg(feature = "gpu")]
 use crate::Device;
+use crate::{Font, NumCastExt};
 #[cfg(feature = "gpu")]
 use glyphon::Viewport;
 use std::fmt::Debug;
@@ -127,7 +127,7 @@ pub struct Context {
     #[cfg(feature = "gpu")]
     pub viewport: Viewport,
     pub window: Arc<WindowType>,
-    pub font: Arc<Font>,
+    pub font: Font,
     pub render: Render,
     pub updates: Map<String, ContextUpdate>,
     pub user_update: (WindowId, UpdateType),

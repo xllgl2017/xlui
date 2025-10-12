@@ -3,7 +3,7 @@ use crate::error::UiResult;
 #[cfg(not(feature = "gpu"))]
 use crate::render::image::texture::ImageTexture;
 #[cfg(not(feature = "gpu"))]
-use crate::text::cchar::{CChar, LineChar};
+use crate::text::cchar::LineChar;
 use crate::window::ime::IME;
 use crate::window::x11::clipboard::X11ClipBoard;
 use crate::window::{ClipboardData, UserEvent};
@@ -21,15 +21,13 @@ use std::os::raw::c_long;
 use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 #[cfg(not(feature = "gpu"))]
-use x11::xft::{XftColor, XftColorAllocValue, XftDrawCreate, XftDrawDestroy, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName, XftTextExtentsUtf8};
-#[cfg(not(feature = "gpu"))]
-use x11::xft::XftFont;
+use x11::xft::{XftColor, XftColorAllocValue, XftDrawCreate, XftDrawDestroy, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName};
 use x11::xlib;
 use x11::xlib::{XFreeColormap, XMoveWindow};
 #[cfg(not(feature = "gpu"))]
 use x11::xlib::XRectangle;
 #[cfg(not(feature = "gpu"))]
-use x11::xrender::{XGlyphInfo, XRenderColor};
+use x11::xrender::XRenderColor;
 #[cfg(not(feature = "gpu"))]
 use crate::ui::PaintParam;
 #[cfg(not(feature = "gpu"))]
@@ -45,8 +43,6 @@ pub struct X11WindowHandle {
     pub(crate) clipboard: X11ClipBoard,
     pub(crate) visual_info: xlib::XVisualInfo,
     pub(crate) size: RwLock<Size>,
-    #[cfg(not(feature = "gpu"))]
-    pub(crate) root: xlib::Window,
     pub(crate) colormap: u64,
 }
 
@@ -201,43 +197,9 @@ impl X11WindowHandle {
         }
     }
 
-    #[cfg(not(feature = "gpu"))]
-    pub fn measure_text(&self, text: &RichText) -> UiResult<Vec<LineChar>> {
-        // 打开字体
-        let family = text.family.as_ref().ok_or("字体未设置")?;
-        let font_size = text.font_size() as i32;
-        let font_name = CString::new(format!("{}:pixelsize={}", family, font_size))?;
-        let xft_font = unsafe { XftFontOpenName(self.display, self.screen, font_name.as_ptr()) };
-        let mut extents: XGlyphInfo = unsafe { mem::zeroed() };
-        let mut res = vec![];
-        let text = text.text.replace("\r\n", "\n");
-        for line in text.split("\n") {
-            res.push(self.measure_line(line, xft_font, &mut extents)?);
-        }
-        unsafe { XftFontClose(self.display, xft_font) };
-        Ok(res)
-    }
 
-    #[cfg(not(feature = "gpu"))]
-    fn measure_line(&self, line: &str, xft_font: *mut XftFont, extents: &mut XGlyphInfo) -> UiResult<LineChar> {
-        let mut line_char = LineChar::new(line);
-        for ch in line.chars() {
-            line_char.push(self.measure_char(ch, xft_font, extents)?);
-        }
-        Ok(line_char)
-    }
 
-    #[cfg(not(feature = "gpu"))]
-    fn measure_char(&self, ch: char, xft_font: *mut XftFont, extents: &mut XGlyphInfo) -> UiResult<CChar> {
-        let char_str = ch.to_string();
-        let char_len = char_str.len() as i32;
-        let c_char_str = CString::new(char_str)?;
-        let c_char_ptr = c_char_str.as_ptr() as *const u8;
-        unsafe {
-            XftTextExtentsUtf8(self.display, xft_font, c_char_ptr, char_len, extents);
-        }
-        Ok(CChar::new(ch, extents.xOff as f32))
-    }
+
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_rect(&self, cairo: &mut Cairo, fill: &Color, border: &Border, rect: &Rect) {
