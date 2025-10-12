@@ -5,19 +5,23 @@
 [![Documentation](https://docs.rs/xlui/badge.svg)](https://docs.rs/xlui)
 [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/xlui/blob/main/LICENSE-APACHE)
 
-&nbsp;&nbsp;&nbsp;&nbsp; xlui是一个用Rust语言，基于原生窗口和wgpu实现的2D GUI库。
-目标是利用Rust语言原生构建GUI、最小第三方依赖、体积小（比winit+wgpu少50%左右）、简单易用， 在保证性能的前提下尽量减少CPU的开销。
+&nbsp;&nbsp;&nbsp;&nbsp; xlui是一个用Rust语言的2D GUI库，支持使用x11(Linux)、Gdi(Windows)、wgpu渲染。支持window server，对新老硬件
+系统有友好支持。xlui目标是利用Rust语言原生构建GUI、最小第三方依赖、体积小（比winit+wgpu少50%左右）、简单易用，
+同时在保证性能的前提下尽量减少CPU的开销。
 
 ## xlui的目标
 
-| 适配情况 |   目标系统    |    平台UI     |    渲染    |     窗口管理      | 备注 |
-|:----:|:---------:|:-----------:|:--------:|:-------------:|:--:|
-|  ✅   |   Linux   | x11,wayland | x11,wgpu |   x11,winit   |    |
-|  ✅   |  Windows  |    10,11    | gdi,wgpu | windows,winit |    |
-|  ⬜️  |   MacOS   |      -      |   wgpu   |     winit     |    |
-|  ⬜️  |  Android  |     11+     |   wgpu   |     winit     |    |
-|  ⬜️  |    Web    |    Wasm     |   wgpu   |     winit     |    |
-|  ❌   | HarmonyOS |   暂无适配计划    |    -     |       -       | -  |
+| 适配情况 |   目标系统    |      平台UI      |    渲染    |     窗口管理      | 备注 |
+|:----:|:---------:|:--------------:|:--------:|:-------------:|:--:|
+|  ✅   |   Linux   |  x11,wayland   | x11,wgpu |   x11,winit   |    |
+|  ✅   |  Windows  | 7,10,11,server | gdi,wgpu | windows,winit |    |
+|  ⬜️  |   MacOS   |       -        |   wgpu   |     winit     |    |
+|  ⬜️  |  Android  |      11+       |   wgpu   |     winit     |    |
+|  ⬜️  |    Web    |      Wasm      |   wgpu   |     winit     |    |
+|  ❌   | HarmonyOS |     暂无适配计划     |    -     |       -       | -  |
+
+* [winit](https://github.com/rust-windowing/winit)在x11桌面系统下的IME不支持设置输入法位置，仅显示在窗口的左下角
+* x11原生窗口管理使用了[dbus](https://github.com/diwic/dbus-rs)，支持设置输入法位置
 
 ## [🎯](https://github.com/xllgl2017/xlui/wiki/%E5%B8%83%E5%B1%80)控件(目前可用)
 
