@@ -130,7 +130,7 @@ impl Geometry {
     pub fn set_height(&mut self, height: f32) {
         self.height = height + self.padding.vertical();
     }
-    #[cfg(feature = "gpu")]
+
     pub(crate) fn is_fix_width(&self) -> bool {
         self.fix_width.is_some()
     }

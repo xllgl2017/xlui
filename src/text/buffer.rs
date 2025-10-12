@@ -51,12 +51,8 @@ impl TextBuffer {
 
     #[cfg(not(feature = "gpu"))]
     fn reset(&mut self, ui: &mut Ui) {
-        self.lines=ui.context.font.measure_text(&ui.context.window,&self.text).unwrap();
-        // #[cfg(target_os = "windows")]
-        // { self.lines = ui.context.window.win32().measure_char_widths(&self.text).unwrap(); }
-        // #[cfg(target_os = "linux")]
-        // { self.lines = ui.context.window.x11().measure_text(&self.text).unwrap(); }
-        // self.text.width = self.lines[0].width;
+        let wrap = self.geometry.is_fix_width() && self.text.wrap.is_wrap();
+        self.lines = ui.context.font.measure_text(&ui.context.window, &self.text, wrap, self.geometry.width()).unwrap();
         self.text.width = self.lines.iter().map(|x| x.width).reduce(f32::max).unwrap_or(self.geometry.width());
     }
 
@@ -177,11 +173,6 @@ impl TextBuffer {
         self.change = self.text.wrap == wrap;
         self.text.wrap = wrap;
     }
-
-    // pub fn height(mut self, height: f32) -> Self {
-    //     self.geometry.set_height(height);
-    //     self
-    // }
 
     pub fn fix_width(mut self, w: f32) -> Self {
         self.geometry.set_fix_width(w);

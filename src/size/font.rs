@@ -166,24 +166,37 @@ impl Font {
         Ok(height)
     }
 
-    pub fn measure_text(&self, handle: &Arc<WindowType>, text: &RichText) -> UiResult<Vec<LineChar>> {
+    pub fn measure_text(&self, handle: &Arc<WindowType>, text: &RichText, wrap: bool, max_wrap: f32) -> UiResult<Vec<LineChar>> {
         let mut res = vec![];
         let xft_font = self.get_xft_font(handle, text.family.as_ref().ok_or("字体为空")?, text.font_size())?;
         let text = text.text.replace("\r\n", "\n");
 
         for line in text.split("\n") {
-            res.push(self.measure_line(line, handle, xft_font)?);
+            let mut lines = self.measure_line(line, handle, xft_font, wrap, max_wrap)?;
+            res.append(&mut lines);
         }
+        println!("{:#?}", res);
         unsafe { XftFontClose(handle.x11().display, xft_font) };
         Ok(res)
     }
 
-    fn measure_line(&self, line: &str, handle: &Arc<WindowType>, xft_font: *mut XftFont) -> UiResult<LineChar> {
-        let mut line_char = LineChar::new(line);
+    fn measure_line(&self, line: &str, handle: &Arc<WindowType>, xft_font: *mut XftFont, wrap: bool, max_wrap: f32) -> UiResult<Vec<LineChar>> {
+        let mut res = vec![];
+        let mut line_char = LineChar::new();
         for ch in line.chars() {
-            line_char.push(self.measure_char(ch, handle, xft_font)?);
+            let cchar = self.measure_char(ch, handle, xft_font)?;
+            if wrap && line_char.width + cchar.width >= max_wrap {
+                let mut line = mem::take(&mut line_char);
+                line.auto_wrap = true;
+                line.line_text = line.chars.iter().map(|x| x.cchar.to_string()).collect();
+                res.push(line);
+            }
+            line_char.push(cchar);
         }
-        Ok(line_char)
+        line_char.auto_wrap = false;
+        line_char.line_text = line_char.chars.iter().map(|x| x.cchar.to_string()).collect();
+        res.push(line_char);
+        Ok(res)
     }
 
     fn measure_char(&self, ch: char, handle: &Arc<WindowType>, xft_font: *mut XftFont) -> UiResult<CChar> {

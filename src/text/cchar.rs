@@ -22,10 +22,10 @@ pub struct LineChar {
 }
 
 impl LineChar {
-    pub fn new(text: &str) -> LineChar {
+    pub fn new() -> LineChar {
         LineChar {
             chars: vec![],
-            line_text: text.to_string(),
+            line_text: "".to_string(),
             auto_wrap: true,
             width: 0.0,
         }
