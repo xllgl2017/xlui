@@ -25,6 +25,7 @@ impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         ui.window().request_update();
         ui.add(Label::new(self.status.as_str().color(Color::ORANGE)).with_id("status"));
+        ui.add(TextEdit::single_edit("sdfkdsfj每年粉碎德军开发和"));
         for i in 10..=28 {
             ui.add(Label::new(format!("当前字号: {}px", i).size(i as f32).color(Color::GREEN)));
         }
@@ -35,8 +36,7 @@ impl App for XlUiApp {
 
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
-            font: Arc::new(Font::from_family("微软雅黑")
-                .with_size(24.0)),
+            font: Font::from_family("微软雅黑").unwrap().with_size(24.0),
             inner_size: (300, 500).into(),
             ..Default::default()
         }

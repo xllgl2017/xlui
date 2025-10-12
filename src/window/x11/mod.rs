@@ -31,6 +31,8 @@ pub mod handle;
 mod clipboard;
 #[cfg(not(feature = "gpu"))]
 pub mod ffi;
+#[cfg(not(feature = "gpu"))]
+pub mod font;
 
 #[repr(C)]
 struct X11WmHints {

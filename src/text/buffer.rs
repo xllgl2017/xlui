@@ -1,4 +1,7 @@
+#[cfg(feature = "gpu")]
+use cosmic_text::Metrics;
 use crate::align::Align;
+use crate::error::UiResult;
 use crate::size::Geometry;
 use crate::text::cchar::LineChar;
 use crate::text::rich::RichText;
@@ -11,19 +14,20 @@ use crate::SAMPLE_COUNT;
 use glyphon::Shaping;
 #[cfg(feature = "gpu")]
 use wgpu::MultisampleState;
-use crate::error::UiResult;
+use crate::size::font::FontKind;
 
 pub struct TextBuffer {
     pub(crate) text: RichText,
     pub(crate) geometry: Geometry,
     #[cfg(feature = "gpu")]
-    pub(crate) buffer: glyphon::Buffer,
-    #[cfg(feature = "gpu")]
     pub(crate) render: Option<glyphon::TextRenderer>,
+    #[cfg(feature = "gpu")]
+    buffer: cosmic_text::Buffer,
     pub(crate) clip_x: f32,
     pub(crate) clip_y: f32,
     pub(crate) change: bool,
     pub(crate) lines: Vec<LineChar>,
+    font_buffer: FontKind,
 }
 
 impl TextBuffer {
@@ -32,39 +36,30 @@ impl TextBuffer {
             text: text.into(),
             geometry: Geometry::new(),
             #[cfg(feature = "gpu")]
-            buffer: glyphon::Buffer::new_empty(glyphon::Metrics::new(14.0, 10.0)),
-            #[cfg(feature = "gpu")]
             render: None,
+            #[cfg(feature = "gpu")]
+            buffer: cosmic_text::Buffer::new_empty(Metrics::new(14.0, 10.0)),
             clip_x: 0.0,
             clip_y: 0.0,
             change: false,
             lines: vec![],
+            font_buffer: FontKind::new(),
         }
     }
 
-    #[cfg(feature = "gpu")]
-    fn reset(&mut self, ui: &mut Ui) {
+    fn reset(&mut self) {
         let wrap = self.geometry.is_fix_width() && self.text.wrap.is_wrap();
-        self.lines = ui.context.font.measure_text(&self.buffer, wrap, self.geometry.width());
-        self.text.width = self.lines.iter().map(|x| x.width).reduce(f32::max).unwrap_or(self.geometry.width());
-    }
-
-    #[cfg(not(feature = "gpu"))]
-    fn reset(&mut self, ui: &mut Ui) {
-        let wrap = self.geometry.is_fix_width() && self.text.wrap.is_wrap();
-        self.lines = ui.context.font.measure_text(&ui.context.window, &self.text, wrap, self.geometry.width()).unwrap();
+        self.lines = self.font_buffer.measure_text(&self.text, wrap, self.geometry.width()).unwrap();
         self.text.width = self.lines.iter().map(|x| x.width).reduce(f32::max).unwrap_or(self.geometry.width());
     }
 
     pub fn init(&mut self, ui: &mut Ui) {
         self.text.height = self.line_height(ui).unwrap();
-        #[cfg(not(feature = "gpu"))]
-        self.reset(ui);
-
+        self.reset();
         #[cfg(feature = "gpu")]
         {
             let font_system = ui.context.font.system_mut();
-            self.buffer.set_metrics(font_system, glyphon::Metrics::new(self.text.font_size(), self.text.height));
+            self.buffer.set_metrics(font_system, Metrics::new(self.text.font_size(), self.text.height));
             self.buffer.set_wrap(font_system, self.text.wrap.as_gamma());
             self.buffer.set_text(font_system, &self.text.text, &self.text.font_family(), Shaping::Advanced);
             let render = glyphon::TextRenderer::new(&mut ui.context.render.text.atlas, &ui.device.device, MultisampleState {
@@ -73,8 +68,6 @@ impl TextBuffer {
                 alpha_to_coverage_enabled: false,
             }, None);
             self.render = Some(render);
-            // self.buffer = Some(buffer);
-            self.reset(ui);
         }
         self.geometry.set_size(self.text.width, self.text.height);
         #[cfg(feature = "gpu")]
@@ -115,10 +108,8 @@ impl TextBuffer {
     }
 
     pub(crate) fn line_height(&mut self, ui: &mut Ui) -> UiResult<f32> {
-        #[cfg(not(feature = "gpu"))]
-        return ui.context.font.line_height(&ui.context.window, &mut self.text);
-        #[cfg(feature = "gpu")]
-        return ui.context.font.line_height(&mut self.text);
+        self.font_buffer.set_family_size(ui, &mut self.text)?;
+        self.font_buffer.line_height()
     }
 
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
@@ -144,14 +135,14 @@ impl TextBuffer {
     }
 
     pub fn update_if_not(&mut self, ui: &mut Ui, text: &str, reset: bool) {
+        self.text.text = text.to_string();
         #[cfg(feature = "gpu")]
         self.buffer.set_text(ui.context.font.system_mut(), text, &self.text.font_family(), Shaping::Advanced);
-        self.text.text = text.to_string();
         if reset {
             #[cfg(feature = "gpu")]
-            self.reset(ui);
+            self.reset();
             #[cfg(not(feature = "gpu"))]
-            self.reset(ui);
+            self.reset();
         }
     }
 
@@ -159,14 +150,9 @@ impl TextBuffer {
         if !self.change { return; }
         self.change = false;
         #[cfg(feature = "gpu")]
-        self.buffer.set_text(
-            ui.context.font.system_mut(), self.text.text.as_str(),
-            &self.text.font_family(), Shaping::Advanced);
-        #[cfg(feature = "gpu")]
-        self.reset(ui);
-        #[cfg(not(feature = "gpu"))]
-        self.reset(ui);
-        self.geometry.set_width(self.lines[0].width)
+        self.buffer.set_text(ui.context.font.system_mut(), &self.text.text, &self.text.font_family(), Shaping::Advanced);
+        self.reset();
+        self.geometry.set_width(self.text.width)
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {

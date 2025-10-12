@@ -1,31 +1,26 @@
+use crate::text::cchar::{CChar, LineChar};
+#[cfg(all(target_os = "linux", not(feature = "gpu")))]
+use crate::window::x11::font::X11Font;
+use crate::*;
 #[cfg(feature = "gpu")]
 use ab_glyph::{Font as AbFont, PxScale, ScaleFont};
 #[cfg(feature = "gpu")]
+use cosmic_text::fontdb::Source;
+#[cfg(feature = "gpu")]
+use cosmic_text::rustybuzz;
+#[cfg(feature = "gpu")]
+use cosmic_text::rustybuzz::{Direction, ShapePlan, UnicodeBuffer};
+#[cfg(feature = "gpu")]
 use std::fs;
+#[cfg(feature = "gpu")]
 use std::mem;
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-use std::ffi::CString;
 #[cfg(feature = "gpu")]
 use std::path::Path;
-use std::sync::Arc;
 #[cfg(feature = "gpu")]
-use cosmic_text::fontdb::Source;
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-use x11::xft::{XftFont, XftFontClose, XftFontOpenName};
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-use x11::xft::XftTextExtentsUtf8;
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-use x11::xrender::XGlyphInfo;
-use crate::error::UiResult;
-use crate::*;
-use crate::text::cchar::{CChar, LineChar};
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-use crate::window::WindowType;
+use std::sync::Arc;
 
 pub struct Font {
     family: String,
-    #[cfg(feature = "gpu")]
-    glyph_font: ab_glyph::FontArc,
     size: f32,
     #[cfg(feature = "gpu")]
     font_system: cosmic_text::FontSystem,
@@ -36,46 +31,33 @@ impl Font {
     pub fn default() -> UiResult<Font> {
         Font::from_family("FangSong")
     }
-
+    ///根据字体名称调用系统字体
+    pub fn from_family(family: &str) -> UiResult<Font> {
+        Ok(Font {
+            family: family.to_string(),
+            size: 14.0,
+            #[cfg(feature = "gpu")]
+            font_system: cosmic_text::FontSystem::new(),
+        })
+    }
 
     ///设置全局字体大小
     pub fn with_size(mut self, font_size: f32) -> Self {
         self.size = font_size;
         self
     }
+
+    pub fn family(&self) -> &str {
+        &self.family
+    }
+
+    pub fn size(&self) -> f32 {
+        self.size
+    }
 }
 
 #[cfg(feature = "gpu")]
 impl Font {
-    fn get_font_by_family(system: &cosmic_text::FontSystem, family: &str) -> UiResult<Vec<u8>> {
-        let face = system.db().faces().find(|x| {
-            for (font_family, _) in &x.families {
-                if font_family == family { return true; };
-            }
-            false
-        }).ok_or(format!("字体'{}'未找到", family))?;
-        let data = match &face.source {
-            Source::Binary(data) => data.as_ref().as_ref().to_vec(),
-            Source::File(data) => fs::read(data)?,
-            Source::SharedFile(_, data) => data.as_ref().as_ref().to_vec(),
-        };
-        Ok(data)
-    }
-
-    ///根据字体名称调用系统字体
-    pub fn from_family(family: &str) -> UiResult<Font> {
-        let mut font_system = cosmic_text::FontSystem::new();
-        let font = Font::get_font_by_family(&mut font_system, family)?;
-        let glyph_font = ab_glyph::FontArc::try_from_vec(font)?;
-        Ok(Font {
-            family: family.to_string(),
-            glyph_font,
-            // font,
-            size: 14.0,
-            font_system,
-        })
-    }
-
     ///使用自定义字体文件
     pub fn from_file(fp: impl AsRef<Path>) -> UiResult<Font> {
         let data = fs::read(fp)?;
@@ -86,7 +68,7 @@ impl Font {
     ///使用字体字节集
     pub fn from_vec(data: Vec<u8>) -> UiResult<Font> {
         let mut res = Font::default()?;
-        res.glyph_font = ab_glyph::FontArc::try_from_vec(data.to_vec())?;
+        // res.glyph_font = ab_glyph::FontArc::try_from_vec(data.to_vec())?;
         let mut font_system = cosmic_text::FontSystem::new();
         let id = font_system.db_mut().load_font_source(Source::Binary(Arc::new(data)));
         for face in font_system.db().faces() {
@@ -94,98 +76,103 @@ impl Font {
             res.family = face.families[0].0.clone();
             break;
         }
+        res.font_system = font_system;
         Ok(res)
     }
 
-    pub(crate) fn line_height(&self, text: &mut RichText) -> UiResult<f32> {
-        let size = text.size.get_or_insert(self.size);
-        let family = text.family.get_or_insert_with(|| self.family.clone());
-        let font = Self::get_font_by_family(&self.font_system, family)?;
-        let glyph_font = ab_glyph::FontRef::try_from_slice(&font)?;
-        let scale = PxScale::from(*size);
-        let scale_font = glyph_font.as_scaled(scale);
-        let ascent = scale_font.ascent();
-        let descent = scale_font.descent();
-        let line_gap = scale_font.line_gap();
-        Ok(ascent - descent + line_gap)
-    }
-
-    pub(crate) fn measure_text(&self, buffer: &cosmic_text::Buffer, wrap: bool, max_wrap_width: f32) -> Vec<LineChar> {
-        let mut res = vec![];
-        for buffer_line in &buffer.lines {
-            let mut line = LineChar::new(buffer_line.text());
-            line.auto_wrap = false;
-            for layout in buffer_line.layout_opt().unwrap() {
-                for glyph in &layout.glyphs {
-                    let cchar = buffer_line.text()[glyph.start..glyph.end].chars().next().unwrap();
-                    if wrap && line.width + glyph.w >= max_wrap_width {
-                        let mut line = mem::take(&mut line);
-                        line.auto_wrap = true;
-                        res.push(line);
-                    }
-                    line.push(CChar::new(cchar, glyph.w));
-                }
-            }
-            res.push(line);
-        }
-        if let Some(line) = res.last_mut() { line.auto_wrap = true; }
-        res
-    }
 
     pub(crate) fn system_mut(&mut self) -> &mut cosmic_text::FontSystem {
         &mut self.font_system
     }
 }
 
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-impl Font {
-    ///根据字体名称调用系统字体
-    pub fn from_family(family: &str) -> UiResult<Font> {
-        Ok(Font {
-            family: family.to_string(),
-            size: 14.0,
-        })
+impl From<&Font> for Font {
+    fn from(value: &Font) -> Self {
+        Font {
+            family: value.family.clone(),
+            size: value.size,
+            #[cfg(feature = "gpu")]
+            font_system: cosmic_text::FontSystem::new(),
+        }
+    }
+}
+
+#[cfg(feature = "gpu")]
+pub(crate) struct WGpuFont {
+    glyph_font: Option<ab_glyph::FontArc>,
+    family: String,
+    size: f32,
+    font: Option<Arc<cosmic_text::Font>>,
+}
+
+#[cfg(feature = "gpu")]
+impl WGpuFont {
+    pub fn new() -> WGpuFont {
+        WGpuFont {
+            glyph_font: None,
+
+            family: "".to_string(),
+            size: 0.0,
+            font: None,
+        }
     }
 
-    // 打开字体
-    fn get_xft_font(&self, handle: &Arc<WindowType>, family: &str, size: f32) -> UiResult<*mut XftFont> {
-        let font_name = CString::new(format!("{}:pixelsize={}", family, size))?;
-        let display = handle.x11().display;
-        let screen = handle.x11().screen;
-        let xft_font = unsafe { XftFontOpenName(display, screen, font_name.as_ptr()) };
-        Ok(xft_font)
+    fn get_font_by_family(&self, system: &mut cosmic_text::FontSystem, family: &str) -> UiResult<Arc<cosmic_text::Font>> {
+        let face = system.db().faces().find(|x| {
+            for (font_family, _) in &x.families {
+                if font_family == family { return true; };
+            }
+            false
+        }).ok_or(format!("字体'{}'未找到", family))?;
+        let font = system.get_font(face.id).ok_or(UiError::OptNone)?;
+        Ok(font)
     }
 
-    pub(crate) fn line_height(&self, handle: &Arc<WindowType>, text: &mut RichText) -> UiResult<f32> {
-        let size = text.size.get_or_insert(self.size);
-        let family = text.family.get_or_insert_with(|| self.family.clone());
-        let font = self.get_xft_font(handle, family, *size)?;
-        let font_ref = unsafe { font.as_ref() }.ok_or(format!("字体'{}'未找到", family))?;
-        let height = font_ref.height as f32;
-        unsafe { XftFontClose(handle.x11().display, font) };
-        Ok(height)
+    pub fn set_family_size(&mut self, ui: &mut Ui, text: &mut RichText) -> UiResult<()> {
+        let family = text.family.get_or_insert_with(|| ui.context.font.family().to_string());
+        let size = text.size.get_or_insert_with(|| ui.context.font.size());
+        self.family = family.to_string();
+        self.size = *size;
+        // self.buffer.set_metrics(ui.context.font.system_mut(), Metrics::new(self.size, text.height));
+        self.init(ui)?;
+        Ok(())
     }
 
-    pub fn measure_text(&self, handle: &Arc<WindowType>, text: &RichText, wrap: bool, max_wrap: f32) -> UiResult<Vec<LineChar>> {
+    pub fn init(&mut self, ui: &mut Ui) -> UiResult<()> {
+        let font = self.get_font_by_family(ui.context.font.system_mut(), &self.family)?;
+        self.glyph_font = Some(ab_glyph::FontArc::try_from_vec(font.data().to_vec())?);
+        self.font = Some(font);
+        Ok(())
+    }
+
+    pub(crate) fn measure_text(&self, text: &RichText, wrap: bool, max_wrap_width: f32) -> UiResult<Vec<LineChar>> {
         let mut res = vec![];
-        let xft_font = self.get_xft_font(handle, text.family.as_ref().ok_or("字体为空")?, text.font_size())?;
         let text = text.text.replace("\r\n", "\n");
         for line in text.split("\n") {
-            let mut lines = self.measure_line(line, handle, xft_font, wrap, max_wrap)?;
+            let mut lines = self.measure_line(line, wrap, max_wrap_width)?;
             res.append(&mut lines);
         }
-        unsafe { XftFontClose(handle.x11().display, xft_font) };
         if let Some(last) = res.last_mut() {
             last.auto_wrap = true;
         }
         Ok(res)
     }
 
-    fn measure_line(&self, line: &str, handle: &Arc<WindowType>, xft_font: *mut XftFont, wrap: bool, max_wrap: f32) -> UiResult<Vec<LineChar>> {
+    fn measure_line(&self, line: &str, wrap: bool, max_wrap: f32) -> UiResult<Vec<LineChar>> {
+        let mut buffer = UnicodeBuffer::default();
+        buffer.set_direction(Direction::LeftToRight);
+        buffer.push_str(line);
+        buffer.guess_segment_properties();
+        let font = self.font.as_ref().ok_or(UiError::OptNone)?;
+        let shape_plan = ShapePlan::new(font.rustybuzz(), Direction::LeftToRight, Some(buffer.script()), None, &vec![]);
+        let glyph_buffer = rustybuzz::shape_with_plan(font.rustybuzz(), &shape_plan, buffer);
+        let font_scale = font.rustybuzz().units_per_em() as f32;
         let mut res = vec![];
         let mut line_char = LineChar::new();
-        for ch in line.chars() {
-            let cchar = self.measure_char(ch, handle, xft_font)?;
+        let glyph_positions = glyph_buffer.glyph_positions();
+        for (position, ch) in glyph_positions.iter().zip(line.chars()) {
+            let x_advance = position.x_advance as f32 / font_scale + 0.0;
+            let cchar = CChar::new(ch, x_advance * self.size);
             if wrap && line_char.width + cchar.width >= max_wrap {
                 let mut line = mem::take(&mut line_char);
                 line.auto_wrap = true;
@@ -197,31 +184,85 @@ impl Font {
         line_char.auto_wrap = false;
         line_char.line_text = line_char.chars.iter().map(|x| x.cchar.to_string()).collect();
         res.push(line_char);
+
         Ok(res)
     }
 
-    pub(crate) fn measure_char(&self, ch: char, handle: &Arc<WindowType>, xft_font: *mut XftFont) -> UiResult<CChar> {
-        let char_str = ch.to_string();
-        let char_len = char_str.len() as i32;
-        let c_char_str = CString::new(char_str)?;
-        let c_char_ptr = c_char_str.as_ptr() as *const u8;
-        let mut extents: XGlyphInfo = unsafe { mem::zeroed() };
-        unsafe {
-            XftTextExtentsUtf8(handle.x11().display, xft_font, c_char_ptr, char_len, &mut extents);
-        }
-        Ok(CChar::new(ch, extents.xOff as f32))
+    pub fn measure_char(&self, ch: char) -> UiResult<CChar> {
+        let mut buffer = UnicodeBuffer::default();
+        buffer.set_direction(Direction::LeftToRight);
+        buffer.push_str(ch.to_string().as_str());
+        buffer.guess_segment_properties();
+        let font = self.font.as_ref().ok_or(UiError::OptNone)?;
+        let shape_plan = ShapePlan::new(font.rustybuzz(), Direction::LeftToRight, Some(buffer.script()), None, &vec![]);
+        let glyph_buffer = rustybuzz::shape_with_plan(font.rustybuzz(), &shape_plan, buffer);
+        let font_scale = font.rustybuzz().units_per_em() as f32;
+        let x_advance = glyph_buffer.glyph_positions().get(0).ok_or(UiError::OptNone)?.x_advance as f32 / font_scale + 0.0;
+        Ok(CChar::new(ch, x_advance * self.size))
+    }
+
+    pub(crate) fn line_height(&self) -> UiResult<f32> {
+        let scale = PxScale::from(self.size);
+        let scale_font = self.glyph_font.as_ref().ok_or(UiError::OptNone)?.as_scaled(scale);
+        let ascent = scale_font.ascent();
+        let descent = scale_font.descent();
+        let line_gap = scale_font.line_gap();
+        Ok(ascent - descent + line_gap)
     }
 }
 
-impl From<&Font> for Font {
-    fn from(value: &Font) -> Self {
-        Font {
-            family: value.family.clone(),
+pub(crate) enum FontKind {
+    #[cfg(feature = "gpu")]
+    WGpu(WGpuFont),
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+    X11(X11Font),
+}
+
+impl FontKind {
+    pub fn new() -> FontKind {
+        #[cfg(feature = "gpu")]
+        return FontKind::WGpu(WGpuFont::new());
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        return FontKind::X11(X11Font::new_empty());
+    }
+
+    pub(crate) fn line_height(&self) -> UiResult<f32> {
+        match self {
             #[cfg(feature = "gpu")]
-            glyph_font: value.glyph_font.clone(),
-            size: value.size,
+            FontKind::WGpu(font) => font.line_height(),
+            #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+            FontKind::X11(font) => font.line_height(),
+        }
+    }
+
+    pub(crate) fn set_family_size(&mut self, ui: &mut Ui, text: &mut RichText) -> UiResult<()> {
+        match self {
             #[cfg(feature = "gpu")]
-            font_system: cosmic_text::FontSystem::new(),
+            FontKind::WGpu(font) => font.set_family_size(ui, text),
+            #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+            FontKind::X11(font) => font.set_family_size(ui, text)
+        }
+    }
+
+    pub fn measure_text(&self, text: &RichText, wrap: bool, max_wrap_width: f32) -> UiResult<Vec<LineChar>> {
+        match self {
+            #[cfg(feature = "gpu")]
+            FontKind::WGpu(font) => font.measure_text(text, wrap, max_wrap_width),
+            #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+            FontKind::X11(font) => font.measure_text(text, wrap, max_wrap_width),
+        }
+    }
+    #[cfg(feature = "gpu")]
+    pub fn wgpu_mut(&mut self) -> &mut WGpuFont {
+        match self { FontKind::WGpu(font) => font }
+    }
+
+    pub fn measure_char(&self, ch: char) -> UiResult<CChar> {
+        match self {
+            #[cfg(feature = "gpu")]
+            FontKind::WGpu(font) => font.measure_char(ch),
+            #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+            FontKind::X11(font) => font.measure_char(ch),
         }
     }
 }

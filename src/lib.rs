@@ -104,8 +104,9 @@ pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget
                   image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
                   select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combo::ComboBox,
                   rectangle::Rectangle, circle::Circle, triangle::Triangle, tab::TabWidget,
-                  combo::check::CheckComboBox, table::TableExt, table::TableView,table::column::TableColumn,
-                    };
+                  combo::check::CheckComboBox, table::TableExt, table::TableView, table::column::TableColumn,
+};
+pub use error::{UiResult, UiError};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 pub use ui::Ui;
 pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow, FrameStyle};
