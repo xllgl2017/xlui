@@ -2,18 +2,7 @@ use std::ffi::CString;
 use std::marker::{PhantomData, PhantomPinned};
 use std::mem::MaybeUninit;
 use x11::xlib::{Display, Drawable, Visual};
-
-#[derive(Clone, PartialEq, Eq, PartialOrd, Debug, Copy)]
-pub enum FontSlant {
-    Normal = 0,
-    Italic = 1,
-    Oblique = 2,
-}
-
-pub enum FontWeight {
-    Normal = 0,
-    Bold = 1,
-}
+use crate::size::font::{FontSlant, FontWeight};
 
 unsafe extern "C" {
     fn cairo_surface_reference(surface: *mut CairoSurface) -> *mut CairoSurface;

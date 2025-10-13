@@ -19,6 +19,17 @@ use std::path::Path;
 #[cfg(feature = "gpu")]
 use std::sync::Arc;
 
+pub enum FontSlant {
+    Normal = 0,
+    Italic = 1,
+    Oblique = 2,
+}
+
+pub enum FontWeight {
+    Normal = 0,
+    Bold = 1,
+}
+
 pub struct Font {
     family: String,
     size: f32,

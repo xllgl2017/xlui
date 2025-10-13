@@ -11,7 +11,7 @@ use crate::window::x11::clipboard::X11ClipBoard;
 #[cfg(not(feature = "gpu"))]
 use crate::window::x11::ffi::CairoAntialias;
 #[cfg(not(feature = "gpu"))]
-use crate::window::x11::ffi::{Cairo, CairoSurface, FontSlant, FontWeight};
+use crate::window::x11::ffi::{Cairo, CairoSurface};
 use crate::window::{ClipboardData, UserEvent};
 use crate::*;
 #[cfg(feature = "gpu")]
@@ -19,21 +19,14 @@ use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, Window
 use std::cell::RefCell;
 #[cfg(feature = "gpu")]
 use std::ffi::c_void;
-#[cfg(not(feature = "gpu"))]
-use std::ffi::CString;
 use std::mem;
 use std::os::raw::c_long;
 #[cfg(feature = "gpu")]
 use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
-#[cfg(not(feature = "gpu"))]
-use x11::xft::{XftColor, XftColorAllocValue, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName};
 use x11::xlib;
-#[cfg(not(feature = "gpu"))]
-use x11::xlib::XRectangle;
 use x11::xlib::{XFreeColormap, XMoveWindow};
-#[cfg(not(feature = "gpu"))]
-use x11::xrender::XRenderColor;
+use crate::size::font::{FontSlant, FontWeight};
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,
