@@ -22,10 +22,12 @@ pub trait App: Any + 'static {
     fn draw(&mut self, ui: &mut Ui);
     fn update(&mut self, _: &mut Ui) {}
 
+    /// 创建window的参数，包含标题、位置、图标等信息
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute::default()
     }
 
+    /// 运行并创建窗口
     fn run(self) -> UiResult<()>
     where
         Self: Sized,

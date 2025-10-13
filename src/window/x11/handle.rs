@@ -78,6 +78,8 @@ impl X11WindowHandle {
         unsafe { DisplayHandle::borrow_raw(raw_display_handle) }
     }
 
+    /// * 设置输入法显示的位置
+    /// * x,y为窗口内部的位置
     pub fn set_ime_position(&self, ime: &Arc<IME>, x: f32, y: f32) {
         let root = unsafe { xlib::XRootWindow(self.display, self.screen) };
         let mut child_return: xlib::Window = 0;
@@ -93,6 +95,7 @@ impl X11WindowHandle {
         ime.set_cursor_position(ax + x as i32, ay + y as i32);
     }
 
+    /// 请求系统粘贴板，需要指定类型
     pub fn request_clipboard(&self, clipboard: ClipboardData) {
         match clipboard {
             ClipboardData::Unsupported => {}
@@ -102,10 +105,13 @@ impl X11WindowHandle {
         }
     }
 
+    /// 设置系统粘贴板
     pub fn set_clipboard(&self, clipboard: ClipboardData) {
         self.clipboard.request_set_clipboard(self.window, clipboard);
     }
 
+    ///* 移动窗口
+    ///* x,y是窗口在桌面的位置
     pub fn move_window(&self, x: f32, y: f32) {
         unsafe { XMoveWindow(self.display, self.window, x as i32, y as i32) };
     }

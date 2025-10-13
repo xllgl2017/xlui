@@ -4,16 +4,35 @@ use crate::size::border::Border;
 use crate::style::color::Color;
 use crate::Radius;
 
+
+/// #### 窗口样式
+/// 可以用于窗口布局
+/// ```rust
+///  use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///     let style=FrameStyle{
+///         fill:Color::rgb(165,235,154),
+///         shadow:Shadow{
+///             offset:[10.0,10.0],
+///             spread:10.0,
+///             blur:5.0,
+///             color:Color::rgb(123,123,123)
+///         },
+///         border:Border::same(1.0).radius(Radius::same(2))
+///     };
+/// }
+/// ```
 pub struct FrameStyle {
     pub fill: Color,
-    pub radius: Radius,
     pub shadow: Shadow,
     pub border: Border,
 
 }
 
 ///
-/// ### 控件样式
+/// #### 控件样式
+/// 包含控件在未活跃、滑动、活跃的状态
 /// ```
 /// use xlui::*;
 ///
@@ -134,10 +153,9 @@ impl Style {
     pub fn light_style() -> Style {
         Style {
             window: FrameStyle {
-                radius: Radius::same(0),
                 fill: Color::rgb(240, 240, 240),
                 shadow: Shadow::new(),
-                border: Border::same(0.0),
+                border: Border::same(0.0).radius(Radius::same(0)),
             },
 
             widgets: WidgetStyle {

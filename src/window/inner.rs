@@ -84,9 +84,8 @@ impl InnerWindow {
     fn draw_title(&mut self, ui: &mut Ui) {
         let style = FrameStyle {
             fill: Color::rgb(210, 210, 210),
-            radius: Radius::same(0).with_left_top(1).with_right_top(1),
             shadow: Shadow::new(),
-            border: Border::same(0.0),
+            border: Border::same(0.0).radius(Radius::same(0).with_left_top(1).with_right_top(1)),
         };
         // let mut style = ClickStyle::new();
         // style.fill = FillStyle::same();

@@ -30,6 +30,24 @@ pub enum FontWeight {
     Bold = 1,
 }
 
+/// ### Font全局字体
+/// * 在wgpu模式下支持使用自定义字体ttf文件和bytes
+/// * 在native模式下仅支持调用系统已有的字体
+///
+/// ### Font示例
+/// ```rust
+/// use std::fs;
+/// use xlui::Font;
+///
+/// fn draw(){
+///     let font=Font::from_family("微软雅黑");
+///     #[cfg(feature = "gpu")]
+///     let font=Font::from_file("1.ttf");
+///     #[cfg(feature = "gpu")]
+///     let font=Font::from_vec(fs::read("1.ttf"));
+/// }
+/// ```
+
 pub struct Font {
     family: String,
     size: f32,

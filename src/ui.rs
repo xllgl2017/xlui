@@ -270,7 +270,7 @@ impl AppContext {
         self.device.queue.submit([encoder.finish()]);
         #[cfg(feature = "gpu")]
         surface_texture.present();
-        self.previous_time = crate::time_ms();
+        self.previous_time = time_ms();
     }
 }
 
@@ -343,11 +343,14 @@ impl<'a, 'p> Ui<'a, 'p> {
     pub fn window(&self) -> Arc<WindowType> {
         self.context.window.clone()
     }
+
+    ///添加一些间隔，可能是水平方向，也可能是垂直方向
     pub fn add_space(&mut self, space: f32) {
         let space = Space::new(space);
         self.add(space);
     }
 
+    ///添加一个控件，控件必须实现是Widget Trait
     pub fn add<T: Widget>(&mut self, widget: T) -> Option<&mut T> {
         let widget = WidgetKind::new(self, widget);
         let wid = widget.id().to_owned();
@@ -356,16 +359,19 @@ impl<'a, 'p> Ui<'a, 'p> {
         layout.get_item_mut(&wid)?.widget_mut()
     }
 
+    ///查询控件，id为控件的ID
     pub fn get_widget<T: Widget>(&mut self, id: impl ToString) -> Option<&mut T> {
         let layout = self.layout.as_mut()?;
         layout.get_widget(&id.to_string())
     }
 
+    ///请求更新，只执行update
     pub fn request_update(&mut self, ut: UpdateType) {
         let wid = self.context.window.id();
         self.request_update = Some((wid, ut));
     }
 
+    ///添加一个布局
     pub fn add_layout(&mut self, layout: impl Layout + 'static, context: impl FnOnce(&mut Ui)) {
         let layout = LayoutKind::new(layout);
         let previous_layout = self.layout.replace(layout).unwrap();
@@ -375,6 +381,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         self.layout().add_item(LayoutItem::Layout(current_layout));
     }
 
+    ///快速水平布局
     pub fn horizontal(&mut self, context: impl FnOnce(&mut Ui)) {
         let current_layout = HorizontalLayout::left_to_right().with_padding(Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::new(current_layout)).unwrap();
@@ -384,6 +391,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         self.layout().add_item(LayoutItem::Layout(current_layout));
     }
 
+    ///快速垂直布局
     pub fn vertical(&mut self, mut context: impl FnMut(&mut Ui)) {
         let current_layout = VerticalLayout::top_to_bottom().with_padding(Padding::same(0.0));
         let previous_layout = self.layout.replace(LayoutKind::new(current_layout)).unwrap();
@@ -393,6 +401,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         self.layout().add_item(LayoutItem::Layout(current_layout));
     }
 
+    /// 创建一个内部子窗口
     pub fn create_inner_window<W: App>(&mut self, w: W) -> &mut InnerWindow {
         let mut inner_window = InnerWindow::new(w, self);
         inner_window.top = true;
@@ -402,42 +411,49 @@ impl<'a, 'p> Ui<'a, 'p> {
         self.inner_windows.as_mut().unwrap().get_mut(&id).unwrap()
     }
 
+    ///创建一个外部独立窗口
     pub fn create_window<W: App>(&mut self, w: W) {
         let app = Box::new(w);
         self.context.new_window = Some(app);
         self.context.window.request_update_event(UserEvent::CreateChild);
     }
 
+    ///快速创建一个label
     pub fn label(&mut self, text: impl Into<RichText>) {
         let label = Label::new(text);
         self.add(label);
     }
-
+    ///快速创建一个button
     pub fn button(&mut self, text: impl Into<RichText>) -> &mut Button {
         let btn = Button::new(text);
         self.add(btn).unwrap()
     }
 
+    ///快速创建一个radio
     pub fn radio(&mut self, v: bool, l: impl Into<RichText>) -> &mut RadioButton {
         let radio = RadioButton::new(v, l);
         self.add(radio).unwrap()
     }
 
+    ///快速创建一个checkbox
     pub fn checkbox(&mut self, v: bool, l: impl Into<RichText>) -> &mut CheckBox {
         let checkbox = CheckBox::new(v, l);
         self.add(checkbox).unwrap()
     }
 
+    ///快速创建一个slider
     pub fn slider(&mut self, v: f32, r: Range<f32>) -> &mut Slider {
         let slider = Slider::new(v).with_range(r);
         self.add(slider).unwrap()
     }
 
+    ///快速创建一个image,这里需要给指定绘制的大小
     pub fn image(&mut self, source: impl Into<ImageSource>, size: (f32, f32)) -> &mut Image {
         let image = Image::new(source).with_size(size.0, size.1);
         self.add(image).unwrap()
     }
 
+    ///快速创建一个spinbox，支持i8,u8,i16,u16,i32,u32,f32,i64,u64,f64等
     pub fn spinbox<T: Display + NumCastExt + PartialOrd + AddAssign + SubAssign + Copy + 'static>(&mut self, v: T, g: T, r: Range<T>) -> &mut SpinBox<T> {
         let spinbox = SpinBox::new(v, g, r);
         self.add(spinbox).unwrap()
