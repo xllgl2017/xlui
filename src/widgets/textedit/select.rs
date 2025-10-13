@@ -198,13 +198,22 @@ impl EditSelection {
             let end_line = &cchar.buffer.lines[cursor.vert];
             let sm = start_line.get_width_in_char(start_horiz) + cursor.min_pos.x;
             self.renders[start_vert].rect_mut().set_x_min(sm);
-            self.renders[start_vert].rect_mut().set_x_max(cursor.max_pos.x);
+            if cursor.max_pos.x > cursor.min_pos.x + start_line.width {
+                self.renders[start_vert].rect_mut().set_x_max(cursor.min_pos.x + start_line.width);
+            } else {
+                self.renders[start_vert].rect_mut().set_x_max(cursor.max_pos.x);
+            }
+
             self.renders[cursor.vert].rect_mut().set_x_min(cursor.min_pos.x);
             let em = end_line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
             self.renders[cursor.vert].rect_mut().set_x_max(em);
             for v in start_vert + 1..cursor.vert {
                 self.renders[v].rect_mut().set_x_min(cursor.min_pos.x);
-                self.renders[v].rect_mut().set_x_max(cursor.max_pos.x);
+                if cursor.max_pos.x > cursor.min_pos.x + cchar.buffer.lines[v].width {
+                    self.renders[v].rect_mut().set_x_max(cursor.min_pos.x + cchar.buffer.lines[v].width);
+                } else {
+                    self.renders[v].rect_mut().set_x_max(cursor.max_pos.x);
+                }
             }
         }
 
