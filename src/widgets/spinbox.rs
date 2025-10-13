@@ -51,8 +51,8 @@ pub struct SpinBox<T> {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, T)>>,
     up_render: RenderParam,
     down_render: RenderParam,
-    up_rect: Rect,
-    down_rect: Rect,
+    // up_rect: Rect,
+    // down_rect: Rect,
     changed: bool,
     contact_ids: Vec<String>,
     press_up: bool,
@@ -81,8 +81,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             callback: None,
             up_render: RenderParam::new(RenderKind::Triangle(up_param)),
             down_render: RenderParam::new(RenderKind::Triangle(down_param)),
-            up_rect: Rect::new(),
-            down_rect: Rect::new(),
+            // up_rect: Rect::new(),
+            // down_rect: Rect::new(),
             changed: false,
             contact_ids: vec![],
             press_up: false,
@@ -125,35 +125,35 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
 
     fn re_init(&mut self, ui: &mut Ui) {
         self.edit.update(ui);
-        self.up_rect.set_x_min(self.rect.dx().max - 14.0);
-        self.up_rect.set_x_max(self.rect.dx().max);
-        self.up_rect.set_y_min(self.rect.dy().min + 1.0);
-        self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
+        self.up_render.rect_mut().set_x_min(self.rect.dx().max - 14.0);
+        self.up_render.rect_mut().set_x_max(self.rect.dx().max);
+        self.up_render.rect_mut().set_y_min(self.rect.dy().min + 1.0);
+        self.up_render.rect_mut().set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
         let mut p0 = Pos::new();
-        p0.x = self.up_rect.dx().min + self.up_rect.width() / 2.0;
-        p0.y = self.up_rect.dy().min;
+        p0.x = self.up_render.rect().dx().min + self.up_render.rect().width() / 2.0;
+        p0.y = self.up_render.rect().dy().min;
         let mut p1 = Pos::new();
-        p1.x = self.up_rect.dx().min;
-        p1.y = self.up_rect.dy().max;
+        p1.x = self.up_render.rect().dx().min;
+        p1.y = self.up_render.rect().dy().max;
         let mut p2 = Pos::new();
         p2.x = self.rect.dx().max;
-        p2.y = self.up_rect.dy().max;
+        p2.y = self.up_render.rect().dy().max;
         self.up_render.set_poses(p0, p1, p2);
         #[cfg(feature = "gpu")]
         self.up_render.init(ui, false, false);
-        self.down_rect.set_x_min(self.rect.dx().max - 14.0);
-        self.down_rect.set_x_max(self.rect.dx().max);
-        self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
-        self.down_rect.set_y_max(self.rect.dy().max - 2.0);
+        self.down_render.rect_mut().set_x_min(self.rect.dx().max - 14.0);
+        self.down_render.rect_mut().set_x_max(self.rect.dx().max);
+        self.down_render.rect_mut().set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
+        self.down_render.rect_mut().set_y_max(self.rect.dy().max - 2.0);
         let mut p0 = Pos::new();
-        p0.x = self.down_rect.dx().min + self.down_rect.width() / 2.0;
-        p0.y = self.down_rect.dy().max;
+        p0.x = self.down_render.rect_mut().dx().min + self.down_render.rect_mut().width() / 2.0;
+        p0.y = self.down_render.rect_mut().dy().max;
         let mut p1 = Pos::new();
         p1.x = self.rect.dx().max - 14.0;
-        p1.y = self.down_rect.dy().min;
+        p1.y = self.down_render.rect_mut().dy().min;
         let mut p2 = Pos::new();
         p2.x = self.rect.dx().max;
-        p2.y = self.down_rect.dy().min;
+        p2.y = self.down_render.rect_mut().dy().min;
         self.down_render.set_poses(p0, p1, p2);
         #[cfg(feature = "gpu")]
         self.down_render.init(ui, false, false);
@@ -212,27 +212,16 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.rect.offset_to_rect(&ui.draw_rect);
-            self.up_rect.set_x_min(self.rect.dx().max - 14.0);
-            self.up_rect.set_x_max(self.rect.dx().max);
-            self.up_rect.set_y_min(self.rect.dy().min + 1.0);
-            self.up_rect.set_y_max(self.rect.dy().min + self.rect.height() / 2.0 - 2.0);
-            self.up_render.offset_to_rect(&self.up_rect);
-            #[cfg(feature = "gpu")]
-            self.up_render.update(ui, false, false);
-
-            self.down_rect.set_x_min(self.rect.dx().max - 14.0);
-            self.down_rect.set_x_max(self.rect.dx().max);
-            self.down_rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
-            self.down_rect.set_y_max(self.rect.dy().max - 2.0);
-            self.down_render.offset_to_rect(&self.down_rect);
-            #[cfg(feature = "gpu")]
-            self.down_render.update(ui, false, false);
+            let mut rect = self.rect.clone();
+            rect.set_x_min(rect.dx().max - 14.0);
+            rect.set_y_min(rect.dy().min + 1.0);
+            self.up_render.offset_to_rect(&rect);
+            let mut rect = self.rect.clone();
+            rect.set_x_min(rect.dx().max - 14.0);
+            rect.set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
+            self.down_render.offset_to_rect(&rect);
         }
         if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.down_render.update(ui, self.value <= self.range.start, false);
-            #[cfg(feature = "gpu")]
-            self.up_render.update(ui, self.value >= self.range.end, false);
             self.edit.update_text(ui, format!("{:.*}", 2, self.value));
         }
     }
@@ -254,12 +243,6 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             ui.draw_rect = edit_rect;
         }
         self.edit.redraw(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.triangle.render(&self.down_render, pass);
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.triangle.render(&self.up_render, pass);
         self.down_render.draw(ui, self.value <= self.range.start, false);
         self.up_render.draw(ui, self.value >= self.range.end, false);
     }
@@ -297,9 +280,9 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 self.press_up = false;
                 self.press_down = false;
                 self.press_time = 0;
-                if ui.device.device_input.click_at(&self.up_rect) {
+                if ui.device.device_input.click_at(self.up_render.rect()) {
                     self.click_up(ui)
-                } else if ui.device.device_input.click_at(&self.down_rect) {
+                } else if ui.device.device_input.click_at(self.down_render.rect()) {
                     self.click_down(ui);
                 }
                 return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));

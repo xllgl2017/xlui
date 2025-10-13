@@ -73,7 +73,7 @@ impl TriangleParam {
         self.rect.set_x_min(xs.clone().into_iter().reduce(f32::min).unwrap());
         self.rect.set_x_max(xs.into_iter().reduce(f32::max).unwrap());
         self.rect.set_y_min(ys.clone().into_iter().reduce(f32::min).unwrap());
-        self.rect.set_x_max(ys.into_iter().reduce(f32::max).unwrap());
+        self.rect.set_y_max(ys.into_iter().reduce(f32::max).unwrap());
         self.p0 = p0;
         self.p1 = p1;
         self.p2 = p2;
@@ -85,12 +85,6 @@ impl TriangleParam {
         self.p1.offset(offset.x, offset.y);
         self.p2.offset(offset.x, offset.y);
         offset
-        // self.p0.x += o.x;
-        // self.p0.y += o.y;
-        // self.p1.x += o.x;
-        // self.p1.y += o.y;
-        // self.p2.x += o.x;
-        // self.p2.y += o.y;
     }
 
     pub fn set_style(&mut self, style: ClickStyle) {

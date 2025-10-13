@@ -126,7 +126,6 @@ impl X11WindowHandle {
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_text_by_cairo(&self, paint: &mut PaintParam, text: &RichText, lines: &Vec<LineChar>, rect: Rect, clip_x: f32, clip_y: f32) { //功能异常
-        println!("{} {}", text.text, text.family.as_ref().unwrap());
         paint.cairo.save();
         paint.cairo.select_font_face(text.family.as_ref().unwrap(), FontSlant::Normal, FontWeight::Normal);
         paint.cairo.set_font_size(text.font_size() as f64);
@@ -208,7 +207,7 @@ impl X11WindowHandle {
         let y1 = rect.dy().min;
         let x2 = rect.dx().max;
         let y2 = rect.dy().max;
-        cairo.set_antialias(CairoAntialias::Good);
+        cairo.set_antialias(CairoAntialias::Best);
         cairo.new_path();
         cairo.arc(
             (x2 - border.radius.right_top as f32) as f64,
