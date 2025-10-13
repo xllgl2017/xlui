@@ -217,11 +217,11 @@ impl X11Window {
                     xlib::Expose => {
                         #[cfg(not(feature = "gpu"))]
                         {
-                            if crate::time_ms() - window.app_ctx.previous_time <= 10 {
+                            if crate::time_ms() - window.app_ctx.previous_time <= 5 {
                                 let handle = window.handle().clone();
                                 if window.app_ctx.redraw_thread.is_finished() {
                                     window.app_ctx.redraw_thread = spawn(move || {
-                                        sleep(Duration::from_millis(10));
+                                        sleep(Duration::from_millis(5));
                                         handle.request_redraw();
                                     });
                                 }

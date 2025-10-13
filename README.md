@@ -6,8 +6,7 @@
 [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/xllgl2017/xlui/blob/main/LICENSE-APACHE)
 
 &nbsp;&nbsp;&nbsp;&nbsp; xlui是一个用Rust语言的2D GUI库，支持使用x11(Linux)、Gdi(Windows)、wgpu渲染。支持window server，对新老硬件
-系统有友好支持。xlui目标是利用Rust语言原生构建GUI、最小第三方依赖、体积小（比winit+wgpu少50%左右）、简单易用，
-同时在保证性能的前提下尽量减少CPU的开销。
+系统有友好支持。xlui目标是利用Rust语言原生构建GUI、最小第三方依赖、体积小（比winit+wgpu少50%左右）、简单易用，同时在保证性能的前提下尽量减少CPU的开销。
 
 ## xlui的目标
 
