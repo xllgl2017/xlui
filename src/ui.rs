@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use crate::frame::context::{Context, ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::layout::horizontal::HorizontalLayout;
@@ -15,8 +14,11 @@ use crate::widgets::checkbox::CheckBox;
 use crate::widgets::space::Space;
 use crate::widgets::{Widget, WidgetChange, WidgetKind};
 use crate::window::inner::InnerWindow;
+#[cfg(all(target_os = "linux", not(feature = "gpu")))]
+use crate::window::x11::ffi::Cairo;
 use crate::window::{UserEvent, WindowId, WindowType};
 use crate::*;
+use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{AddAssign, Range, SubAssign};
 use std::rc::Rc;
@@ -31,8 +33,6 @@ use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
-#[cfg(all(target_os = "linux", not(feature = "gpu")))]
-use crate::window::x11::ffi::Cairo;
 
 pub struct AppContext {
     pub(crate) device: Device,
@@ -71,8 +71,6 @@ impl AppContext {
             device: &self.device,
             context: &mut self.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: None,
             layout: Some(self.layout.take().unwrap()),
             popups: self.popups.take(),
             update_type: UpdateType::Init,
@@ -98,8 +96,6 @@ impl AppContext {
             device: &self.device,
             context: &mut self.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: None,
             layout: self.layout.take(),
             popups: None,
             update_type: UpdateType::None,
@@ -122,8 +118,6 @@ impl AppContext {
             device: &self.device,
             context: &mut self.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: None,
             layout: self.layout.take(),
             popups: None,
             update_type: ut,
@@ -176,9 +170,11 @@ impl AppContext {
 
     pub fn redraw(&mut self, app: &mut Box<dyn App>, paint: Option<PaintParam>) { //ps: Option<PAINTSTRUCT>, hdc: Option<HDC>
         #[cfg(feature = "gpu")]
+        let _ = paint.is_none();
+        #[cfg(feature = "gpu")]
         if !self.redraw_thread.is_finished() { return; }
         #[cfg(feature = "gpu")]
-        if crate::time_ms() - self.previous_time < 10 {
+        if time_ms() - self.previous_time < 10 {
             let window = self.context.window.clone();
             let t = self.previous_time;
             self.redraw_thread = spawn(move || {
@@ -233,14 +229,14 @@ impl AppContext {
         };
         #[cfg(feature = "gpu")]
         let pass = encoder.begin_render_pass(&render_pass_desc);
+        #[cfg(feature = "gpu")]
+        let paint = Some(PaintParam { pass });
         let size = self.context.window.size();
         let draw_rect = Rect::new().with_size(size.width, size.height);
         let mut ui = Ui {
             device: &self.device,
             context: &mut self.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: Some(pass),
             layout: self.layout.take(),
             popups: self.popups.take(),
             update_type: UpdateType::Draw,
@@ -283,12 +279,17 @@ pub(crate) struct PaintParam<'p> {
     pub(crate) cairo: &'p mut Cairo,
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) window: x11::xlib::Window,
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+    pub(crate) draw: *mut x11::xft::XftDraw,
+
     #[cfg(all(windows, not(feature = "gpu")))]
     pub(crate) paint_struct: PAINTSTRUCT,
     #[cfg(all(windows, not(feature = "gpu")))]
     pub(crate) hdc: HDC,
-    #[cfg(any(all(target_os = "linux", feature = "gpu"), target_os = "windows"))]
+    #[cfg(target_os = "windows")]
     pub(crate) _s: &'p str,
+    #[cfg(feature = "gpu")]
+    pub(crate) pass: wgpu::RenderPass<'p>,
 }
 
 impl<'a> Debug for PaintParam<'a> {
@@ -297,13 +298,18 @@ impl<'a> Debug for PaintParam<'a> {
     }
 }
 
+impl<'a> Drop for PaintParam<'a> {
+    fn drop(&mut self) {
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        unsafe { x11::xft::XftDrawDestroy(self.draw) };
+    }
+}
+
 
 pub struct Ui<'a, 'p> {
     pub(crate) device: &'a Device,
     pub(crate) context: &'a mut Context,
     pub(crate) app: Option<&'a mut Box<dyn App>>,
-    #[cfg(feature = "gpu")]
-    pub(crate) pass: Option<wgpu::RenderPass<'p>>,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
     pub(crate) update_type: UpdateType,

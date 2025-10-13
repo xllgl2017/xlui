@@ -97,7 +97,7 @@ impl TextBuffer {
             &mut ui.context.render.text.atlas,
             &ui.context.viewport, vec![area],
             &mut ui.context.render.text.cache).unwrap();
-        let pass = ui.pass.as_mut().unwrap();
+        let pass = &mut ui.paint.as_mut().unwrap().pass;
         self.render.as_mut().unwrap().render(&mut ui.context.render.text.atlas, &ui.context.viewport, pass).unwrap()
     }
 

@@ -4,8 +4,14 @@ use crate::error::UiResult;
 use crate::render::image::texture::ImageTexture;
 #[cfg(not(feature = "gpu"))]
 use crate::text::cchar::LineChar;
+#[cfg(not(feature = "gpu"))]
+use crate::ui::PaintParam;
 use crate::window::ime::IME;
 use crate::window::x11::clipboard::X11ClipBoard;
+#[cfg(not(feature = "gpu"))]
+use crate::window::x11::ffi::CairoAntialias;
+#[cfg(not(feature = "gpu"))]
+use crate::window::x11::ffi::{Cairo, CairoSurface, FontSlant, FontWeight};
 use crate::window::{ClipboardData, UserEvent};
 use crate::*;
 #[cfg(feature = "gpu")]
@@ -21,19 +27,13 @@ use std::os::raw::c_long;
 use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 #[cfg(not(feature = "gpu"))]
-use x11::xft::{XftColor, XftColorAllocValue, XftDrawCreate, XftDrawDestroy, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName};
+use x11::xft::{XftColor, XftColorAllocValue, XftDrawSetClip, XftDrawSetClipRectangles, XftDrawStringUtf8, XftFontClose, XftFontOpenName};
 use x11::xlib;
-use x11::xlib::{XFreeColormap, XMoveWindow};
 #[cfg(not(feature = "gpu"))]
 use x11::xlib::XRectangle;
+use x11::xlib::{XFreeColormap, XMoveWindow};
 #[cfg(not(feature = "gpu"))]
 use x11::xrender::XRenderColor;
-#[cfg(not(feature = "gpu"))]
-use crate::ui::PaintParam;
-#[cfg(not(feature = "gpu"))]
-use crate::window::x11::ffi::{Cairo, CairoSurface, FontSlant, FontWeight};
-#[cfg(not(feature = "gpu"))]
-use crate::window::x11::ffi::CairoAntialias;
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,
@@ -126,83 +126,85 @@ impl X11WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_text_by_cairo(&self, cairo: &mut Cairo, text: &RichText, rect: Rect) { //功能异常
+    pub fn paint_text_by_cairo(&self, paint: &mut PaintParam, text: &RichText, lines: &Vec<LineChar>, rect: Rect, clip_x: f32, clip_y: f32) { //功能异常
         println!("{} {}", text.text, text.family.as_ref().unwrap());
-        cairo.select_font_face(text.family.as_ref().unwrap(), FontSlant::Normal, FontWeight::Normal);
-        cairo.set_font_size(text.font_size() as f64);
-        cairo.set_source_rgba(text.color.r_f64(), text.color.g_f64(), text.color.b_f64(), text.color.a_f64());
-        let font_extents = cairo.font_extends();
-        cairo.rectangle(rect.dx().min as f64, rect.dy().min as f64 - font_extents.ascent, rect.width() as f64, rect.height() as f64 + font_extents.ascent + font_extents.descent);
-        cairo.clip();
-        cairo.move_to(rect.dx().min as f64, rect.dy().min as f64 + font_extents.ascent);
-        cairo.show_text(text.text.as_str());
-        cairo.reset_clip();
+        paint.cairo.save();
+        paint.cairo.select_font_face(text.family.as_ref().unwrap(), FontSlant::Normal, FontWeight::Normal);
+        paint.cairo.set_font_size(text.font_size() as f64);
+        paint.cairo.set_source_rgba(text.color.r_f64(), text.color.g_f64(), text.color.b_f64(), text.color.a_f64());
+        let font_extents = paint.cairo.font_extends();
+        paint.cairo.rectangle(rect.dx().min as f64, rect.dy().min as f64 - font_extents.ascent, rect.width() as f64, rect.height() as f64 + font_extents.ascent + font_extents.descent);
+        paint.cairo.clip();
+        let x = (rect.dx().min + clip_x) as f64;
+        let mut y = (rect.dy().min + clip_y) as f64 + font_extents.ascent;
+        for line in lines {
+            paint.cairo.move_to(x, y);
+            paint.cairo.show_text(line.line_text.as_str());
+            y += text.height as f64;
+        }
+
+        // paint.cairo.move_to(rect.dx().min as f64, rect.dy().min as f64 + font_extents.ascent);
+        // paint.cairo.show_text(text.text.as_str());
+        paint.cairo.reset_clip();
+        paint.cairo.restore();
     }
+
+    // #[cfg(not(feature = "gpu"))]
+    // pub fn set_clip_rect(&self, paint: &mut PaintParam, rect: &Rect) {
+    //     paint.cairo.rectangle(rect.dx().min as f64, rect.dy().min as f64, rect.width() as f64, rect.height() as f64);
+    //     // unsafe { XftDrawSetClipRectangles(draw, 0, 0, &rect.as_x_rect() as *const XRectangle, 1); }
+    // }
+
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_text(&self, paint: &mut PaintParam, text: &RichText, lines: &Vec<LineChar>, rect: Rect, clip_x: f32, clip_y: f32) -> UiResult<()> {
-        unsafe {
-            // let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, xlib::AllocNone);
-            // 创建 XftDraw 对象
-            let draw = XftDrawCreate(self.display, paint.window, self.visual_info.visual, self.colormap);
-            if draw.is_null() { return Err("Failed to create XftDraw".into()); }
-            let font = CString::new(format!("{}:pixelsize={}", text.family.as_ref().unwrap(), text.font_size() as i32))?;
-            // 加载字体
-            let font = XftFontOpenName(self.display, self.screen, font.as_ptr() as *const i8);
-            if font.is_null() { return Err("Failed to load font".into()); }
-
-            // 创建颜色（黑色）
-            let mut xft_color: XftColor = mem::zeroed();
-            let mut render_color: XRenderColor = XRenderColor {
-                red: text.color.r as u16 * 257,
-                green: text.color.g as u16 * 257,
-                blue: text.color.b as u16 * 257,
-                alpha: text.color.a as u16 * 257,
-            };
-
-            if XftColorAllocValue(self.display, self.visual_info.visual, self.colormap, &mut render_color, &mut xft_color) == 0 {
-                return Err("Failed to alloc color".into());
-            }
-            let clip_rect = XRectangle {
-                x: rect.dx().min as i16,
-                y: rect.dy().min as i16,
-                width: rect.width() as u16,
-                height: rect.height() as u16,
-            };
-            // 设置裁剪区域
-            XftDrawSetClipRectangles(draw, 0, 0, &clip_rect as *const XRectangle, 1);
-            let font_ascent = font.as_ref().ok_or("获取字体ascent失败")?.ascent;
-            let line_height = text.height as i32;
-            let x = (rect.dx().min + clip_x) as i32;
-            let mut y = (rect.dy().min + clip_y) as i32 + font_ascent;
-            for line in lines {
-                let c_str = CString::new(line.line_text.clone())?;
-                XftDrawStringUtf8(
-                    draw, &mut xft_color, font,
-                    x, y,
-                    c_str.as_ptr() as *const u8,
-                    line.line_text.len() as i32,
-                );
-                y += line_height;
-            }
-
-
-            // let c_str = CString::new(text.text.clone())?;
-
-            // 恢复裁剪（清空剪裁区域）
-            XftDrawSetClip(draw, std::ptr::null_mut());
-            XftFontClose(self.display, font);
-            XftDrawDestroy(draw);
-            Ok(())
-        }
+        return Ok(self.paint_text_by_cairo(paint, text, lines, rect, clip_x, clip_y));
+        // unsafe {
+        //     // let colormap = xlib::XCreateColormap(self.display, self.root, self.visual_info.visual, xlib::AllocNone);
+        //     let font = CString::new(format!("{}:pixelsize={}", text.family.as_ref().unwrap(), text.font_size() as i32))?;
+        //     // 加载字体
+        //     let font = XftFontOpenName(self.display, self.screen, font.as_ptr() as *const i8);
+        //     if font.is_null() { return Err("Failed to load font".into()); }
+        //
+        //     // 创建颜色（黑色）
+        //     let mut xft_color: XftColor = mem::zeroed();
+        //     let mut render_color: XRenderColor = XRenderColor {
+        //         red: text.color.r as u16 * 257,
+        //         green: text.color.g as u16 * 257,
+        //         blue: text.color.b as u16 * 257,
+        //         alpha: text.color.a as u16 * 257,
+        //     };
+        //
+        //     if XftColorAllocValue(self.display, self.visual_info.visual, self.colormap, &mut render_color, &mut xft_color) == 0 {
+        //         return Err("Failed to alloc color".into());
+        //     }
+        //     // 设置裁剪区域
+        //     XftDrawSetClipRectangles(paint.draw, 0, 0, &rect.as_x_rect() as *const XRectangle, 1);
+        //     let font_ascent = font.as_ref().ok_or("获取字体ascent失败")?.ascent;
+        //     let line_height = text.height as i32;
+        //     let x = (rect.dx().min + clip_x) as i32;
+        //     let mut y = (rect.dy().min + clip_y) as i32 + font_ascent;
+        //     for line in lines {
+        //         let c_str = CString::new(line.line_text.clone())?;
+        //         XftDrawStringUtf8(
+        //             paint.draw, &mut xft_color, font,
+        //             x, y,
+        //             c_str.as_ptr() as *const u8,
+        //             line.line_text.len() as i32,
+        //         );
+        //         y += line_height;
+        //     }
+        //     // 恢复裁剪（清空剪裁区域）
+        //     XftDrawSetClip(paint.draw, std::ptr::null_mut());
+        //     XftFontClose(self.display, font);
+        //     Ok(())
+        // }
     }
-
-
-
 
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_rect(&self, cairo: &mut Cairo, fill: &Color, border: &Border, rect: &Rect) {
+        cairo.save();
         let x1 = rect.dx().min;
         let y1 = rect.dy().min;
         let x2 = rect.dx().max;
@@ -236,10 +238,12 @@ impl X11WindowHandle {
         cairo.set_line_width(border.width() as f64);
         cairo.set_source_rgba(border.color.r_f64(), border.color.g_f64(), border.color.b_f64(), border.color.a_f64());
         cairo.stroke();
+        cairo.restore();
     }
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_circle(&self, cairo: &mut Cairo, fill: &Color, border: &Border, rect: &Rect) {
+        cairo.save();
         cairo.new_path();
         cairo.arc(
             rect.dx().center() as f64,
@@ -253,10 +257,12 @@ impl X11WindowHandle {
         cairo.set_line_width(border.width() as f64);
         cairo.set_source_rgba(border.color.r_f64(), border.color.g_f64(), border.color.b_f64(), border.color.a_f64());
         cairo.stroke();
+        cairo.restore();
     }
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_triangle(&self, cairo: &mut Cairo, pos0: Pos, pos1: Pos, pos2: Pos, fill: &Color, border: &Border) {
+        cairo.save();
         cairo.new_path();
         cairo.move_to(pos0.x as f64, pos0.y as f64);
         cairo.line_to(pos1.x as f64, pos1.y as f64);
@@ -267,14 +273,15 @@ impl X11WindowHandle {
         cairo.set_line_width(border.width() as f64);
         cairo.set_source_rgba(border.color.r_f64(), border.color.g_f64(), border.color.b_f64(), border.color.a_f64());
         cairo.stroke();
+        cairo.restore();
     }
 
     #[cfg(not(feature = "gpu"))]
     pub fn paint_image(&self, cairo: &mut Cairo, texture: &mut ImageTexture, rect: Rect) {
+        cairo.save();
         let img = texture.raw_mut().as_mut_ptr();
         let sx = rect.width() / texture.size().width;
         let sy = rect.height() / texture.size().height;
-        cairo.save();
         cairo.translate(rect.dx().min as f64, rect.dy().min as f64);
         cairo.scale(sx as f64, sy as f64);
         let surface = CairoSurface::new_image(img, texture.size().width as i32, texture.size().height as i32);

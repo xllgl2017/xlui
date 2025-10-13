@@ -171,11 +171,6 @@ impl Rect {
         res
     }
 
-    // pub(crate) fn out_of_rect(&self, other: &Rect) -> bool {
-    //     other.dx.min > self.dx.max || other.dx.max < self.dx.min ||
-    //         other.dy.min > self.dy.max || other.dy.max < self.dy.min
-    // }
-
     pub fn x_direction(&self) -> LayoutDirection {
         self.x_direction
     }
@@ -188,6 +183,15 @@ impl Rect {
 
     pub fn set_y_direction(&mut self, y_direction: LayoutDirection) {
         self.y_direction = y_direction;
+    }
+
+    pub fn as_x_rect(&self) -> x11::xlib::XRectangle {
+        x11::xlib::XRectangle {
+            x: self.dx.min as i16,
+            y: self.dy.min as i16,
+            width: self.width() as u16,
+            height: self.width() as u16,
+        }
     }
 }
 

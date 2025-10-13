@@ -4,8 +4,6 @@ use crate::layout::popup::Popup;
 use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
 use crate::render::rectangle::param::RectParam;
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::render::{RenderKind, RenderParam};
 use crate::response::Callback;
 use crate::size::border::Border;
@@ -137,24 +135,15 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: None,
             layout: Some(LayoutKind::new(context_layout)),
             popups: self.popups.take(),
             update_type: UpdateType::Init,
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            // #[cfg(all(windows, not(feature = "gpu")))]
-            // paint_struct: None,
-            // #[cfg(not(feature = "gpu"))]
-            // p: crate::ui::P { text: "" },
-            // #[cfg(all(windows, not(feature = "gpu")))]
-            // hdc: None,
             paint: None,
         };
 
@@ -186,9 +175,6 @@ impl InnerWindow {
                     self.fill_render.rect_mut().offset(&Offset::new().with_x(ox).with_y(oy).covered());
                     self.offset.x += ox;
                     self.offset.y += oy;
-                    // self.offset.pos = ui.device.device_input.mouse.lastest.relative;
-                    // ui.update_type = UpdateType::Offset(self.offset.clone());
-                    // ui.can_offset = true;
                     self.changed = true;
                     ui.context.window.request_redraw();
                     return false;
@@ -221,37 +207,21 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: oui.pass.take(),
             layout: self.layout.take(),
             popups: self.popups.take(),
             update_type: UpdateType::Draw,
             can_offset: false,
             inner_windows: None,
             request_update: None,
-            // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            // #[cfg(all(windows, not(feature = "gpu")))]
-            // paint_struct: oui.paint_struct.take(),
-            // #[cfg(not(feature = "gpu"))]
-            // p: P { text: "" },
-            // #[cfg(all(windows, not(feature = "gpu")))]
-            // hdc: oui.hdc.take(),
             paint: oui.paint.take(),
         };
 
 
         self.update_buffer(&mut nui);
-        // let previous_rect = ui.draw_rect.clone();
-        // let mut rect = self.fill_render.param.rect.clone();
         self.title_rect.offset_to_rect(&nui.draw_rect);
-        // ui.draw_rect = rect;
-        #[cfg(feature = "gpu")]
-        let pass = nui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        nui.context.render.rectangle.render(&self.fill_render, pass);
         self.fill_render.draw(&mut nui, false, false);
         self.w.update(&mut nui);
         self.layout = nui.layout.take();
@@ -259,15 +229,7 @@ impl InnerWindow {
         self.offset.x = 0.0;
         self.offset.y = 0.0;
         self.popups = nui.popups.take();
-
-        #[cfg(feature = "gpu")]
-        { oui.pass = nui.pass.take() };
-        // #[cfg(all(windows, not(feature = "gpu")))]
-        // { oui.hdc = nui.hdc.take(); }
-        // #[cfg(all(windows, not(feature = "gpu")))]
-        // { oui.paint_struct = nui.paint_struct.take(); }
-        #[cfg(not(feature = "gpu"))]
-        { oui.paint = nui.paint.take(); }
+        oui.paint = nui.paint.take();
     }
 
     pub fn update(&mut self, oui: &mut Ui) {
@@ -277,24 +239,15 @@ impl InnerWindow {
             device: oui.device,
             context: oui.context,
             app: None,
-            #[cfg(feature = "gpu")]
-            pass: None,
             layout: self.layout.take(),
             popups: self.popups.take(),
             update_type: oui.update_type.clone(),
             can_offset: oui.can_offset,
             inner_windows: self.inner_windows.take(),
             request_update: None,
-            // offset: Offset::new(Pos::new()),
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            // #[cfg(all(windows, not(feature = "gpu")))]
-            // paint_struct: None,
-            // #[cfg(not(feature = "gpu"))]
-            // p: P { text: "" },
-            // #[cfg(all(windows, not(feature = "gpu")))]
-            // hdc: None,
             paint:None
         };
         self.w.update(&mut nui);

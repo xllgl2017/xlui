@@ -7,6 +7,8 @@ use crate::window::event::WindowEvent;
 use crate::window::ime::{IMEData, IME};
 use crate::window::wino::{EventLoopHandle, LoopWindow};
 use crate::window::x11::clipboard::X11ClipBoard;
+#[cfg(not(feature = "gpu"))]
+use crate::window::x11::ffi::{Cairo, CairoSurface};
 use crate::window::x11::handle::X11WindowHandle;
 use crate::window::x11::ime::flag::{Capabilities, Modifiers};
 use crate::window::{WindowId, WindowKind, WindowType};
@@ -16,15 +18,15 @@ use std::os::raw::{c_long, c_uint, c_ulong};
 use std::process::exit;
 use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
-use std::{mem, ptr};
 #[cfg(not(feature = "gpu"))]
 use std::thread::{sleep, spawn};
 #[cfg(not(feature = "gpu"))]
 use std::time::Duration;
+use std::{mem, ptr};
+#[cfg(not(feature = "gpu"))]
+use x11::xft::XftDrawCreate;
 use x11::xlib;
 use x11::xlib::{AllocNone, XCloseDisplay, XLookupString, XVisualInfo};
-#[cfg(not(feature = "gpu"))]
-use crate::window::x11::ffi::{Cairo, CairoSurface};
 
 pub mod ime;
 pub mod handle;
@@ -217,7 +219,7 @@ impl X11Window {
                     xlib::Expose => {
                         #[cfg(not(feature = "gpu"))]
                         {
-                            if crate::time_ms() - window.app_ctx.previous_time <= 5 {
+                            if time_ms() - window.app_ctx.previous_time <= 5 {
                                 let handle = window.handle().clone();
                                 if window.app_ctx.redraw_thread.is_finished() {
                                     window.app_ctx.redraw_thread = spawn(move || {
@@ -239,20 +241,14 @@ impl X11Window {
                             xlib::XFillRectangle(self.display, pixmap, gc, 0, 0, width as u32, height as u32);
                             let surface = CairoSurface::new(self.display, pixmap, window.handle().x11().visual_info.visual, width, height);
                             let cairo = Cairo::new(surface).unwrap();
+                            // 创建 XftDraw 对象
+                            let draw = XftDrawCreate(self.display, pixmap, window.handle().x11().visual_info.visual, window.handle().x11().colormap);
+                            if draw.is_null() { return Err("Failed to create XftDraw".into()); }
                             let draw_param = PaintParam {
                                 cairo,
                                 window: pixmap,
+                                draw,
                             };
-
-
-                            // let draw = XftDrawCreate(self.display, window.handle().x11().window, window.handle().x11().visual_info.visual, window.handle().x11().colormap);
-                            // if draw.is_null() { return Err("Failed to create XftDraw".into()); }
-                            // let pixmap = xlib::XCreatePixmap(self.display, window.handle().x11().window, width as u32, height as u32, window.handle().x11().visual_info.depth as u32);
-                            // let gc = xlib::XCreateGC(self.display, pixmap, 0, null_mut());
-                            // // 设置背景颜色，例如浅灰色
-                            // let color = Color::WHITE.as_rgba_u32(); // RGB (192,192,192)
-                            // xlib::XSetForeground(self.display, gc, color as u64);
-                            // // 获取窗口大小（Expose 时可从 event.xexpose 获取）
 
 
                             window.handle_event(WindowEvent::Redraw(draw_param));

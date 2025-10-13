@@ -70,11 +70,9 @@ impl EditCursor {
         self.render.draw(ui, false, false);
     }
 
-    pub fn update_position(&mut self, ui: &mut Ui, rect: Rect, cchar: &CharBuffer) {
+    pub fn update_position(&mut self, rect: Rect, cchar: &CharBuffer) {
         *self.render.rect_mut() = rect;
         self.render.rect_mut().offset(&self.offset);
-        #[cfg(feature = "gpu")]
-        self.render.update(ui, false, false);
         self.min_pos.x = cchar.buffer.geometry.x();
         self.min_pos.y = cchar.buffer.geometry.y();
         self.max_pos.x = cchar.buffer.geometry.right();

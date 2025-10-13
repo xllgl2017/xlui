@@ -186,7 +186,7 @@ impl RenderParam {
             #[cfg(feature = "gpu")]
             RenderKind::Rectangle(_) => {
                 self.update(ui, hovered, pressed);
-                let pass = ui.pass.as_mut().unwrap();
+                let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.rectangle.render(&self, pass);
             }
             #[cfg(not(feature = "gpu"))]
@@ -210,13 +210,13 @@ impl RenderParam {
             #[cfg(feature = "gpu")]
             RenderKind::Circle(_) => {
                 self.update(ui, hovered, pressed);
-                let pass = ui.pass.as_mut().unwrap();
+                let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.circle.render(&self, pass);
             }
             #[cfg(feature = "gpu")]
             RenderKind::Triangle(_) => {
                 self.update(ui, hovered, pressed);
-                let pass = ui.pass.as_mut().unwrap();
+                let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.triangle.render(&self, pass);
             }
         }

@@ -2,8 +2,6 @@ use crate::frame::context::UpdateType;
 use crate::layout::LayoutKind;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::Response;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
@@ -115,10 +113,11 @@ impl ItemWidget {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        self.fill_render.draw(ui, self.hovered || self.selected, ui.device.device_input.mouse.pressed || self.selected);
         self.layout.as_mut().unwrap().update(ui);
     }
 }

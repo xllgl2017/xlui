@@ -141,7 +141,7 @@ impl Image {
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
+        let pass = &mut ui.paint.as_mut().unwrap().pass;
         #[cfg(feature = "gpu")]
         ui.context.render.image.render(
             &self.source.uri(),

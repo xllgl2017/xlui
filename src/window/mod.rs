@@ -25,6 +25,7 @@ use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowH
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 use crate::*;
+use crate::ui::PaintParam;
 
 #[derive(Copy, Clone, PartialEq, Hash, Debug, Eq)]
 pub struct WindowId(u32);
@@ -202,6 +203,22 @@ impl WindowType {
             #[cfg(all(target_os = "linux", not(feature = "winit")))]
             WindowKind::X11(ref window) => window.size()
         }
+    }
+
+    pub(crate) fn set_clip_rect(&self, paint: &mut PaintParam, clip: Rect) {
+        #[cfg(feature = "gpu")]
+        paint.pass.set_scissor_rect(clip.dx().min as u32, clip.dy().min as u32, clip.width() as u32, clip.height() as u32);
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        paint.cairo.rectangle(clip.dx().min as f64, clip.dy().min as f64, clip.width() as f64, clip.height() as f64);
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        paint.cairo.clip();
+    }
+
+    pub(crate) fn reset_clip(&self, paint: &mut PaintParam) {
+        #[cfg(feature = "gpu")]
+        paint.pass.set_scissor_rect(0, 0, self.size().width_u32(), self.size().height_u32());
+        #[cfg(all(target_os = "linux", not(feature = "gpu")))]
+        paint.cairo.reset_clip();
     }
 }
 #[cfg(feature = "gpu")]

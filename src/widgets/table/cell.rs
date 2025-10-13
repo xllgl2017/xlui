@@ -1,8 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::render::rectangle::param::RectParam;
 use crate::render::{RenderKind, RenderParam};
-#[cfg(feature = "gpu")]
-use crate::render::WrcRender;
 use crate::response::Response;
 use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle, FillStyle};
@@ -71,20 +69,22 @@ impl TableCell {
     fn redraw(&mut self, ui: &mut Ui) {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
+            // #[cfg(feature = "gpu")]
+            // self.fill_render.update(ui, false, false);
             let mut cell_rect = self.fill_render.rect_mut().clone();
             cell_rect.set_x_min(cell_rect.dx().max - 2.0);
             self.cell_line.rect_mut().offset_to_rect(&cell_rect);
-            #[cfg(feature = "gpu")]
-            self.cell_line.update(ui, false, false);
+            // #[cfg(feature = "gpu")]
+            // self.cell_line.update(ui, false, false);
         }
-        #[cfg(feature = "gpu")]
-        let pass = ui.pass.as_mut().unwrap();
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.fill_render, pass);
-        #[cfg(feature = "gpu")]
-        ui.context.render.rectangle.render(&self.cell_line, pass);
+        // #[cfg(feature = "gpu")]
+        // let pass = ui.pass.as_mut().unwrap();
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.fill_render, pass);
+        // #[cfg(feature = "gpu")]
+        // ui.context.render.rectangle.render(&self.cell_line, pass);
+        self.fill_render.draw(ui, false, false);
+        self.cell_line.draw(ui, false, false);
         self.layout.as_mut().unwrap().update(ui);
     }
 }
