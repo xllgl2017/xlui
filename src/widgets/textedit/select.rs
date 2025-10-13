@@ -70,15 +70,6 @@ impl EditSelection {
         self.changed = true;
     }
 
-    pub fn update(&mut self, ui: &mut Ui) {
-        if !self.changed { return; }
-        self.changed = false;
-        for render in self.renders.iter_mut() {
-            #[cfg(feature = "gpu")]
-            render.update(ui, false, false);
-        }
-    }
-
     pub fn render(&mut self, ui: &mut Ui, rows: usize) {
         for (index, render) in self.renders.iter_mut().enumerate() {
             if index >= rows { continue; }
@@ -188,11 +179,11 @@ impl EditSelection {
         if start_vert == cursor.vert { //处于同一行中
             let line = &cchar.buffer.lines[cursor.vert];
             let mut x_min = line.get_width_in_char(start_horiz) + cursor.min_pos.x;
-            let mut x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
-            if x_max > cursor.max_pos.x { x_max = cursor.max_pos.x; }
+            // let mut x_max = line.get_width_in_char(cursor.horiz) + cursor.min_pos.x;
+            // if x_max > cursor.max_pos.x { x_max = cursor.max_pos.x; }
             if x_min < cursor.min_pos.x { x_min = cursor.min_pos.x; }
             self.renders[cursor.vert].rect_mut().set_x_min(x_min);
-            self.renders[cursor.vert].rect_mut().set_x_max(x_max);
+            self.renders[cursor.vert].rect_mut().set_x_max(cursor.cursor_min() + 2.0);
         } else {
             let start_line = &cchar.buffer.lines[start_vert];
             let end_line = &cchar.buffer.lines[cursor.vert];
@@ -221,11 +212,9 @@ impl EditSelection {
         self.changed = true;
     }
 
-    pub fn update_position(&mut self, ui: &mut Ui, mut rect: Rect) {
+    pub fn update_position(&mut self, mut rect: Rect) {
         for render in self.renders.iter_mut() {
             render.rect_mut().offset_y_to(rect.dy().min);
-            #[cfg(feature = "gpu")]
-            render.update(ui, false, false);
             rect.add_min_y(render.rect().height());
         }
     }

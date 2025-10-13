@@ -46,10 +46,6 @@ impl EditCursor {
 
     pub fn init(&mut self, cchar: &CharBuffer, ui: &mut Ui, init: bool) {
         if init {
-            // self.min_pos.x = cchar.buffer.rect.dx().min;
-            // self.min_pos.y = cchar.buffer.rect.dy().min;
-            // self.max_pos.x = cchar.buffer.rect.dx().max;
-            // self.max_pos.y = cchar.buffer.rect.dy().max;
             self.line_height = cchar.buffer.text.height;
             self.vert = cchar.buffer.lines.len();
             self.horiz = cchar.buffer.lines.last().unwrap().len();
@@ -69,35 +65,20 @@ impl EditCursor {
         self.render.rect_mut().offset(&self.offset);
     }
 
-    // pub fn offset(&mut self, offset: &Offset) {
-    //     self.min_pos.x += offset.x;
-    //     self.min_pos.y += offset.y;
-    //     self.render.param.rect.offset(offset);
-    //     self.changed = true;
-    // }
 
     pub fn render(&mut self, ui: &mut Ui) {
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.render, pass);
         self.render.draw(ui, false, false);
     }
-
-    // pub fn set_rect(&mut self, rect: Rect) {
-    //     self.render.param.rect = rect;
-    //     self.changed = true;
-    // }
 
     pub fn update_position(&mut self, ui: &mut Ui, rect: Rect, cchar: &CharBuffer) {
         *self.render.rect_mut() = rect;
         self.render.rect_mut().offset(&self.offset);
         #[cfg(feature = "gpu")]
         self.render.update(ui, false, false);
-        self.min_pos.x = cchar.buffer.geometry.x(); //cchar.buffer.rect.dx().min;
-        self.min_pos.y = cchar.buffer.geometry.y(); //cchar.buffer.rect.dy().min;
-        self.max_pos.x = cchar.buffer.geometry.right(); //cchar.buffer.rect.dx().max;
-        self.max_pos.y = cchar.buffer.geometry.bottom(); //cchar.buffer.rect.dy().max;
+        self.min_pos.x = cchar.buffer.geometry.x();
+        self.min_pos.y = cchar.buffer.geometry.y();
+        self.max_pos.x = cchar.buffer.geometry.right();
+        self.max_pos.y = cchar.buffer.geometry.bottom();
     }
 
     pub fn move_left(&mut self, cchar: &CharBuffer) {
@@ -111,7 +92,6 @@ impl EditCursor {
         } else {
             self.horiz -= 1;
             self.offset.x = cchar.buffer.lines[self.vert].get_width_in_char(self.horiz) + cchar.offset.x;
-            // self.offset.x -= cchar.lines[self.vert].chars[self.horiz - 1].width + cchar.offset.x;
 
         }
         self.changed = true;
@@ -250,7 +230,6 @@ impl EditCursor {
         for cc in line.chars.iter() {
             let char_min = self.min_pos.x + sum_width + cchar.offset.x;
             let char_max = self.min_pos.x + sum_width + cchar.offset.x + cc.width;
-            // println!("{} {} {} {} {} {}", pos.x, char_min, pos.x, char_max, cchar.offset.x, horiz);
             if pos.x >= char_min && pos.x <= char_max {
                 char_width = cc.width;
                 break;
@@ -259,7 +238,6 @@ impl EditCursor {
             horiz += 1;
         }
         let char_min = self.min_pos.x + sum_width + cchar.offset.x;
-        // let char_max = self.min_pos.x + sum_width + cchar.offset.x + char_width;
         println!("{}-{}-{}-{}-{}", pos.x, self.min_pos.x, char_min + char_width / 2.0, horiz, sum_width);
         if pos.x < self.min_pos.x {
             self.horiz = 0;

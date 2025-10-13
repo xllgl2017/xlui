@@ -149,7 +149,7 @@ impl TextEdit {
             cursor_rect.set_width(2.0);
             cursor_rect.set_height(self.char_layout.buffer.text.height);
             self.cursor_render.update_position(ui, cursor_rect, &self.char_layout);
-            self.select_render.update_position(ui, self.char_layout.buffer.geometry.rect());
+            self.select_render.update_position(self.char_layout.buffer.geometry.rect());
             let mut psd_rect = self.fill_render.rect_mut().clone();
             psd_rect.set_x_direction(LayoutDirection::Max);
             psd_rect.add_min_y(2.0);
@@ -158,7 +158,6 @@ impl TextEdit {
 
         if ui.widget_changed.contains(WidgetChange::Value) {
             self.cursor_render.update();
-            self.select_render.update(ui);
         }
     }
 
