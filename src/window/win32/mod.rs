@@ -65,7 +65,7 @@ impl Win32Window {
         #[cfg(feature = "gpu")]
         let mut window = pollster::block_on(async { LoopWindow::create_gpu_window(app, Arc::new(window_type), attr).await });
         #[cfg(not(feature = "gpu"))]
-        let mut window = LoopWindow::create_native_window(app, Arc::new(window_type), attr);
+        let window = LoopWindow::create_native_window(app, Arc::new(window_type), attr);
         let mut windows = Map::new();
         windows.insert(window.window_id(), window);
         let window = Win32Window {
@@ -164,7 +164,7 @@ impl Win32Window {
         let window = pollster::block_on(async { LoopWindow::create_gpu_window(app, window_type, attr).await });
         #[cfg(not(feature = "gpu"))]
         let window = LoopWindow::create_native_window(app, window_type, attr);
-        unsafe { unsafe { SetWindowLongPtrW(window.handle().win32().hwnd, GWLP_USERDATA, self as *mut _ as isize); } }
+        unsafe { SetWindowLongPtrW(window.handle().win32().hwnd, GWLP_USERDATA, self as *mut _ as isize); }
         self.windows.insert(window.window_id(), window);
         Ok(())
     }

@@ -24,6 +24,8 @@ use crate::window::x11::handle::X11WindowHandle;
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle, WindowHandle};
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
+#[cfg(all(target_os = "windows", not(feature = "gpu")))]
+use windows::Win32::Graphics::Gdi::{CreateRectRgn, DeleteObject, RestoreDC, SaveDC, SelectClipRgn, HGDIOBJ};
 use crate::*;
 use crate::ui::PaintParam;
 
@@ -212,6 +214,23 @@ impl WindowType {
         paint.cairo.rectangle(clip.dx().min as f64, clip.dy().min as f64, clip.width() as f64, clip.height() as f64);
         #[cfg(all(target_os = "linux", not(feature = "gpu")))]
         paint.cairo.clip();
+        #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+        unsafe {
+            paint.saved_hdc = SaveDC(paint.hdc);
+            // 先创建矩形区域
+            let hrgn = CreateRectRgn(
+                clip.dx().min as i32,
+                clip.dy().min as i32,
+                clip.dx().max as i32,
+                clip.dy().max as i32,
+            );
+
+            // 设置裁剪区域（会替换当前裁剪）
+            SelectClipRgn(paint.hdc, Some(hrgn));
+
+            // 删除区域对象，GDI 内部会复制
+            DeleteObject(HGDIOBJ::from(hrgn)).ok().unwrap();
+        }
     }
 
     pub(crate) fn reset_clip(&self, paint: &mut PaintParam) {
@@ -219,6 +238,8 @@ impl WindowType {
         paint.pass.set_scissor_rect(0, 0, self.size().width_u32(), self.size().height_u32());
         #[cfg(all(target_os = "linux", not(feature = "gpu")))]
         paint.cairo.reset_clip();
+        #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+        unsafe { RestoreDC(paint.hdc, paint.saved_hdc).ok().unwrap(); }
     }
 }
 #[cfg(feature = "gpu")]

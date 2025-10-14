@@ -2,22 +2,22 @@ use crate::error::UiResult;
 #[cfg(not(feature = "gpu"))]
 use crate::render::image::{load_win32_image_raw, ImageSource};
 #[cfg(not(feature = "gpu"))]
-use crate::text::cchar::{CChar, LineChar};
+use crate::text::cchar::LineChar;
 use crate::window::win32::clipboard::Win32Clipboard;
 use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
+#[cfg(feature = "gpu")]
+use crate::window::win32::{GetWindowLongPtrW, GWLP_HINSTANCE};
 use crate::window::UserEvent;
 use crate::*;
 #[cfg(feature = "gpu")]
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 #[cfg(feature = "gpu")]
 use std::num::NonZeroIsize;
-#[cfg(feature = "gpu")]
-use crate::window::win32::{GetWindowLongPtrW, GWLP_HINSTANCE};
 use std::ptr::null_mut;
 use std::sync::RwLock;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, GetCharWidth32W, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, SRCCOPY, TRANSPARENT};
+use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, SRCCOPY, TRANSPARENT};
 use windows::Win32::Graphics::GdiPlus::{FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipDrawPolygon, GdipFillEllipse, GdipFillPath, GdipFillPolygon, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, PointF, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, UnitPixel};
 use windows::Win32::Graphics::Imaging::{GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};

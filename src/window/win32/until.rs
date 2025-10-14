@@ -183,6 +183,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                 let paint = PaintParam {
                     paint_struct: ps,
                     hdc: mem_dc,
+                    saved_hdc: 0,
                     _s: "",
                 };
                 window.handle_event(WindowEvent::Redraw(paint));

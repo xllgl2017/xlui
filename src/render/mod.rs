@@ -41,8 +41,6 @@ pub struct RenderParam {
     vertices_buffer: Option<wgpu::Buffer>,
     #[cfg(feature = "gpu")]
     indices_buffer: Option<wgpu::Buffer>,
-    #[cfg(feature = "gpu")]
-    bind_buffer: Option<wgpu::Buffer>,
 }
 
 
@@ -58,8 +56,6 @@ impl RenderParam {
             vertices_buffer: None,
             #[cfg(feature = "gpu")]
             indices_buffer: None,
-            #[cfg(feature = "gpu")]
-            bind_buffer: None,
         }
     }
 
