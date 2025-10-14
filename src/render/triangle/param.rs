@@ -7,10 +7,14 @@ use crate::Size;
 use crate::{Offset, Rect};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::GdiPlus::PointF;
+#[cfg(feature = "gpu")]
+use crate::render::Screen;
+#[cfg(feature = "gpu")]
+use crate::vertex::Vertex;
 
 #[cfg(feature = "gpu")]
 #[repr(C)]
-#[derive(Debug, Copy, Clone,bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct TriangleDrawParam {
     p0: [f32; 2],             //⬅️ 顶点位置1
     p1: [f32; 2],             //⬅️ 顶点位置2
@@ -30,6 +34,12 @@ pub struct TriangleParam {
     pub(crate) style: ClickStyle,
     #[cfg(feature = "gpu")]
     draw: TriangleDrawParam,
+    #[cfg(feature = "gpu")]
+    pub(crate) screen: Screen,
+    #[cfg(feature = "gpu")]
+    pub(crate) vertices: Vec<Vertex>,
+    #[cfg(feature = "gpu")]
+    pub(crate) indices: Vec<u16>,
 }
 
 impl TriangleParam {
@@ -63,7 +73,13 @@ impl TriangleParam {
             style,
             #[cfg(feature = "gpu")]
             draw,
+            #[cfg(feature = "gpu")]
+            screen: Screen { size: [1000.0, 800.0] },
+            #[cfg(feature = "gpu")]
+            vertices: vec![],
             rect,
+            #[cfg(feature = "gpu")]
+            indices: vec![],
         }
     }
 
@@ -112,6 +128,21 @@ impl WrcParam for TriangleParam {
         self.draw.border_thickness = border.left_width;
         self.draw.border_color = border.color.as_gamma_rgba();
         self.draw.fill_color = fill_color;
+        self.vertices = vec![
+            Vertex {
+                position: [self.p0.x, self.p0.y],
+                color: fill_color,
+            },
+            Vertex {
+                position: [self.p1.x, self.p1.y],
+                color: fill_color,
+            },
+            Vertex {
+                position: [self.p2.x, self.p2.y],
+                color: fill_color,
+            }
+        ];
+        self.indices = vec![0, 1, 2, 0];
         bytemuck::bytes_of(&self.draw)
     }
 }

@@ -4,6 +4,8 @@ use crate::size::rect::Rect;
 use crate::style::{ClickStyle, FrameStyle, Shadow};
 use crate::*;
 #[cfg(feature = "gpu")]
+use crate::render::Screen;
+#[cfg(feature = "gpu")]
 use crate::shape::rectangle::RectangleShape;
 
 #[cfg(feature = "gpu")]
@@ -38,13 +40,6 @@ struct RectDrawParam2 {
     screen: [f32; 4],             //⬅️ 总大小（宽、高）,缩放比例、填充
     shadow_params: [f32; 4],      //⬅️ 阴影(x,y)、模糊半径、强度
     shadow_color: [f32; 4],       //⬅️ 阴影颜色
-}
-
-#[cfg(feature = "gpu")]
-#[repr(C)]
-#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Screen {
-    size: [f32; 2],
 }
 
 pub struct RectParam {
