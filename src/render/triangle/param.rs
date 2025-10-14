@@ -86,7 +86,7 @@ impl TriangleParam {
 
 #[cfg(feature = "gpu")]
 impl WrcParam for TriangleParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         self.vertices = vec![
             Vertex {
@@ -103,6 +103,7 @@ impl WrcParam for TriangleParam {
             }
         ];
         self.indices = vec![0, 1, 2, 0];
+        self.screen.size=[size.width,size.height];
         bytemuck::bytes_of(&self.screen)
     }
 }

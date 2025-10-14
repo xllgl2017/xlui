@@ -38,15 +38,14 @@ impl CircleParam {
 
 #[cfg(feature = "gpu")]
 impl WrcParam for CircleParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered);
         let border = self.style.dyn_border(mouse_down, hovered);
-        let center = [self.rect.dx().center(), self.rect.dy().center()];
-        let radius = self.rect.height() / 2.0;
         self.circle_shape.draw(&self.rect, fill_color, border);
         while (self.circle_shape.indices.len() * 2) % 4 != 0 {
             self.circle_shape.indices.push(0);
         }
+        self.screen.size=[size.width, size.height];
         bytemuck::bytes_of(&self.screen)
     }
 }

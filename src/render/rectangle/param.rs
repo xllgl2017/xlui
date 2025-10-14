@@ -80,10 +80,11 @@ impl RectParam {
 }
 #[cfg(feature = "gpu")]
 impl WrcParam for RectParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered);
         let border = self.style.dyn_border(mouse_down, hovered);
         self.rect_shape.reset(&self.rect, fill_color, border);
+        self.screen.size=[size.width, size.height];
         bytemuck::bytes_of(&self.screen)
     }
 }

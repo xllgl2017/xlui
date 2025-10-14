@@ -1,27 +1,27 @@
 use std::sync::Arc;
 #[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use wgpu::{include_wgsl, IndexFormat, RenderPassDescriptor, StoreOp, TextureDimension};
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use winit::window::WindowAttributes;
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
 };
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use xlui::shape::rectangle::RectangleShape;
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use xlui::vertex::Vertex;
 use xlui::{Border, Color, Rect};
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Screen {
     size: [f32; 2],
 }
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 fn draw_rect() -> (Vec<Vertex>, Vec<u16>) {
     let mut rect = Rect::new();
     rect.set_x_min(153.0);
@@ -32,7 +32,7 @@ fn draw_rect() -> (Vec<Vertex>, Vec<u16>) {
     rectangle.reset(&rect, &Color::rgb(230, 230, 230), &Border::same(2.0));
     (rectangle.vertices, rectangle.indices)
 }
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 fn main() {
     // 创建窗口
     let event_loop = EventLoop::new().unwrap();
@@ -228,7 +228,7 @@ fn get_r_square(l: f32, w: f32) -> f32 {
     (l / 2.0) * (l / 2.0) + w * w
 }
 
-#[cfg(not(feature = "gpu"))]
+#[cfg(any(not(feature = "gpu"),not(feature = "winit")))]
 fn main() {
 
 }
