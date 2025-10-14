@@ -1,13 +1,7 @@
 use crate::frame::App;
 use crate::key::Key;
 use crate::map::Map;
-#[cfg(feature = "gpu")]
-use crate::render::circle::CircleRender;
 use crate::render::image::ImageRender;
-#[cfg(feature = "gpu")]
-use crate::render::rectangle::RectangleRender;
-#[cfg(feature = "gpu")]
-use crate::render::triangle::TriangleRender;
 #[cfg(feature = "gpu")]
 use crate::text::render::TextRender;
 use crate::window::ime::IMEData;
@@ -19,6 +13,12 @@ use crate::{Font, NumCastExt};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
+#[cfg(feature = "gpu")]
+use crate::render::circle::CircleRender;
+#[cfg(feature = "gpu")]
+use crate::render::rectangle::RectangleRender;
+#[cfg(feature = "gpu")]
+use crate::render::triangle::TriangleRender;
 
 #[derive(Clone)]
 pub enum ContextUpdate {
@@ -30,21 +30,10 @@ pub enum ContextUpdate {
 }
 
 impl ContextUpdate {
-    // pub fn update_i32(&self, value: &mut i32) {
-    //     match self {
-    //         ContextUpdate::String(v) => *value = v.parse::<i32>().unwrap_or(*value),
-    //         // ContextUpdate::I32(v) => *value = *v,
-    //         ContextUpdate::F32(v) => *value = *v as i32,
-    //         // ContextUpdate::U8(v) => *value = *v as i32,
-    //         _ => {}
-    //     }
-    // }
     pub fn update_f32(&self, value: &mut f32) {
         match self {
             ContextUpdate::String(v) => *value = v.parse::<f32>().unwrap_or(*value),
-            // ContextUpdate::I32(v) => *value = *v as f32,
             ContextUpdate::F32(v) => *value = *v,
-            // ContextUpdate::U8(v) => *value = *v as f32,
             _ => {}
         }
     }
@@ -52,9 +41,7 @@ impl ContextUpdate {
     pub fn update_t<T: NumCastExt>(&self, value: &mut T) {
         match self {
             ContextUpdate::String(v) => *value = T::from_num(v.parse::<f64>().unwrap_or(value.as_f32() as f64)),
-            // ContextUpdate::I32(v) => *value = T::from_num(*v as f64),
             ContextUpdate::F32(v) => *value = T::from_num(*v as f64),
-            // ContextUpdate::U8(v) => *value = T::from_num(*v as f64),
             _ => {}
         }
     }
@@ -69,9 +56,7 @@ impl ContextUpdate {
     pub fn update_str(self, value: &mut String) {
         match self {
             ContextUpdate::String(v) => *value = v,
-            // ContextUpdate::I32(v) => *value = v.to_string(),
             ContextUpdate::F32(v) => *value = v.to_string(),
-            // ContextUpdate::U8(v) => *value = v.to_string(),
             ContextUpdate::Bool(v) => *value = v.to_string(),
         }
     }

@@ -7,20 +7,10 @@ use crate::Size;
 use crate::{Offset, Rect};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::GdiPlus::PointF;
-
 #[cfg(feature = "gpu")]
-#[repr(C)]
-#[derive(Debug, Copy, Clone,bytemuck::Pod, bytemuck::Zeroable)]
-struct TriangleDrawParam {
-    p0: [f32; 2],             //⬅️ 顶点位置1
-    p1: [f32; 2],             //⬅️ 顶点位置2
-    p2: [f32; 2],             //⬅️ 顶点位置3
-    _pad0: [f32; 2],
-    fill_color: [f32; 4],     //⬅️ 填充颜色
-    border_thickness: f32,    //⬅️ 边框宽度
-    _pad1: [f32; 3],
-    border_color: [f32; 4],   //⬅️ 边框颜色
-}
+use crate::render::Screen;
+#[cfg(feature = "gpu")]
+use crate::vertex::Vertex;
 
 pub struct TriangleParam {
     pub(crate) rect: Rect,
@@ -29,26 +19,15 @@ pub struct TriangleParam {
     pub(crate) p2: Pos,
     pub(crate) style: ClickStyle,
     #[cfg(feature = "gpu")]
-    draw: TriangleDrawParam,
+    pub(crate) screen: Screen,
+    #[cfg(feature = "gpu")]
+    pub(crate) vertices: Vec<Vertex>,
+    #[cfg(feature = "gpu")]
+    pub(crate) indices: Vec<u16>,
 }
 
 impl TriangleParam {
     pub fn new(p0: Pos, p1: Pos, p2: Pos, style: ClickStyle) -> Self {
-        #[cfg(feature = "gpu")]
-        let fill_color = style.dyn_fill(false, false).as_gamma_rgba();
-        #[cfg(feature = "gpu")]
-        let border = style.dyn_border(false, false);
-        #[cfg(feature = "gpu")]
-        let draw = TriangleDrawParam {
-            p0: [p0.x, p0.y],
-            p1: [p1.x, p1.y],
-            p2: [p2.x, p2.y],
-            _pad0: [0.0; 2],
-            fill_color,
-            border_thickness: border.left_width,
-            _pad1: [0.0; 3],
-            border_color: border.color.as_gamma_rgba(),
-        };
         let xs = vec![p0.x, p1.x, p2.x];
         let ys = vec![p0.y, p1.y, p2.y];
         let mut rect = Rect::new();
@@ -62,8 +41,12 @@ impl TriangleParam {
             p2,
             style,
             #[cfg(feature = "gpu")]
-            draw,
+            screen: Screen { size: [1000.0, 800.0] },
+            #[cfg(feature = "gpu")]
+            vertices: vec![],
             rect,
+            #[cfg(feature = "gpu")]
+            indices: vec![],
         }
     }
 
@@ -105,13 +88,21 @@ impl TriangleParam {
 impl WrcParam for TriangleParam {
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, _: Size) -> &[u8] {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
-        let border = self.style.dyn_border(mouse_down, hovered);
-        self.draw.p0 = [self.p0.x, self.p0.y];
-        self.draw.p1 = [self.p1.x, self.p1.y];
-        self.draw.p2 = [self.p2.x, self.p2.y];
-        self.draw.border_thickness = border.left_width;
-        self.draw.border_color = border.color.as_gamma_rgba();
-        self.draw.fill_color = fill_color;
-        bytemuck::bytes_of(&self.draw)
+        self.vertices = vec![
+            Vertex {
+                position: [self.p0.x, self.p0.y],
+                color: fill_color,
+            },
+            Vertex {
+                position: [self.p1.x, self.p1.y],
+                color: fill_color,
+            },
+            Vertex {
+                position: [self.p2.x, self.p2.y],
+                color: fill_color,
+            }
+        ];
+        self.indices = vec![0, 1, 2, 0];
+        bytemuck::bytes_of(&self.screen)
     }
 }

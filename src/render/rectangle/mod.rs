@@ -2,19 +2,23 @@ pub mod param;
 #[cfg(feature = "gpu")]
 use crate::render::WrcRender;
 #[cfg(feature = "gpu")]
+use crate::vertex::Vertex;
+#[cfg(feature = "gpu")]
 use crate::Device;
+
 #[cfg(feature = "gpu")]
 pub struct RectangleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
 }
+
 #[cfg(feature = "gpu")]
 impl RectangleRender {
     pub fn new(device: &Device) -> RectangleRender {
-        let shader = device.device.create_shader_module(wgpu::include_wgsl!("rectangle2.wgsl"));
+        let shader = device.device.create_shader_module(wgpu::include_wgsl!("../../bin/1.wgsl"));
         let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
             binding: 0,
-            visibility: wgpu::ShaderStages::FRAGMENT,
+            visibility: wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::VERTEX,
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: false,
@@ -31,13 +35,14 @@ impl RectangleRender {
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
-        let pipeline = super::create_pipeline(device, shader, pipeline_layout, &[]);
+        let pipeline = super::create_pipeline(device, shader, pipeline_layout, &[Vertex::desc()]);
         RectangleRender {
             pipeline,
             bind_group_layout,
         }
     }
 }
+
 #[cfg(feature = "gpu")]
 impl WrcRender for RectangleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {

@@ -1,3 +1,5 @@
+#[cfg(feature = "gpu")]
+use wgpu::IndexFormat;
 use crate::ui::Ui;
 use crate::*;
 #[cfg(feature = "gpu")]
@@ -10,6 +12,13 @@ pub mod rectangle;
 pub mod circle;
 pub mod image;
 pub mod triangle;
+
+#[cfg(feature = "gpu")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Screen {
+    size: [f32; 2],
+}
 
 #[cfg(feature = "gpu")]
 pub trait WrcParam {
@@ -28,6 +37,12 @@ pub struct RenderParam {
     buffer: Option<wgpu::Buffer>,
     #[cfg(feature = "gpu")]
     bind_group: Option<wgpu::BindGroup>,
+    #[cfg(feature = "gpu")]
+    vertices_buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
+    indices_buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
+    bind_buffer: Option<wgpu::Buffer>,
 }
 
 
@@ -39,18 +54,39 @@ impl RenderParam {
             buffer: None,
             #[cfg(feature = "gpu")]
             bind_group: None,
+            #[cfg(feature = "gpu")]
+            vertices_buffer: None,
+            #[cfg(feature = "gpu")]
+            indices_buffer: None,
+            #[cfg(feature = "gpu")]
+            bind_buffer: None,
         }
     }
 
     #[cfg(feature = "gpu")]
     pub fn update(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-        let data = match self.kind {
-            RenderKind::Rectangle(ref mut param) => param.as_draw_param(hovered, pressed, size),
-            RenderKind::Circle(ref mut param) => param.as_draw_param(hovered, pressed, size),
-            RenderKind::Triangle(ref mut param) => param.as_draw_param(hovered, pressed, size),
+        match self.kind {
+            RenderKind::Rectangle(ref mut param) => {
+                param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.vertices));
+                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.indices));
+            }
+            RenderKind::Circle(ref mut param) => {
+                let data = param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.circle_shape.vertices));
+                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.circle_shape.indices));
+            }
+            RenderKind::Triangle(ref mut param) => {
+                let data = param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.vertices));
+                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.indices));
+            }
         };
-        ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
+        // ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
     }
 
     #[cfg(feature = "gpu")]
@@ -58,16 +94,52 @@ impl RenderParam {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         let (buffer, bind_group) = match self.kind {
             RenderKind::Rectangle(ref mut param) => {
-                let data = param.as_draw_param(hovered, pressed, size);
+                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    size: 8192,
+                    mapped_at_creation: false,
+                }));
+                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+                    size: 8192,
+                    mapped_at_creation: false,
+                }));
+                let data = bytemuck::bytes_of(&param.screen);
                 ui.context.render.rectangle.init(&ui.device, data)
             }
             RenderKind::Circle(ref mut param) => {
+                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    size: 8192,
+                    mapped_at_creation: false,
+                }));
+                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+                    size: 8192,
+                    mapped_at_creation: false,
+                }));
                 let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.circle.init(&ui.device, data)
+                ui.context.render.circle.init(&ui.device, bytemuck::bytes_of(&param.screen))
             }
             RenderKind::Triangle(ref mut param) => {
+                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    size: 96,
+                    mapped_at_creation: false,
+                }));
+                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+                    size: 12,
+                    mapped_at_creation: false,
+                }));
                 let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.triangle.init(&ui.device, data)
+                ui.context.render.triangle.init(&ui.device, bytemuck::bytes_of(&param.screen))
             }
         };
         self.buffer = Some(buffer);
@@ -101,6 +173,13 @@ impl RenderParam {
     pub fn rect_param_mut(&mut self) -> &mut RectParam {
         match self.kind {
             RenderKind::Rectangle(ref mut param) => param,
+            _ => panic!("not rect")
+        }
+    }
+
+    pub fn rect_param(&self) -> &RectParam {
+        match self.kind {
+            RenderKind::Rectangle(ref param) => param,
             _ => panic!("not rect")
         }
     }
@@ -144,33 +223,14 @@ impl RenderParam {
             RenderKind::Triangle(ref mut param) => param.offset_to_rect(rect),
         };
     }
-
-    // #[cfg(feature = "gpu")]
-    // pub fn init_rectangle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-    //     let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-    //     let data = self.param.as_draw_param(hovered, pressed, size);
-    //     let (buffer, bind_group) = ui.context.render.rectangle.init(&ui.device, data);
-    //     self.buffer = Some(buffer);
-    //     self.bind_group = Some(bind_group);
-    // }
-    //
-    // #[cfg(feature = "gpu")]
-    // pub fn init_triangle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-    //     let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-    //     let data = self.param.as_draw_param(hovered, pressed, size);
-    //     let (buffer, bind_group) = ui.context.render.triangle.init(&ui.device, data);
-    //     self.buffer = Some(buffer);
-    //     self.bind_group = Some(bind_group);
-    // }
-    //
-    // #[cfg(feature = "gpu")]
-    // pub fn init_circle(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-    //     let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-    //     let data = self.param.as_draw_param(hovered, pressed, size);
-    //     let (buffer, bind_group) = ui.context.render.circle.init(&ui.device, data);
-    //     self.buffer = Some(buffer);
-    //     self.bind_group = Some(bind_group);
-    // }
+    #[cfg(feature = "gpu")]
+    pub fn indices(&self) -> &Vec<u16> {
+        match self.kind {
+            RenderKind::Rectangle(ref param) => &param.rect_shape.indices,
+            RenderKind::Circle(ref param) => &param.circle_shape.indices,
+            RenderKind::Triangle(ref param) => &param.indices
+        }
+    }
 
     pub fn draw(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         match self.kind {
@@ -215,9 +275,13 @@ impl RenderParam {
             }
             #[cfg(feature = "gpu")]
             RenderKind::Triangle(_) => {
+                println!("1");
                 self.update(ui, hovered, pressed);
+                println!("2");
                 let pass = &mut ui.paint.as_mut().unwrap().pass;
+                println!("3");
                 ui.context.render.triangle.render(&self, pass);
+                println!("5");
             }
         }
     }
@@ -283,6 +347,8 @@ pub(crate) trait WrcRender {
     fn render(&self, param: &RenderParam, render_pass: &mut wgpu::RenderPass) {
         render_pass.set_pipeline(self.pipeline());
         render_pass.set_bind_group(0, param.bind_group.as_ref().unwrap(), &[]);
-        render_pass.draw(0..6, 0..1);
+        render_pass.set_vertex_buffer(0, param.vertices_buffer.as_ref().unwrap().slice(..));
+        render_pass.set_index_buffer(param.indices_buffer.as_ref().unwrap().slice(..), IndexFormat::Uint16);
+        render_pass.draw_indexed(0..param.indices().len() as u32, 0, 0..1);
     }
 }

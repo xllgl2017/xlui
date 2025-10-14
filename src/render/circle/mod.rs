@@ -4,20 +4,24 @@ use crate::render::WrcRender;
 use crate::Device;
 #[cfg(feature = "gpu")]
 use wgpu::include_wgsl;
+#[cfg(feature = "gpu")]
+use crate::vertex::Vertex;
 
 pub mod param;
+
 #[cfg(feature = "gpu")]
 pub struct CircleRender {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
 }
+
 #[cfg(feature = "gpu")]
 impl CircleRender {
     pub fn new(device: &Device) -> Self {
-        let shader = device.device.create_shader_module(include_wgsl!("circle.wgsl"));
+        let shader = device.device.create_shader_module(include_wgsl!("../../bin/1.wgsl"));
         let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
             binding: 0,
-            visibility: wgpu::ShaderStages::FRAGMENT,
+            visibility: wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::VERTEX,
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: false,
@@ -37,13 +41,14 @@ impl CircleRender {
             push_constant_ranges: &[],
         });
 
-        let render_pipeline = super::create_pipeline(device, shader, pipeline_layout, &[]);
+        let render_pipeline = super::create_pipeline(device, shader, pipeline_layout, &[Vertex::desc()]);
         CircleRender {
             pipeline: render_pipeline,
             bind_group_layout,
         }
     }
 }
+
 #[cfg(feature = "gpu")]
 impl WrcRender for CircleRender {
     fn pipeline(&self) -> &wgpu::RenderPipeline {
