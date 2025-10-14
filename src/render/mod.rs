@@ -28,6 +28,12 @@ pub struct RenderParam {
     buffer: Option<wgpu::Buffer>,
     #[cfg(feature = "gpu")]
     bind_group: Option<wgpu::BindGroup>,
+    #[cfg(feature = "gpu")]
+    vertices_buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
+    indices_buffer: Option<wgpu::Buffer>,
+    #[cfg(feature = "gpu")]
+    bind_buffer: Option<wgpu::Buffer>,
 }
 
 
@@ -39,18 +45,36 @@ impl RenderParam {
             buffer: None,
             #[cfg(feature = "gpu")]
             bind_group: None,
+            #[cfg(feature = "gpu")]
+            vertices_buffer: None,
+            #[cfg(feature = "gpu")]
+            indices_buffer: None,
+            #[cfg(feature = "gpu")]
+            bind_buffer: None,
         }
     }
 
     #[cfg(feature = "gpu")]
     pub fn update(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-        let data = match self.kind {
-            RenderKind::Rectangle(ref mut param) => param.as_draw_param(hovered, pressed, size),
-            RenderKind::Circle(ref mut param) => param.as_draw_param(hovered, pressed, size),
-            RenderKind::Triangle(ref mut param) => param.as_draw_param(hovered, pressed, size),
+        match self.kind {
+            RenderKind::Rectangle(ref mut param) => {
+                param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.vertices));
+                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.indices));
+
+            }
+            RenderKind::Circle(ref mut param) => {
+                let data = param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
+            }
+            RenderKind::Triangle(ref mut param) => {
+                let data = param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
+            }
         };
-        ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
+        // ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
     }
 
     #[cfg(feature = "gpu")]
@@ -58,8 +82,36 @@ impl RenderParam {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         let (buffer, bind_group) = match self.kind {
             RenderKind::Rectangle(ref mut param) => {
-                let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.rectangle.init(&ui.device, data)
+                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    // contents: bytemuck::cast_slice(&param.rect_shape.vertices),
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    size: 8096,
+                    mapped_at_creation: false,
+                }));
+                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: None,
+                    // contents: bytemuck::cast_slice(&param.rect_shape.indices),
+                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+                    size: 8096,
+                    mapped_at_creation: false,
+                }));
+                // let data = bytemuck::bytes_of(&param.screen); //param.as_draw_param(hovered, pressed, size);
+                let bind_buffer = ui.device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: None,
+                    contents: bytemuck::bytes_of(&param.screen),
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                });
+                let bind_group_entry = wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: bind_buffer.as_entire_binding(),
+                };
+                let bind_group = ui.device.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    layout: &ui.context.render.rectangle.bind_group_layout,
+                    entries: &[bind_group_entry],
+                    label: None,
+                });
+                (bind_buffer, bind_group)
             }
             RenderKind::Circle(ref mut param) => {
                 let data = param.as_draw_param(hovered, pressed, size);
@@ -101,6 +153,13 @@ impl RenderParam {
     pub fn rect_param_mut(&mut self) -> &mut RectParam {
         match self.kind {
             RenderKind::Rectangle(ref mut param) => param,
+            _ => panic!("not rect")
+        }
+    }
+
+    pub fn rect_param(&self) -> &RectParam {
+        match self.kind {
+            RenderKind::Rectangle(ref param) => param,
             _ => panic!("not rect")
         }
     }

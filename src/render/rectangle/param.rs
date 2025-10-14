@@ -3,6 +3,8 @@ use crate::render::WrcParam;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, FrameStyle, Shadow};
 use crate::*;
+#[cfg(feature = "gpu")]
+use crate::shape::rectangle::RectangleShape;
 
 #[cfg(feature = "gpu")]
 #[repr(C)]
@@ -38,12 +40,23 @@ struct RectDrawParam2 {
     shadow_color: [f32; 4],       //⬅️ 阴影颜色
 }
 
+#[cfg(feature = "gpu")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Screen {
+    size: [f32; 2],
+}
+
 pub struct RectParam {
     pub(crate) rect: Rect,
     pub(crate) style: ClickStyle,
     pub(crate) shadow: Shadow,
     #[cfg(feature = "gpu")]
     draw: RectDrawParam2,
+    #[cfg(feature = "gpu")]
+    pub(crate) rect_shape: RectangleShape,
+    #[cfg(feature = "gpu")]
+    pub(crate) screen:Screen
 }
 
 impl RectParam {
@@ -103,6 +116,12 @@ impl RectParam {
                 shadow_params: [0.0; 4],
                 shadow_color: [0.0; 4],
             },
+            #[cfg(feature = "gpu")]
+            rect_shape: RectangleShape::new(),
+            #[cfg(feature = "gpu")]
+            screen: Screen {
+                size: [1000.0,800.0],
+            },
         }
     }
 
@@ -154,7 +173,7 @@ impl RectParam {
 #[cfg(feature = "gpu")]
 impl WrcParam for RectParam {
     fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
-        let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
+        let fill_color = self.style.dyn_fill(mouse_down, hovered);
         let border = self.style.dyn_border(mouse_down, hovered);
         let x = (self.rect.dx().min + self.rect.dx().max) / 2.0;
         let y = (self.rect.dy().min + self.rect.dy().max) / 2.0;
@@ -167,7 +186,7 @@ impl WrcParam for RectParam {
             border.radius.right_bottom as f32,
             border.radius.left_bottom as f32,
         ];
-        self.draw.fill_color = fill_color;
+        self.draw.fill_color = fill_color.as_gamma_rgba();
         self.draw.border_color = border.color.as_gamma_rgba();
         self.draw.screen = [size.width, size.height, 1.0, 0.0];
         // self.draw.fill_color = [0.0; 4];
@@ -176,6 +195,7 @@ impl WrcParam for RectParam {
         // self.draw.shadow_color = [0.0; 4];
         self.draw.shadow_params = [self.shadow.offset[0], self.shadow.offset[1], self.shadow.spread, self.shadow.blur];
         self.draw.shadow_color = self.shadow.color.as_gamma_rgba();
+        self.rect_shape.reset(&self.rect, fill_color, border);
         // let draw = RectDrawParam2 {
         //     center_position: [x, y],
         //     radius:,

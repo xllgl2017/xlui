@@ -19,6 +19,8 @@ use crate::{Font, NumCastExt};
 use glyphon::Viewport;
 use std::fmt::Debug;
 use std::sync::Arc;
+#[cfg(feature = "gpu")]
+use crate::render::rectangle::RectangleRender2;
 
 #[derive(Clone)]
 pub enum ContextUpdate {
@@ -136,7 +138,7 @@ pub struct Context {
 
 pub struct Render {
     #[cfg(feature = "gpu")]
-    pub(crate) rectangle: RectangleRender,
+    pub(crate) rectangle: RectangleRender2,
     #[cfg(feature = "gpu")]
     pub(crate) text: TextRender,
     #[cfg(feature = "gpu")]
@@ -149,7 +151,7 @@ pub struct Render {
 impl Render {
     pub fn new(device: &Device) -> Render {
         Render {
-            rectangle: RectangleRender::new(device),
+            rectangle: RectangleRender2::new(device),
             text: TextRender::new(device),
             circle: CircleRender::new(device),
             image: ImageRender::new(device),

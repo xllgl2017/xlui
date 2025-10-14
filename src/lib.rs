@@ -78,7 +78,7 @@ use std::time::SystemTime;
 mod widgets;
 mod align;
 #[cfg(feature = "gpu")]
-mod vertex;
+pub mod vertex;
 mod layout;
 mod text;
 mod size;
@@ -92,6 +92,8 @@ pub mod map;
 mod window;
 mod key;
 mod error;
+#[cfg(feature = "gpu")]
+pub mod shape;
 
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
 pub use window::win32::tray::{Tray, TrayMenu};

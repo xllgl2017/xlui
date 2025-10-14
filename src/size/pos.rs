@@ -54,7 +54,7 @@ impl From<(i32, i32)> for Pos {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Axis {
     pub min: f32,
-    pub(crate) max: f32,
+    pub max: f32,
 }
 
 impl Axis {
