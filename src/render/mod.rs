@@ -68,20 +68,20 @@ impl RenderParam {
         let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
         match self.kind {
             RenderKind::Rectangle(ref mut param) => {
-                param.as_draw_param(hovered, pressed, size);
-                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                let data=param.as_draw_param(hovered, pressed, size);
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
                 ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.vertices));
                 ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.indices));
             }
             RenderKind::Circle(ref mut param) => {
                 let data = param.as_draw_param(hovered, pressed, size);
-                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
                 ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.circle_shape.vertices));
                 ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.circle_shape.indices));
             }
             RenderKind::Triangle(ref mut param) => {
                 let data = param.as_draw_param(hovered, pressed, size);
-                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, bytemuck::bytes_of(&param.screen));
+                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
                 ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.vertices));
                 ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.indices));
             }
@@ -123,7 +123,7 @@ impl RenderParam {
                     mapped_at_creation: false,
                 }));
                 let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.circle.init(&ui.device, bytemuck::bytes_of(&param.screen))
+                ui.context.render.circle.init(&ui.device, data)
             }
             RenderKind::Triangle(ref mut param) => {
                 self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
@@ -139,7 +139,7 @@ impl RenderParam {
                     mapped_at_creation: false,
                 }));
                 let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.triangle.init(&ui.device, bytemuck::bytes_of(&param.screen))
+                ui.context.render.triangle.init(&ui.device, data)
             }
         };
         self.buffer = Some(buffer);

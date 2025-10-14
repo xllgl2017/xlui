@@ -104,7 +104,7 @@ impl TextBuffer {
     #[cfg(all(windows, not(feature = "gpu")))]
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         let hdc = ui.paint.as_mut().unwrap().hdc;
-        ui.context.window.win32().paint_text(hdc, &self.text, self.geometry.rect());
+        ui.context.window.win32().paint_text(hdc, &self.lines, &self.text, self.geometry.rect()).unwrap();
     }
 
     pub(crate) fn line_height(&mut self, ui: &mut Ui) -> UiResult<f32> {

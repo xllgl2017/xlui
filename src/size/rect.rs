@@ -185,6 +185,7 @@ impl Rect {
         self.y_direction = y_direction;
     }
 
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub fn as_x_rect(&self) -> x11::xlib::XRectangle {
         x11::xlib::XRectangle {
             x: self.dx.min as i16,

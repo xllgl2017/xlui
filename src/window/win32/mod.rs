@@ -25,6 +25,7 @@ pub mod tray;
 pub(crate) mod handle;
 pub(crate) mod until;
 mod clipboard;
+pub mod font;
 
 const TRAY_ICON: u32 = WM_USER + 1;
 const REQ_UPDATE: u32 = WM_USER + 2;

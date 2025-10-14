@@ -86,7 +86,7 @@ impl Win32WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_text(&self, hdc: HDC, text: &RichText, rect: Rect) -> UiResult<()> {
+    pub fn paint_text(&self, hdc: HDC, lines: &Vec<LineChar>, text: &RichText, rect: Rect) -> UiResult<()> {
         unsafe {
             SetBkMode(hdc, TRANSPARENT);
 
@@ -94,9 +94,16 @@ impl Win32WindowHandle {
             let hfont = self.create_font(text.height as i32, text.family.as_ref().unwrap());
             // 选择字体进入 HDC
             let old_font = SelectObject(hdc, HGDIOBJ::from(hfont));
-            let mut text = until::to_wstr(&text.text);
+            let mut rect = rect.as_win32_rect();
+            for line in lines {
+                let mut utf16 = until::to_wstr(&line.line_text);
+                DrawTextW(hdc, utf16.as_mut_slice(), &mut rect, DT_SINGLELINE | DT_TOP | DT_LEFT);
+                rect.top += text.height as i32;
+            }
+
+            // let mut text = until::to_wstr(&text.text);
             // DrawTextW 参数：hdc, text, -1 表示以 null 结尾, 矩形: 0,0,width,height -> 这里用 DT_SINGLELINE + center
-            DrawTextW(hdc, text.as_mut_slice(), &mut rect.as_win32_rect(), DT_SINGLELINE | DT_TOP | DT_LEFT);
+            // DrawTextW(hdc, text.as_mut_slice(), &mut rect.as_win32_rect(), DT_SINGLELINE | DT_TOP | DT_LEFT);
             // 恢复原字体并删除我们创建的字体对象
             SelectObject(hdc, old_font);
             DeleteObject(HGDIOBJ::from(hfont)).ok()?;
@@ -238,40 +245,7 @@ impl Win32WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn measure_char_widths(&self, text: &RichText) -> UiResult<Vec<LineChar>> {
-        unsafe {
-            // 创建内存 DC（不依赖窗口）
-            let hdc = CreateCompatibleDC(None);
-            let hfont = self.create_font(text.height as i32, text.family.as_ref().unwrap());
-            let old_font = SelectObject(hdc, HGDIOBJ::from(hfont));
-            let lines = text.text.replace("\r\n", "\n");;
-            let mut res = vec![];
-            for line in lines.split("\n") {
-                let mut wtext = until::to_wstr(line);
-                wtext.remove(wtext.len() - 1); //把\0删除
-                let mut line = LineChar::new();
-                // 逐字符测量
-                for &ch in &wtext {
-                    let mut w = 0i32;
-                    GetCharWidth32W(hdc, ch as u32, ch as u32, &mut w).ok()?;
-                    line.push(CChar::new(char::from_u32(ch as u32).unwrap_or(' '), w as f32));
-                }
-                res.push(line);
-            }
-            // 转 UTF-16
-
-
-            // 清理
-            SelectObject(hdc, old_font);
-            DeleteObject(HGDIOBJ::from(hfont)).ok()?;
-            DeleteDC(hdc).ok()?;
-
-            Ok(res)
-        }
-    }
-
-    #[cfg(not(feature = "gpu"))]
-    pub fn paint_image(&self, hdc: HDC, source: &ImageSource, rect: Rect)->UiResult<()> {
+    pub fn paint_image(&self, hdc: HDC, source: &ImageSource, rect: Rect) -> UiResult<()> {
         unsafe {
             let (factory, frame) = load_win32_image_raw(&source)?;
             let scaler = factory.CreateBitmapScaler().unwrap();

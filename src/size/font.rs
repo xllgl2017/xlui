@@ -18,6 +18,8 @@ use std::mem;
 use std::path::Path;
 #[cfg(feature = "gpu")]
 use std::sync::Arc;
+#[cfg(all(target_os = "windows",not(feature = "gpu")))]
+use crate::window::win32::font::Win32Font;
 
 pub enum FontSlant {
     Normal = 0,
@@ -245,6 +247,8 @@ pub(crate) enum FontKind {
     WGpu(WGpuFont),
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     X11(X11Font),
+    #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+    Win32(Win32Font),
 }
 
 impl FontKind {
@@ -253,6 +257,8 @@ impl FontKind {
         return FontKind::WGpu(WGpuFont::new());
         #[cfg(all(target_os = "linux", not(feature = "gpu")))]
         return FontKind::X11(X11Font::new_empty());
+        #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+        return FontKind::Win32(Win32Font::new());
     }
 
     pub(crate) fn line_height(&self) -> UiResult<f32> {
@@ -261,6 +267,8 @@ impl FontKind {
             FontKind::WGpu(font) => font.line_height(),
             #[cfg(all(target_os = "linux", not(feature = "gpu")))]
             FontKind::X11(font) => font.line_height(),
+            #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+            FontKind::Win32(font) => font.line_height()
         }
     }
 
@@ -269,7 +277,9 @@ impl FontKind {
             #[cfg(feature = "gpu")]
             FontKind::WGpu(font) => font.set_family_size(ui, text),
             #[cfg(all(target_os = "linux", not(feature = "gpu")))]
-            FontKind::X11(font) => font.set_family_size(ui, text)
+            FontKind::X11(font) => font.set_family_size(ui, text),
+            #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+            FontKind::Win32(font) => font.set_family_size(ui, text)
         }
     }
 
@@ -279,6 +289,8 @@ impl FontKind {
             FontKind::WGpu(font) => font.measure_text(text, wrap, max_wrap_width),
             #[cfg(all(target_os = "linux", not(feature = "gpu")))]
             FontKind::X11(font) => font.measure_text(text, wrap, max_wrap_width),
+            #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+            FontKind::Win32(font) => font.measure_text(text, wrap, max_wrap_width),
         }
     }
     #[cfg(feature = "gpu")]
@@ -292,6 +304,8 @@ impl FontKind {
             FontKind::WGpu(font) => font.measure_char(ch),
             #[cfg(all(target_os = "linux", not(feature = "gpu")))]
             FontKind::X11(font) => font.measure_char(ch),
+            #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+            FontKind::Win32(font) => font.measure_char(ch),
         }
     }
 }
