@@ -26,6 +26,7 @@ use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 use x11::xlib;
 use x11::xlib::{XFreeColormap, XMoveWindow};
+#[cfg(not(feature = "gpu"))]
 use crate::size::font::{FontSlant, FontWeight};
 
 pub struct X11WindowHandle {
