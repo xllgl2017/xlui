@@ -9,15 +9,16 @@ use crate::window::{WindowId, WindowKind, WindowType};
 use crate::{App, TrayMenu, WindowAttribute};
 use std::ops::Index;
 use std::process::exit;
-#[cfg(not(feature = "gpu"))]
 use std::ptr::null_mut;
 use std::sync::{Arc, RwLock};
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{HINSTANCE, HWND, POINT};
-use windows::Win32::Graphics::Gdi::{GetStockObject, HBRUSH, WHITE_BRUSH};
+use windows::Win32::Foundation::{COLORREF, HINSTANCE, HWND, POINT};
+use windows::Win32::Graphics::Dwm::DwmExtendFrameIntoClientArea;
+use windows::Win32::Graphics::Gdi::HBRUSH;
 #[cfg(not(feature = "gpu"))]
 use windows::Win32::Graphics::GdiPlus::{GdiplusStartup, GdiplusStartupInput};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::UI::Controls::MARGINS;
 use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
@@ -130,16 +131,18 @@ impl Win32Window {
             lpszClassName: PCWSTR(class_name.as_ptr()),
             hCursor: unsafe { LoadCursorW(None, IDC_ARROW)? },
             style: CS_HREDRAW | CS_VREDRAW,
-            hbrBackground: HBRUSH(unsafe { GetStockObject(WHITE_BRUSH) }.0), // 系统白色背景
+            hbrBackground: HBRUSH(null_mut()), //HBRUSH(unsafe { GetStockObject(WHITE_BRUSH) }.0), // 系统白色背景
             ..Default::default()
         };
         unsafe { RegisterClassW(&wc); }
+        let dw_ex_style = if attr.transparent { WS_EX_LAYERED | WS_EX_APPWINDOW } else { Default::default() };
+        let dw_style = if attr.transparent { WS_POPUP | WS_VISIBLE } else { WS_OVERLAPPEDWINDOW | WS_VISIBLE };
         let hwnd = unsafe {
             CreateWindowExW(
-                Default::default(),
+                dw_ex_style, //WS_EX_LAYERED | WS_EX_APPWINDOW, //Default::default(),
                 PCWSTR(class_name.as_ptr()),
                 PCWSTR(until::to_wstr(&attr.title).as_ptr()),
-                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                dw_style,
                 attr.position[0], attr.position[1],
                 attr.inner_size.width as i32, attr.inner_size.height as i32,
                 None,
@@ -148,6 +151,15 @@ impl Win32Window {
                 None,
             )
         }?;
+        unsafe { SetLayeredWindowAttributes(hwnd, COLORREF(0), 255, LWA_COLORKEY); } // 255表示不透明，也可以设为128半透明
+        let margins = MARGINS {
+            cxLeftWidth: 1,
+            cxRightWidth: 1,
+            cyTopHeight: 1,
+            cyBottomHeight: 1,
+        };
+        let _ = unsafe { DwmExtendFrameIntoClientArea(hwnd, &margins) };
+
         Ok(Win32WindowHandle { hwnd, clipboard: Win32Clipboard, size: RwLock::new(attr.inner_size.clone()) })
     }
 

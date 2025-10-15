@@ -1,11 +1,11 @@
 use crate::text::cchar::{CChar, LineChar};
+use crate::window::win32::until;
 use crate::{RichText, Ui, UiResult};
 use std::mem;
 use std::mem::zeroed;
 use std::ptr::null_mut;
 use windows::core::PCWSTR;
 use windows::Win32::Graphics::Gdi::{CreateCompatibleDC, CreateFontW, DeleteDC, DeleteObject, GetCharWidth32W, GetDeviceCaps, GetTextMetricsW, SelectObject, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HDC, HFONT, HGDIOBJ, LOGPIXELSY};
-use crate::window::win32::until;
 
 pub struct Win32Font {
     family: String,
@@ -72,21 +72,6 @@ impl Win32Font {
             if let Some(last) = res.last_mut() {
                 last.auto_wrap = true;
             }
-            // for line in lines.split("\n") {
-            //     let mut wtext = until::to_wstr(line);
-            //     wtext.remove(wtext.len() - 1); //把\0删除
-            //     let mut line = LineChar::new();
-            //     // 逐字符测量
-            //     for &ch in &wtext {
-            //         let mut w = 0i32;
-            //         GetCharWidth32W(self.hdc, ch as u32, ch as u32, &mut w).ok().unwrap();
-            //         line.push(CChar::new(char::from_u32(ch as u32).unwrap_or(' '), w as f32));
-            //     }
-            //     res.push(line);
-            // }
-            // 转 UTF-16
-
-
             // 清理
             SelectObject(self.hdc, old_font);
             DeleteObject(HGDIOBJ::from(hfont)).ok()?;
@@ -116,8 +101,6 @@ impl Win32Font {
     pub fn measure_line(&self, line: &str, wrap: bool, max_wrap: f32) -> UiResult<Vec<LineChar>> {
         let mut res = vec![];
         let mut line_char = LineChar::new();
-        // let line = until::to_wstr(line);
-        // line.remove(line.len() - 1);
         for ch in line.chars() {
             let cchar = self.measure_char(ch).unwrap();
             if wrap && line_char.width + cchar.width >= max_wrap {
@@ -137,7 +120,6 @@ impl Win32Font {
     pub fn measure_char(&self, cc: char) -> UiResult<CChar> {
         let mut w = 0;
         let ch = cc.to_string().encode_utf16().collect::<Vec<u16>>();
-        println!("measure_char {} {:?}", cc, ch);
         let ch = ch[0];
         unsafe { GetCharWidth32W(self.hdc, ch as u32, ch as u32, &mut w).ok().unwrap() };
         Ok(CChar::new(cc, w as f32))

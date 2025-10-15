@@ -43,7 +43,7 @@ pub struct AppContext {
     pub(crate) context: Context,
     pub(crate) previous_time: u128,
     pub(crate) redraw_thread: JoinHandle<()>,
-    attr: WindowAttribute,
+    pub(crate) attr: WindowAttribute,
 }
 
 impl AppContext {

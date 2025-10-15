@@ -24,21 +24,20 @@ impl XlUiApp {
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         let style = FrameStyle {
-            fill: Color::rgb(240, 240, 240),
-            radius: Radius::same(5),
+            fill: Color::rgba(240, 240, 240,255),
             shadow: Shadow {
                 offset: [0.0, 0.0],
                 spread: 5.0,
                 blur: 1.0,
                 color: Color::rgba(0, 0, 0, 100),
             },
-            border: Border::same(2.0).color(Color::rgb(150, 210, 255)),
+            border: Border::same(2.0).color(Color::rgb(150, 210, 255)).radius(Radius::same(10)),
         };
         let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
-        layout.set_padding(Padding::same(2.0));
-        layout.set_margin(Margin::same(0.0));
+        layout.set_padding(Padding::same(5.0));
+        layout.set_margin(Margin::same(2.0));
         layout.set_style(style);
-        let title_layout = HorizontalLayout::left_to_right().with_size(296.0, 25.0)
+        let title_layout = HorizontalLayout::left_to_right().with_size(290.0, 25.0)
             .with_fill(Color::rgb(210, 210, 210)).moving();
         ui.add_layout(title_layout, |ui| {
             ui.image("logo.jpg", (25.0, 25.0));
