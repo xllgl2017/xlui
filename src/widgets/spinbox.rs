@@ -12,7 +12,7 @@ use crate::style::color::Color;
 use crate::style::{BorderStyle, ClickStyle};
 use crate::ui::Ui;
 use crate::widgets::textedit::TextEdit;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::window::UserEvent;
 use crate::NumCastExt;
 use std::fmt::Display;
@@ -51,13 +51,11 @@ pub struct SpinBox<T> {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, T)>>,
     up_render: RenderParam,
     down_render: RenderParam,
-    // up_rect: Rect,
-    // down_rect: Rect,
-    changed: bool,
     contact_ids: Vec<String>,
     press_up: bool,
     press_down: bool,
     press_time: u128,
+    state: WidgetState,
 }
 
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> SpinBox<T> {
@@ -81,13 +79,11 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             callback: None,
             up_render: RenderParam::new(RenderKind::Triangle(up_param)),
             down_render: RenderParam::new(RenderKind::Triangle(down_param)),
-            // up_rect: Rect::new(),
-            // down_rect: Rect::new(),
-            changed: false,
             contact_ids: vec![],
             press_up: false,
             press_down: false,
             press_time: 0,
+            state: WidgetState::default(),
         }
     }
     pub fn id(mut self, id: impl ToString) -> Self {
@@ -109,7 +105,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     pub fn set_value(&mut self, value: T) {
-        self.changed = true;
+        self.state.changed = true;
         self.value = value;
     }
 
@@ -175,7 +171,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.call(ui);
             ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
         }
-        self.changed = true;
+        self.state.changed = true;
         ui.update_type = UpdateType::None;
         ui.context.window.request_redraw();
     }
@@ -188,7 +184,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             self.call(ui);
             ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()))
         }
-        self.changed = true;
+        self.state.changed = true;
         ui.update_type = UpdateType::None;
         ui.context.window.request_redraw();
     }
@@ -206,10 +202,10 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_t(&mut self.value);
-            self.changed = true;
+            self.state.changed = true;
         }
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.rect.offset_to_rect(&ui.draw_rect);
             let mut rect = self.rect.clone();
@@ -227,10 +223,10 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
     }
 
     fn update_from_edit(&mut self, ui: &mut Ui, focused: bool) {
-        if focused && self.edit.focused != focused {
+        if focused && self.edit.state().focused != focused {
             let v = self.edit.text().parse::<f32>().unwrap_or(self.value.as_f32());
             self.value = T::from_num(v);
-            self.changed = true;
+            self.state.changed = true;
             ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value.as_f32()));
             ui.context.window.request_redraw();
         }
@@ -257,12 +253,12 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MousePress => {
                 if ui.device.device_input.pressed_at(self.down_render.rect()) {
-                    self.edit.focused = false;
+                    self.edit.state().focused = false;
                     self.press_down = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
                 } else if ui.device.device_input.pressed_at(self.up_render.rect()) {
-                    self.edit.focused = false;
+                    self.edit.state().focused = false;
                     self.press_up = true;
                     self.press_time = crate::time_ms();
                     self.listen_input(ui, 500);
@@ -270,7 +266,7 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                     self.press_down = false;
                     self.press_up = false;
                     self.press_time = 0;
-                    let focused = self.edit.focused;
+                    let focused = self.edit.state().focused;
                     self.edit.update(ui);
                     self.update_from_edit(ui, focused);
                 }
@@ -285,18 +281,17 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
                 } else if ui.device.device_input.click_at(self.down_render.rect()) {
                     self.click_down(ui);
                 }
+                self.edit.state().on_release();
                 return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));
             }
             UpdateType::KeyRelease(ref key) => {
-                if !self.edit.focused { return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height())); }
+                if !self.edit.state().focused { return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height())); }
                 if let Key::Enter = key {
-                    self.edit.focused = false;
+                    self.edit.state().focused = false;
                     self.update_from_edit(ui, true);
                 } else {
                     self.edit.update(ui);
                 }
-
-
                 return Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()));
             }
             UpdateType::None => {
@@ -316,5 +311,9 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

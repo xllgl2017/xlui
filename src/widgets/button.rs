@@ -12,7 +12,7 @@ use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::ui::Ui;
 use crate::widgets::image::Image;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 
 /// ### Button的示例用法
 /// ```
@@ -61,9 +61,7 @@ pub struct Button {
     inner_callback: Option<Box<dyn FnMut()>>,
     fill_render: RenderParam,
     image: Option<Image>,
-    hovered: bool,
-    changed: bool,
-    available: bool,
+    state: WidgetState,
 }
 
 
@@ -75,10 +73,8 @@ impl Button {
             callback: None,
             inner_callback: None,
             image: None,
-            hovered: false,
-            changed: false,
             fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
-            available: true,
+            state: WidgetState::default(),
         }
     }
 
@@ -122,11 +118,11 @@ impl Button {
     }
 
     pub fn enable(&mut self) {
-        self.available = true;
+        self.state.disabled = false;
     }
 
     pub fn disable(&mut self) {
-        self.available = false;
+        self.state.disabled = true;
     }
 
     pub fn connect<A: App>(mut self, f: impl FnMut(&mut A, &mut Button, &mut Ui) + 'static) -> Self {
@@ -175,28 +171,19 @@ impl Button {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.geometry.offset_to_rect(&ui.draw_rect);
         }
-
         if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.text_buffer.update_buffer(ui);
         }
     }
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
-        self.fill_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        self.fill_render.draw(ui, self.state.hovered, self.state.pressed);
         match self.image {
             None => self.text_buffer.redraw(ui),
             Some(ref mut image) => {
@@ -228,23 +215,16 @@ impl Widget for Button {
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
-                let has_pos = ui.device.device_input.hovered_at(self.fill_render.rect());
-                if self.hovered != has_pos && self.available {
-                    self.hovered = has_pos;
-                    self.changed = true;
-                    ui.context.window.request_redraw();
-                }
+                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
+                if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MousePress => {
-                if ui.device.device_input.pressed_at(self.fill_render.rect()) && self.available {
-                    self.hovered = true;
-                    self.changed = true;
-                    ui.context.window.request_redraw();
-                }
+                let pressed = ui.device.device_input.pressed_at(self.fill_render.rect());
+                if self.state.on_pressed(pressed) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(self.fill_render.rect()) && self.available {
-                    self.changed = true;
+                let clicked=ui.device.device_input.click_at(self.fill_render.rect());
+                if self.state.on_clicked(clicked) {
                     let callback = self.callback.take();
                     if let Some(mut callback) = callback {
                         let app = ui.app.take().unwrap();
@@ -266,5 +246,9 @@ impl Widget for Button {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.text_buffer.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

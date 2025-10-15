@@ -6,13 +6,13 @@ use crate::size::Geometry;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 
 pub struct Circle {
     id: String,
     render: RenderParam,
-    changed: bool,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 impl Circle {
@@ -24,7 +24,7 @@ impl Circle {
             id: crate::gen_unique_id(),
             geometry: Geometry::new().with_size(rect.width(), rect.height()),
             render: RenderParam::new(RenderKind::Circle(CircleParam::new(rect, ClickStyle::new()))),
-            changed: false,
+            state: WidgetState::default(),
 
         }
     }
@@ -35,27 +35,17 @@ impl Circle {
     }
 
     pub fn set_style(&mut self, style: ClickStyle) {
-        self.changed = true;
         self.render.set_style(style);
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
-        self.changed = true;
         self.render.style_mut()
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.render.update(ui, false, false);
-        }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.render.update(ui, false, false);
         }
     }
 
@@ -70,7 +60,7 @@ impl Widget for Circle {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::Init|UpdateType::ReInit => self.render.init(ui, false, false),
+            UpdateType::Init | UpdateType::ReInit => self.render.init(ui, false, false),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
@@ -78,5 +68,9 @@ impl Widget for Circle {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

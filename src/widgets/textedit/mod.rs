@@ -15,7 +15,7 @@ use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::widgets::textedit::select::EditSelection;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::window::ime::IMEData;
 use crate::window::ClipboardData;
 use crate::{App, FillStyle, TextWrap};
@@ -41,13 +41,10 @@ pub struct TextEdit {
     fill_render: RenderParam,
     select_render: EditSelection,
     cursor_render: EditCursor,
-    changed: bool,
-    hovered: bool,
     char_layout: CharBuffer,
     desire_lines: usize,
-    pub(crate) focused: bool,
     psd_buffer: TextBuffer,
-
+    state: WidgetState,
 }
 
 impl TextEdit {
@@ -65,12 +62,10 @@ impl TextEdit {
             fill_render: RenderParam::new(RenderKind::Rectangle(param)),
             select_render: EditSelection::new(),
             cursor_render: EditCursor::new(),
-            changed: false,
-            hovered: false,
             char_layout: CharBuffer::new(text),
             desire_lines: 8,
-            focused: false,
             psd_buffer: TextBuffer::new("🔒").with_align(Align::Center), //👁🔓
+            state: WidgetState::default(),
         }
     }
 
@@ -111,7 +106,7 @@ impl TextEdit {
     pub(crate) fn update_text(&mut self, ui: &mut Ui, text: String) {
         self.char_layout.buffer.update_buffer_text(ui, &text);
         self.select_render.reset(&self.cursor_render);
-        self.changed = true;
+        self.state.changed = true;
     }
 
     pub fn text(&self) -> String {
@@ -140,8 +135,8 @@ impl TextEdit {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
             self.char_layout.buffer.geometry.offset_to_rect(&ui.draw_rect);
@@ -177,7 +172,7 @@ impl TextEdit {
     }
 
     fn key_input(&mut self, key: Key, ui: &mut Ui) {
-        self.changed = true;
+        self.state.changed = true;
         match key {
             Key::Backspace => {
                 self.char_layout.remove_chars_before_cursor(ui, &mut self.cursor_render, &mut self.select_render);
@@ -239,9 +234,9 @@ impl TextEdit {
 
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill_render.draw(ui, self.hovered, self.focused);
+        self.fill_render.draw(ui, self.state.hovered, self.state.focused);
         self.select_render.render(ui, self.char_layout.buffer.lines.len());
-        if self.focused { self.cursor_render.render(ui); }
+        if self.state.focused { self.cursor_render.render(ui); }
         self.char_layout.buffer.redraw(ui);
         if let EditKind::Password = self.char_layout.edit_kind {
             self.psd_buffer.redraw(ui);
@@ -256,48 +251,38 @@ impl Widget for TextEdit {
             UpdateType::Init => self.init(ui, true),
             UpdateType::ReInit => self.init(ui, false),
             UpdateType::MouseMove => {
-                if ui.device.device_input.mouse.pressed && self.focused {
+                if self.state.hovered_moving() {
                     self.select_render.move_select(ui, &mut self.cursor_render, &mut self.char_layout);
-                    self.changed = true;
                     self.char_layout.buffer.clip_x = self.char_layout.offset.x;
                     ui.context.window.request_redraw();
                 }
-
                 let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
-                if self.hovered != hovered {
-                    self.hovered = hovered;
-                    self.changed = true;
-                    ui.context.window.request_redraw();
-                }
+                if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MousePress => {
-                let old_focused = self.focused;
-                self.focused = ui.device.device_input.pressed_at(self.fill_render.rect());
-                ui.context.window.ime().request_ime(self.focused);
-                if self.focused {
+                let pressed = ui.device.device_input.pressed_at(self.fill_render.rect());
+                if self.state.on_pressed(pressed) { ui.context.window.request_redraw(); }
+                ui.context.window.ime().request_ime(self.state.focused);
+                if self.state.focused {
                     let pos = ui.device.device_input.mouse.lastest.relative;
                     self.cursor_render.update_by_pos(pos, &mut self.char_layout);
                     self.select_render.set_by_cursor(&self.cursor_render);
+                    ui.context.window.request_redraw();
                 }
-                self.changed = true;
-                if self.focused != old_focused { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
                 let clicked = ui.device.device_input.click_at(&self.psd_buffer.geometry.rect());
-                if clicked && let EditKind::Password = self.char_layout.edit_kind {
+                if self.state.on_clicked(clicked) && let EditKind::Password = self.char_layout.edit_kind {
                     self.char_layout.looking = !self.char_layout.looking;
                     self.psd_buffer.update_buffer_text(ui, if self.char_layout.looking { "🔓" } else { "🔒" });
                     self.char_layout.rebuild_text(ui);
                     self.cursor_render.reset_x(&self.char_layout);
-                    self.changed = true;
-                }
-                if clicked || (self.focused && !clicked) {
                     ui.context.window.request_redraw();
                 }
             }
             #[cfg(not(feature = "winit"))]
             UpdateType::KeyPress(ref mut key) => {
-                if self.focused {
+                if self.state.focused {
                     match key {
                         Key::CtrlC => {
                             println!("copy");
@@ -320,7 +305,7 @@ impl Widget for TextEdit {
                                 ClipboardData::Image(_) => {}
                                 ClipboardData::Url(_) => {}
                             }
-                            self.changed = true;
+                            self.state.changed = true;
                             ui.context.window.request_redraw();
                         }
                         Key::CtrlX => {
@@ -352,7 +337,7 @@ impl Widget for TextEdit {
                 }
             }
             UpdateType::Clipboard(ref mut clipboard) => {
-                if self.focused {
+                if self.state.focused {
                     match mem::take(clipboard) {
                         ClipboardData::Text(t) => {
                             for c in t.chars() {
@@ -366,10 +351,10 @@ impl Widget for TextEdit {
                 }
             }
             UpdateType::KeyRelease(ref mut key) => {
-                if self.focused { self.key_input(mem::take(key), ui); }
+                if self.state.focused { self.key_input(mem::take(key), ui); }
             }
             UpdateType::IME(ref mut data) => {
-                if self.focused {
+                if self.state.focused {
                     let start_horiz = self.select_render.start_horiz;
                     let start_vert = self.select_render.start_vert;
                     match data {
@@ -388,7 +373,7 @@ impl Widget for TextEdit {
                             self.select_render.reset(&self.cursor_render);
                         }
                     }
-                    self.changed = true;
+                    self.state.changed = true;
                     ui.context.window.request_redraw();
                 }
             }
@@ -399,5 +384,9 @@ impl Widget for TextEdit {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.char_layout.buffer.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

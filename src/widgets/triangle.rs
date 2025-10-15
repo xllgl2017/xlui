@@ -7,13 +7,13 @@ use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 
 pub struct Triangle {
     id: String,
     render: RenderParam,
-    changed: bool,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 
@@ -23,8 +23,8 @@ impl Triangle {
         Triangle {
             id: crate::gen_unique_id(),
             render: RenderParam::new(RenderKind::Triangle(param)),
-            changed: false,
             geometry: Geometry::new(),
+            state: WidgetState::default(),
         }
     }
 
@@ -71,23 +71,15 @@ impl Triangle {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
             self.render.update(ui, false, false);
         }
-
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.render.update(ui, false, false);
-        }
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
-        self.changed = true;
         self.render.style_mut()
     }
 
@@ -111,5 +103,9 @@ impl Widget for Triangle {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

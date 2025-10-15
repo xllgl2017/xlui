@@ -6,7 +6,7 @@ use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::text::TextWrap;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 /// ### Label的示例用法
 /// ```
 /// use xlui::*;
@@ -30,6 +30,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize};
 pub struct Label {
     id: String,
     buffer: TextBuffer,
+    state: WidgetState,
 }
 
 impl Label {
@@ -38,6 +39,7 @@ impl Label {
         Label {
             id: crate::gen_unique_id(),
             buffer,
+            state:WidgetState::default(),
         }
     }
     ///仅作用于draw
@@ -127,5 +129,9 @@ impl Widget for Label {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.buffer.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

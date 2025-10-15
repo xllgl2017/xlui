@@ -184,7 +184,7 @@ impl<T: 'static> ListView<T> {
         recycle.remove_item();
         recycle.items_mut().iter_mut().for_each(|x| {
             let item: &mut ItemWidget = x.widget_mut().unwrap();
-            item.restore_status(false, false, 0.to_string());
+            item.restore_status(false, 0.to_string());
         });
         let h = recycle.size().rh;
         area.reset_context_height(h);
@@ -192,7 +192,7 @@ impl<T: 'static> ListView<T> {
         self.current.write().unwrap().take();
         self.hovered.take();
         self.selected.take();
-        if let UpdateType::Draw = ui.update_type {}else { ui.context.window.request_redraw(); }
+        if let UpdateType::Draw = ui.update_type {} else { ui.context.window.request_redraw(); }
 
         // let mut layout = ui.layout.take().expect("应在App::update中调用");
         // let area = layout.get_layout(&self.lid).expect("找不到ListView");
@@ -231,7 +231,7 @@ impl<T: 'static> ListView<T> {
             area.reset_context_height(h);
         }
         self.data.push(datum);
-        if let UpdateType::Draw = ui.update_type {}else { ui.context.window.request_redraw(); }
+        if let UpdateType::Draw = ui.update_type {} else { ui.context.window.request_redraw(); }
         // let mut layout = ui.layout.take().expect("应在App::update中调用");
         // let area = layout.get_layout(&self.lid).expect("找不到ListView");
         // if let LayoutKind::ScrollArea(area) = area {
@@ -307,16 +307,15 @@ impl<T: 'static> ListView<T> {
                 let mut start = self.previous_display.start;
                 recycle_layout.items_mut().iter_mut().for_each(|x| {
                     let item: &mut ItemWidget = x.widget_mut().unwrap();
-                    let (hovered, selected) = item.store_and_reset();
-                    if hovered { self.hovered = Some(start); }
-                    if selected { self.selected = Some(start); }
+                    if item.state().hovered { self.hovered = Some(start); }
+                    // if selected { self.selected = Some(start); }
                     start += 1;
                 });
                 let display = recycle_layout.display_range();
                 let mut start = display.start;
                 for item in recycle_layout.items_mut().iter_mut() {
                     let item: &mut ItemWidget = item.widget_mut().unwrap();
-                    item.restore_status(self.hovered == Some(start), self.selected == Some(start), start.to_string());
+                    item.restore_status(self.hovered == Some(start),  start.to_string());
                     (self.onscroll)(&self.data[start], item.layout());
                     start += 1;
                     if start == self.data.len() { break; }

@@ -3,14 +3,14 @@ use crate::render::{RenderKind, RenderParam};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
-use crate::widgets::{WidgetChange, WidgetSize};
+use crate::widgets::{WidgetChange, WidgetSize, WidgetState};
 use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind, Padding, Radius, RichText, Ui, UpdateType, VerticalLayout, Widget};
 
 pub struct TabHeader {
     id: String,
     text: TextBuffer,
     fill: RenderParam,
-    changed: bool,
+    state: WidgetState,
 }
 
 impl TabHeader {
@@ -24,7 +24,7 @@ impl TabHeader {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0).padding(Padding::same(3.0)),
             fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_height(25.0).with_style(tab_style))),
-            changed: false,
+            state: WidgetState::default(),
         }
     }
 
@@ -40,8 +40,6 @@ impl TabHeader {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill.rect_mut().offset_to_rect(&ui.draw_rect);
             ui.widget_changed |= WidgetChange::Value;
@@ -68,6 +66,10 @@ impl Widget for TabHeader {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.text.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }
 
@@ -99,6 +101,7 @@ pub struct TabWidget {
     items: Vec<TabItem>,
     geometry: Geometry,
     fill: RenderParam,
+    state: WidgetState,
 }
 
 impl TabWidget {
@@ -113,6 +116,7 @@ impl TabWidget {
             items: vec![],
             geometry: Geometry::new(),
             fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
+            state: WidgetState::default(),
         }
     }
     pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) -> &mut TabHeader {
@@ -204,5 +208,9 @@ impl Widget for TabWidget {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

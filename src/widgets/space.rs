@@ -2,11 +2,12 @@ use crate::response::Response;
 use crate::size::Geometry;
 use crate::ui::Ui;
 use crate::Widget;
-use crate::widgets::WidgetSize;
+use crate::widgets::{WidgetSize, WidgetState};
 
 pub struct Space {
     id: String,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 impl Space {
@@ -14,6 +15,7 @@ impl Space {
         Space {
             id: crate::gen_unique_id(),
             geometry: Geometry::new().with_size(space, space),
+            state: WidgetState::default(),
         }
     }
 }
@@ -26,5 +28,9 @@ impl Widget for Space {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

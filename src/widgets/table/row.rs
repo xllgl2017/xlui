@@ -6,7 +6,7 @@ use crate::ui::Ui;
 use crate::widgets::table::cell::TableCell;
 use crate::widgets::table::header::TableHeader;
 use crate::widgets::table::TableExt;
-use crate::widgets::{WidgetKind, WidgetSize};
+use crate::widgets::{WidgetKind, WidgetSize, WidgetState};
 use crate::*;
 
 pub struct TableRow {
@@ -14,6 +14,7 @@ pub struct TableRow {
     fill_render: RenderParam,
     cells: Vec<TableCell>,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 impl TableRow {
@@ -23,10 +24,11 @@ impl TableRow {
             cells.push(TableCell::new(column.width(), row_height));
         }
         TableRow {
-            id: crate::gen_unique_id(),
+            id: gen_unique_id(),
             fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
             cells,
             geometry: Geometry::new().with_fix_height(row_height),
+            state: WidgetState::default(),
         }
     }
 
@@ -75,6 +77,10 @@ impl Widget for TableRow {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }
 

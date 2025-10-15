@@ -7,7 +7,7 @@ use crate::size::Geometry;
 use crate::size::rect::Rect;
 use crate::style::{ClickStyle, Shadow};
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 /// ### Rectangle的示例用法
 /// ```rust
 /// use xlui::*;
@@ -30,8 +30,7 @@ pub struct Rectangle {
     id: String,
     fill_render: RenderParam,
     geometry: Geometry,
-    hovered: bool,
-    changed: bool,
+    state: WidgetState,
 }
 
 impl Rectangle {
@@ -41,8 +40,7 @@ impl Rectangle {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RenderKind::Rectangle(param)),
             geometry: Geometry::new().with_size(width, height),
-            hovered: false,
-            changed: false,
+            state: WidgetState::default(),
         }
     }
 
@@ -66,46 +64,36 @@ impl Rectangle {
     }
 
     pub fn style_mut(&mut self) -> &mut ClickStyle {
-        self.changed = true;
+        self.state.changed = true;
         self.fill_render.style_mut()
     }
 
     pub fn set_offset_x(&mut self, v: f32) {
-        self.changed = self.fill_render.rect_param_mut().shadow.offset[0] == v;
+        self.state.changed = self.fill_render.rect_param_mut().shadow.offset[0] == v;
         self.fill_render.rect_param_mut().shadow.offset[0] = v;
     }
 
     pub fn set_offset_y(&mut self, v: f32) {
-        self.changed = self.fill_render.rect_param_mut().shadow.offset[1] == v;
+        self.state.changed = self.fill_render.rect_param_mut().shadow.offset[1] == v;
         self.fill_render.rect_param_mut().shadow.offset[1] = v;
     }
 
     pub fn set_border(&mut self, nb: Border) {
         let ob = &self.fill_render.style_mut().border.inactive;
-        self.changed = ob == &nb;
+        self.state.changed = ob == &nb;
         self.fill_render.style_mut().border.inactive = nb;
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        // if !self.changed && !ui.can_offset { return; }
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
         }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
-        }
-        // if ui.can_offset { self.fill_render.param.rect.offset(&ui.offset); }
 
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        self.fill_render.draw(ui, self.state.hovered, ui.device.device_input.mouse.pressed);
     }
 }
 
@@ -117,10 +105,7 @@ impl Widget for Rectangle {
             UpdateType::Init | UpdateType::ReInit => self.fill_render.init(ui, false, false),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
-                if self.hovered != hovered {
-                    self.hovered = hovered;
-                    self.changed = true;
-                }
+                if self.state.on_pressed(hovered) { ui.context.window.request_redraw(); }
             }
             _ => {}
         }
@@ -129,5 +114,9 @@ impl Widget for Rectangle {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

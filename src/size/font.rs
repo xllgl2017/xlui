@@ -293,10 +293,10 @@ impl FontKind {
             FontKind::Win32(font) => font.measure_text(text, wrap, max_wrap_width),
         }
     }
-    #[cfg(feature = "gpu")]
-    pub fn wgpu_mut(&mut self) -> &mut WGpuFont {
-        match self { FontKind::WGpu(font) => font }
-    }
+    // #[cfg(feature = "gpu")]
+    // pub fn wgpu_mut(&mut self) -> &mut WGpuFont {
+    //     match self { FontKind::WGpu(font) => font }
+    // }
 
     pub fn measure_char(&self, ch: char) -> UiResult<CChar> {
         match self {

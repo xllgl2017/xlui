@@ -5,7 +5,7 @@ use crate::size::Geometry;
 use crate::ui::Ui;
 #[cfg(feature = "gpu")]
 use crate::vertex::ImageVertex;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::Size;
 #[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
@@ -43,7 +43,7 @@ pub struct Image {
     vertex_buffer: Option<wgpu::Buffer>,
     #[cfg(feature = "gpu")]
     index_buffer: Option<wgpu::Buffer>,
-    changed: bool,
+    state: WidgetState,
 }
 
 impl Image {
@@ -58,7 +58,7 @@ impl Image {
             vertex_buffer: None,
             #[cfg(feature = "gpu")]
             index_buffer: None,
-            changed: false,
+            state: WidgetState::default(),
         }
     }
 
@@ -80,7 +80,7 @@ impl Image {
 
     pub fn set_image(&mut self, source: impl Into<ImageSource>) {
         self.source = source.into();
-        self.changed = true;
+        self.state.changed = true;
     }
 
     #[cfg(feature = "gpu")]
@@ -110,8 +110,8 @@ impl Image {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.state.changed = false;
         if !ui.widget_changed.unchanged() {
             self.geometry.offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
@@ -163,7 +163,7 @@ impl Widget for Image {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::Init|UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init | UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
@@ -171,5 +171,9 @@ impl Widget for Image {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

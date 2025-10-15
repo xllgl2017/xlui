@@ -12,7 +12,7 @@ use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 
 /// ### CheckBox的示例用法
 /// ```
@@ -51,10 +51,9 @@ pub struct CheckBox {
     inner_callback: Option<InnerCallB>,
     geometry: Geometry,
     check_render: RenderParam,
-    hovered: bool,
     contact_ids: Vec<String>,
-    changed: bool,
     fill: Option<RenderParam>,
+    state: WidgetState,
 }
 
 impl CheckBox {
@@ -76,10 +75,9 @@ impl CheckBox {
             inner_callback: None,
             geometry: Geometry::new(),
             check_render: RenderParam::new(RenderKind::Rectangle(param)),
-            hovered: false,
             contact_ids: vec![],
-            changed: false,
             fill: None,
+            state: WidgetState::default(),
         }
     }
 
@@ -153,19 +151,15 @@ impl CheckBox {
             v.update_bool(&mut self.value);
             ui.widget_changed |= WidgetChange::Value;
         }
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             if let Some(ref mut fill) = self.fill {
                 fill.offset_to_rect(&ui.draw_rect);
-                #[cfg(feature = "gpu")]
-                fill.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             }
             self.geometry.offset_to_rect(&ui.draw_rect);
             let mut rect = self.geometry.rect();
             self.check_render.offset_to_rect(&rect);
-            #[cfg(feature = "gpu")]
-            self.check_render.update(ui, self.hovered, ui.device.device_input.mouse.pressed);
             self.check_text.geometry.offset_to_rect(&rect);
             rect.add_min_x(self.check_render.rect().width() + 2.0);
             self.text.geometry.offset_to_rect(&rect);
@@ -175,9 +169,9 @@ impl CheckBox {
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         if let Some(ref mut fill) = self.fill {
-            fill.draw(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
+            fill.draw(ui, self.state.hovered || self.value, self.value);
         }
-        self.check_render.draw(ui, self.hovered, ui.device.device_input.mouse.pressed);
+        self.check_render.draw(ui, self.state.hovered, self.state.pressed);
         self.text.redraw(ui);
         if self.value { self.check_text.redraw(ui); }
     }
@@ -199,16 +193,12 @@ impl Widget for CheckBox {
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.geometry.max_rect());
-                if self.hovered != hovered {
-                    self.hovered = hovered;
-                    self.changed = true;
-                    ui.context.window.request_redraw();
-                }
+                if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.geometry.max_rect()) {
+                let clicked = ui.device.device_input.click_at(&self.geometry.max_rect());
+                if self.state.on_clicked(clicked) {
                     self.value = !self.value;
-                    self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(app, ui, self.value);
@@ -229,5 +219,9 @@ impl Widget for CheckBox {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

@@ -8,7 +8,7 @@ use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::Offset;
 
 pub struct ScrollBar {
@@ -16,10 +16,9 @@ pub struct ScrollBar {
     fill_render: RenderParam,
     slider_render: RenderParam,
     context_size: f32,
-    focused: bool,
     offset: Offset,
-    changed: bool,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 
@@ -43,10 +42,9 @@ impl ScrollBar {
             fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
             slider_render: RenderParam::new(RenderKind::Rectangle(slider_param)),
             context_size: 0.0,
-            focused: false,
             offset: Offset::new(),
-            changed: false,
             geometry: Geometry::new().with_size(10.0, 20.0),
+            state: WidgetState::default(),
         }
     }
 
@@ -69,7 +67,7 @@ impl ScrollBar {
         let oy = self.slider_offset_y(offset);
         let roy = self.slider_render.rect_mut().offset_y_limit(self.offset.y + oy, self.fill_render.rect().dy());
         self.offset.y = roy;
-        self.changed = true;
+        self.state.changed = true;
         self.context_offset_y(-roy)
     }
 
@@ -78,7 +76,7 @@ impl ScrollBar {
         let ox = self.slider_offset_x(offset);
         let rox = self.slider_render.rect_mut().offset_x_limit(self.offset.x + ox, self.fill_render.rect().dx());
         self.offset.x = rox;
-        self.changed = true;
+        self.state.changed = true;
         self.context_offset_x(-rox)
     }
 
@@ -99,7 +97,7 @@ impl ScrollBar {
         };
         if slider_height < 32.0 { slider_height = 32.0; }
         self.slider_render.rect_mut().set_height(slider_height);
-        self.changed = true;
+        self.state.changed = true;
     }
 
     pub fn set_context_width(&mut self, context_width: f32) {
@@ -111,7 +109,7 @@ impl ScrollBar {
         };
         if slider_width < 32.0 { slider_width = 32.0; }
         self.slider_render.rect_mut().set_width(slider_width);
-        self.changed = true;
+        self.state.changed = true;
     }
 
     //计算滑块位移
@@ -158,39 +156,20 @@ impl ScrollBar {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.offset_to_rect(&ui.draw_rect);
             self.slider_render.offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
             self.slider_render.rect_mut().offset(&self.offset);
-            #[cfg(feature = "gpu")]
-            self.slider_render.update(ui, false, false);
-        }
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.slider_render.update(ui, false, false);
         }
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
         if self.context_size > self.fill_render.rect().height() && self.geometry.height() > self.geometry.width() { //垂直
-            // #[cfg(feature = "gpu")]
-            // ui.context.render.rectangle.render(&self.fill_render, pass);
-            // #[cfg(feature = "gpu")]
-            // ui.context.render.rectangle.render(&self.slider_render, pass);
             self.fill_render.draw(ui, false, false);
             self.slider_render.draw(ui, false, false);
         }
         if self.context_size > self.fill_render.rect().width() && self.geometry.width() > self.geometry.height() { //垂直
-            // #[cfg(feature = "gpu")]
-            // ui.context.render.rectangle.render(&self.fill_render, pass);
-            // #[cfg(feature = "gpu")]
-            // ui.context.render.rectangle.render(&self.slider_render, pass);
             self.fill_render.draw(ui, false, false);
             self.slider_render.draw(ui, false, false);
         }
@@ -203,7 +182,7 @@ impl Widget for ScrollBar {
         match ui.update_type {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
-                if self.focused && ui.device.device_input.mouse.pressed {
+                if self.state.hovered_moving() {
                     if self.geometry.height() > self.geometry.width() { //垂直滚动条
                         let oy = ui.device.device_input.mouse.offset_y();
                         let roy = self.slider_render.rect_mut().offset_y_limit(self.offset.y + oy, self.fill_render.rect().dy());
@@ -214,22 +193,23 @@ impl Widget for ScrollBar {
                         self.offset.x = rox;
                     }
                     ui.context.window.request_redraw();
-                    self.changed = true;
                 }
             }
-            UpdateType::MousePress => self.focused = ui.device.device_input.pressed_at(self.slider_render.rect()),
-            _ => {
-                if self.changed {
-                    self.changed = false;
-                    #[cfg(feature = "gpu")]
-                    self.slider_render.update(ui, false, false);
-                }
+            UpdateType::MousePress => {
+                let pressed = ui.device.device_input.pressed_at(self.slider_render.rect());
+                self.state.on_pressed(pressed);
             }
+            UpdateType::MouseRelease => { self.state.on_release(); }
+            _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

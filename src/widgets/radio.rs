@@ -11,7 +11,7 @@ use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 
 /// ### RadioButton的示例用法
 /// ```
@@ -45,9 +45,8 @@ pub struct RadioButton {
     geometry: Geometry,
     outer_render: RenderParam,
     inner_render: RenderParam,
-    hovered: bool,
     contact_ids: Vec<String>,
-    changed: bool,
+    state: WidgetState,
 }
 
 impl RadioButton {
@@ -78,9 +77,8 @@ impl RadioButton {
             geometry: Geometry::new(),
             outer_render: RenderParam::new(RenderKind::Circle(outer_param)),
             inner_render: RenderParam::new(RenderKind::Circle(inner_param)),
-            hovered: false,
             contact_ids: vec![],
-            changed: false,
+            state: WidgetState::default(),
         }
     }
 
@@ -128,7 +126,7 @@ impl RadioButton {
         //内圆
         self.inner_render.rect_mut().add_min_x(4.0);
         self.inner_render.rect_mut().contract_y(4.0);
-        let height=self.inner_render.rect().height();
+        let height = self.inner_render.rect().height();
         self.inner_render.rect_mut().set_width(height);
         #[cfg(feature = "gpu")]
         self.inner_render.init(ui, self.value, self.value);
@@ -141,13 +139,11 @@ impl RadioButton {
             v.update_bool(&mut self.value);
             ui.widget_changed |= WidgetChange::Value;
         }
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
+        self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.rect.offset_to_rect(&ui.draw_rect);
             self.outer_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.outer_render.rect().width() + 2.0);
             self.text.geometry.offset_to_rect(&text_rect);
@@ -156,27 +152,13 @@ impl RadioButton {
             inner_rect.add_min_x(4.0);
             inner_rect.add_min_y(4.0);
             self.inner_render.offset_to_rect(&inner_rect);
-            #[cfg(feature = "gpu")]
-            self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
-        }
-
-        #[cfg(feature = "gpu")]
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            self.outer_render.update(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-            self.inner_render.update(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.circle.render(&self.outer_render, pass);
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.circle.render(&self.inner_render, pass);
-        self.outer_render.draw(ui, self.hovered || self.value, ui.device.device_input.mouse.pressed || self.value);
-        self.inner_render.draw(ui, self.value, ui.device.device_input.mouse.pressed || self.value);
+        self.outer_render.draw(ui, self.state.hovered || self.value, self.value);
+        self.inner_render.draw(ui, self.value, self.value);
         self.text.redraw(ui);
     }
 }
@@ -186,20 +168,15 @@ impl Widget for RadioButton {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(&self.rect);
-                if hovered != self.hovered {
-                    self.hovered = hovered;
-                    self.changed = true;
-                    ui.context.window.request_redraw();
-                }
+                if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.click_at(&self.rect) {
+                let clicked = ui.device.device_input.click_at(&self.rect);
+                if self.state.on_clicked(clicked) {
                     self.value = !self.value;
-                    self.changed = true;
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(app, ui, self.value);
@@ -218,5 +195,9 @@ impl Widget for RadioButton {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

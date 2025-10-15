@@ -4,12 +4,12 @@ use crate::render::{RenderKind, RenderParam};
 use crate::response::Response;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
+use crate::size::Geometry;
 use crate::style::color::Color;
 use crate::style::Shadow;
 use crate::ui::Ui;
-use crate::widgets::{WidgetChange, WidgetSize};
+use crate::widgets::{WidgetSize, WidgetState};
 use crate::{ScrollWidget, Widget};
-use crate::size::Geometry;
 
 pub struct Popup {
     pub(crate) id: String,
@@ -17,8 +17,8 @@ pub struct Popup {
     fill_render: RenderParam,
     open: bool,
     requests: Vec<bool>,
-    changed: bool,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 impl Popup {
@@ -42,8 +42,8 @@ impl Popup {
             fill_render,
             open: false,
             requests: vec![],
-            changed: false,
             geometry: Geometry::new().with_size(width, height).with_padding(Padding::same(5.0)),
+            state: WidgetState::default(),
         }
     }
 
@@ -57,28 +57,14 @@ impl Popup {
 
     pub fn set_rect(&mut self, rect: Rect) {
         *self.fill_render.rect_mut() = rect;
-        self.changed = true;
     }
 
     pub fn rect(&self) -> &Rect {
         self.fill_render.rect()
     }
 
-    pub fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
-        }
-    }
-
     fn redraw(&mut self, ui: &mut Ui) {
         if !self.open { return; }
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
         self.fill_render.draw(ui, false, false);
         let previous_rect = ui.draw_rect.clone();
         ui.draw_rect = self.fill_render.rect().clone();
@@ -124,5 +110,9 @@ impl Widget for Popup {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

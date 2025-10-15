@@ -7,9 +7,24 @@ use crate::size::radius::Radius;
 use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use std::ops::Range;
 use crate::size::Geometry;
+
+///#### ProcessBar的示例用法
+///```rust
+/// use xlui::*;
+///
+/// fn draw(ui:&mut Ui){
+///    let mut bar=ProcessBar::new(1.0)
+///        //设置控件id
+///        .with_id("simple_id")
+///        //设置值范围
+///        .with_range(0.0..100.0);
+///    //更新值
+///    bar.set_value(10.0);
+/// }
+/// ```
 
 pub struct ProcessBar {
     id: String,
@@ -17,11 +32,10 @@ pub struct ProcessBar {
     fill_render: RenderParam,
     //当前位置
     process_render: RenderParam,
-    //
     value: f32,
     range: Range<f32>,
-    change: bool,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 impl ProcessBar {
@@ -48,8 +62,8 @@ impl ProcessBar {
             process_render: RenderParam::new(RenderKind::Rectangle(process_param)),
             value: v,
             range: 0.0..100.0,
-            change: false,
             geometry: Geometry::new().with_size(200.0, 10.0),
+            state: WidgetState::default(),
         }
     }
 
@@ -75,44 +89,30 @@ impl ProcessBar {
 
     pub fn set_value(&mut self, value: f32) {
         self.value = value;
-        self.change = true;
+        self.state.changed = true;
     }
 
-    pub fn update_buffer(&mut self, ui: &mut Ui) {
+    pub(crate) fn update_buffer(&mut self, ui: &mut Ui) {
         if let Some(v) = ui.context.updates.remove(&self.id) {
             v.update_f32(&mut self.value);
             ui.widget_changed |= WidgetChange::Value;
         }
-        if self.change { ui.widget_changed |= WidgetChange::Value; }
+        if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
             self.process_render.rect_mut().offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.process_render.update(ui, false, false);
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
             if self.value > self.range.end { self.value = self.range.end; }
             let w = self.value * self.fill_render.rect_mut().width() / (self.range.end - self.range.start);
             self.process_render.rect_mut().set_width(w);
-            #[cfg(feature = "gpu")]
-            self.process_render.update(ui, false, false);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.process_render, pass);
         self.fill_render.draw(ui, false, false);
         self.process_render.draw(ui, false, false);
     }
@@ -123,8 +123,7 @@ impl Widget for ProcessBar {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.init(ui),
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
@@ -132,5 +131,9 @@ impl Widget for ProcessBar {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

@@ -10,7 +10,7 @@ use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 use crate::size::Geometry;
@@ -42,9 +42,7 @@ pub struct SelectItem<T> {
     fill_render: RenderParam,
 
     callback: Option<Box<dyn FnMut(&mut Option<T>)>>,
-    hovered: bool,
-    selected: bool,
-    changed: bool,
+    state: WidgetState,
 }
 
 impl<T: Display> SelectItem<T> {
@@ -63,9 +61,7 @@ impl<T: Display> SelectItem<T> {
             parent_selected: Arc::new(RwLock::new(None)),
             fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
             callback: None,
-            hovered: false,
-            selected: false,
-            changed: false,
+            state: WidgetState::default(),
         }
     }
 
@@ -117,41 +113,18 @@ impl<T: Display> SelectItem<T> {
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
-        let current = self.parent_selected.read().unwrap();
-        let selected = current.as_ref() == Some(&self.value.to_string());
-        if !selected && self.selected {
-            self.selected = false;
-            self.changed = true
-        } else if selected && !self.selected {
-            self.selected = true;
-            self.changed = true;
-        }
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
+        self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.fill_render.offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
             self.text.geometry.offset_to_rect(&ui.draw_rect);
-        }
-
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            let current = self.parent_selected.read().unwrap();
-            let selected = current.as_ref() == Some(&self.value.to_string());
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.rectangle.render(&self.fill_render, pass);
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
-        self.fill_render.draw(ui, selected || self.hovered, selected || ui.device.device_input.mouse.pressed);
+        self.fill_render.draw(ui, selected || self.state.hovered, selected);
         self.text.redraw(ui);
     }
 }
@@ -160,21 +133,14 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
-                if self.hovered != hovered {
-                    self.hovered = hovered;
-                    self.changed = true;
-                    ui.context.window.request_redraw();
-                }
+                if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
                 let clicked = ui.device.device_input.click_at(self.fill_render.rect());
-                if clicked {
-                    self.selected = true;
-                    self.changed = true;
+                if self.state.on_clicked(clicked) {
                     let mut selected = self.parent_selected.write().unwrap();
                     *selected = Some(self.value.to_string());
                     ui.update_type = UpdateType::None;
@@ -188,5 +154,9 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.text.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

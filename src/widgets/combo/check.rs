@@ -3,7 +3,7 @@ use crate::render::triangle::param::TriangleParam;
 use crate::render::{RenderKind, RenderParam};
 use crate::response::{Callback, Response};
 use crate::size::Geometry;
-use crate::widgets::{WidgetChange, WidgetSize};
+use crate::widgets::{WidgetChange, WidgetSize, WidgetState};
 use crate::{Align, App, Border, BorderStyle, CheckBox, ClickStyle, Color, FillStyle, Offset, Padding, Popup, Radius, Rect, TextEdit, Ui, UpdateType, Widget};
 use std::fmt::Display;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -40,6 +40,7 @@ pub struct CheckComboBox<T> {
 
     selected: Arc<RwLock<Vec<String>>>,
     changed: Arc<AtomicBool>,
+    state: WidgetState,
 }
 
 impl<T: Display + 'static> CheckComboBox<T> {
@@ -61,6 +62,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
 
             changed: Arc::new(AtomicBool::new(false)),
             allow_render: RenderParam::new(RenderKind::Triangle(allow_param)),
+            state: WidgetState::default(),
         }
     }
 
@@ -138,25 +140,6 @@ impl<T: Display + 'static> CheckComboBox<T> {
             self.edit.update_text(ui, value);
             self.changed.store(false, Ordering::SeqCst);
         }
-        // self.edit.update_text(ui, "sdfsdf".to_string());
-        // let select = self.selected.read().unwrap();
-        // if *select != self.previous_select {
-        //     self.previous_select = select.clone();
-        //     if let Some(ref select) = self.previous_select {
-        //         self.edit.update_text(ui, select.clone());
-        //         if let Some(ref mut callback) = self.callback {
-        //             let app = ui.app.take().unwrap();
-        //             let t = self.data.iter().find(|x| &x.to_string() == select).unwrap();
-        //             callback(app, ui, t);
-        //             ui.app.replace(app);
-        //             ui.context.window.request_redraw();
-        //         }
-        //         self.changed = true;
-        //     }
-        //
-        //     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
-        //     popup.request_state(false);
-        // }
 
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.popup_rect.offset_to_rect(&ui.draw_rect);
@@ -166,28 +149,14 @@ impl<T: Display + 'static> CheckComboBox<T> {
             allow_rect.set_x_min(allow_rect.dx().min + self.edit.geometry().width() - 15.0);
             allow_rect.add_min_y(5.0);
             self.allow_render.offset_to_rect(&allow_rect);
-            #[cfg(feature = "gpu")]
-            self.allow_render.update(ui, false, false);
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
         self.edit.update(ui);
-        // #[cfg(feature = "gpu")]
-        // let pass = ui.pass.as_mut().unwrap();
-        // #[cfg(feature = "gpu")]
-        // ui.context.render.triangle.render(&self.allow_render, pass);
         self.allow_render.draw(ui, false, false);
     }
-
-    //初始化时设置当前item，默认为None
-    // pub fn with_current_index(mut self, index: usize) -> Self {
-    //     let current = self.data[index].to_string();
-    //     self.edit.update_text().set_text(current.clone());
-    //     *self.selected.write().unwrap() = Some(current);
-    //     self
-    // }
 }
 
 
@@ -220,5 +189,9 @@ impl<T: Display + 'static> Widget for CheckComboBox<T> {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.edit.buffer().geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }

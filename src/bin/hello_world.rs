@@ -1,5 +1,6 @@
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use std::sync::Arc;
-#[cfg(feature = "gpu")]
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use wgpu::util::DeviceExt;
 #[cfg(all(feature = "gpu",feature = "winit"))]
 use wgpu::{include_wgsl, IndexFormat, RenderPassDescriptor, StoreOp, TextureDimension};
@@ -14,6 +15,7 @@ use winit::{
 use xlui::shape::rectangle::RectangleShape;
 #[cfg(all(feature = "gpu",feature = "winit"))]
 use xlui::vertex::Vertex;
+#[cfg(all(feature = "gpu",feature = "winit"))]
 use xlui::{Border, Color, Rect};
 #[cfg(all(feature = "gpu",feature = "winit"))]
 #[repr(C)]
@@ -223,10 +225,6 @@ fn main() {
     }).unwrap();
 }
 
-/// 计算r²
-fn get_r_square(l: f32, w: f32) -> f32 {
-    (l / 2.0) * (l / 2.0) + w * w
-}
 
 #[cfg(any(not(feature = "gpu"),not(feature = "winit")))]
 fn main() {

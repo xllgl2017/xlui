@@ -14,7 +14,6 @@ pub mod spinbox;
 pub mod slider;
 pub mod checkbox;
 pub mod radio;
-pub mod combobox;
 pub mod select;
 pub mod rectangle;
 pub mod item;
@@ -25,10 +24,7 @@ pub mod triangle;
 pub mod circle;
 pub mod table;
 pub mod combo;
-// pub mod column;
-// pub mod cell;
 
-// pub type UiDraw = Box<dyn Fn(&mut Ui)>;
 pub mod tab;
 
 pub trait Widget: Any {
@@ -36,6 +32,8 @@ pub trait Widget: Any {
     fn update(&mut self, ui: &mut Ui) -> Response<'_>;
     ///控件的几何信息：位置、大小、最小大小、最大大小、间隔、对齐
     fn geometry(&mut self) -> &mut Geometry;
+    ///控件状态信息: 焦点、按下、滑动、改变、禁用
+    fn state(&mut self) -> &mut WidgetState;
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -112,10 +110,6 @@ impl WidgetKind {
         }
     }
 
-    // pub fn offset(&mut self, o: &Offset, pr: &Rect) -> bool {
-    //     self.rect.offset(o);
-    //     !self.rect.out_of_rect(pr)
-    // }
     pub fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         ui.widget_changed = WidgetChange::Position;
         let resp = self.widget.update(ui);
@@ -129,17 +123,6 @@ impl WidgetKind {
         }
         resp
     }
-
-    #[deprecated = "use update"]
-    pub fn redraw(&mut self, ui: &mut Ui) {
-        self.widget.update(ui);
-    }
-
-    // pub fn change_position(&mut self, x: f32, y: f32) {
-    //     self.rect.set_x_min(x);
-    //     self.rect.set_x_max(y);
-    //     self.change = WidgetChange::Position;
-    // }
 
     pub fn id(&self) -> &str {
         &self.id
@@ -185,5 +168,54 @@ impl WidgetSize {
             rw: w,
             rh: h,
         }
+    }
+}
+
+
+#[derive(Default)]
+pub struct WidgetState {
+    focused: bool,
+    hovered: bool,
+    pressed: bool,
+    changed: bool,
+    disabled: bool,
+    // selected: bool,
+}
+
+impl WidgetState {
+    ///更新控件滑动状态，返回值通知是否重绘
+    pub fn on_hovered(&mut self, hovered: bool) -> bool {
+        self.changed = self.hovered != hovered;
+        self.hovered = hovered;
+        self.changed && !self.disabled
+    }
+
+    ///更新控件按下状态，返回值通知是否重绘
+    pub fn on_pressed(&mut self, pressed: bool) -> bool {
+        self.changed = self.pressed != pressed || self.focused != pressed;
+        self.pressed = pressed;
+        self.focused = pressed;
+        self.changed && !self.disabled
+    }
+
+    ///更新控件点击时状态，返回值通知是否重绘
+    pub fn on_clicked(&mut self, clicked: bool) -> bool {
+        self.changed = clicked;
+        self.pressed = false;
+        self.focused = false;
+        self.changed && !self.disabled
+    }
+
+    ///移除控件按下、焦点状态
+    pub fn on_release(&mut self) -> bool {
+        self.changed = self.pressed || self.focused;
+        self.pressed = false;
+        self.focused = false;
+        self.changed && !self.disabled
+    }
+
+    ///控件按下的滑动移动
+    pub fn hovered_moving(&self) -> bool {
+        self.pressed && self.focused
     }
 }

@@ -14,7 +14,7 @@ use crate::style::color::Color;
 use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::scroll::bar::ScrollBar;
-use crate::widgets::{Widget, WidgetChange, WidgetSize};
+use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::{Offset, VerticalLayout};
 use crate::size::Geometry;
 
@@ -29,6 +29,7 @@ pub struct ScrollWidget {
     horiz_scrollable: bool,
     vert_scrollable: bool,
     geometry: Geometry,
+    state: WidgetState,
 }
 
 impl ScrollWidget {
@@ -48,6 +49,7 @@ impl ScrollWidget {
             horiz_scrollable: false,
             vert_scrollable: false,
             geometry: Geometry::new().with_size(400.0, 300.0).with_padding(Padding::same(5.0)),
+            state: WidgetState::default(),
         }
     }
 
@@ -258,6 +260,12 @@ impl Widget for ScrollWidget {
                 if ui.device.device_input.hovered_at(self.fill_render.rect()) {
                     self.a = ui.device.device_input.mouse.a;
                 }
+                if self.vert_scrollable {
+                    self.v_bar.update(ui);
+                }
+                if self.horiz_scrollable {
+                    self.h_bar.update(ui);
+                }
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseWheel => {
@@ -274,5 +282,9 @@ impl Widget for ScrollWidget {
 
     fn geometry(&mut self) -> &mut Geometry {
         &mut self.geometry
+    }
+
+    fn state(&mut self) -> &mut WidgetState {
+        &mut self.state
     }
 }
