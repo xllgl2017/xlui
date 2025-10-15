@@ -6,6 +6,7 @@ pub enum UiError {
     NullPtr,
     UNINIT,
     OptNone,
+    SendErr,
     Error(String),
 }
 
@@ -17,6 +18,7 @@ impl UiError {
             UiError::NullPtr => "空指针",
             UiError::UNINIT => "值未初始化",
             UiError::OptNone => "Option值为None",
+            UiError::SendErr => "通道发送失败",
             UiError::Error(value) => value
         }
     }
@@ -29,6 +31,11 @@ impl<E: Into<Box<dyn Error>>> From<E> for UiError {
     }
 }
 
-
+#[cfg(target_os = "windows")]
+impl From<UiError> for windows::core::Error{
+    fn from(value: UiError) -> Self {
+        windows::core::Error::new(windows::core::HRESULT(-1),value.to_string())
+    }
+}
 
 pub type UiResult<T> = Result<T, UiError>;

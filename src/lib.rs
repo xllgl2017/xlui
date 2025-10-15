@@ -114,7 +114,6 @@ pub use ui::Ui;
 pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow, FrameStyle};
 pub use frame::{App, context::UpdateType};
 pub use align::Align;
-pub use error::{UiResult, UiError};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

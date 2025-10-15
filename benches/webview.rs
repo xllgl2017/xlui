@@ -2,28 +2,23 @@
 
 use std::sync::Arc;
 use std::{ptr, sync::mpsc};
-use windows::{
-    core::*,
-    Win32::{
-        Foundation::{E_POINTER, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM}
-        ,
-        System::{Com::*, LibraryLoader, Threading},
-        UI::WindowsAndMessaging::{self, MSG, WNDCLASSW},
-    },
-};
-
-use webview2_com::{Microsoft::Web::WebView2::Win32::*, *};
-use windows::Win32::UI::WindowsAndMessaging::{WS_OVERLAPPEDWINDOW, WS_VISIBLE};
-use xlui::{Size, UiResult};
+use webview2_com::{CoTaskMemPWSTR, CreateCoreWebView2ControllerCompletedHandler, CreateCoreWebView2EnvironmentCompletedHandler, NavigationCompletedEventHandler, WebMessageReceivedEventHandler};
+use webview2_com::Microsoft::Web::WebView2::Win32::{CreateCoreWebView2Environment, ICoreWebView2, ICoreWebView2Controller, ICoreWebView2Environment, ICoreWebView2WebMessageReceivedEventHandler};
+use windows::core::{w, PWSTR};
+use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::System::Com::{CoInitializeEx, COINIT_APARTMENTTHREADED};
+use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::UI::WindowsAndMessaging;
+use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowLongPtrW, GWLP_USERDATA, MSG, WNDCLASSW, WS_OVERLAPPEDWINDOW, WS_VISIBLE};
+use xlui::{Size, UiError, UiResult};
 
 fn main() -> UiResult<()> {
-    unsafe {
-        CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok()?;
-    }
-    // set_process_dpi_awareness()?;
+    // unsafe {
+    //     CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok()?;
+    // }
     let frame = FrameWindow::new();
     let mut webview = WebView::create(frame, true)?;
-    webview.navigate("https://www.baidu.com/")?;
+    webview.url = "https://www.baidu.com/".to_string();
     webview.run()
 }
 
@@ -42,6 +37,7 @@ impl FrameWindow {
             };
 
             unsafe {
+                let hinstance = GetModuleHandleW(None).unwrap();
                 WindowsAndMessaging::RegisterClassW(&window_class);
 
                 WindowsAndMessaging::CreateWindowExW(
@@ -55,7 +51,7 @@ impl FrameWindow {
                     600,
                     None,
                     None,
-                    LibraryLoader::GetModuleHandleW(None).ok().map(|h| HINSTANCE(h.0)),
+                    Some(HINSTANCE::from(hinstance)),
                     None,
                 )
             }
@@ -63,18 +59,14 @@ impl FrameWindow {
 
         FrameWindow {
             window: hwnd,
-            size: Size { width: 800, height: 600 },
+            size: Size { width: 800.0, height: 600.0 },
         }
     }
 }
 
-type WebViewSender = mpsc::Sender<Box<dyn FnOnce(WebView) + Send>>;
-type WebViewReceiver = mpsc::Receiver<Box<dyn FnOnce(WebView) + Send>>;
-
 pub struct WebView {
     controller: ICoreWebView2Controller,
     webview: ICoreWebView2,
-    thread_id: u32,
     frame: Arc<FrameWindow>,
     url: String,
 }
@@ -86,50 +78,53 @@ impl Drop for WebView {
 }
 
 impl WebView {
+    fn create_environment() -> UiResult<ICoreWebView2Environment> {
+        let (tx, rx) = mpsc::channel();
+        CreateCoreWebView2EnvironmentCompletedHandler::wait_for_async_operation(
+            Box::new(|handler| unsafe {
+                CreateCoreWebView2Environment(&handler).map_err(webview2_com::Error::WindowsError)
+            }),
+            Box::new(move |error_code, environment| {
+                error_code?;
+                tx.send(environment).or(Err(UiError::SendErr))?;
+                Ok(())
+            }),
+        )?;
+        rx.recv()?.ok_or(UiError::NullPtr)
+    }
+
+    fn create_controller(hwnd: HWND, environment: ICoreWebView2Environment) -> UiResult<ICoreWebView2Controller> {
+        let (tx, rx) = mpsc::channel();
+
+        CreateCoreWebView2ControllerCompletedHandler::wait_for_async_operation(
+            Box::new(move |handler| unsafe {
+                environment.CreateCoreWebView2Controller(hwnd, &handler).map_err(webview2_com::Error::WindowsError)
+            }),
+            Box::new(move |error_code, controller| {
+                error_code?;
+                tx.send(controller).or(Err(UiError::SendErr))?;
+                Ok(())
+            }),
+        )?;
+
+        rx.recv()?.ok_or(UiError::NullPtr)
+    }
+
+    fn create_message_receiver() -> UiResult<ICoreWebView2WebMessageReceivedEventHandler> {
+        Ok(WebMessageReceivedEventHandler::create(Box::new(move |_webview, args| {
+            let args = args.ok_or(UiError::NullPtr)?;
+            let mut message = PWSTR(ptr::null_mut());
+            unsafe { args.WebMessageAsJson(&mut message)?; }
+            let message_str = CoTaskMemPWSTR::from(message).to_string();
+            println!("message: {}", message_str);
+            Ok(())
+        })))
+    }
+
     pub fn create(parent: FrameWindow, debug: bool) -> UiResult<WebView> {
-        let hwnd = parent.window;
-        let environment = {
-            let (tx, rx) = mpsc::channel();
-
-            CreateCoreWebView2EnvironmentCompletedHandler::wait_for_async_operation(
-                Box::new(|environmentcreatedhandler| unsafe {
-                    CreateCoreWebView2Environment(&environmentcreatedhandler)
-                        .map_err(webview2_com::Error::WindowsError)
-                }),
-                Box::new(move |error_code, environment| {
-                    error_code?;
-                    tx.send(environment.ok_or_else(|| windows::core::Error::from(E_POINTER)))
-                        .expect("send over mpsc channel");
-                    Ok(())
-                }),
-            )?;
-
-            rx.recv().unwrap()
-        }?;
-
-        let controller = {
-            let (tx, rx) = mpsc::channel();
-
-            CreateCoreWebView2ControllerCompletedHandler::wait_for_async_operation(
-                Box::new(move |handler| unsafe {
-                    environment
-                        .CreateCoreWebView2Controller(hwnd, &handler)
-                        .map_err(webview2_com::Error::WindowsError)
-                }),
-                Box::new(move |error_code, controller| {
-                    error_code?;
-                    tx.send(controller.ok_or_else(|| windows::core::Error::from(E_POINTER)))
-                        .expect("send over mpsc channel");
-                    Ok(())
-                }),
-            )?;
-
-            rx.recv().unwrap()
-        }?;
-
-        let mut client_rect = RECT::default();
+        let environment = WebView::create_environment()?;
+        let controller = WebView::create_controller(parent.window, environment)?;
         unsafe {
-            let _ = WindowsAndMessaging::GetClientRect(hwnd, &mut client_rect);
             controller.SetBounds(RECT {
                 left: 0,
                 top: 0,
@@ -137,130 +132,95 @@ impl WebView {
                 bottom: parent.size.height as i32,
             })?;
             controller.SetIsVisible(true)?;
-        }
-
-        let webview = unsafe { controller.CoreWebView2()? };
-
-        if !debug {
-            unsafe {
+            let webview = controller.CoreWebView2()?;
+            if !debug {
                 let settings = webview.Settings()?;
                 settings.SetAreDefaultContextMenusEnabled(false)?;
                 settings.SetAreDevToolsEnabled(false)?;
             }
+            webview.add_WebMessageReceived(&WebView::create_message_receiver()?, &mut 0)?;
+            Ok(WebView {
+                controller,
+                webview,
+                frame: Arc::new(parent),
+                url: String::new(),
+            })
         }
-
-
-        let thread_id = unsafe { Threading::GetCurrentThreadId() };
-
-        let webview = WebView {
-            controller,
-            webview,
-            thread_id,
-            frame: Arc::new(parent),
-            url: String::new(),
-        };
-
-        // webview.init(r#"window.external = { invoke: s => window.chrome.webview.postMessage(s) };"#)?;
-        unsafe {
-            let mut _token = 0;
-            webview.webview.add_WebMessageReceived(
-                &WebMessageReceivedEventHandler::create(Box::new(move |_webview, args| {
-                    if let Some(args) = args {
-                        let mut message = PWSTR(ptr::null_mut());
-                        if args.WebMessageAsJson(&mut message).is_ok() {
-                            let message = CoTaskMemPWSTR::from(message).to_string();
-                            println!("{}", message);
-                        }
-                    }
-                    Ok(())
-                })),
-                &mut _token,
-            )?;
-        }
-
-        Ok(webview)
     }
 
-    pub fn run(self) -> UiResult<()> {
+    pub fn run(mut self) -> UiResult<()> {
         let webview = &self.webview;
-        let url = self.url.as_str();
-        let (tx, rx) = mpsc::channel();
-
-        if !url.is_empty() {
-            let handler =
-                NavigationCompletedEventHandler::create(Box::new(move |_sender, _args| {
-                    tx.send(()).expect("send over mpsc channel");
-                    Ok(())
-                }));
+        if !self.url.is_empty() {
+            let handler = NavigationCompletedEventHandler::create(Box::new(move |_sender, _args| { Ok(()) }));
             let mut token = 0;
             unsafe {
                 webview.add_NavigationCompleted(&handler, &mut token)?;
-                let url = CoTaskMemPWSTR::from(url);
+                let url = CoTaskMemPWSTR::from(self.url.as_str());
                 webview.Navigate(*url.as_ref().as_pcwstr())?;
-                let result = webview2_com::wait_with_pump(rx);
                 webview.remove_NavigationCompleted(token)?;
-                result?;
             }
         }
+        unsafe { SetWindowLongPtrW(self.frame.window, GWLP_USERDATA, &mut self as *mut _ as isize); }
 
         let mut msg = MSG::default();
 
         loop {
             unsafe {
-                let result = WindowsAndMessaging::GetMessageW(&mut msg, None, 0, 0).0;
-
-                match result {
-                    -1 => break Err(windows::core::Error::from_win32().into()),
-                    0 => break Ok(()),
-                    _ => match msg.message {
-                        WindowsAndMessaging::WM_APP => (),
-                        _ => {
-                            let _ = WindowsAndMessaging::TranslateMessage(&msg);
-                            WindowsAndMessaging::DispatchMessageW(&msg);
-                        }
-                    },
+                while WindowsAndMessaging::GetMessageW(&mut msg, None, 0, 0).into() {
+                    let _ = WindowsAndMessaging::TranslateMessage(&msg);
+                    WindowsAndMessaging::DispatchMessageW(&msg);
                 }
             }
         }
     }
 
-    pub fn navigate(&mut self, url: &str) -> UiResult<&Self> {
-        self.url = url.to_string();
-        Ok(self)
-    }
 
-    pub fn init(&self, js: &str) -> UiResult<&Self> {
-        let webview = self.webview.clone();
-        let js = String::from(js);
-        AddScriptToExecuteOnDocumentCreatedCompletedHandler::wait_for_async_operation(
-            Box::new(move |handler| unsafe {
-                let js = CoTaskMemPWSTR::from(js.as_str());
-                webview
-                    .AddScriptToExecuteOnDocumentCreated(*js.as_ref().as_pcwstr(), &handler)
-                    .map_err(webview2_com::Error::WindowsError)
-            }),
-            Box::new(|error_code, _id| error_code),
-        )?;
-        Ok(self)
-    }
+    // pub fn init(&self, js: &str) -> UiResult<&Self> {
+    //     let webview = self.webview.clone();
+    //     let js = String::from(js);
+    //     AddScriptToExecuteOnDocumentCreatedCompletedHandler::wait_for_async_operation(
+    //         Box::new(move |handler| unsafe {
+    //             let js = CoTaskMemPWSTR::from(js.as_str());
+    //             webview
+    //                 .AddScriptToExecuteOnDocumentCreated(*js.as_ref().as_pcwstr(), &handler)
+    //                 .map_err(webview2_com::Error::WindowsError)
+    //         }),
+    //         Box::new(|error_code, _id| error_code),
+    //     )?;
+    //     Ok(self)
+    // }
 
-    pub fn eval(&self, js: &str) -> UiResult<&Self> {
-        let webview = self.webview.clone();
-        let js = String::from(js);
-        ExecuteScriptCompletedHandler::wait_for_async_operation(
-            Box::new(move |handler| unsafe {
-                let js = CoTaskMemPWSTR::from(js.as_str());
-                webview.ExecuteScript(*js.as_ref().as_pcwstr(), &handler).map_err(webview2_com::Error::WindowsError)
-            }),
-            Box::new(|error_code, _result| error_code),
-        )?;
-        Ok(self)
-    }
+    // pub fn eval(&self, js: &str) -> UiResult<&Self> {
+    //     let webview = self.webview.clone();
+    //     let js = String::from(js);
+    //     ExecuteScriptCompletedHandler::wait_for_async_operation(
+    //         Box::new(move |handler| unsafe {
+    //             let js = CoTaskMemPWSTR::from(js.as_str());
+    //             webview.ExecuteScript(*js.as_ref().as_pcwstr(), &handler).map_err(webview2_com::Error::WindowsError)
+    //         }),
+    //         Box::new(|error_code, _result| error_code),
+    //     )?;
+    //     Ok(self)
+    // }
 }
 
-extern "system" fn window_proc(hwnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
+extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     match msg {
         WindowsAndMessaging::WM_SIZE => {
+            let window = unsafe { (GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut WebView).as_mut() };
+            if let Some(window) = window {
+                let width = (lparam.0 as u32 & 0xffff) as f32;
+                let height = ((lparam.0 as u32 >> 16) & 0xffff) as f32;
+                println!("resize: width: {}; height: {}", width, height);
+                unsafe {
+                    window.controller.SetBounds(RECT {
+                        left: 0,
+                        top: 0,
+                        right: width as i32,
+                        bottom: height as i32,
+                    }).unwrap();
+                }
+            }
             LRESULT::default()
         }
 
@@ -275,6 +235,6 @@ extern "system" fn window_proc(hwnd: HWND, msg: u32, w_param: WPARAM, l_param: L
             LRESULT::default()
         }
 
-        _ => unsafe { WindowsAndMessaging::DefWindowProcW(hwnd, msg, w_param, l_param) },
+        _ => unsafe { WindowsAndMessaging::DefWindowProcW(hwnd, msg, wparam, lparam) },
     }
 }
