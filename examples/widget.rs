@@ -160,6 +160,15 @@ impl App for TestWidget {
             ui.checkbox(true, "变动监测");
         });
         ui.horizontal(|ui| {
+            ui.radio(true, "RadioGroups");
+            ui.add_space(10.0);
+            ui.radio_groups(vec![
+                RadioButton::new(false, "r1"),
+                RadioButton::new(false, "r2"),
+                RadioButton::new(true, "r3")
+            ])
+        });
+        ui.horizontal(|ui| {
             ui.radio(true, "TextEdit");
             ui.add_space(30.0);
             ui.add(TextEdit::single_edit("abcdefghijklmnopqrstuvwsyz1234567890".to_string()).connect(Self::edit_changed));
@@ -217,6 +226,7 @@ impl App for TestWidget {
             let edit = TextEdit::single_edit("dsfdsf").password();
             ui.add(edit);
         });
+
     }
 
     fn update(&mut self, ui: &mut Ui) {

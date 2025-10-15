@@ -437,6 +437,17 @@ impl<'a, 'p> Ui<'a, 'p> {
         self.add(radio).unwrap()
     }
 
+    pub fn radio_groups(&mut self, mut groups: Vec<RadioButton>) {
+        let ids = groups.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
+        for (index, mut group) in groups.into_iter().enumerate() {
+            for (i, id) in ids.iter().enumerate() {
+                if i == index { continue; }
+                group.set_group_by_id(id);
+            }
+            self.add(group).unwrap();
+        }
+    }
+
     ///快速创建一个checkbox
     pub fn checkbox(&mut self, v: bool, l: impl Into<RichText>) -> &mut CheckBox {
         let checkbox = CheckBox::new(v, l);

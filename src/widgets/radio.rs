@@ -46,6 +46,7 @@ pub struct RadioButton {
     outer_render: RenderParam,
     inner_render: RenderParam,
     contact_ids: Vec<String>,
+    group_ids: Vec<String>,
     state: WidgetState,
 }
 
@@ -78,6 +79,7 @@ impl RadioButton {
             outer_render: RenderParam::new(RenderKind::Circle(outer_param)),
             inner_render: RenderParam::new(RenderKind::Circle(inner_param)),
             contact_ids: vec![],
+            group_ids: vec![],
             state: WidgetState::default(),
         }
     }
@@ -108,9 +110,15 @@ impl RadioButton {
         self
     }
 
+    ///控件值关联，自动更新给定id的控件的值
     pub fn contact(mut self, id: impl ToString) -> Self {
         self.contact_ids.push(id.to_string());
         self
+    }
+
+    /// 关联radio组
+    pub fn set_group_by_id(&mut self, id: impl ToString) {
+        self.group_ids.push(id.to_string());
     }
 
     fn init(&mut self, ui: &mut Ui) {
@@ -184,6 +192,7 @@ impl Widget for RadioButton {
                     }
                     ui.update_type = UpdateType::None;
                     ui.send_updates(&self.contact_ids, ContextUpdate::Bool(self.value));
+                    ui.send_updates(&self.group_ids, ContextUpdate::Bool(!self.value));
                     ui.context.window.request_redraw();
                 }
             }
