@@ -24,49 +24,49 @@ impl TestWidget {
         }
     }
 
-    fn add(&mut self, _: &mut Button, _: &mut Ui) {
+    fn add(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count += 1;
-        self.status = format!("count: {}", self.count);
+        ui.set_value("status", format!("count: {}", self.count));
     }
 
-    fn reduce(&mut self, _: &mut Button, _: &mut Ui) {
+    fn reduce(&mut self, _: &mut Button, ui: &mut Ui) {
         self.count -= 1;
-        self.status = format!("count: {}", self.count);
+        ui.set_value("status", format!("count: {}", self.count));
     }
 
-    fn slider(&mut self, _: &mut Ui, value: f32) {
-        self.status = format!("slider: {}", value);
+    fn slider(&mut self, ui: &mut Ui, value: f32) {
+        ui.set_value("status", format!("slider: {}", value));
     }
 
-    fn check(&mut self, _: &mut Ui, checked: bool) {
-        self.status = format!("check: {}", checked);
+    fn check(&mut self, ui: &mut Ui, checked: bool) {
+        ui.set_value("status", format!("check: {}", checked));
     }
 
-    fn spinbox_i32(&mut self, _: &mut Ui, value: i32) {
-        self.status = format!("spinbox: {}", value);
+    fn spinbox_i32(&mut self, ui: &mut Ui, value: i32) {
+        ui.set_value("status", format!("spinbox_i: {}", value));
     }
 
-    fn spinbox_f32(&mut self, _: &mut Ui, value: f32) {
-        self.status = format!("spinbox: {}", value);
+    fn spinbox_f32(&mut self, ui: &mut Ui, value: f32) {
+        ui.set_value("status", format!("spinbox_f: {}", value));
     }
 
-    fn radio(&mut self, _: &mut Ui, checked: bool) {
-        self.status = format!("radio: {}", checked);
+    fn radio(&mut self, ui: &mut Ui, checked: bool) {
+        ui.set_value("status", format!("radio: {}", checked));
     }
 
-    fn edit_changed(&mut self, _: &mut Ui, value: String) {
-        self.status = format!("edit: {}", value);
+    fn edit_changed(&mut self, ui: &mut Ui, value: String) {
+        ui.set_value("status", format!("edit: {}", value));
     }
 
     fn image_button_click(&mut self, btn: &mut Button, ui: &mut Ui) {
-        self.status = format!("image button: {}", self.count);
         self.change_image = true;
         btn.set_image("/home/xl/下载/2f2da786-1326-42ee-9d14-a13946d05e7f.png");
         btn.update(ui);
+        ui.set_value("status", format!("image button: {}", self.count));
     }
 
-    fn combo_changed(&mut self, _: &mut Ui, data: &SV) {
-        self.status = format!("combo: {}", data);
+    fn combo_changed(&mut self, ui: &mut Ui, data: &SV) {
+        ui.set_value("status", format!("combo: {}", data));
     }
 }
 
@@ -226,12 +226,11 @@ impl App for TestWidget {
             let edit = TextEdit::single_edit("dsfdsf").password();
             ui.add(edit);
         });
-
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        let status: &mut Label = ui.get_widget("status").unwrap();
-        status.set_text(&self.status);
+        // let status: &mut Label = ui.get_widget("status").unwrap();
+        // status.set_text(&self.status);
         if self.change_image {
             self.change_image = false;
             let image: &mut Image = ui.get_widget("test_image").unwrap();

@@ -184,7 +184,7 @@ impl Widget for RadioButton {
             UpdateType::MouseRelease => {
                 let clicked = ui.device.device_input.click_at(&self.rect);
                 if self.state.on_clicked(clicked) {
-                    self.value = !self.value;
+                    self.value = !self.value || !self.group_ids.is_empty();
                     if let Some(ref mut callback) = self.callback {
                         let app = ui.app.take().unwrap();
                         callback(app, ui, self.value);

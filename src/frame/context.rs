@@ -70,6 +70,19 @@ impl ContextUpdate {
     }
 }
 
+impl From<&String> for ContextUpdate {
+    fn from(value: &String) -> Self {
+        ContextUpdate::String(value.to_string())
+    }
+}
+
+
+impl From<String> for ContextUpdate {
+    fn from(value: String) -> Self {
+        ContextUpdate::String(value)
+    }
+}
+
 #[derive(Clone)]
 pub enum UpdateType {
     Draw,

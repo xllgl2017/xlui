@@ -339,6 +339,10 @@ impl<'a, 'p> Ui<'a, 'p> {
     pub fn get_value(&mut self, cid: impl ToString) -> Option<ContextUpdate> {
         self.context.updates.remove(&cid.to_string())
     }
+
+    pub fn set_value(&mut self, wid: impl ToString, value: impl Into<ContextUpdate>) {
+        self.context.updates.insert(wid.to_string(), value.into());
+    }
 }
 
 impl<'a, 'p> Ui<'a, 'p> {
