@@ -97,7 +97,11 @@ impl App for TestWidget {
     fn draw(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.add_space(100.0);
-            ui.add(Label::new("当前控件的工作状态".size(24.0).color(Color::ORANGE)));
+            let label = Label::new("当前控件的工作状态".size(24.0).color(Color::ORANGE));
+            // label.geometry().set_fix_width(100.0);
+            // label.geometry().set_fix_height(100.0);
+            // label.geometry().set_align(Align::Center);
+            ui.add(label);
         });
         ui.horizontal(|ui| {
             ui.radio(true, "Label");

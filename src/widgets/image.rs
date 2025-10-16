@@ -63,7 +63,7 @@ impl Image {
     }
 
     fn reset_size(&mut self, size: Size) {
-        self.geometry.set_size(size.width, size.height);
+        self.geometry.set_context_size(size.width, size.height);
     }
 
 
@@ -88,7 +88,7 @@ impl Image {
         let size = ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
         self.reset_size(size);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
-        let rect = self.geometry.rect();
+        let rect = self.geometry.context_rect();
         self.vertices = vec![
             ImageVertex::new_coord(rect.left_top(), [0.0, 0.0], Size::from(&ui.device.surface_config)),
             ImageVertex::new_coord(rect.left_bottom(), [0.0, 1.0], Size::from(&ui.device.surface_config)),
@@ -115,7 +115,7 @@ impl Image {
         if !ui.widget_changed.unchanged() {
             self.geometry.offset_to_rect(&ui.draw_rect);
             #[cfg(feature = "gpu")]
-            let rect = self.geometry.rect();
+            let rect = self.geometry.context_rect();
             #[cfg(feature = "gpu")]
             for (index, v) in self.vertices.iter_mut().enumerate() {
                 match index {
@@ -154,7 +154,7 @@ impl Image {
         #[cfg(all(target_os = "linux", not(feature = "gpu")))]
         let texture = ui.context.render.image.get_texture_mut(&self.source.uri()).unwrap();
         #[cfg(all(target_os = "linux", not(feature = "gpu")))]
-        ui.context.window.x11().paint_image(ui.paint.as_mut().unwrap().cairo, texture, self.geometry.rect());
+        ui.context.window.x11().paint_image(ui.paint.as_mut().unwrap().cairo, texture, self.geometry.context_rect());
     }
 }
 
@@ -166,7 +166,7 @@ impl Widget for Image {
             UpdateType::Init | UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.padding_width(),self.geometry.padding_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

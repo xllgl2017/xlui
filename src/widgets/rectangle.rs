@@ -39,7 +39,7 @@ impl Rectangle {
         Rectangle {
             id: crate::gen_unique_id(),
             fill_render: RenderParam::new(RenderKind::Rectangle(param)),
-            geometry: Geometry::new().with_size(width, height),
+            geometry: Geometry::new().with_context_size(width, height),
             state: WidgetState::default(),
         }
     }
@@ -109,7 +109,7 @@ impl Widget for Rectangle {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

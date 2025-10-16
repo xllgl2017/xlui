@@ -57,7 +57,7 @@ impl Triangle {
         rect.set_y_min(y_min);
         rect.set_y_max(y_max);
         self.render.set_poses(p0, p1, p2);
-        self.geometry.set_size(rect.width(), rect.height());
+        self.geometry.set_context_size(rect.width(), rect.height());
         self.geometry.offset_to_rect(&rect);
     }
 
@@ -98,7 +98,7 @@ impl Widget for Triangle {
             UpdateType::Init | UpdateType::ReInit => self.render.init(ui, false, false),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

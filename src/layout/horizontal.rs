@@ -1,3 +1,4 @@
+use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
@@ -150,7 +151,7 @@ impl HorizontalLayout {
 
 impl Layout for HorizontalLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
-        let previous_rect = ui.draw_rect.clone();
+        self.geometry.offset_to_rect(&ui.draw_rect);
         let mut width = 0.0;
         let mut height = 0.0;
         match ui.update_type {
@@ -161,15 +162,14 @@ impl Layout for HorizontalLayout {
                 }
                 width -= self.item_space;
                 if let Some(ref mut render) = self.fill_render {
-                    self.geometry.set_size(width, height);
-                    render.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+                    self.geometry.set_context_size(width, height);
+                    render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
                     #[cfg(feature = "gpu")]
                     render.init(ui, false, false);
                 }
             }
             _ => {
-                self.geometry.set_size(previous_rect.width(), previous_rect.height());
-                ui.draw_rect.set_size(self.geometry.width(), self.geometry.height());
+                self.geometry.set_margin_size(ui.draw_rect.width(), ui.draw_rect.height());
                 if let UpdateType::MouseMove = ui.update_type && self.window && self.pressed {
                     ui.context.window.request_redraw();
                 }
@@ -188,23 +188,14 @@ impl Layout for HorizontalLayout {
                     #[cfg(target_os = "linux")]
                     ui.context.window.x11().move_window(x, y);
                 }
+                //设置布局padding
+                let mut rect = self.geometry.context_rect().with_x_direction(self.direction);
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
-                    render.rect_mut().offset_to_rect(&previous_rect);
-                    // #[cfg(feature = "gpu")]
-                    // render.update(ui, false, false);
-                    // #[cfg(feature = "gpu")]
-                    // let pass = ui.pass.as_mut().unwrap();
-                    // #[cfg(feature = "gpu")]
-                    // ui.context.render.rectangle.render(&render, pass);
+                    render.rect_mut().offset_to_rect(&rect);
                     render.draw(ui, false, false);
                 }
-
-                //设置布局padding
-                ui.draw_rect.add_min_x(self.geometry.padding().left);
-                ui.draw_rect.add_min_y(self.geometry.padding().top);
-                ui.draw_rect.add_max_x(-self.geometry.padding().right);
-                ui.draw_rect.add_max_y(-self.geometry.padding().bottom);
-                ui.draw_rect.set_x_direction(self.direction);
+                rect.offset(&self.offset);
+                let previous_rect = mem::replace(&mut ui.draw_rect, rect);
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);
                     if height < resp.size.dh { height = resp.size.dh; }
@@ -215,13 +206,13 @@ impl Layout for HorizontalLayout {
                     }
                 }
                 width -= self.item_space;
+                ui.draw_rect = previous_rect;
             }
         }
-        ui.draw_rect = previous_rect;
-        self.geometry.set_size(width, height);
+        self.geometry.set_context_size(width, height);
         Response::new(&self.id, WidgetSize {
-            dw: self.geometry.width(),
-            dh: self.geometry.height(),
+            dw: self.geometry.margin_width(),
+            dh: self.geometry.margin_height(),
             rw: width,
             rh: height,
         })
@@ -235,7 +226,7 @@ impl Layout for HorizontalLayout {
 
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
-            space.geometry().set_height(0.0);
+            space.geometry().set_context_height(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }

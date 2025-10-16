@@ -22,7 +22,7 @@ impl Circle {
         rect.set_width(r * 2.0);
         Circle {
             id: crate::gen_unique_id(),
-            geometry: Geometry::new().with_size(rect.width(), rect.height()),
+            geometry: Geometry::new().with_context_size(rect.width(), rect.height()),
             render: RenderParam::new(RenderKind::Circle(CircleParam::new(rect, ClickStyle::new()))),
             state: WidgetState::default(),
 
@@ -63,7 +63,7 @@ impl Widget for Circle {
             UpdateType::Init | UpdateType::ReInit => self.render.init(ui, false, false),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_width()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

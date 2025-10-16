@@ -38,7 +38,6 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 /// }
 pub struct RadioButton {
     pub(crate) id: String,
-    pub(crate) rect: Rect,
     pub(crate) value: bool,
     pub(crate) text: TextBuffer,
     pub(crate) callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, bool)>>,
@@ -71,7 +70,6 @@ impl RadioButton {
         let inner_param = CircleParam::new(Rect::new().with_size(16.0, 16.0), inner_style);
         RadioButton {
             id: crate::gen_unique_id(),
-            rect: Rect::new(),
             value: v,
             text: TextBuffer::new(label),
             callback: None,
@@ -85,10 +83,9 @@ impl RadioButton {
     }
 
     fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.geometry.add_fix_width(self.geometry.width() - 18.0);
+        self.text.geometry.add_fix_width(self.geometry.context_width() - 18.0);
         self.text.init(ui);
-        self.geometry.set_size(self.text.geometry.width() + 18.0, self.text.geometry.height());
-        self.rect.set_size(self.geometry.width(), self.geometry.height());
+        self.geometry.set_context_size(self.text.geometry.padding_width() + 18.0, self.text.geometry.padding_height());
     }
 
     pub fn with_width(mut self, width: f32) -> RadioButton {
@@ -150,7 +147,7 @@ impl RadioButton {
         if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
         self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.rect.offset_to_rect(&ui.draw_rect);
+            self.geometry.offset_to_rect(&ui.draw_rect);
             self.outer_render.rect_mut().offset_to_rect(&ui.draw_rect);
             let mut text_rect = ui.draw_rect.clone();
             text_rect.add_min_x(self.outer_render.rect().width() + 2.0);
@@ -178,11 +175,11 @@ impl Widget for RadioButton {
             UpdateType::Draw => self.redraw(ui),
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.rect);
+                let hovered = ui.device.device_input.hovered_at(&self.geometry.padding_rect());
                 if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                let clicked = ui.device.device_input.click_at(&self.rect);
+                let clicked = ui.device.device_input.click_at(&self.geometry.padding_rect());
                 if self.state.on_clicked(clicked) {
                     self.value = !self.value || !self.group_ids.is_empty();
                     if let Some(ref mut callback) = self.callback {
@@ -199,7 +196,7 @@ impl Widget for RadioButton {
             _ => {}
         }
 
-        Response::new(&self.id, WidgetSize::same(self.rect.width(), self.rect.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

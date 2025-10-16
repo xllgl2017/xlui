@@ -29,7 +29,7 @@ use crate::size::Geometry;
 ///         .padding(Padding::same(5.0));
 ///
 ///         //设置控件大小
-///     item.geometry().set_size(30.0,30.0);
+///     item.geometry().set_context_size(30.0,30.0);
 ///     ui.add(item);
 ///
 /// }
@@ -67,7 +67,7 @@ impl<T: Display> SelectItem<T> {
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill_render.rect_mut().set_size(self.text.geometry.width(), self.text.geometry.height());
+        self.fill_render.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
     }
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
@@ -149,7 +149,7 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.text.geometry.width(), self.text.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.text.geometry.margin_width(), self.text.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

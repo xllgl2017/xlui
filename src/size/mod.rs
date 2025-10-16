@@ -1,5 +1,5 @@
 use crate::layout::LayoutDirection;
-use crate::{Align, Padding, Rect};
+use crate::{Align, Margin, Padding, Rect};
 
 pub mod rect;
 pub mod padding;
@@ -53,7 +53,8 @@ impl From<&wgpu::SurfaceConfiguration> for Size {
 }
 
 
-///```text
+/// #### 布局的几何信息，包含x、y、大小、填充，边缘
+/// ```text
 ///              (fix/min/max width)
 /// (x,y)---------------------------(right)
 /// |                                 |
@@ -65,8 +66,10 @@ impl From<&wgpu::SurfaceConfiguration> for Size {
 /// |------------------------------(bottom)
 /// ```
 pub struct Geometry {
+    ///所在区域的最小值，内容起始需+padding+margin
     x: f32,
     y: f32,
+    ///这里的不含padding和margin
     width: f32,
     height: f32,
     min_width: Option<f32>,
@@ -76,6 +79,15 @@ pub struct Geometry {
     fix_width: Option<f32>,
     fix_height: Option<f32>,
     padding: Padding,
+    margin: Margin,
+    /// #### 对齐
+    ///```text
+    /// |--------------------------------|
+    /// |lt             ct            rt |
+    /// |lc             cc            rc |
+    /// |lb             cb            rb |
+    /// |--------------------------------|
+    /// ```
     align: Align,
 }
 
@@ -92,7 +104,8 @@ impl Geometry {
             max_height: None,
             fix_width: None,
             fix_height: None,
-            padding: Padding::same(0.0),
+            padding: Padding::ZERO,
+            margin: Margin::ZERO,
             align: Align::LeftTop,
         }
     }
@@ -100,86 +113,135 @@ impl Geometry {
     pub fn offset_to_rect(&mut self, rect: &Rect) {
         match rect.x_direction() {
             LayoutDirection::Min => self.x = rect.dx().min,
-            LayoutDirection::Max => self.x = rect.dx().max - self.width()
+            LayoutDirection::Max => self.x = rect.dx().max - self.margin_width()
         }
         match rect.y_direction() {
             LayoutDirection::Min => self.y = rect.dy().min,
-            LayoutDirection::Max => self.y = rect.dy().max - self.height()
+            LayoutDirection::Max => self.y = rect.dy().max - self.margin_height()
         }
     }
 
-    pub fn set_size(&mut self, width: f32, height: f32) {
-        self.set_width(width);
-        self.set_height(height);
+    pub fn set_margin_size(&mut self, w: f32, h: f32) {
+        self.set_margin_width(w);
+        self.set_margin_height(h);
     }
 
-    pub fn with_width(mut self, width: f32) -> Self {
-        self.set_width(width);
+    pub fn set_margin_width(&mut self, w: f32) {
+        self.set_context_width(w - self.padding.horizontal() - self.margin.horizontal())
+    }
+
+    pub fn set_margin_height(&mut self, h: f32) {
+        self.set_context_height(h - self.padding.vertical() - self.margin.vertical())
+    }
+
+    pub fn with_context_size(mut self, w: f32, h: f32) -> Self {
+        self.set_context_size(w, h);
         self
     }
 
-    pub fn set_width(&mut self, width: f32) {
-        self.width = width + self.padding.horizontal();
+    pub fn set_context_size(&mut self, width: f32, height: f32) {
+        self.set_context_width(width);
+        self.set_context_height(height);
     }
 
-    pub fn with_height(mut self, height: f32) -> Self {
-        self.set_height(height);
+    pub fn with_context_width(mut self, width: f32) -> Self {
+        self.set_context_width(width);
         self
     }
 
-    pub fn set_height(&mut self, height: f32) {
-        self.height = height + self.padding.vertical();
+    pub fn set_context_width(&mut self, width: f32) {
+        self.width = width;
+    }
+
+    pub fn with_context_height(mut self, height: f32) -> Self {
+        self.set_context_height(height);
+        self
+    }
+
+    pub fn set_context_height(&mut self, height: f32) {
+        self.height = height;
     }
 
     pub(crate) fn is_fix_width(&self) -> bool {
         self.fix_width.is_some()
     }
 
-    pub(crate) fn width(&self) -> f32 {
-        if let Some(width) = self.fix_width { return width; };
+    ///返回item的宽度，不含padding和margin
+    pub(crate) fn context_width(&self) -> f32 {
+        if let Some(width) = self.fix_width { return width - self.padding.horizontal() - self.margin.horizontal(); };
         if let Some(min_width) = self.min_width && self.width < min_width { return min_width; }
-        if let Some(max_width) = self.max_width && self.width > max_width { return max_width; }
+        if let Some(max_width) = self.max_width && self.width > max_width + self.padding.horizontal() + self.margin.horizontal() {
+            return max_width - self.padding.horizontal() - self.margin.horizontal();
+        }
         self.width
     }
 
-    pub(crate) fn height(&self) -> f32 {
-        if let Some(height) = self.fix_height { return height; };
+    ///返回item的宽度，含padding和margin
+    pub(crate) fn margin_width(&self) -> f32 {
+        self.context_width() + self.padding.horizontal() + self.margin.horizontal()
+    }
+
+    ///返回item的宽度，含padding,不含margin
+    pub(crate) fn padding_width(&self) -> f32 {
+        self.context_width() + self.padding.horizontal()
+    }
+
+    ///返回item的高度，不含padding和margin
+    pub(crate) fn context_height(&self) -> f32 {
+        if let Some(height) = self.fix_height { return height - self.padding.vertical() - self.margin.vertical(); };
         if let Some(min_height) = self.min_height && self.height < min_height { return min_height; }
-        if let Some(max_height) = self.max_height && self.height > max_height { return max_height; }
+        if let Some(max_height) = self.max_height && self.height > max_height - self.padding.vertical() - self.margin.vertical() {
+            return max_height - self.padding.vertical() - self.margin.vertical();
+        }
         self.height
     }
 
-    pub(crate) fn rect(&self) -> Rect {
+    ///返回item的高度，含padding和margin
+    pub(crate) fn margin_height(&self) -> f32 {
+        self.context_height() + self.padding.vertical() + self.margin.vertical()
+    }
+
+    ///返回item的高度，含padding,不含margin
+    pub(crate) fn padding_height(&self) -> f32 {
+        self.context_height() + self.padding.vertical()
+    }
+
+    ///返回内容的rect
+    pub(crate) fn context_rect(&self) -> Rect {
         let mut rect = Rect::new();
-        rect.set_x_min(self.x());
-        rect.set_y_min(self.y());
-        rect.set_x_max(self.right());
-        rect.set_y_max(self.bottom());
+        rect.set_x_min(self.context_left());
+        rect.set_x_max(self.context_right());
+        rect.set_y_min(self.context_top());
+        rect.set_y_max(self.context_bottom());
         rect
     }
 
-    pub(crate) fn max_rect(&self) -> Rect {
+    ///返回含padding的rect
+    pub(crate) fn padding_rect(&self) -> Rect {
         let mut rect = Rect::new();
-        rect.set_x_min(self.x);
-        rect.set_y_min(self.y);
-        rect.set_width(self.width());
-        rect.set_height(self.height());
+        rect.set_x_min(self.padding_left());
+        rect.set_x_max(self.padding_right());
+        rect.set_y_min(self.padding_top());
+        rect.set_y_max(self.padding_bottom());
         rect
     }
 
-    /// Align
-    ///```text
-    /// |--------------------------------|
-    /// |lt             ct            rt |
-    /// |lc             cc            rc |
-    /// |lb             cb            rb |
-    /// |--------------------------------|
-    /// ```
-    pub(crate) fn x(&self) -> f32 {
-        let mut x = self.x + self.padding.left;
-        let fix_width = if let Some(fix_width) = self.fix_width {
-            fix_width
-        } else { return x };
+    // pub(crate) fn max_rect(&self) -> Rect {
+    //     let mut rect = Rect::new();
+    //     rect.set_x_min(self.x);
+    //     rect.set_y_min(self.y);
+    //     rect.set_width(self.width());
+    //     rect.set_height(self.height());
+    //     rect
+    // }
+
+
+    pub(crate) fn context_left(&self) -> f32 {
+        let mut x = self.x + self.padding.left + self.margin.left;
+        let fix_width = match self.fix_width {
+            None => return x,
+            Some(w) => w - self.padding.horizontal() - self.margin.horizontal(),
+        };
         match self.align {
             Align::CenterTop | Align::Center | Align::CenterBottom => {
                 let free_space = fix_width - self.width;
@@ -194,17 +256,21 @@ impl Geometry {
         x
     }
 
-    #[cfg(feature = "gpu")]
-    pub(crate) fn x_i32(&self) -> i32 {
-        self.x() as i32
+    pub(crate) fn padding_left(&self) -> f32 {
+        self.context_left() - self.margin.left
     }
 
-    pub(crate) fn y(&self) -> f32 {
-        let mut y = self.y + self.padding.top;
-        let fix_height = if let Some(fix_height) = self.fix_height {
-            fix_height
-        } else {
-            return y;
+
+    #[cfg(feature = "gpu")]
+    pub(crate) fn x_i32(&self) -> i32 {
+        self.context_left() as i32
+    }
+
+    pub(crate) fn context_top(&self) -> f32 {
+        let mut y = self.y + self.padding.top + self.margin.top;
+        let fix_height = match self.fix_height {
+            None => return y,
+            Some(h) => h - self.padding.vertical() - self.margin.vertical(),
         };
         match self.align {
             Align::LeftCenter | Align::Center | Align::RightCenter => {
@@ -220,25 +286,46 @@ impl Geometry {
         y
     }
 
+    pub(crate) fn padding_top(&self) -> f32 {
+        self.context_top() - self.margin.top
+    }
+
     // pub fn y_i32(&self) -> i32 {
     //     self.y() as i32
     // }
 
-    pub(crate) fn right(&self) -> f32 {
-        self.x + self.width() - self.padding.right
-    }
-    #[cfg(feature = "gpu")]
-    pub(crate) fn right_i32(&self) -> i32 {
-        self.right() as i32
+    pub(crate) fn context_right(&self) -> f32 {
+        self.padding_right() - self.padding.right
     }
 
-    pub(crate) fn bottom(&self) -> f32 {
-        self.y + self.height() - self.padding.bottom
+    fn padding_right(&self) -> f32 {
+        self.margin_right() - self.margin.right
     }
 
-    pub(crate) fn bottom_i32(&self) -> i32 {
-        self.bottom() as i32
+    fn margin_right(&self) -> f32 {
+        self.x + self.margin_width()
     }
+
+    // #[cfg(feature = "gpu")]
+    // pub(crate) fn right_i32(&self) -> i32 {
+    //     self.right() as i32
+    // }
+
+    pub(crate) fn context_bottom(&self) -> f32 {
+        self.padding_bottom() - self.padding.bottom
+    }
+
+    fn padding_bottom(&self) -> f32 {
+        self.margin_bottom() - self.margin.bottom
+    }
+
+    fn margin_bottom(&self) -> f32 {
+        self.y + self.margin_height()
+    }
+
+    // pub(crate) fn bottom_i32(&self) -> i32 {
+    //     self.bottom() as i32
+    // }
 
     pub fn set_fix_size(&mut self, w: f32, h: f32) {
         self.set_fix_width(w);
@@ -304,10 +391,8 @@ impl Geometry {
         &self.padding
     }
 
-    pub fn with_size(mut self, w: f32, h: f32) -> Self {
-        self.set_width(w);
-        self.set_height(h);
-        self
+    pub fn margin(&self) -> &Margin {
+        &self.margin
     }
 
     pub fn with_align(mut self, align: Align) -> Self {
@@ -319,6 +404,10 @@ impl Geometry {
         self.align = align;
     }
 
+    pub fn set_margin(&mut self, margin: Margin) {
+        self.margin = margin;
+    }
+
     ///Align
     pub fn an(&mut self, align: Align) -> &mut Self {
         self.set_align(align);
@@ -328,6 +417,11 @@ impl Geometry {
     ///padding
     pub fn pd(&mut self, padding: Padding) -> &mut Self {
         self.set_padding(padding);
+        self
+    }
+
+    pub fn mn(&mut self, margin: Margin) -> &mut Self {
+        self.set_margin(margin);
         self
     }
 }

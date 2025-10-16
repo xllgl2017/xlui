@@ -44,7 +44,7 @@ impl ItemWidget {
         context(ui);
         self.layout = ui.layout.replace(previous_layout);
         let resp = self.layout.as_mut().unwrap().update(ui);
-        self.geometry.set_size(resp.size.dw, resp.size.dh);
+        self.geometry.set_context_size(resp.size.dw, resp.size.dh);
         self.fill_render.rect_mut().set_size(resp.size.dw, resp.size.dh);
     }
 
@@ -133,7 +133,7 @@ impl Widget for ItemWidget {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry { &mut self.geometry }

@@ -48,7 +48,7 @@ impl TableRow {
             datum.set_column(index);
             cell.show_body(ui, header, datum);
         }
-        self.fill_render.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+        self.fill_render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
         if datum.row % 2 == 0 { self.fill_render.style_mut().fill = FillStyle::same(Color::rgb(245, 245, 245)) }
 
         let row = WidgetKind::new(ui, self);
@@ -71,8 +71,8 @@ impl Widget for TableRow {
             ui.draw_rect.add_min_x(resp.size.dw);
         }
         ui.draw_rect = previous_rect;
-        self.geometry.set_width(width);
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        self.geometry.set_context_width(width);
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

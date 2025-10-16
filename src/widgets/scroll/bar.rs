@@ -43,21 +43,21 @@ impl ScrollBar {
             slider_render: RenderParam::new(RenderKind::Rectangle(slider_param)),
             context_size: 0.0,
             offset: Offset::new(),
-            geometry: Geometry::new().with_size(10.0, 20.0),
+            geometry: Geometry::new().with_context_size(10.0, 20.0),
             state: WidgetState::default(),
         }
     }
 
     pub fn horizontal() -> ScrollBar {
         let mut res = ScrollBar::new();
-        res.geometry.set_size(300.0, 5.0);
+        res.geometry.set_context_size(300.0, 5.0);
         res.slider_render.rect_mut().set_size(30.0, 5.0);
         res
     }
 
     pub fn vertical() -> ScrollBar {
         let mut res = ScrollBar::new();
-        res.geometry.set_size(5.0, 300.0);
+        res.geometry.set_context_size(5.0, 300.0);
         res.slider_render.rect_mut().set_size(5.0, 30.0);
         res
     }
@@ -81,7 +81,7 @@ impl ScrollBar {
     }
 
     pub fn offset(&mut self) -> f32 {
-        if self.geometry.height() > self.geometry.width() { //垂直滚动条
+        if self.geometry.context_height() > self.geometry.context_width() { //垂直滚动条
             self.context_offset_y(-self.offset.y)
         } else { //水平滚动条
             self.context_offset_x(-self.offset.x)
@@ -146,7 +146,7 @@ impl ScrollBar {
 
     fn init(&mut self, ui: &mut Ui) {
         //背景
-        self.fill_render.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+        self.fill_render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
         #[cfg(feature = "gpu")]
         self.fill_render.init(ui, false, false);
         //滑块
@@ -165,11 +165,11 @@ impl ScrollBar {
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        if self.context_size > self.fill_render.rect().height() && self.geometry.height() > self.geometry.width() { //垂直
+        if self.context_size > self.fill_render.rect().height() && self.geometry.context_height() > self.geometry.context_width() { //垂直
             self.fill_render.draw(ui, false, false);
             self.slider_render.draw(ui, false, false);
         }
-        if self.context_size > self.fill_render.rect().width() && self.geometry.width() > self.geometry.height() { //垂直
+        if self.context_size > self.fill_render.rect().width() && self.geometry.context_width() > self.geometry.context_height() { //垂直
             self.fill_render.draw(ui, false, false);
             self.slider_render.draw(ui, false, false);
         }
@@ -183,7 +183,7 @@ impl Widget for ScrollBar {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
                 if self.state.hovered_moving() {
-                    if self.geometry.height() > self.geometry.width() { //垂直滚动条
+                    if self.geometry.context_height() > self.geometry.context_width() { //垂直滚动条
                         let oy = ui.device.device_input.mouse.offset_y();
                         let roy = self.slider_render.rect_mut().offset_y_limit(self.offset.y + oy, self.fill_render.rect().dy());
                         self.offset.y = roy;

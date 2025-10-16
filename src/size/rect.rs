@@ -1,7 +1,7 @@
 use crate::layout::LayoutDirection;
-use crate::Offset;
 use crate::size::padding::Padding;
 use crate::size::pos::{Axis, Pos};
+use crate::Offset;
 
 #[derive(Clone, Debug)]
 pub struct Rect {

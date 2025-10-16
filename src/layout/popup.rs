@@ -42,7 +42,7 @@ impl Popup {
             fill_render,
             open: false,
             requests: vec![],
-            geometry: Geometry::new().with_size(width, height).with_padding(Padding::same(5.0)),
+            geometry: Geometry::new().with_context_size(width, height).with_padding(Padding::same(5.0)),
             state: WidgetState::default(),
         }
     }
@@ -105,7 +105,7 @@ impl Widget for Popup {
                 if ui.device.device_input.hovered_at(&self.fill_render.rect()) { ui.update_type = UpdateType::None; }
             }
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

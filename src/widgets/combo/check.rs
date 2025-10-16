@@ -143,10 +143,10 @@ impl<T: Display + 'static> CheckComboBox<T> {
 
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.popup_rect.offset_to_rect(&ui.draw_rect);
-            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.edit.buffer().geometry.height() + 5.0));
+            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.edit.buffer().geometry.margin_height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
-            allow_rect.set_x_min(allow_rect.dx().min + self.edit.geometry().width() - 15.0);
+            allow_rect.set_x_min(allow_rect.dx().min + self.edit.geometry().context_width() - 15.0);
             allow_rect.add_min_y(5.0);
             self.allow_render.offset_to_rect(&allow_rect);
         }
@@ -169,7 +169,7 @@ impl<T: Display + 'static> Widget for CheckComboBox<T> {
             UpdateType::MouseRelease => {
                 let clicked = ui.device.device_input.mouse.clicked.load(Ordering::SeqCst);
                 self.edit.update(ui);
-                if clicked && self.edit.buffer().geometry.rect().has_position(ui.device.device_input.mouse.lastest.relative) {
+                if clicked && self.edit.buffer().geometry.padding_rect().has_position(ui.device.device_input.mouse.lastest.relative) {
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
                     popup.request_state(true);
                     ui.update_type = UpdateType::None;
@@ -184,7 +184,7 @@ impl<T: Display + 'static> Widget for CheckComboBox<T> {
             }
             _ => { self.edit.update(ui); }
         }
-        Response::new(&self.id, WidgetSize::same(self.edit.buffer().geometry.width(), self.edit.buffer().geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.edit.buffer().geometry.margin_width(), self.edit.buffer().geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

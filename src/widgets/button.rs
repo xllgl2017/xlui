@@ -47,7 +47,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 ///    //设置字体大小
 ///    //btn.set_font_size(14.0);
 ///    //设置控件宽高
-///    btn.geometry().set_size(30.0,30.0);
+///    btn.geometry().set_context_size(30.0,30.0);
 ///    ui.add(btn);
 ///    //图片按钮
 ///    let image_btn=Button::image_and_text("logo.jpg","点击");
@@ -87,11 +87,11 @@ impl Button {
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text_buffer.geometry.set_padding(Padding::same(2.0));
         self.text_buffer.init(ui);
-        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
+        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.padding_width(), self.text_buffer.geometry.padding_height());
         if let Some(ref mut image) = self.image {
             let ih = self.fill_render.rect().height() - self.text_buffer.geometry.padding().vertical();
             image.geometry().set_fix_size(ih, ih);
-            self.text_buffer.geometry.set_fix_width(self.text_buffer.geometry.width() - ih);
+            self.text_buffer.geometry.set_fix_width(self.text_buffer.geometry.context_width() - ih);
             self.text_buffer.init(ui);
         }
     }
@@ -189,11 +189,11 @@ impl Button {
             Some(ref mut image) => {
                 if ui.widget_changed.contains(WidgetChange::Position) {
                     let mut text_rect = ui.draw_rect.clone();
-                    text_rect.add_min_x(image.geometry().width());
+                    text_rect.add_min_x(image.geometry().margin_width());
                     self.text_buffer.geometry.offset_to_rect(&text_rect);
                     self.text_buffer.redraw(ui);
                 }
-                let mut image_rect = ui.draw_rect.clone_with_size(&image.geometry().rect());
+                let mut image_rect = ui.draw_rect.clone_with_size(&image.geometry().context_rect());
                 image_rect.add_min_x(self.text_buffer.geometry.padding().left);
                 image_rect.add_min_y(self.text_buffer.geometry.padding().top);
                 ui.draw_rect = image_rect;

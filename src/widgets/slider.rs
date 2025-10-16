@@ -95,7 +95,7 @@ impl Slider {
             slider_render: RenderParam::new(RenderKind::Circle(slider_param)),
             slided_render: RenderParam::new(RenderKind::Rectangle(slided_param)),
             offset: 0.0,
-            geometry: Geometry::new().with_size(130.0, 16.0),
+            geometry: Geometry::new().with_context_size(130.0, 16.0),
             state: WidgetState::default(),
         }
     }
@@ -141,7 +141,7 @@ impl Slider {
         #[cfg(feature = "gpu")]
         self.slided_render.init(ui, false, false);
         //滑块
-        self.slider_render.rect_mut().set_width(self.geometry.height());
+        self.slider_render.rect_mut().set_width(self.geometry.context_height());
         self.offset = self.value * self.fill_render.rect().width() / (self.range.end - self.range.start);
         self.slider_render.rect_mut().offset_x(&Offset::new().with_x(self.offset));
         #[cfg(feature = "gpu")]
@@ -176,10 +176,10 @@ impl Slider {
             }
             let scale = self.value / (self.range.end - self.range.start);
             self.slided_render.rect_mut().set_width(self.fill_render.rect().width() * scale);
-            *self.slider_render.rect_mut() = self.geometry.rect();
-            self.slider_render.rect_mut().set_width(self.geometry.height());
+            *self.slider_render.rect_mut() = self.geometry.context_rect();
+            self.slider_render.rect_mut().set_width(self.geometry.context_height());
             let offset = self.value * self.fill_render.rect().width() / (self.range.end - self.range.start);
-            self.offset = self.slider_render.rect_mut().offset_x_limit(offset, self.geometry.rect().dx());
+            self.offset = self.slider_render.rect_mut().offset_x_limit(offset, self.geometry.context_rect().dx());
         }
     }
 
@@ -218,7 +218,7 @@ impl Widget for Slider {
                     ui.send_updates(&self.contact_ids, ContextUpdate::F32(self.value));
                     ui.update_type = UpdateType::None;
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()));
+                    return Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()));
                 }
                 let hovered = ui.device.device_input.hovered_at(self.slider_render.rect());
                 if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); };
@@ -230,7 +230,7 @@ impl Widget for Slider {
             UpdateType::MouseRelease => if self.state.on_release() { ui.context.window.request_redraw(); },
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

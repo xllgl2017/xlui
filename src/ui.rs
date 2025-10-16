@@ -441,7 +441,7 @@ impl<'a, 'p> Ui<'a, 'p> {
         self.add(radio).unwrap()
     }
 
-    pub fn radio_groups(&mut self, mut groups: Vec<RadioButton>) {
+    pub fn radio_groups(&mut self, groups: Vec<RadioButton>) {
         let ids = groups.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
         for (index, mut group) in groups.into_iter().enumerate() {
             for (i, id) in ids.iter().enumerate() {

@@ -1,4 +1,3 @@
-
 /// ###Padding的用法
 /// ```rust
 /// use xlui::*;
@@ -44,19 +43,19 @@ impl Padding {
     ///垂直方向的总边距
     pub fn horizontal(&self) -> f32 { self.right + self.left }
 
-    pub fn left(mut self,l:f32) -> Self {
+    pub fn left(mut self, l: f32) -> Self {
         self.left = l;
         self
     }
-    pub fn right(mut self, r:f32) -> Self {
+    pub fn right(mut self, r: f32) -> Self {
         self.right = r;
         self
     }
-    pub fn bottom(mut self, b:f32) -> Self {
+    pub fn bottom(mut self, b: f32) -> Self {
         self.bottom = b;
         self
     }
-    pub fn top(mut self, b:f32) -> Self {
+    pub fn top(mut self, b: f32) -> Self {
         self.top = b;
         self
     }

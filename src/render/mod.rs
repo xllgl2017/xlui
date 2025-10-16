@@ -271,13 +271,9 @@ impl RenderParam {
             }
             #[cfg(feature = "gpu")]
             RenderKind::Triangle(_) => {
-                println!("1");
                 self.update(ui, hovered, pressed);
-                println!("2");
                 let pass = &mut ui.paint.as_mut().unwrap().pass;
-                println!("3");
                 ui.context.render.triangle.render(&self, pass);
-                println!("5");
             }
         }
     }

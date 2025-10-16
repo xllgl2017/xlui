@@ -88,7 +88,7 @@ impl<T: Display + 'static> ComboBox<T> {
         self.text_buffer.geometry.set_min_width(100.0);
         self.text_buffer.geometry.set_max_width(100.0);
         self.text_buffer.init(ui);
-        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.width(), self.text_buffer.geometry.height());
+        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.padding_width(), self.text_buffer.geometry.padding_height());
     }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {

@@ -23,7 +23,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 ///         //设置控件高度
 ///         .height(100.0);
 ///     //获取控件ID
-///     let _id=label.get_id();
+///     let _id=label.id();
 ///     ui.add(label);
 /// }
 /// ```
@@ -54,7 +54,7 @@ impl Label {
         self
     }
 
-
+    ///设置文本
     pub fn set_text(&mut self, text: impl ToString) {
         self.buffer.set_text(text.to_string());
     }
@@ -64,6 +64,7 @@ impl Label {
         self.buffer.geometry.set_fix_width(w);
         self
     }
+
     pub fn max_width(mut self, w: f32) -> Self {
         self.buffer.geometry.set_max_width(w);
         self
@@ -79,7 +80,7 @@ impl Label {
         &self.buffer.text.text
     }
 
-    pub fn get_id(&self) -> &str {
+    pub fn id(&self) -> &str {
         &self.id
     }
 
@@ -124,7 +125,7 @@ impl Widget for Label {
             UpdateType::Draw => self.redraw(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.buffer.geometry.width(), self.buffer.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.buffer.geometry.margin_width(),self.buffer.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

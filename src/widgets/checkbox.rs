@@ -84,7 +84,7 @@ impl CheckBox {
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.geometry.set_size(self.text.geometry.width() + 15.0, self.text.geometry.height());
+        self.geometry.set_context_size(self.text.geometry.margin_width() + 15.0, self.text.geometry.margin_height());
     }
 
     pub(crate) fn connect_inner(mut self, callback: impl FnMut() + 'static) -> Self {
@@ -134,7 +134,7 @@ impl CheckBox {
     fn re_init(&mut self, ui: &mut Ui) {
         //背景
         if let Some(ref mut fill) = self.fill {
-            fill.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+            fill.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
             #[cfg(feature = "gpu")]
             fill.init(ui, false, false);
         }
@@ -158,7 +158,7 @@ impl CheckBox {
                 fill.offset_to_rect(&ui.draw_rect);
             }
             self.geometry.offset_to_rect(&ui.draw_rect);
-            let mut rect = self.geometry.rect();
+            let mut rect = self.geometry.context_rect();
             self.check_render.offset_to_rect(&rect);
             self.check_text.geometry.offset_to_rect(&rect);
             rect.add_min_x(self.check_render.rect().width() + 2.0);
@@ -192,11 +192,11 @@ impl Widget for CheckBox {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.re_init(ui),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(&self.geometry.max_rect());
+                let hovered = ui.device.device_input.hovered_at(&self.geometry.padding_rect());
                 if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                let clicked = ui.device.device_input.click_at(&self.geometry.max_rect());
+                let clicked = ui.device.device_input.click_at(&self.geometry.padding_rect());
                 if self.state.on_clicked(clicked) {
                     self.value = !self.value;
                     if let Some(ref mut callback) = self.callback {
@@ -214,7 +214,7 @@ impl Widget for CheckBox {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

@@ -49,8 +49,8 @@ impl TextBuffer {
 
     fn reset(&mut self) {
         let wrap = self.geometry.is_fix_width() && self.text.wrap.is_wrap();
-        self.lines = self.font_buffer.measure_text(&self.text, wrap, self.geometry.width()).unwrap();
-        self.text.width = self.lines.iter().map(|x| x.width).reduce(f32::max).unwrap_or(self.geometry.width());
+        self.lines = self.font_buffer.measure_text(&self.text, wrap, self.geometry.context_width()).unwrap();
+        self.text.width = self.lines.iter().map(|x| x.width).reduce(f32::max).unwrap_or(self.geometry.context_width());
     }
 
     pub fn init(&mut self, ui: &mut Ui) {
@@ -69,9 +69,9 @@ impl TextBuffer {
             }, None);
             self.render = Some(render);
         }
-        self.geometry.set_size(self.text.width, self.text.height);
+        self.geometry.set_context_size(self.text.width, self.text.height);
         #[cfg(feature = "gpu")]
-        self.buffer.set_size(ui.context.font.system_mut(), Some(self.geometry.width()), Some(self.geometry.height()));
+        self.buffer.set_size(ui.context.font.system_mut(), Some(self.geometry.context_width()), Some(self.geometry.context_height()));
     }
 
     #[cfg(feature = "gpu")]
@@ -79,13 +79,13 @@ impl TextBuffer {
         let bounds = glyphon::TextBounds {
             left: self.geometry.x_i32(),
             top: 0,
-            right: self.geometry.right_i32(),
-            bottom: self.geometry.bottom_i32(),
+            right: self.geometry.context_right() as i32,
+            bottom: self.geometry.context_bottom() as i32,
         };
         let area = glyphon::TextArea {
             buffer: &self.buffer,
-            left: self.geometry.x() + self.clip_x,
-            top: self.geometry.y() + self.clip_y,
+            left: self.geometry.context_left() + self.clip_x,
+            top: self.geometry.context_top() + self.clip_y,
             scale: 1.0,
             bounds,
             default_color: self.text.color.as_glyphon_color(),
@@ -115,7 +115,7 @@ impl TextBuffer {
     #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         let param = &mut ui.paint.as_mut().unwrap();
-        ui.context.window.x11().paint_text(param, &self.text, &self.lines, self.geometry.rect(), self.clip_x, self.clip_y).unwrap();
+        ui.context.window.x11().paint_text(param, &self.text, &self.lines, self.geometry.context_rect(), self.clip_x, self.clip_y).unwrap();
     }
 
     pub fn set_text(&mut self, text: String) {
@@ -152,7 +152,7 @@ impl TextBuffer {
         #[cfg(feature = "gpu")]
         self.buffer.set_text(ui.context.font.system_mut(), &self.text.text, &self.text.font_family(), Shaping::Advanced);
         self.reset();
-        self.geometry.set_width(self.text.width)
+        self.geometry.set_context_width(self.text.width)
     }
 
     pub fn set_wrap(&mut self, wrap: TextWrap) {

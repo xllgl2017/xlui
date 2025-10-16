@@ -34,7 +34,7 @@ impl TabHeader {
 
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill.rect_mut().set_size(self.text.geometry.width(), self.text.geometry.height());
+        self.fill.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
         #[cfg(feature = "gpu")]
         self.fill.init(ui, false, false);
     }
@@ -143,7 +143,7 @@ impl TabWidget {
     }
 
     fn init(&mut self, ui: &mut Ui) {
-        self.fill.rect_mut().set_size(self.geometry.width(), self.geometry.height());
+        self.fill.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
         #[cfg(feature = "gpu")]
         self.fill.init(ui, false, false);
     }
@@ -198,12 +198,12 @@ impl Widget for TabWidget {
         if let Some(current) = self.current {
             ui.draw_rect = context_rect;
             let resp = self.items[current].layout.update(ui);
-            self.geometry.set_size(if width > resp.size.dw { width } else { resp.size.dw }, resp.size.dh + 25.0);
+            self.geometry.set_context_size(if width > resp.size.dw { width } else { resp.size.dw }, resp.size.dh + 25.0);
         }
         match ui.update_type {
             UpdateType::Init | UpdateType::ReInit | _ => self.init(ui),
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

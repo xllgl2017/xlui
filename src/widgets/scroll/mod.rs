@@ -48,7 +48,7 @@ impl ScrollWidget {
             a: 0.0,
             horiz_scrollable: false,
             vert_scrollable: false,
-            geometry: Geometry::new().with_size(400.0, 300.0).with_padding(Padding::same(5.0)),
+            geometry: Geometry::new().with_context_size(400.0, 300.0).with_padding(Padding::same(5.0)),
             state: WidgetState::default(),
         }
     }
@@ -106,18 +106,18 @@ impl ScrollWidget {
 
     pub(crate) fn draw(&mut self, ui: &mut Ui, mut callback: impl FnMut(&mut Ui)) {
         let mut current_layout = self.layout.take().unwrap_or_else(|| LayoutKind::new(VerticalLayout::top_to_bottom()));
-        let lw = self.geometry.width() - self.geometry.padding().horizontal() - self.v_bar.geometry().width(); //self.width - self.padding.horizontal() - self.v_bar.width();
-        let lh = self.geometry.height() - self.geometry.padding().vertical() - self.h_bar.geometry().height(); //self.height - self.padding.vertical() - self.h_bar.height();
-        current_layout.set_size(lw, lh);
+        // let lw = self.geometry.width() - self.geometry.padding().horizontal() - self.v_bar.geometry().width(); //self.width - self.padding.horizontal() - self.v_bar.width();
+        // let lh = self.geometry.height() - self.geometry.padding().vertical() - self.h_bar.geometry().height(); //self.height - self.padding.vertical() - self.h_bar.height();
+        current_layout.set_size(self.geometry.context_width(), self.geometry.context_height());
         let previous_layout = ui.layout.replace(current_layout).unwrap();
         //视图内容
         callback(ui);
         let mut current_layout = ui.layout.replace(previous_layout).unwrap();
         let resp = current_layout.update(ui);
-        self.fill_render.rect_mut().set_size(self.geometry.width(), self.geometry.height());
-        self.v_bar.geometry().set_fix_height(self.geometry.height() - self.h_bar.geometry().height() - self.geometry.padding().vertical());
+        self.fill_render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+        self.v_bar.geometry().set_fix_height(self.geometry.context_height() - self.h_bar.geometry().context_height() - self.geometry.padding().vertical());
         self.v_bar.set_context_height(resp.size.rh);
-        self.h_bar.geometry().set_fix_width(self.geometry.width() - self.v_bar.geometry().width() - self.geometry.padding().horizontal());
+        self.h_bar.geometry().set_fix_width(self.geometry.context_width() - self.v_bar.geometry().context_width() - self.geometry.padding().horizontal());
         self.h_bar.set_context_width(resp.size.rw);
         self.layout = Some(current_layout);
     }
@@ -173,8 +173,8 @@ impl ScrollWidget {
         ui.context.window.set_clip_rect(ui.paint.as_mut().unwrap(), clip);
         let resp = if ui.widget_changed.contains(WidgetChange::Position) {
             self.context_rect = ui.draw_rect.clone();
-            self.context_rect.set_width(self.fill_render.rect().width() - self.geometry.padding().horizontal() - self.v_bar.geometry().width());
-            self.context_rect.set_height(self.fill_render.rect().height() - self.geometry.padding().vertical() - self.h_bar.geometry().height());
+            self.context_rect.set_width(self.fill_render.rect().width() - self.geometry.padding().horizontal() - self.v_bar.geometry().context_width());
+            self.context_rect.set_height(self.fill_render.rect().height() - self.geometry.padding().vertical() - self.h_bar.geometry().context_height());
             self.context_rect.add_min_x(self.geometry.padding().left);
             self.context_rect.add_min_y(self.geometry.padding().top);
             let previous_rect = ui.draw_rect.clone();

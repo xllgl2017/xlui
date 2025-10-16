@@ -14,7 +14,7 @@ impl Space {
     pub fn new(space: f32) -> Space {
         Space {
             id: crate::gen_unique_id(),
-            geometry: Geometry::new().with_size(space, space),
+            geometry: Geometry::new().with_context_size(space, space),
             state: WidgetState::default(),
         }
     }
@@ -23,7 +23,7 @@ impl Space {
 
 impl Widget for Space {
     fn update(&mut self, _: &mut Ui) -> Response<'_> {
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

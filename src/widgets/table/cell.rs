@@ -38,7 +38,7 @@ impl TableCell {
             fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
             cell_line: RenderParam::new(RenderKind::Rectangle(cell_param)),
             layout: Some(LayoutKind::new(layout)),
-            geometry: Geometry::new().with_size(width, height),
+            geometry: Geometry::new().with_context_size(width, height),
             state: WidgetState::default(),
         }
     }
@@ -97,7 +97,7 @@ impl Widget for TableCell {
             _ => {}
         }
         self.layout.as_mut().unwrap().update(ui);
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

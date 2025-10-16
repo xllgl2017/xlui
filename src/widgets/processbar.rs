@@ -62,7 +62,7 @@ impl ProcessBar {
             process_render: RenderParam::new(RenderKind::Rectangle(process_param)),
             value: v,
             range: 0.0..100.0,
-            geometry: Geometry::new().with_size(200.0, 10.0),
+            geometry: Geometry::new().with_context_size(200.0, 10.0),
             state: WidgetState::default(),
         }
     }
@@ -126,7 +126,7 @@ impl Widget for ProcessBar {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.width(), self.geometry.height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

@@ -1,3 +1,4 @@
+use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
@@ -46,7 +47,6 @@ pub struct VerticalLayout {
     geometry: Geometry,
     direction: LayoutDirection,
     fill_render: Option<RenderParam>,
-    marin: Margin,
 }
 
 impl VerticalLayout {
@@ -59,7 +59,6 @@ impl VerticalLayout {
             direction,
             offset: Offset::new(),
             fill_render: None,
-            marin: Margin::ZERO,
         }
     }
 
@@ -129,7 +128,7 @@ impl VerticalLayout {
     }
 
     pub fn set_margin(&mut self, m: Margin) {
-        self.marin = m;
+        self.geometry.set_margin(m);
     }
 
     pub fn item_space(&self) -> f32 {
@@ -139,7 +138,7 @@ impl VerticalLayout {
 
 impl Layout for VerticalLayout {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
-        let previous_rect = ui.draw_rect.clone();
+        self.geometry.offset_to_rect(&ui.draw_rect);
         let mut width = 0.0;
         let mut height = 0.0;
         match ui.update_type {
@@ -149,38 +148,22 @@ impl Layout for VerticalLayout {
                     height += item.height() + self.item_space;
                 }
                 if let Some(ref mut render) = self.fill_render {
-                    self.geometry.set_size(width, height);
-                    // let (dw, dh) = self.size_mode.size(width + self.padding.horizontal() + self.marin.horizontal(), height + self.padding.vertical() + self.marin.vertical());
-                    render.rect_mut().set_size(self.geometry.width() - self.marin.horizontal(), self.geometry.height() - self.marin.vertical());
+                    self.geometry.set_context_size(width, height);
+                    render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
                     #[cfg(feature = "gpu")]
                     render.init(ui, false, false);
                 }
             }
             _ => {
+                self.geometry.set_margin_size(ui.draw_rect.width(), ui.draw_rect.height());
                 if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
-                    render.rect_mut().offset_to_rect(&previous_rect);
-                    render.rect_mut().offset(&Offset::new().with_y(self.marin.top).with_x(self.marin.left));
-                    // render.param.rect.add_min_x(self.marin.left);
-                    // render.param.rect.add_min_y(self.marin.top);
-                    // #[cfg(feature = "gpu")]
-                    // render.update(ui, false, false);
-                    // #[cfg(feature = "gpu")]
-                    // let pass = ui.pass.as_mut().unwrap();
-                    // #[cfg(feature = "gpu")]
-                    // ui.context.render.rectangle.render(&render, pass);
+                    render.rect_mut().offset_to_rect(&ui.draw_rect);
                     render.draw(ui, false, false);
                 }
-                self.geometry.set_size(previous_rect.width(), previous_rect.height());
-                // let (w, h) = self.size_mode.size(previous_rect.width(), previous_rect.height());
-                ui.draw_rect.set_size(self.geometry.width() - self.marin.horizontal(), self.geometry.height() - self.marin.vertical());
-                //设置布局padding
-                ui.draw_rect.add_min_x(self.geometry.padding().left + self.marin.left);
-                ui.draw_rect.add_min_y(self.geometry.padding().top + self.marin.top);
-                ui.draw_rect.add_max_x(-self.geometry.padding().right - self.marin.right);
-                ui.draw_rect.add_max_y(-self.geometry.padding().bottom - self.marin.bottom);
-                ui.draw_rect.set_y_direction(self.direction);
-                ui.draw_rect.set_x_min(ui.draw_rect.dx().min + self.offset.x);
-                ui.draw_rect.set_y_min(ui.draw_rect.dy().min + self.offset.y);
+
+                let mut rect = self.geometry.context_rect().with_y_direction(self.direction);
+                rect.offset(&self.offset);
+                let previous_rect = mem::replace(&mut ui.draw_rect, rect);
                 for item in self.items.iter_mut() {
                     let resp = item.update(ui);
                     if width < resp.size.dw { width = resp.size.dw; }
@@ -191,16 +174,13 @@ impl Layout for VerticalLayout {
                     }
                 }
                 height -= self.item_space;
+                ui.draw_rect = previous_rect;
             }
         }
-        ui.draw_rect = previous_rect;
-        // width += self.padding.horizontal() + self.marin.horizontal();
-        // height += self.padding.vertical() + self.marin.vertical();
-        self.geometry.set_size(width, height);
-        // let (dw, dh) = self.size_mode.size(width, height);
+        self.geometry.set_context_size(width, height);
         Response::new(&self.id, WidgetSize {
-            dw: self.geometry.width() + self.marin.horizontal(),
-            dh: self.geometry.height() + self.marin.vertical(),
+            dw: self.geometry.margin_width(),
+            dh: self.geometry.margin_height(),
             rw: width,
             rh: height,
         })
@@ -215,7 +195,7 @@ impl Layout for VerticalLayout {
 
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
-            space.geometry().set_width(0.0);
+            space.geometry().set_context_width(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }

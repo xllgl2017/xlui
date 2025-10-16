@@ -57,13 +57,11 @@ impl InnerWindow {
         let mut fill_render = RenderParam::new(RenderKind::Rectangle(fill_param));
         #[cfg(feature = "gpu")]
         fill_render.init(ui, false, false);
-        let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height())
-            .with_padding(Padding::ZERO);
-        let layout = LayoutKind::new(layout);
+        let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height());
         let mut window = InnerWindow {
             id: WindowId::unique_id(),
             fill_render,
-            layout: Some(layout),
+            layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
             title_rect: Rect::new().with_size(attr.inner_width_f32(), 22.0),
             offset: Offset::new().covered(),
@@ -149,19 +147,11 @@ impl InnerWindow {
 
         nui.update_type = UpdateType::Init;
         self.w.draw(&mut nui);
-        let context_layout = nui.layout.take().unwrap();
+        let mut context_layout = nui.layout.take().unwrap();
+        context_layout.update(&mut nui);
         nui.update_type = UpdateType::None;
         self.popups = nui.popups.take();
         self.layout.as_mut().unwrap().add_item(LayoutItem::Layout(context_layout));
-    }
-
-    fn update_buffer(&mut self, ui: &mut Ui) {
-        if self.changed { ui.widget_changed |= WidgetChange::Value; }
-        self.changed = false;
-        if ui.widget_changed.contains(WidgetChange::Value) {
-            #[cfg(feature = "gpu")]
-            self.fill_render.update(ui, false, false);
-        }
     }
 
     fn window_update(&mut self, ui: &mut Ui) -> bool {
@@ -218,8 +208,6 @@ impl InnerWindow {
             paint: oui.paint.take(),
         };
 
-
-        self.update_buffer(&mut nui);
         self.title_rect.offset_to_rect(&nui.draw_rect);
         self.fill_render.draw(&mut nui, false, false);
         self.w.update(&mut nui);
@@ -247,7 +235,7 @@ impl InnerWindow {
             draw_rect: self.fill_render.rect().clone(),
             widget_changed: WidgetChange::None,
             style: Rc::new(RefCell::new(Style::light_style())),
-            paint:None
+            paint: None,
         };
         self.w.update(&mut nui);
         nui.app = Some(&mut self.w);
