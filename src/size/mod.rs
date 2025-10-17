@@ -10,6 +10,8 @@ pub mod font;
 pub mod margin;
 
 #[derive(Clone, Debug, Copy, PartialEq)]
+#[cfg_attr(feature = "gpu", repr(C))]
+#[cfg_attr(feature = "gpu", derive(bytemuck::Pod, bytemuck::Zeroable))]
 pub struct Size {
     pub width: f32,
     pub height: f32,
@@ -226,16 +228,6 @@ impl Geometry {
         rect
     }
 
-    // pub(crate) fn max_rect(&self) -> Rect {
-    //     let mut rect = Rect::new();
-    //     rect.set_x_min(self.x);
-    //     rect.set_y_min(self.y);
-    //     rect.set_width(self.width());
-    //     rect.set_height(self.height());
-    //     rect
-    // }
-
-
     pub(crate) fn context_left(&self) -> f32 {
         let mut x = self.x + self.padding.left + self.margin.left;
         let fix_width = match self.fix_width {
@@ -256,8 +248,12 @@ impl Geometry {
         x
     }
 
+    pub(crate) fn margin_left(&self) -> f32 {
+        self.x
+    }
+
     pub(crate) fn padding_left(&self) -> f32 {
-        self.context_left() - self.margin.left
+        self.x + self.margin.left
     }
 
 
@@ -287,12 +283,12 @@ impl Geometry {
     }
 
     pub(crate) fn padding_top(&self) -> f32 {
-        self.context_top() - self.margin.top
+        self.y + self.margin.top
     }
 
-    // pub fn y_i32(&self) -> i32 {
-    //     self.y() as i32
-    // }
+    pub(crate) fn margin_top(&self) -> f32 {
+        self.y
+    }
 
     pub(crate) fn context_right(&self) -> f32 {
         self.padding_right() - self.padding.right
@@ -306,11 +302,6 @@ impl Geometry {
         self.x + self.margin_width()
     }
 
-    // #[cfg(feature = "gpu")]
-    // pub(crate) fn right_i32(&self) -> i32 {
-    //     self.right() as i32
-    // }
-
     pub(crate) fn context_bottom(&self) -> f32 {
         self.padding_bottom() - self.padding.bottom
     }
@@ -322,10 +313,6 @@ impl Geometry {
     fn margin_bottom(&self) -> f32 {
         self.y + self.margin_height()
     }
-
-    // pub(crate) fn bottom_i32(&self) -> i32 {
-    //     self.bottom() as i32
-    // }
 
     pub fn set_fix_size(&mut self, w: f32, h: f32) {
         self.set_fix_width(w);
@@ -354,29 +341,15 @@ impl Geometry {
         self.max_width = Some(width);
     }
 
-    // pub fn set_max_height(&mut self, height: f32) {
-    //     self.max_height = Some(height);
-    // }
-
     pub fn set_min_width(&mut self, min_width: f32) {
         self.min_width = Some(min_width);
     }
-
-    // pub fn set_min_height(&mut self, min_height: f32) {
-    //     self.min_height = Some(min_height);
-    // }
 
     pub fn add_fix_width(&mut self, w: f32) {
         if let Some(fix_width) = self.fix_width {
             self.fix_width = Some(fix_width + w);
         }
     }
-
-    // pub fn add_fix_height(&mut self, h: f32) {
-    //     if let Some(fix_height) = self.fix_height {
-    //         self.fix_height = Some(fix_height + h);
-    //     }
-    // }
 
     pub fn with_padding(mut self, padding: Padding) -> Self {
         self.set_padding(padding);

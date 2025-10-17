@@ -1,19 +1,18 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
+use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
+use crate::Shadow;
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
-use crate::size::Geometry;
 
 /// ### SelectItem的示例用法
 /// ```
@@ -39,7 +38,7 @@ pub struct SelectItem<T> {
     text: TextBuffer,
     value: T,
     parent_selected: Arc<RwLock<Option<String>>>,
-    fill_render: RenderParam,
+    visual: Visual,
 
     callback: Option<Box<dyn FnMut(&mut Option<T>)>>,
     state: WidgetState,
@@ -47,19 +46,20 @@ pub struct SelectItem<T> {
 
 impl<T: Display> SelectItem<T> {
     pub fn new(value: T) -> Self {
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::TRANSPARENT;
-        fill_style.fill.hovered = Color::rgba(153, 193, 241, 220);
-        fill_style.fill.clicked = Color::rgba(153, 193, 241, 220);
-        fill_style.border.inactive = Border::same(0.0);
-        fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        let mut fill_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgba(153, 193, 241, 220),
+            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+            radius: Radius::same(2),
+            shadow: Shadow::new(),
+        });
+        fill_style.inactive.fill = Color::TRANSPARENT;
+        fill_style.inactive.border.set_same(0.0);
         SelectItem {
             id: crate::gen_unique_id(),
             text: TextBuffer::new(value.to_string()).with_align(Align::LeftCenter).padding(Padding::same(2.0)),
             value,
             parent_selected: Arc::new(RwLock::new(None)),
-            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
+            visual: Visual::new().with_enable().with_style(fill_style),
             callback: None,
             state: WidgetState::default(),
         }
@@ -67,7 +67,7 @@ impl<T: Display> SelectItem<T> {
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill_render.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
+        self.visual.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
     }
 
     pub fn with_size(mut self, w: f32, h: f32) -> Self {
@@ -101,21 +101,12 @@ impl<T: Display> SelectItem<T> {
 
     fn init(&mut self, ui: &mut Ui) {
         self.reset_size(ui);
-        self.re_init(ui);
-    }
-
-    fn re_init(&mut self, ui: &mut Ui) {
-        //背景
-        let current = self.parent_selected.read().unwrap();
-        let selected = current.as_ref() == Some(&self.value.to_string());
-        #[cfg(feature = "gpu")]
-        self.fill_render.init(ui, selected, selected);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.offset_to_rect(&ui.draw_rect);
+            self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
             self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
     }
@@ -124,8 +115,9 @@ impl<T: Display> SelectItem<T> {
         self.update_buffer(ui);
         let current = self.parent_selected.read().unwrap();
         let selected = current.as_ref() == Some(&self.value.to_string());
-        self.fill_render.draw(ui, selected || self.state.hovered, selected);
+        self.visual.draw(ui, self.state.disabled, selected || self.state.hovered, selected, false);
         self.text.redraw(ui);
+        self.visual.draw(ui, self.state.disabled, selected || self.state.hovered, selected, true);
     }
 }
 
@@ -133,13 +125,15 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init | UpdateType::ReInit => self.init(ui),
+            UpdateType::Init => self.init(ui),
+            #[cfg(feature = "gpu")]
+            UpdateType::ReInit => self.fill_render.re_init(),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
+                let hovered = ui.device.device_input.hovered_at(self.visual.rect());
                 if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                let clicked = ui.device.device_input.click_at(self.fill_render.rect());
+                let clicked = ui.device.device_input.click_at(self.visual.rect());
                 if self.state.on_clicked(clicked) {
                     let mut selected = self.parent_selected.write().unwrap();
                     *selected = Some(self.value.to_string());

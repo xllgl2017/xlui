@@ -2,21 +2,19 @@ pub mod bar;
 
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutKind};
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
+use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::scroll::bar::ScrollBar;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
-use crate::{Offset, VerticalLayout};
-use crate::size::Geometry;
+use crate::{Offset, Shadow, VerticalLayout};
 
 pub struct ScrollWidget {
     pub(crate) id: String,
@@ -24,7 +22,7 @@ pub struct ScrollWidget {
     pub(crate) layout: Option<LayoutKind>,
     v_bar: ScrollBar,
     h_bar: ScrollBar,
-    fill_render: RenderParam,
+    visual: Visual,
     a: f32,
     horiz_scrollable: bool,
     vert_scrollable: bool,
@@ -34,17 +32,23 @@ pub struct ScrollWidget {
 
 impl ScrollWidget {
     fn new() -> ScrollWidget {
-        let mut fill_style = ClickStyle::new();
-        fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        let fill_style = VisualStyle::same(WidgetStyle {
+            fill: Color::WHITE,
+            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+            radius: Radius::same(2),
+            shadow: Shadow::new(),
+        });
+        // fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        // fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        // fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         ScrollWidget {
             id: crate::gen_unique_id(),
             context_rect: Rect::new(),
             layout: None,
             v_bar: ScrollBar::vertical(),
             h_bar: ScrollBar::horizontal(),
-            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
+            visual: Visual::new().with_style(fill_style),
+            // fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
             a: 0.0,
             horiz_scrollable: false,
             vert_scrollable: false,
@@ -100,8 +104,8 @@ impl ScrollWidget {
         self
     }
 
-    pub fn set_style(&mut self, style: ClickStyle) {
-        self.fill_render.set_style(style);
+    pub fn set_style(&mut self, style: VisualStyle) {
+        self.visual.set_style(style);
     }
 
     pub(crate) fn draw(&mut self, ui: &mut Ui, mut callback: impl FnMut(&mut Ui)) {
@@ -114,7 +118,7 @@ impl ScrollWidget {
         callback(ui);
         let mut current_layout = ui.layout.replace(previous_layout).unwrap();
         let resp = current_layout.update(ui);
-        self.fill_render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+        self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
         self.v_bar.geometry().set_fix_height(self.geometry.context_height() - self.h_bar.geometry().context_height() - self.geometry.padding().vertical());
         self.v_bar.set_context_height(resp.size.rh);
         self.h_bar.geometry().set_fix_width(self.geometry.context_width() - self.v_bar.geometry().context_width() - self.geometry.padding().horizontal());
@@ -124,8 +128,8 @@ impl ScrollWidget {
 
     fn re_init(&mut self, ui: &mut Ui) {
         //滚动区域
-        #[cfg(feature = "gpu")]
-        self.fill_render.init(ui, false, false);
+        // #[cfg(feature = "gpu")]
+        // self.fill_render.init(ui, false, false);
         self.v_bar.update(ui);
         self.h_bar.update(ui);
     }
@@ -153,8 +157,8 @@ impl ScrollWidget {
         if self.a != 0.0 {
             let oy = self.a * 10.0 * 10.0;
             let mut pos = Pos::new();
-            pos.x = self.fill_render.rect().dx().center();
-            pos.y = self.fill_render.rect().dy().center();
+            pos.x = self.visual.rect().dx().center();
+            pos.y = self.visual.rect().dy().center();
             if self.a.abs() - 0.001 < 0.0 {
                 self.a = 0.0;
             } else if self.a > 0.0 {
@@ -166,15 +170,15 @@ impl ScrollWidget {
             ui.context.window.request_redraw();
         }
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.offset_to_rect(&ui.draw_rect);
+            self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
         }
-        self.fill_render.draw(ui, false, false);
-        let clip = self.fill_render.rect().clone_add_padding(self.geometry.padding());
+        self.visual.draw(ui, self.state.disabled, false, false, false);
+        let clip = self.visual.rect().clone_add_padding(self.geometry.padding());
         ui.context.window.set_clip_rect(ui.paint.as_mut().unwrap(), clip);
         let resp = if ui.widget_changed.contains(WidgetChange::Position) {
             self.context_rect = ui.draw_rect.clone();
-            self.context_rect.set_width(self.fill_render.rect().width() - self.geometry.padding().horizontal() - self.v_bar.geometry().context_width());
-            self.context_rect.set_height(self.fill_render.rect().height() - self.geometry.padding().vertical() - self.h_bar.geometry().context_height());
+            self.context_rect.set_width(self.visual.rect().width() - self.geometry.padding().horizontal() - self.v_bar.geometry().context_width());
+            self.context_rect.set_height(self.visual.rect().height() - self.geometry.padding().vertical() - self.h_bar.geometry().context_height());
             self.context_rect.add_min_x(self.geometry.padding().left);
             self.context_rect.add_min_y(self.geometry.padding().top);
             let previous_rect = ui.draw_rect.clone();
@@ -237,7 +241,7 @@ impl Widget for ScrollWidget {
                     let ox = ui.device.device_input.mouse.offset_x();
                     self.bar_offset(ox, oy);
                     ui.context.window.request_redraw();
-                    return Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()));
+                    return Response::new(&self.id, WidgetSize::same(self.visual.rect().width(), self.visual.rect().height()));
                 }
                 let mut offset = Offset::new();
                 if self.vert_scrollable {
@@ -257,7 +261,7 @@ impl Widget for ScrollWidget {
                 if self.horiz_scrollable { self.h_bar.update(ui); }
             }
             UpdateType::MouseRelease => {
-                if ui.device.device_input.hovered_at(self.fill_render.rect()) {
+                if ui.device.device_input.hovered_at(self.visual.rect()) {
                     self.a = ui.device.device_input.mouse.a;
                 }
                 if self.vert_scrollable {
@@ -269,7 +273,7 @@ impl Widget for ScrollWidget {
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseWheel => {
-                if ui.device.device_input.hovered_at(self.fill_render.rect()) {
+                if ui.device.device_input.hovered_at(self.visual.rect()) {
                     let oy = ui.device.device_input.mouse.delta_y() * 10.0;
                     self.bar_offset(0.0, oy);
                     ui.context.window.request_redraw();
@@ -277,7 +281,7 @@ impl Widget for ScrollWidget {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
+        Response::new(&self.id, WidgetSize::same(self.visual.rect().width(), self.visual.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

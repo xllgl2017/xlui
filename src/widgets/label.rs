@@ -1,5 +1,6 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
+use crate::render::Visual;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
@@ -31,6 +32,7 @@ pub struct Label {
     id: String,
     buffer: TextBuffer,
     state: WidgetState,
+    visual: Visual,
 }
 
 impl Label {
@@ -39,7 +41,8 @@ impl Label {
         Label {
             id: crate::gen_unique_id(),
             buffer,
-            state:WidgetState::default(),
+            state: WidgetState::default(),
+            visual: Visual::new(),
         }
     }
     ///仅作用于draw
@@ -119,13 +122,15 @@ impl Label {
 
 impl Widget for Label {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> { //处理鼠标键盘时间
+        self.visual.draw(ui, self.state.disabled, self.state.hovered, self.state.pressed, false);
         match &ui.update_type {
             UpdateType::Init => self.init(ui),
             UpdateType::ReInit => self.buffer.init(ui),
             UpdateType::Draw => self.redraw(ui),
-            _ => {}
+            _ => self.state.handle_event(ui, &self.buffer.geometry, self.visual.disable())
         }
-        Response::new(&self.id, WidgetSize::same(self.buffer.geometry.margin_width(),self.buffer.geometry.margin_height()))
+        self.visual.draw(ui,self.state.disabled, self.state.hovered, self.state.pressed, true);
+        Response::new(&self.id, WidgetSize::same(self.buffer.geometry.margin_width(), self.buffer.geometry.margin_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

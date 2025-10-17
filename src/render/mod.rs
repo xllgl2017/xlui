@@ -4,9 +4,7 @@ use crate::ui::Ui;
 use crate::*;
 #[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
-use crate::render::circle::param::CircleParam;
-use crate::render::rectangle::param::RectParam;
-use crate::render::triangle::param::TriangleParam;
+use crate::shape::Shape;
 
 pub mod rectangle;
 pub mod circle;
@@ -14,27 +12,16 @@ pub mod image;
 pub mod triangle;
 
 #[cfg(feature = "gpu")]
-#[repr(C)]
-#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Screen {
-    size: [f32; 2],
-}
-
-#[cfg(feature = "gpu")]
 pub trait WrcParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8];
-}
-
-pub enum RenderKind {
-    Rectangle(RectParam),
-    Circle(CircleParam),
-    Triangle(TriangleParam),
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool);
 }
 
 pub struct RenderParam {
-    kind: RenderKind,
+    rect: Rect,
+    shape: Shape,
+    style: VisualStyle,
     #[cfg(feature = "gpu")]
-    buffer: Option<wgpu::Buffer>,
+    bind_buffer: Option<wgpu::Buffer>,
     #[cfg(feature = "gpu")]
     bind_group: Option<wgpu::BindGroup>,
     #[cfg(feature = "gpu")]
@@ -45,11 +32,13 @@ pub struct RenderParam {
 
 
 impl RenderParam {
-    pub fn new(kind: RenderKind) -> RenderParam {
+    pub fn new(shape: Shape) -> RenderParam {
         RenderParam {
-            kind,
+            rect: Rect::new(),
+            shape,
+            style: VisualStyle::new(),
             #[cfg(feature = "gpu")]
-            buffer: None,
+            bind_buffer: None,
             #[cfg(feature = "gpu")]
             bind_group: None,
             #[cfg(feature = "gpu")]
@@ -59,165 +48,256 @@ impl RenderParam {
         }
     }
 
-    #[cfg(feature = "gpu")]
-    pub fn update(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => {
-                let data=param.as_draw_param(hovered, pressed, size);
-                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
-                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.vertices));
-                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.rect_shape.indices));
-            }
-            RenderKind::Circle(ref mut param) => {
-                let data = param.as_draw_param(hovered, pressed, size);
-                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
-                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.circle_shape.vertices));
-                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.circle_shape.indices));
-            }
-            RenderKind::Triangle(ref mut param) => {
-                let data = param.as_draw_param(hovered, pressed, size);
-                ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
-                ui.device.queue.write_buffer(self.vertices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.vertices));
-                ui.device.queue.write_buffer(self.indices_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&param.indices));
-            }
-        };
-        // ui.device.queue.write_buffer(self.buffer.as_ref().unwrap(), 0, data);
+    pub fn with_style(mut self, style: VisualStyle) -> RenderParam {
+        self.style = style;
+        self
     }
+
+    pub fn set_style(&mut self, style: VisualStyle) {
+        self.style = style;
+    }
+
+    pub fn style_mut(&mut self) -> &mut VisualStyle { &mut self.style }
+
+    pub fn style(&self) -> &VisualStyle { &self.style }
+
+    pub fn with_size(mut self, w: f32, h: f32) -> RenderParam {
+        self.rect.set_size(w, h);
+        self
+    }
+
+    pub fn rect(&self) -> &Rect { &self.rect }
+
+    pub fn rect_mut(&mut self) -> &mut Rect { &mut self.rect }
 
     #[cfg(feature = "gpu")]
-    pub fn init(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        let size = (ui.device.surface_config.width, ui.device.surface_config.height).into();
-        let (buffer, bind_group) = match self.kind {
-            RenderKind::Rectangle(ref mut param) => {
-                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                    size: 8192,
-                    mapped_at_creation: false,
-                }));
-                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-                    size: 8192,
-                    mapped_at_creation: false,
-                }));
-                let data = bytemuck::bytes_of(&param.screen);
-                ui.context.render.rectangle.init(&ui.device, data)
+    pub fn update(&mut self, ui: &mut Ui, style: WidgetStyle) {
+        let size: Size = (&ui.device.surface_config).into();
+        let bind_data = bytemuck::bytes_of(&size);
+        match self.bind_buffer {
+            None => {
+                let (buffer, group) = ui.context.render.rectangle.init(&ui.device, bind_data);
+                self.bind_buffer = Some(buffer);
+                self.bind_group = Some(group);
             }
-            RenderKind::Circle(ref mut param) => {
-                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                    size: 8192,
-                    mapped_at_creation: false,
-                }));
-                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-                    size: 8192,
-                    mapped_at_creation: false,
-                }));
-                let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.circle.init(&ui.device, data)
+            Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bind_data),
+        }
+        let vertices_data = bytemuck::cast_slice(self.shape.vertices());
+        let indices_data = bytemuck::cast_slice(self.shape.indices());
+        match self.vertices_buffer {
+            None => {
+                let buffer = Self::create_buffer(ui, wgpu::BufferUsages::VERTEX, self.shape.vertices_size());
+                ui.device.queue.write_buffer(&buffer, 0, vertices_data);
+                self.vertices_buffer = Some(buffer);
             }
-            RenderKind::Triangle(ref mut param) => {
-                self.vertices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                    size: 96,
-                    mapped_at_creation: false,
-                }));
-                self.indices_buffer = Option::from(ui.device.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-                    size: 12,
-                    mapped_at_creation: false,
-                }));
-                let data = param.as_draw_param(hovered, pressed, size);
-                ui.context.render.triangle.init(&ui.device, data)
+            Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, vertices_data),
+        }
+        match self.indices_buffer {
+            None => {
+                let buffer = Self::create_buffer(ui, wgpu::BufferUsages::INDEX, self.shape.indices_size());
+                ui.device.queue.write_buffer(&buffer, 0, indices_data);
+                self.indices_buffer = Some(buffer);
             }
-        };
-        self.buffer = Some(buffer);
-        self.bind_group = Some(bind_group);
-    }
-
-    pub fn rect_mut(&mut self) -> &mut Rect {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => &mut param.rect,
-            RenderKind::Circle(ref mut param) => &mut param.rect,
-            RenderKind::Triangle(ref mut param) => &mut param.rect,
+            Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, indices_data),
         }
+        // match self.kind {
+        //     Shape::Rectangle(ref mut param) => {
+        //         // param.as_draw_param(hovered, pressed);
+        //         let bind_data = bytemuck::bytes_of(&size);
+        //         match self.bind_buffer {
+        //             None => {
+        //                 let (buffer, group) = ui.context.render.rectangle.init(&ui.device, bind_data);
+        //                 self.bind_buffer = Some(buffer);
+        //                 self.bind_group = Some(group);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bind_data),
+        //         }
+        //         let vertices_data = bytemuck::cast_slice(&param.rect_shape.vertices);
+        //         let indices_data = bytemuck::cast_slice(&param.rect_shape.indices);
+        //         match self.vertices_buffer {
+        //             None => {
+        //                 let buffer = Self::create_buffer(ui, wgpu::BufferUsages::VERTEX, 8192);
+        //                 ui.device.queue.write_buffer(&buffer, 0, vertices_data);
+        //                 self.vertices_buffer = Some(buffer);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, vertices_data),
+        //         }
+        //         match self.indices_buffer {
+        //             None => {
+        //                 let buffer = Self::create_buffer(ui, wgpu::BufferUsages::INDEX, 2048);
+        //                 ui.device.queue.write_buffer(&buffer, 0, indices_data);
+        //                 self.indices_buffer = Some(buffer);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, indices_data),
+        //         }
+        //     }
+        //     RenderKind::Circle(ref mut param) => {
+        //         param.as_draw_param(hovered, pressed);
+        //         let data = bytemuck::bytes_of(&size);
+        //         match self.bind_buffer {
+        //             None => {
+        //                 let (buffer, group) = ui.context.render.circle.init(&ui.device, data);
+        //                 self.bind_buffer = Some(buffer);
+        //                 self.bind_group = Some(group);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, data),
+        //         }
+        //         match self.vertices_buffer {
+        //             None => {
+        //                 let buffer = Self::create_buffer(ui, wgpu::BufferUsages::VERTEX, 8192);
+        //                 ui.device.queue.write_buffer(&buffer, 0, bytemuck::cast_slice(&param.circle_shape.vertices));
+        //                 self.vertices_buffer = Some(buffer);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bytemuck::cast_slice(&param.circle_shape.vertices)),
+        //         }
+        //         match self.indices_buffer {
+        //             None => {
+        //                 let buffer = Self::create_buffer(ui, wgpu::BufferUsages::INDEX, 2048);
+        //                 ui.device.queue.write_buffer(&buffer, 0, bytemuck::cast_slice(&param.circle_shape.indices));
+        //                 self.indices_buffer = Some(buffer);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bytemuck::cast_slice(&param.circle_shape.indices)),
+        //         }
+        //     }
+        //     RenderKind::Triangle(ref mut param) => {
+        //         param.as_draw_param(hovered, pressed);
+        //         let data = bytemuck::bytes_of(&size);
+        //         match self.bind_buffer {
+        //             None => {
+        //                 let (buffer, group) = ui.context.render.triangle.init(&ui.device, data);
+        //                 self.bind_buffer = Some(buffer);
+        //                 self.bind_group = Some(group);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, data),
+        //         }
+        //         match self.vertices_buffer {
+        //             None => {
+        //                 let buffer = Self::create_buffer(ui, wgpu::BufferUsages::VERTEX, 72);
+        //                 ui.device.queue.write_buffer(&buffer, 0, bytemuck::cast_slice(&param.vertices));
+        //                 self.vertices_buffer = Some(buffer);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bytemuck::cast_slice(&param.vertices)),
+        //         }
+        //         match self.indices_buffer {
+        //             None => {
+        //                 let buffer = Self::create_buffer(ui, wgpu::BufferUsages::INDEX, 12);
+        //                 ui.device.queue.write_buffer(&buffer, 0, bytemuck::cast_slice(&param.indices));
+        //                 self.indices_buffer = Some(buffer);
+        //             }
+        //             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bytemuck::cast_slice(&param.indices)),
+        //         }
+        //     }
+        // };
     }
 
-    pub fn rect(&self) -> &Rect {
-        match self.kind {
-            RenderKind::Rectangle(ref param) => &param.rect,
-            RenderKind::Circle(ref param) => &param.rect,
-            RenderKind::Triangle(ref param) => &param.rect,
+    #[cfg(feature = "gpu")]
+    pub(crate) fn re_init(&mut self) {
+        let buffer = self.bind_buffer.take();
+        if let Some(buffer) = buffer {
+            buffer.destroy();
+            drop(buffer);
         }
-    }
-
-    pub fn set_shadow(&mut self, shadow: Shadow) {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => param.shadow = shadow,
-            RenderKind::Circle(_) => {}
-            RenderKind::Triangle(_) => {}
+        let buffer = self.vertices_buffer.take();
+        if let Some(buffer) = buffer {
+            buffer.destroy();
+            drop(buffer);
         }
-    }
-
-    pub fn rect_param_mut(&mut self) -> &mut RectParam {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => param,
-            _ => panic!("not rect")
+        let buffer = self.indices_buffer.take();
+        if let Some(buffer) = buffer {
+            buffer.destroy();
+            drop(buffer);
         }
+        let group = self.bind_group.take();
+        if let Some(group) = group { drop(group); }
     }
 
-    pub fn rect_param(&self) -> &RectParam {
-        match self.kind {
-            RenderKind::Rectangle(ref param) => param,
-            _ => panic!("not rect")
-        }
+    #[cfg(feature = "gpu")]
+    fn create_buffer(ui: &mut Ui, usage: wgpu::BufferUsages, size: u64) -> wgpu::Buffer {
+        ui.device.device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size,
+            usage: usage | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        })
     }
 
-    pub fn set_frame_style(&mut self, style: FrameStyle) {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => param.set_frame(style),
-            RenderKind::Circle(_) => {}
-            RenderKind::Triangle(_) => {}
-        }
-    }
+    // pub fn rect_mut(&mut self) -> &mut Rect {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref mut param) => &mut param.rect,
+    //         RenderKind::Circle(ref mut param) => &mut param.rect,
+    //         RenderKind::Triangle(ref mut param) => &mut param.rect,
+    //     }
+    // }
 
+    // pub fn rect(&self) -> &Rect {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref param) => &param.rect,
+    //         RenderKind::Circle(ref param) => &param.rect,
+    //         RenderKind::Triangle(ref param) => &param.rect,
+    //     }
+    // }
+
+    // pub fn set_shadow(&mut self, shadow: Shadow) {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref mut param) => param.shadow = shadow,
+    //         RenderKind::Circle(_) => {}
+    //         RenderKind::Triangle(_) => {}
+    //     }
+    // }
+
+    // pub fn rect_param_mut(&mut self) -> &mut RectParam {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref mut param) => param,
+    //         _ => panic!("not rect")
+    //     }
+    // }
+
+    // pub fn rect_param(&self) -> &RectParam {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref param) => param,
+    //         _ => panic!("not rect")
+    //     }
+    // }
+
+    // pub fn set_frame_style(&mut self, style: FrameStyle) {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref mut param) => param.set_frame(style),
+    //         RenderKind::Circle(_) => {}
+    //         RenderKind::Triangle(_) => {}
+    //     }
+    // }
+    //
     pub fn set_poses(&mut self, p0: Pos, p1: Pos, p2: Pos) {
-        match self.kind {
-            RenderKind::Rectangle(_) => {}
-            RenderKind::Circle(_) => {}
-            RenderKind::Triangle(ref mut param) => param.set_poses(p0, p1, p2)
-        }
+        // match self.kind {
+        //     RenderKind::Rectangle(_) => {}
+        //     RenderKind::Circle(_) => {}
+        //     RenderKind::Triangle(ref mut param) => param.set_poses(p0, p1, p2)
+        // }
     }
 
-    pub fn set_style(&mut self, style: ClickStyle) {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => param.set_style(style),
-            RenderKind::Circle(ref mut param) => param.set_style(style),
-            RenderKind::Triangle(ref mut param) => param.set_style(style),
-        }
-    }
+    // pub fn set_style(&mut self, style: ClickStyle) {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref mut param) => param.set_style(style),
+    //         RenderKind::Circle(ref mut param) => param.set_style(style),
+    //         RenderKind::Triangle(ref mut param) => param.set_style(style),
+    //     }
+    // }
 
-    pub fn style_mut(&mut self) -> &mut ClickStyle {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => &mut param.style,
-            RenderKind::Circle(ref mut param) => &mut param.style,
-            RenderKind::Triangle(ref mut param) => &mut param.style,
-        }
-    }
+    // pub fn style_mut(&mut self) -> &mut ClickStyle {
+    //     match self.kind {
+    //         RenderKind::Rectangle(ref mut param) => &mut param.style,
+    //         RenderKind::Circle(ref mut param) => &mut param.style,
+    //         RenderKind::Triangle(ref mut param) => &mut param.style,
+    //     }
+    // }
 
     pub fn offset_to_rect(&mut self, rect: &Rect) {
-        match self.kind {
-            RenderKind::Rectangle(ref mut param) => param.rect.offset_to_rect(rect),
-            RenderKind::Circle(ref mut param) => param.rect.offset_to_rect(rect),
-            RenderKind::Triangle(ref mut param) => param.offset_to_rect(rect),
-        };
+        self.rect.offset_to_rect(rect);
+        // match self.kind {
+        //     RenderKind::Rectangle(ref mut param) => param.rect.offset_to_rect(rect),
+        //     RenderKind::Circle(ref mut param) => param.rect.offset_to_rect(rect),
+        //     RenderKind::Triangle(ref mut param) => param.offset_to_rect(rect),
+        // };
     }
     #[cfg(feature = "gpu")]
     pub fn indices(&self) -> &Vec<u16> {
@@ -228,40 +308,35 @@ impl RenderParam {
         }
     }
 
-    pub fn draw(&mut self, ui: &mut Ui, hovered: bool, pressed: bool) {
-        match self.kind {
+    pub fn draw(&mut self, ui: &mut Ui, disabled: bool, hovered: bool, pressed: bool) {
+        let style = self.style.dyn_style(ui.disabled || disabled, hovered, pressed);
+        match self.shape {
             #[cfg(not(feature = "gpu"))]
-            RenderKind::Rectangle(ref param) => {
-                let fill = param.style.dyn_fill(pressed, hovered);
-                let border = param.style.dyn_border(pressed, hovered);
+            Shape::Rectangle => {
                 #[cfg(windows)]
                 ui.context.window.win32().paint_rect(ui.paint.as_mut().unwrap().hdc, fill, border, &param.rect);
                 #[cfg(target_os = "linux")]
-                ui.context.window.x11().paint_rect(ui.paint.as_mut().unwrap().cairo, fill, border, &param.rect);
+                ui.context.window.x11().paint_rect(ui.paint.as_mut().unwrap().cairo, style, &self.rect);
             }
             #[cfg(feature = "gpu")]
-            RenderKind::Rectangle(_) => {
-                self.update(ui, hovered, pressed);
+            Shape::Rectangle(_) => {
+                self.update(ui, style, hovered, pressed);
                 let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.rectangle.render(&self, pass);
             }
             #[cfg(not(feature = "gpu"))]
-            RenderKind::Circle(ref param) => {
-                let fill = param.style.dyn_fill(pressed, hovered);
-                let border = param.style.dyn_border(pressed, hovered);
+            Shape::Circle => {
                 #[cfg(windows)]
                 ui.context.window.win32().paint_circle(ui.paint.as_mut().unwrap().hdc, &param.rect, fill, border);
                 #[cfg(target_os = "linux")]
-                ui.context.window.x11().paint_circle(ui.paint.as_mut().unwrap().cairo, fill, border, &param.rect);
+                ui.context.window.x11().paint_circle(ui.paint.as_mut().unwrap().cairo, style, &self.rect);
             }
             #[cfg(not(feature = "gpu"))]
-            RenderKind::Triangle(ref param) => {
-                let fill = param.style.dyn_fill(pressed, hovered);
-                let border = param.style.dyn_border(pressed, hovered);
+            Shape::Triangle => {
                 #[cfg(windows)]
                 ui.context.window.win32().paint_triangle(ui.paint.as_mut().unwrap().hdc, param.as_win32_points(), fill, border);
-                #[cfg(target_os = "linux")]
-                ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, fill, border);
+                // #[cfg(target_os = "linux")]
+                // ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, style);
             }
             #[cfg(feature = "gpu")]
             RenderKind::Circle(_) => {
@@ -343,4 +418,137 @@ pub(crate) trait WrcRender {
         render_pass.set_index_buffer(param.indices_buffer.as_ref().unwrap().slice(..), IndexFormat::Uint16);
         render_pass.draw_indexed(0..param.indices().len() as u32, 0, 0..1);
     }
+}
+
+#[derive(Clone)]
+pub struct WidgetStyle {
+    pub fill: Color,
+    pub border: Border,
+    pub radius: Radius,
+    pub shadow: Shadow,
+}
+
+impl WidgetStyle {
+    pub fn new() -> WidgetStyle {
+        WidgetStyle {
+            fill: Color::new(),
+            border: Border::same(0.0),
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        }
+    }
+}
+
+impl From<(Color, f32, u8)> for WidgetStyle {
+    fn from(value: (Color, f32, u8)) -> Self {
+        let mut res = WidgetStyle::new();
+        res.fill = value.0;
+        res.border = Border::same(value.1);
+        res.radius = Radius::same(value.2);
+        res
+    }
+}
+
+#[derive(Clone)]
+pub struct VisualStyle {
+    pub disabled: WidgetStyle,
+    pub inactive: WidgetStyle,
+    pub hovered: WidgetStyle,
+    pub pressed: WidgetStyle,
+}
+
+impl VisualStyle {
+    pub fn new() -> VisualStyle {
+        VisualStyle {
+            disabled: WidgetStyle::new(),
+            inactive: WidgetStyle::new(),
+            hovered: WidgetStyle::new(),
+            pressed: WidgetStyle::new(),
+        }
+    }
+
+    pub fn same(style: WidgetStyle) -> VisualStyle {
+        let mut res = VisualStyle::new();
+        res.disabled = style.clone();
+        res.inactive = style.clone();
+        res.hovered = style.clone();
+        res.pressed = style;
+        res
+    }
+
+    pub fn dyn_style(&self, disabled: bool, hovered: bool, pressed: bool) -> &WidgetStyle {
+        if disabled { return &self.disabled; }
+        if pressed { return &self.pressed; }
+        if hovered { return &self.hovered; }
+        &self.inactive
+    }
+}
+
+
+pub struct Visual {
+    render: RenderParam,
+    disable: bool,
+    foreground: bool,
+}
+
+impl Visual {
+    pub fn new() -> Visual {
+        Visual {
+            #[cfg(feature = "gpu")]
+            render: RenderParam::new(Shape::Rectangle(RectangleShape::new())),
+            render: RenderParam::new(Shape::Rectangle),
+            disable: true,
+            foreground: false,
+        }
+    }
+
+    pub fn with_enable(mut self) -> Visual {
+        self.disable = false;
+        self
+    }
+
+    pub fn enable(&mut self) -> &mut Visual {
+        self.disable = false;
+        self
+    }
+
+    pub fn with_style(mut self, style: VisualStyle) -> Visual {
+        self.render.set_style(style);
+        self
+    }
+
+    pub fn set_style(&mut self, style: VisualStyle) {
+        self.render.set_style(style);
+    }
+
+
+    pub fn draw(&mut self, ui: &mut Ui, disabled: bool, hovered: bool, pressed: bool, foreground: bool) {
+        if self.disable || self.foreground != foreground { return; }
+        self.render.draw(ui, disabled, hovered, pressed);
+    }
+
+    pub fn foreground(&self) -> bool {
+        self.foreground
+    }
+
+    pub fn disable(&self) -> bool {
+        self.disable
+    }
+
+    pub fn with_size(mut self, w: f32, h: f32) -> Visual {
+        self.render.rect.set_size(w, h);
+        self
+    }
+
+    pub fn rect(&self) -> &Rect { self.render.rect() }
+
+    pub fn rect_mut(&mut self) -> &mut Rect { self.render.rect_mut() }
+
+    pub fn offset_to_rect(&mut self, rect: &Rect) {
+        self.render.offset_to_rect(rect)
+    }
+
+    pub fn style(&self) -> &VisualStyle { &self.render.style }
+
+    pub fn style_mut(&mut self) -> &mut VisualStyle { self.render.style_mut() }
 }

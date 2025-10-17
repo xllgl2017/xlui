@@ -1,4 +1,3 @@
-use crate::size::radius::Radius;
 use crate::style::color::Color;
 
 #[derive(Clone, PartialEq)]
@@ -7,7 +6,6 @@ pub struct Border {
     pub right_width: f32,
     pub top_width: f32,
     pub bottom_width: f32,
-    pub radius: Radius,
     pub color: Color,
 }
 
@@ -18,8 +16,7 @@ impl Border {
             right_width: width,
             top_width: width,
             bottom_width: width,
-            radius: Radius::same(3),
-            color: Color::rgb(0, 0, 0),
+            color: Color::BLACK,
         }
     }
 
@@ -35,8 +32,8 @@ impl Border {
         self
     }
 
-    pub fn radius(mut self, radius: Radius) -> Self {
-        self.radius = radius;
+    pub fn with_bottom(mut self, w: f32) -> Self {
+        self.bottom_width = w;
         self
     }
 

@@ -1,42 +1,40 @@
 #[cfg(feature = "gpu")]
 use crate::render::WrcParam;
-use crate::size::rect::Rect;
-use crate::style::{ClickStyle, FrameStyle, Shadow};
-use crate::*;
-#[cfg(feature = "gpu")]
-use crate::render::Screen;
+use crate::render::{VisualStyle, WidgetStyle};
 #[cfg(feature = "gpu")]
 use crate::shape::rectangle::RectangleShape;
+use crate::size::rect::Rect;
+use crate::style::{FrameStyle, Shadow};
+use crate::*;
 
 pub struct RectParam {
     pub(crate) rect: Rect,
-    pub(crate) style: ClickStyle,
+    pub(crate) style: VisualStyle,
     pub(crate) shadow: Shadow,
     #[cfg(feature = "gpu")]
     pub(crate) rect_shape: RectangleShape,
-    #[cfg(feature = "gpu")]
-    pub(crate) screen:Screen
 }
 
 impl RectParam {
     pub fn new() -> Self {
         RectParam {
             rect: Rect::new(),
-            style: ClickStyle::new(),
+            style: VisualStyle::new(),
             shadow: Shadow::new(),
             #[cfg(feature = "gpu")]
             rect_shape: RectangleShape::new(),
-            #[cfg(feature = "gpu")]
-            screen: Screen {
-                size: [1000.0,800.0],
-            },
         }
     }
 
     pub fn new_frame(rect: Rect, frame: FrameStyle) -> Self {
-        let mut style = ClickStyle::new();
-        style.fill = FillStyle::same(frame.fill);
-        style.border = BorderStyle::same(frame.border);
+        let style = VisualStyle::same(WidgetStyle {
+            fill: frame.fill,
+            border: frame.border,
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        });
+        // style.fill = FillStyle::same(frame.fill);
+        // style.border = BorderStyle::same(frame.border);
         let res = Self::new().with_rect(rect).with_style(style);
         res.with_shadow(frame.shadow)
     }
@@ -56,20 +54,22 @@ impl RectParam {
         self
     }
 
-    pub fn with_style(mut self, style: ClickStyle) -> Self {
+    pub fn with_style(mut self, style: VisualStyle) -> Self {
         self.set_style(style);
         self
     }
 
-    pub fn set_style(&mut self, style: ClickStyle) {
+    pub fn set_style(&mut self, style: VisualStyle) {
         self.style = style;
     }
 
     pub fn set_frame(&mut self, frame: FrameStyle) {
-        let mut style = ClickStyle::new();
-        style.fill = FillStyle::same(frame.fill);
-        style.border = BorderStyle::same(frame.border);
-        self.style = style;
+        self.style = VisualStyle::same(WidgetStyle {
+            fill: frame.fill,
+            border: frame.border,
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        });
         self.shadow = frame.shadow;
     }
 
@@ -80,11 +80,9 @@ impl RectParam {
 }
 #[cfg(feature = "gpu")]
 impl WrcParam for RectParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) {
         let fill_color = self.style.dyn_fill(mouse_down, hovered);
         let border = self.style.dyn_border(mouse_down, hovered);
         self.rect_shape.reset(&self.rect, fill_color, border);
-        self.screen.size=[size.width, size.height];
-        bytemuck::bytes_of(&self.screen)
     }
 }

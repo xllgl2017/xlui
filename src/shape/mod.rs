@@ -1,10 +1,78 @@
-use crate::{Color, Pos};
+#[cfg(feature = "gpu")]
+use crate::{Color, Pos, Rect};
+#[cfg(feature = "gpu")]
+use crate::shape::circle::CircleShape;
+#[cfg(feature = "gpu")]
+use crate::shape::rectangle::RectangleShape;
+#[cfg(feature = "gpu")]
+use crate::shape::triangle::TriangleShape;
+#[cfg(feature = "gpu")]
 use crate::vertex::Vertex;
+#[cfg(feature = "gpu")]
+mod rectangle;
+#[cfg(feature = "gpu")]
+mod ring;
+#[cfg(feature = "gpu")]
+mod circle;
+#[cfg(feature = "gpu")]
+mod triangle;
 
-pub mod rectangle;
-pub mod ring;
-pub mod circle;
+pub enum Shape {
+    Rectangle,
+    Circle,
+    Triangle,
+    #[cfg(feature = "gpu")]
+    Rectangle(RectangleShape),
+    #[cfg(feature = "gpu")]
+    Circle(CircleShape),
+    #[cfg(feature = "gpu")]
+    Triangle(TriangleShape),
+}
 
+#[cfg(feature = "gpu")]
+impl Shape {
+    pub fn vertices(&self) -> &Vec<Vertex> {
+        match self {
+            Shape::Rectangle(rect) => &rect.vertices,
+            Shape::Circle(circle) => &circle.vertices,
+            Shape::Triangle(triangle) => &triangle.vertices,
+        }
+    }
+
+    pub fn indices(&self) -> &Vec<u16> {
+        match self {
+            Shape::Rectangle(rect) => &rect.indices,
+            Shape::Circle(circle) => &circle.indices,
+            Shape::Triangle(triangle) => &triangle.indices,
+        }
+    }
+
+    pub fn vertices_size(&self) -> u64 {
+        match self {
+            Shape::Rectangle(_) => 8192,
+            Shape::Circle(_) => 8192,
+            Shape::Triangle(_) => 72,
+        }
+    }
+
+    pub fn indices_size(&self) -> u64 {
+        match self {
+            Shape::Rectangle(_) => 2048,
+            Shape::Circle(_) => 2048,
+            Shape::Triangle(_) => 12,
+        }
+    }
+
+    pub fn update(&mut self, rect: &Rect, style: &WidgetStyle) {
+        match self {
+            Shape::Rectangle(rectangle) => rectangle.reset(rect, style),
+            Shape::Circle(circle) => circle.draw(),
+            Shape::Triangle(_) => {}
+        }
+    }
+}
+
+#[cfg(feature = "gpu")]
 pub fn draw_fan(center: Pos, start_pos: Pos, mut start_index: u16, fill: &Color, degree: i32) -> (Vec<Vertex>, Vec<u16>) {
     let mut points = vec![Vertex {
         position: [center.x, center.y],
@@ -32,6 +100,8 @@ pub fn draw_fan(center: Pos, start_pos: Pos, mut start_index: u16, fill: &Color,
     (points, indices)
 }
 
+#[cfg(feature = "gpu")]
+#[allow(dead_code)]
 fn draw_line() -> (Vec<Vertex>, Vec<u16>) {
     let poses = vec![
         Pos {
@@ -86,6 +156,7 @@ fn draw_line() -> (Vec<Vertex>, Vec<u16>) {
     (points, indices)
 }
 
+#[cfg(feature = "gpu")]
 ///计算圆心坐标(a,b)
 ///* p1,p2为屏幕坐标，均>0.0
 fn get_circle_pos(p1: Pos, p2: Pos, w: f32) -> (Pos, Pos) {
@@ -110,6 +181,7 @@ fn get_circle_pos(p1: Pos, p2: Pos, w: f32) -> (Pos, Pos) {
     (Pos { x: cx1, y: cy1 }, Pos { x: cx2, y: cy2 })
 }
 
+#[cfg(feature = "gpu")]
 /// 将点 A 绕圆心 C 旋转 delta_rad（弧度），返回点 B
 fn rotate_point_around_center(a: Pos, c: Pos, delta_rad: f32) -> Pos {
     let dx = a.x - c.x;
@@ -124,10 +196,12 @@ fn rotate_point_around_center(a: Pos, c: Pos, delta_rad: f32) -> Pos {
     Pos { x: c.x + rx, y: c.y + ry }
 }
 
+#[cfg(feature = "gpu")]
 fn deg_to_rad(deg: f32) -> f32 {
     deg * std::f32::consts::PI / 180.0
 }
 
+#[cfg(feature = "gpu")]
 fn rotate_point_deg(a: Pos, c: Pos, delta_deg: f32) -> Pos {
     rotate_point_around_center(a, c, deg_to_rad(delta_deg))
 }

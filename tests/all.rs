@@ -51,7 +51,7 @@ impl XlUi {
 
     fn on_rect_close(&mut self, window: InnerWindow, _: &mut Ui) {
         let frame: TestShape = window.to_();
-        println!("{} {}", frame.border.left_width, frame.border.radius.left_top);
+        println!("{} {}", frame.border.left_width, frame.radius.left_top);
     }
 
 

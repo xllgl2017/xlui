@@ -1,47 +1,53 @@
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;
 use crate::widgets::{WidgetChange, WidgetSize, WidgetState};
-use crate::{Align, Border, BorderStyle, ClickStyle, Color, FillStyle, LayoutKind, Padding, Radius, RichText, Ui, UpdateType, VerticalLayout, Widget};
+use crate::*;
 
 pub struct TabHeader {
     id: String,
     text: TextBuffer,
-    fill: RenderParam,
+    visual: Visual,
     state: WidgetState,
 }
 
 impl TabHeader {
     fn new(text: impl Into<RichText>) -> TabHeader {
-        let mut tab_style = ClickStyle::new();
-        tab_style.fill = FillStyle::same(Color::WHITE);
-        let mut border = Border::same(1.0).radius(Radius::same(1)).color(Color::rgb(160, 160, 160));
-        border.bottom_width = 0.0;
-        tab_style.border = BorderStyle::same(border);
+        let tab_style = VisualStyle::same(WidgetStyle {
+            fill: Color::WHITE,
+            border: Border::same(1.0).with_bottom(0.0).color(Color::rgb(160, 160, 160)),
+            radius: Radius::same(1),
+            shadow: Shadow::new(),
+        });
+
+        // tab_style.fill = FillStyle::same(Color::WHITE);
+        // let mut border = Border::same(1.0).radius(Radius::same(1)).color(Color::rgb(160, 160, 160));
+        // border.bottom_width = 0.0;
+        // tab_style.border = BorderStyle::same(border);
         TabHeader {
-            id: crate::gen_unique_id(),
+            id: gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0).padding(Padding::same(3.0)),
-            fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_height(25.0).with_style(tab_style))),
+            visual: Visual::new().with_style(tab_style),
+            // fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_height(25.0).with_style(tab_style))),
             state: WidgetState::default(),
         }
     }
 
-    pub fn set_style(&mut self, style: ClickStyle) {
-        self.fill.set_style(style);
+    pub fn set_style(&mut self, style: VisualStyle) {
+        self.visual.set_style(style);
     }
 
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
-        self.fill.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
-        #[cfg(feature = "gpu")]
-        self.fill.init(ui, false, false);
+        self.visual.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
+        // #[cfg(feature = "gpu")]
+        // self.fill.init(ui, false, false);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill.rect_mut().offset_to_rect(&ui.draw_rect);
+            self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
             ui.widget_changed |= WidgetChange::Value;
             self.text.geometry.offset_to_rect(&ui.draw_rect);
         }
@@ -49,7 +55,7 @@ impl TabHeader {
 
     fn draw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill.draw(ui, false, false);
+        self.visual.draw(ui, self.state.disabled, false, false, false);
         self.text.redraw(ui);
     }
 }
@@ -61,7 +67,7 @@ impl Widget for TabHeader {
             UpdateType::Init | UpdateType::ReInit => self.init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill.rect_mut().width(), self.fill.rect_mut().height()))
+        Response::new(&self.id, WidgetSize::same(self.visual.rect_mut().width(), self.visual.rect_mut().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {
@@ -100,28 +106,34 @@ pub struct TabWidget {
     space: f32,
     items: Vec<TabItem>,
     geometry: Geometry,
-    fill: RenderParam,
+    visual: Visual,
     state: WidgetState,
 }
 
 impl TabWidget {
     pub fn new() -> TabWidget {
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill = FillStyle::same(Color::WHITE);
-        fill_style.border = BorderStyle::same(Border::same(1.0).radius(Radius::same(1)).color(Color::rgba(144, 209, 255, 255)));
+        let fill_style = VisualStyle::same(WidgetStyle {
+            fill: Color::WHITE,
+            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+            radius: Radius::same(1),
+            shadow: Shadow::new(),
+        });
+        // fill_style.fill = FillStyle::same(Color::WHITE);
+        // fill_style.border = BorderStyle::same(Border::same(1.0).radius(Radius::same(1)).color(Color::rgba(144, 209, 255, 255)));
         TabWidget {
-            id: crate::gen_unique_id(),
+            id: gen_unique_id(),
             current: None,
             space: 2.0,
             items: vec![],
             geometry: Geometry::new(),
-            fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
+            visual: Visual::new().with_style(fill_style),
+            // fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
             state: WidgetState::default(),
         }
     }
     pub fn add_tab(&mut self, ui: &mut Ui, name: impl Into<RichText>, context: impl FnOnce(&mut Ui)) -> &mut TabHeader {
         if let Some(previous) = self.current {
-            self.items[previous].header.fill.style_mut().fill = FillStyle::same(Color::TRANSPARENT);
+            self.items[previous].header.visual.style_mut().inactive.fill = Color::TRANSPARENT;
         }
         self.current = Some(self.items.len());
         let ut = ui.update_type.clone();
@@ -142,10 +154,8 @@ impl TabWidget {
         &mut self.items.last_mut().unwrap().header
     }
 
-    fn init(&mut self, ui: &mut Ui) {
-        self.fill.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
-        #[cfg(feature = "gpu")]
-        self.fill.init(ui, false, false);
+    fn init(&mut self) {
+        self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
     }
 
     pub fn with_width(mut self, w: f32) -> Self {
@@ -170,9 +180,9 @@ impl Widget for TabWidget {
         context_rect.add_min_y(24.0);
         if let UpdateType::Draw = ui.update_type {
             if ui.widget_changed.contains(WidgetChange::Position) {
-                self.fill.rect_mut().offset_to_rect(&context_rect);
+                self.visual.rect_mut().offset_to_rect(&context_rect);
             }
-            self.fill.draw(ui, false, false);
+            self.visual.draw(ui, self.state.disabled, false, false, false);
         }
         context_rect.add_min_y(1.0);
         let mut tab_text_rect = ui.draw_rect.clone();
@@ -187,9 +197,9 @@ impl Widget for TabWidget {
             tab_text_rect.add_min_x(resp.size.dw + self.space);
             if clicked && ui.draw_rect.has_position(ui.device.device_input.mouse.lastest.relative) {
                 let previous = self.current.replace(index);
-                item.header.fill.style_mut().fill = FillStyle::same(Color::WHITE);
+                item.header.visual.style_mut().inactive.fill = Color::WHITE;
                 if let Some(previous) = previous && previous != index {
-                    self.items[previous].header.fill.style_mut().fill = FillStyle::same(Color::TRANSPARENT);
+                    self.items[previous].header.visual.style_mut().inactive.fill = Color::TRANSPARENT;
                 }
 
                 ui.context.window.request_redraw();
@@ -201,7 +211,7 @@ impl Widget for TabWidget {
             self.geometry.set_context_size(if width > resp.size.dw { width } else { resp.size.dw }, resp.size.dh + 25.0);
         }
         match ui.update_type {
-            UpdateType::Init | UpdateType::ReInit | _ => self.init(ui),
+            UpdateType::Init | UpdateType::ReInit | _ => self.init(),
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))
     }

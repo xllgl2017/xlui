@@ -1,18 +1,15 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
-use crate::render::circle::param::CircleParam;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
 use crate::response::{Callback, Response};
+use crate::shape::Shape;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
-use crate::size::rect::Rect;
 use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
-use crate::Offset;
+use crate::{Offset, Shadow};
 use std::ops::Range;
 
 /// ### Slider的示例用法
@@ -47,7 +44,8 @@ pub struct Slider {
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, f32)>>,
     contact_ids: Vec<String>,
 
-    fill_render: RenderParam,
+    visual: Visual,
+    bg_render: RenderParam,
     slider_render: RenderParam,
     slided_render: RenderParam,
 
@@ -59,41 +57,35 @@ pub struct Slider {
 
 impl Slider {
     pub fn new(v: f32) -> Slider {
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::rgb(220, 220, 220);
-        fill_style.fill.hovered = Color::rgb(220, 220, 220);
-        fill_style.fill.clicked = Color::rgb(220, 220, 220);
-        fill_style.border.inactive = Border::same(0.0).radius(Radius::same(3));
-        fill_style.border.hovered = Border::same(0.0).radius(Radius::same(3));
-        fill_style.border.clicked = Border::same(0.0).radius(Radius::same(3));
-
-        let mut slider_style = ClickStyle::new();
-        slider_style.fill.inactive = Color::rgb(56, 182, 244);
-        slider_style.fill.hovered = Color::rgb(56, 182, 244);
-        slider_style.fill.clicked = Color::rgb(56, 182, 244);
-        slider_style.border.inactive = Border::same(0.0).color(Color::BLACK).radius(Radius::same(8));
-        slider_style.border.hovered = Border::same(1.0).color(Color::BLACK).radius(Radius::same(8));
-        slider_style.border.clicked = Border::same(1.0).color(Color::BLACK).radius(Radius::same(8));
-
-        let mut slided_style = ClickStyle::new();
-        slided_style.fill.inactive = Color::rgb(56, 182, 244);
-        slided_style.fill.hovered = Color::rgb(56, 182, 244);
-        slided_style.fill.clicked = Color::rgb(56, 182, 244);
-        slided_style.border.inactive = Border::same(0.0).radius(Radius::same(3));
-        slided_style.border.hovered = Border::same(0.0).radius(Radius::same(3));
-        slided_style.border.clicked = Border::same(0.0).radius(Radius::same(3));
-        let fill_param = RectParam::new().with_size(114.0, 6.0).with_style(fill_style);
-        let slider_param = CircleParam::new(Rect::new().with_size(16.0, 16.0), slider_style);
-        let slided_param = RectParam::new().with_size(114.0, 6.0).with_style(slided_style);
+        let bg_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgb(220, 220, 220),
+            border: Border::same(0.0),
+            radius: Radius::same(3),
+            shadow: Shadow::new(),
+        });
+        let mut slider_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgb(56, 182, 244),
+            border: Border::same(1.0).color(Color::BLACK),
+            radius: Radius::same(8),
+            shadow: Shadow::new(),
+        });
+        slider_style.inactive.border.set_same(0.0);
+        let slided_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgb(56, 182, 244),
+            border: Border::same(0.0),
+            radius: Radius::same(3),
+            shadow: Shadow::new(),
+        });
         Slider {
             id: crate::gen_unique_id(),
             value: v,
             range: 0.0..1.0,
             callback: None,
             contact_ids: vec![],
-            fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
-            slider_render: RenderParam::new(RenderKind::Circle(slider_param)),
-            slided_render: RenderParam::new(RenderKind::Rectangle(slided_param)),
+            visual: Visual::new().with_size(130.0,16.0),
+            bg_render: RenderParam::new(Shape::Rectangle).with_size(114.0, 6.0).with_style(bg_style),
+            slider_render: RenderParam::new(Shape::Circle).with_style(slider_style).with_size(16.0, 16.0),
+            slided_render: RenderParam::new(Shape::Rectangle).with_style(slided_style).with_size(114.0, 6.0),
             offset: 0.0,
             geometry: Geometry::new().with_context_size(130.0, 16.0),
             state: WidgetState::default(),
@@ -125,27 +117,21 @@ impl Slider {
         self
     }
 
-    fn init(&mut self, ui: &mut Ui) {
+    fn init(&mut self) {
         //分配大小
-        self.re_init(ui);
+        self.re_init();
     }
 
-    fn re_init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        //背景
-        self.fill_render.init(ui, false, false);
+    fn re_init(&mut self) {
         //已滑动背景
         let scale = self.value / (self.range.end - self.range.start);
         let width = self.slided_render.rect().width() * scale;
         self.slided_render.rect_mut().set_width(width);
-        #[cfg(feature = "gpu")]
-        self.slided_render.init(ui, false, false);
         //滑块
         self.slider_render.rect_mut().set_width(self.geometry.context_height());
-        self.offset = self.value * self.fill_render.rect().width() / (self.range.end - self.range.start);
+        self.offset = self.value * self.bg_render.rect().width() / (self.range.end - self.range.start);
         self.slider_render.rect_mut().offset_x(&Offset::new().with_x(self.offset));
-        #[cfg(feature = "gpu")]
-        self.slider_render.init(ui, false, false);
+        self.state.changed = true;
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -157,15 +143,13 @@ impl Slider {
         self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
+            self.visual.offset_to_rect(&ui.draw_rect);
             let mut fill_rect = ui.draw_rect.clone();
             fill_rect.contract(8.0, 5.0);
-            self.fill_render.offset_to_rect(&fill_rect);
+            self.bg_render.offset_to_rect(&fill_rect);
             self.slided_render.offset_to_rect(&fill_rect);
-            let mut slider_rect = ui.draw_rect.clone();
-            slider_rect.offset_x(&Offset::new().with_x(self.offset));
-
-            slider_rect.set_height(ui.draw_rect.height());
-            self.slider_render.offset_to_rect(&slider_rect);
+            self.slider_render.offset_to_rect(&ui.draw_rect);
+            self.slider_render.rect_mut().offset(&Offset::new().with_x(self.offset));
         }
 
         if ui.widget_changed.contains(WidgetChange::Value) {
@@ -175,19 +159,22 @@ impl Slider {
                 self.value = self.range.start;
             }
             let scale = self.value / (self.range.end - self.range.start);
-            self.slided_render.rect_mut().set_width(self.fill_render.rect().width() * scale);
+            self.slided_render.rect_mut().set_width(self.bg_render.rect().width() * scale);
             *self.slider_render.rect_mut() = self.geometry.context_rect();
             self.slider_render.rect_mut().set_width(self.geometry.context_height());
-            let offset = self.value * self.fill_render.rect().width() / (self.range.end - self.range.start);
+            let offset = self.value * self.bg_render.rect().width() / (self.range.end - self.range.start);
             self.offset = self.slider_render.rect_mut().offset_x_limit(offset, self.geometry.context_rect().dx());
+            self.slider_render.rect_mut().offset(&Offset::new().with_x(self.offset));
         }
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill_render.draw(ui, false, false);
-        self.slided_render.draw(ui, false, false);
-        self.slider_render.draw(ui, self.state.hovered || self.state.focused, self.state.pressed);
+        self.visual.draw(ui, self.state.disabled, false, false, false);
+        self.bg_render.draw(ui, false, false, false);
+        self.slided_render.draw(ui, false, false, false);
+        self.slider_render.draw(ui, self.state.disabled, self.state.hovered || self.state.focused, self.state.pressed);
+        self.visual.draw(ui, self.state.disabled, false, false, true);
     }
 }
 
@@ -195,13 +182,19 @@ impl Widget for Slider {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init | UpdateType::ReInit => self.init(ui),
+            UpdateType::Init => self.init(),
+            #[cfg(feature = "gpu")]
+            UpdateType::ReInit => {
+                self.fill_render.re_init();
+                self.slided_render.re_init();
+                self.slider_render.re_init();
+            }
             UpdateType::MouseMove => { //滑动
                 if self.state.hovered_moving() {
-                    let ox = ui.device.device_input.mouse.lastest.relative.x - self.fill_render.rect().dx().min;
-                    let mut cl = ox / self.fill_render.rect().width();
+                    let ox = ui.device.device_input.mouse.lastest.relative.x - self.bg_render.rect().dx().min;
+                    let mut cl = ox / self.bg_render.rect().width();
                     if cl >= 1.0 {
-                        self.offset = self.fill_render.rect().width();
+                        self.offset = self.bg_render.rect().width();
                         cl = 1.0;
                     } else if cl <= 0.0 {
                         self.offset = 0.0;

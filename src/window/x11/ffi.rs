@@ -4,6 +4,7 @@ use std::mem::MaybeUninit;
 use x11::xlib::{Display, Drawable, Visual};
 use crate::size::font::{FontSlant, FontWeight};
 
+#[allow(dead_code)]
 unsafe extern "C" {
     fn cairo_surface_reference(surface: *mut CairoSurface) -> *mut CairoSurface;
     fn cairo_create(target: *mut CairoSurface) -> *mut Cairo;
@@ -37,6 +38,7 @@ unsafe extern "C" {
     fn cairo_set_antialias(cr: *mut Cairo, antialias: i32);
 }
 
+#[allow(dead_code)]
 pub enum CairoAntialias {
     Default = 0,
     None = 1,
@@ -144,6 +146,7 @@ impl Cairo {
         }
     }
 
+    #[allow(dead_code)]
     pub fn text_extents(&mut self, utf8: impl AsRef<str>) -> CairoTextExtents {
         let utf8 = CString::new(utf8.as_ref().to_string()).unwrap();
         let mut extents = MaybeUninit::uninit();

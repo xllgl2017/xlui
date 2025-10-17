@@ -2,13 +2,15 @@ use xlui::*;
 
 pub struct TestShape {
     pub(crate) border: Border,
+    pub(crate) radius: Radius,
     shadow_x: f32,
     shadow_y: f32,
 }
 impl TestShape {
     pub fn new() -> TestShape {
         TestShape {
-            border: Border::same(1.0).radius(Radius::same(5)),
+            border: Border::same(1.0),
+            radius: Radius::same(5),
             shadow_x: 5.0,
             shadow_y: 8.0,
         }
@@ -29,7 +31,7 @@ impl TestShape {
     }
 
     fn border_radius(&mut self, _: &mut Ui, v: u8) {
-        self.border.radius = Radius::same(v);
+        self.radius = Radius::same(v);
         // self.rectangle.style_mut().border.inactive.radius = Radius::same(v);
         // self.rectangle.style_mut().border.hovered.radius = Radius::same(v);
         // self.rectangle.style_mut().border.clicked.radius = Radius::same(v);
@@ -37,7 +39,7 @@ impl TestShape {
     }
 
     fn border_radius_f32(&mut self, _: &mut Ui, v: f32) {
-        self.border.radius = Radius::same(v as u8)
+        self.radius = Radius::same(v as u8)
         // self.rectangle.style_mut().border.inactive.radius = Radius::same(v as u8);
         // self.rectangle.style_mut().border.hovered.radius = Radius::same(v as u8);
         // self.rectangle.style_mut().border.clicked.radius = Radius::same(v as u8);
@@ -66,27 +68,32 @@ impl App for TestShape {
             blur: 1.0,
             color: Color::rgba(0, 0, 0, 30),
         };
-        let style = ui.style.borrow().widgets.popup.clone();
-        self.border.color = style.border.inactive.color.clone();
+        let style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgb(240, 240, 240),
+            border: Border::same(1.0),
+            radius: Radius::same(5),
+            shadow,
+        });
+        self.border.color = style.inactive.border.color.clone();
         ui.horizontal(|ui| {
             let rectangle = Rectangle::new(style.clone(), 200.0, 150.0)
-                .with_id("rectangle").with_shadow(shadow);
+                .with_id("rectangle"); //.with_shadow(shadow);
             ui.add(rectangle);
             ui.add_space(20.0);
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("边框:");
-                    ui.add(SpinBox::new(style.border.inactive.left_width, 1.0, 0.0..20.0).id("sbw")
+                    ui.add(SpinBox::new(style.inactive.border.left_width, 1.0, 0.0..20.0).id("sbw")
                         .contact("sb").contact("tsbw").contact("tsb")
                         .connect(Self::border_with));
-                    ui.add(Slider::new(style.border.inactive.left_width).with_range(0.0..20.0).id("sb")
+                    ui.add(Slider::new(style.inactive.border.left_width).with_range(0.0..20.0).id("sb")
                         .contact("sbw").contact("tsbw").contact("tsb")
                         .connect(Self::border_with));
                 });
                 ui.horizontal(|ui| {
                     ui.label("圆角:");
-                    ui.add(SpinBox::new(style.border.inactive.radius.left_bottom, 1, 0..50).id("sbr").contact("sr").connect(Self::border_radius));
-                    ui.add(Slider::new(style.border.inactive.radius.left_bottom as f32).with_range(0.0..50.0).id("sr").contact("sbr").connect(Self::border_radius_f32));
+                    ui.add(SpinBox::new(style.inactive.radius.left_bottom, 1, 0..50).id("sbr").contact("sr").connect(Self::border_radius));
+                    ui.add(Slider::new(style.inactive.radius.left_bottom as f32).with_range(0.0..50.0).id("sr").contact("sbr").connect(Self::border_radius_f32));
                 });
                 ui.horizontal(|ui| {
                     ui.label("偏移:");
@@ -114,10 +121,10 @@ impl App for TestShape {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("边框:");
-                    ui.add(SpinBox::new(style.border.inactive.left_width, 1.0, 0.0..20.0).id("tsbw")
+                    ui.add(SpinBox::new(style.inactive.border.left_width, 1.0, 0.0..20.0).id("tsbw")
                         .contact("tsb").contact("sb").contact("sbw")
                         .connect(Self::border_with));
-                    ui.add(Slider::new(style.border.inactive.left_width).with_range(0.0..20.0).id("tsb")
+                    ui.add(Slider::new(style.inactive.border.left_width).with_range(0.0..20.0).id("tsb")
                         .contact("tsbw").contact("sb").contact("sbw")
                         .connect(Self::border_with));
                 });
@@ -135,10 +142,10 @@ impl App for TestShape {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("边框:");
-                    ui.add(SpinBox::new(style.border.inactive.left_width, 1.0, 0.0..20.0).id("csbw")
+                    ui.add(SpinBox::new(style.inactive.border.left_width, 1.0, 0.0..20.0).id("csbw")
                         .contact("csb").contact("tsb").contact("sb").contact("sbw")
                         .connect(Self::border_with));
-                    ui.add(Slider::new(style.border.inactive.left_width).with_range(0.0..20.0).id("csb")
+                    ui.add(Slider::new(style.inactive.border.left_width).with_range(0.0..20.0).id("csb")
                         .contact("csbw").contact("tsb").contact("sb").contact("sbw")
                         .connect(Self::border_with));
                 });
@@ -147,10 +154,10 @@ impl App for TestShape {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        let rectangle: &mut Rectangle = ui.get_widget("rectangle").unwrap();
-        rectangle.set_offset_x(self.shadow_x);
-        rectangle.set_offset_y(self.shadow_y);
-        rectangle.set_border(self.border.clone());
+        // let rectangle: &mut Rectangle = ui.get_widget("rectangle").unwrap();
+        // rectangle.set_offset_x(self.shadow_x);
+        // rectangle.set_offset_y(self.shadow_y);
+        // rectangle.set_border(self.border.clone());
     }
 
 

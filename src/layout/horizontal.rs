@@ -1,17 +1,16 @@
-use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::Visual;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
+use crate::style::FrameStyle;
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Offset, Padding, Pos, Radius, Rect, Widget};
+use crate::*;
+use std::mem;
 
 ///### 水平布局的使用
 ///```rust
@@ -48,7 +47,7 @@ pub struct HorizontalLayout {
     geometry: Geometry,
     direction: LayoutDirection,
     offset: Offset,
-    fill_render: Option<RenderParam>,
+    visual: Visual,
     window: bool,
     pressed: bool,
     press_pos: Pos,
@@ -57,13 +56,13 @@ pub struct HorizontalLayout {
 impl HorizontalLayout {
     fn new(direction: LayoutDirection) -> HorizontalLayout {
         HorizontalLayout {
-            id: crate::gen_unique_id(),
+            id: gen_unique_id(),
             items: Map::new(),
             item_space: 5.0,
             direction,
             geometry: Geometry::new(),
             offset: Offset::new(),
-            fill_render: None,
+            visual: Visual::new(),
             window: false,
             pressed: false,
             press_pos: Pos::new(),
@@ -86,23 +85,28 @@ impl HorizontalLayout {
 
 
     pub fn with_fill(mut self, color: Color) -> Self {
-        let mut style = ClickStyle::new();
-        style.fill = FillStyle::same(color);
-        style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
-        let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
-        self.fill_render = Some(fill_render);
+        self.visual.style_mut().inactive.fill = color;
+        // let mut style = ClickStyle::new();
+        // style.fill = FillStyle::same(color);
+        // style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
+        // let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
+        // self.fill_render = Some(fill_render);
         self
     }
 
     ///设置背景的样式
     pub fn set_style(&mut self, style: FrameStyle) {
-        match self.fill_render {
-            None => {
-                let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
-                self.fill_render = Some(fill_render);
-            }
-            Some(ref mut render) => render.set_frame_style(style),
-        }
+        self.visual.style_mut().inactive.fill = style.fill;
+        self.visual.style_mut().inactive.border = style.border;
+        self.visual.style_mut().inactive.shadow = style.shadow;
+        self.visual.style_mut().inactive.radius = style.radius;
+        // match self.fill_render {
+        //     None => {
+        //         let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
+        //         self.fill_render = Some(fill_render);
+        //     }
+        //     Some(ref mut render) => render.set_frame_style(style),
+        // }
     }
 
 
@@ -161,12 +165,15 @@ impl Layout for HorizontalLayout {
                     width += item.width() + self.item_space;
                 }
                 width -= self.item_space;
-                if let Some(ref mut render) = self.fill_render {
-                    self.geometry.set_context_size(width, height);
-                    render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
-                    #[cfg(feature = "gpu")]
-                    render.init(ui, false, false);
-                }
+                self.geometry.set_context_size(width, height);
+                self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+                // self.visual.draw(ui, false, false, false, false);
+                // if let Some(ref mut render) = self.fill_render {
+                //     self.geometry.set_context_size(width, height);
+                //     render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+                //     // #[cfg(feature = "gpu")]
+                //     // render.init(ui, false, false);
+                // }
             }
             _ => {
                 self.geometry.set_margin_size(ui.draw_rect.width(), ui.draw_rect.height());
@@ -190,9 +197,12 @@ impl Layout for HorizontalLayout {
                 }
                 //设置布局padding
                 let mut rect = self.geometry.context_rect().with_x_direction(self.direction);
-                if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
-                    render.rect_mut().offset_to_rect(&rect);
-                    render.draw(ui, false, false);
+
+                if let UpdateType::Draw = ui.update_type {
+                    self.visual.rect_mut().offset_to_rect(&rect);
+                    self.visual.draw(ui, false, false, false, false);
+                    // render.rect_mut().offset_to_rect(&rect);
+                    // render.draw(ui, false, false);
                 }
                 rect.offset(&self.offset);
                 let previous_rect = mem::replace(&mut ui.draw_rect, rect);

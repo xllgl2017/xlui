@@ -1,12 +1,12 @@
 use crate::layout::{Layout, LayoutItem};
+use crate::render::{VisualStyle, WidgetStyle};
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::table::column::TableColumn;
 use crate::widgets::table::header::{TableHeader, TableHeaderUi};
 use crate::widgets::table::param::TableParams;
 use crate::widgets::table::row::TableRow;
-use crate::{Border, Radius, Rect, RecycleLayout, ScrollWidget};
+use crate::{Border, Radius, Rect, RecycleLayout, ScrollWidget, Shadow};
 
 mod param;
 pub mod column;
@@ -87,13 +87,18 @@ impl<T: TableExt> TableView<T> {
             .with_size(self.rect.width(), self.rect.height()).with_space(0.0);
         let mut area = ScrollWidget::vertical().enable_hscroll().with_layout(layout);
         self.lid = area.id.clone();
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::TRANSPARENT;
-        fill_style.fill.hovered = Color::TRANSPARENT;
-        fill_style.fill.clicked = Color::TRANSPARENT;
-        fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        let fill_style = VisualStyle::same(WidgetStyle {
+            fill: Color::TRANSPARENT,
+            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+            radius: Radius::same(2),
+            shadow: Shadow::new(),
+        });
+        // fill_style.fill.inactive = Color::TRANSPARENT;
+        // fill_style.fill.hovered = Color::TRANSPARENT;
+        // fill_style.fill.clicked = Color::TRANSPARENT;
+        // fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        // fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        // fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         area.set_style(fill_style);
         area.show(ui, |ui| {
             self.show_rows(ui);

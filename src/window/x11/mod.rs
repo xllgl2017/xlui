@@ -252,7 +252,7 @@ impl X11Window {
 
 
                             window.handle_event(WindowEvent::Redraw(draw_param));
-
+                            (*surface).flush();
                             // 一次性把 pixmap 显示到窗口
                             xlib::XCopyArea(self.display, pixmap, window.handle().x11().window, gc, 0, 0, width as u32, height as u32, 0, 0);
                             xlib::XFreePixmap(self.display, pixmap);

@@ -2,13 +2,9 @@
 use crate::render::WrcParam;
 use crate::size::pos::Pos;
 use crate::style::ClickStyle;
-#[cfg(feature = "gpu")]
-use crate::Size;
 use crate::{Offset, Rect};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::GdiPlus::PointF;
-#[cfg(feature = "gpu")]
-use crate::render::Screen;
 #[cfg(feature = "gpu")]
 use crate::vertex::Vertex;
 
@@ -18,8 +14,6 @@ pub struct TriangleParam {
     pub(crate) p1: Pos,
     pub(crate) p2: Pos,
     pub(crate) style: ClickStyle,
-    #[cfg(feature = "gpu")]
-    pub(crate) screen: Screen,
     #[cfg(feature = "gpu")]
     pub(crate) vertices: Vec<Vertex>,
     #[cfg(feature = "gpu")]
@@ -40,8 +34,6 @@ impl TriangleParam {
             p1,
             p2,
             style,
-            #[cfg(feature = "gpu")]
-            screen: Screen { size: [1000.0, 800.0] },
             #[cfg(feature = "gpu")]
             vertices: vec![],
             rect,
@@ -86,7 +78,7 @@ impl TriangleParam {
 
 #[cfg(feature = "gpu")]
 impl WrcParam for TriangleParam {
-    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool, size: Size) -> &[u8] {
+    fn as_draw_param(&mut self, hovered: bool, mouse_down: bool) {
         let fill_color = self.style.dyn_fill(mouse_down, hovered).as_gamma_rgba();
         self.vertices = vec![
             Vertex {
@@ -103,7 +95,5 @@ impl WrcParam for TriangleParam {
             }
         ];
         self.indices = vec![0, 1, 2, 0];
-        self.screen.size=[size.width,size.height];
-        bytemuck::bytes_of(&self.screen)
     }
 }

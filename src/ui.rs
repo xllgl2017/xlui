@@ -8,7 +8,6 @@ use crate::map::Map;
 use crate::render::image::ImageSource;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;
-use crate::style::Style;
 use crate::text::rich::RichText;
 use crate::widgets::checkbox::CheckBox;
 use crate::widgets::space::Space;
@@ -18,10 +17,8 @@ use crate::window::inner::InnerWindow;
 use crate::window::x11::ffi::Cairo;
 use crate::window::{UserEvent, WindowId, WindowType};
 use crate::*;
-use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{AddAssign, Range, SubAssign};
-use std::rc::Rc;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 #[cfg(feature = "gpu")]
@@ -39,7 +36,7 @@ pub struct AppContext {
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
-    pub(crate) style: Rc<RefCell<Style>>,
+    // pub(crate) style: Rc<RefCell<Style>>,
     pub(crate) context: Context,
     pub(crate) previous_time: u128,
     pub(crate) redraw_thread: JoinHandle<()>,
@@ -56,7 +53,7 @@ impl AppContext {
             layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
             inner_windows: Some(Map::new()),
-            style: Rc::new(RefCell::new(Style::light_style())),
+            // style: Rc::new(RefCell::new(Style::light_style())),
             context,
             previous_time: 0,
             redraw_thread: spawn(|| {}),
@@ -79,8 +76,9 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style: self.style.clone(),
+            // style: self.style.clone(),
             paint: None,
+            disabled: false,
         };
         app.draw(&mut ui);
         self.layout = ui.layout.take();
@@ -104,8 +102,9 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style: self.style.clone(),
+            // style: self.style.clone(),
             paint: None,
+            disabled: false,
         };
         app.update(&mut ui);
         self.layout = ui.layout.take();
@@ -126,8 +125,9 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style: self.style.clone(),
+            // style: self.style.clone(),
             paint: None,
+            disabled: false,
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -135,7 +135,7 @@ impl AppContext {
         let inner_windows = self.inner_windows.as_ref().unwrap();
         for i in 0..inner_windows.len() {
             let win = &inner_windows[inner_windows.len() - i - 1];
-            if self.device.device_input.hovered_at(win.fill_render.rect()) || win.press_title {
+            if self.device.device_input.hovered_at(win.visual.rect()) || win.press_title {
                 event_win = Some(win.id);
                 break;
             }
@@ -245,8 +245,9 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            style: self.style.clone(),
+            // style: self.style.clone(),
             paint,
+            disabled: false,
         };
         app.update(&mut ui);
         ui.app = Some(app);
@@ -320,8 +321,9 @@ pub struct Ui<'a, 'p> {
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
-    pub style: Rc<RefCell<Style>>,
+    // pub style: Rc<RefCell<Style>>,
     pub(crate) paint: Option<PaintParam<'p>>,
+    pub(crate) disabled: bool,
 }
 
 

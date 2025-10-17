@@ -2,11 +2,10 @@ use crate::frame::context::UpdateType;
 use crate::render::image::ImageSource;
 use crate::response::Response;
 use crate::size::Geometry;
-use crate::ui::Ui;
+use crate::*;
 #[cfg(feature = "gpu")]
 use crate::vertex::ImageVertex;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
-use crate::Size;
 #[cfg(feature = "gpu")]
 use wgpu::util::DeviceExt;
 
@@ -62,11 +61,6 @@ impl Image {
         }
     }
 
-    fn reset_size(&mut self, size: Size) {
-        self.geometry.set_context_size(size.width, size.height);
-    }
-
-
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.geometry.set_fix_size(width, height);
         self
@@ -86,7 +80,7 @@ impl Image {
     #[cfg(feature = "gpu")]
     fn re_init(&mut self, ui: &mut Ui) {
         let size = ui.context.render.image.insert_image(&ui.device, &self.source).unwrap();
-        self.reset_size(size);
+        self.geometry.set_context_size(size.width, size.height);
         let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
         let rect = self.geometry.context_rect();
         self.vertices = vec![
@@ -166,7 +160,7 @@ impl Widget for Image {
             UpdateType::Init | UpdateType::ReInit => self.re_init(ui),
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.geometry.padding_width(),self.geometry.padding_height()))
+        Response::new(&self.id, WidgetSize::same(self.geometry.padding_width(), self.geometry.padding_height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {

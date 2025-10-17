@@ -27,6 +27,7 @@ pub struct FrameStyle {
     pub fill: Color,
     pub shadow: Shadow,
     pub border: Border,
+    pub radius: Radius,
 
 }
 
@@ -125,6 +126,7 @@ pub struct WidgetStyle {
     pub popup: ClickStyle,
 }
 
+#[derive(Clone)]
 pub struct Shadow {
     pub offset: [f32; 2],
     pub spread: f32,
@@ -143,29 +145,29 @@ impl Shadow {
     }
 }
 
-pub struct Style {
-    pub window: FrameStyle,
-    pub widgets: WidgetStyle,
-}
+// pub struct Style {
+//     pub window: FrameStyle,
+//     pub widgets: WidgetStyle,
+// }
 
 
-impl Style {
-    pub fn light_style() -> Style {
-        Style {
-            window: FrameStyle {
-                fill: Color::rgb(240, 240, 240),
-                shadow: Shadow::new(),
-                border: Border::same(0.0).radius(Radius::same(0)),
-            },
-
-            widgets: WidgetStyle {
-                click: ClickStyle::new(),
-                popup: ClickStyle {
-                    fill: FillStyle::same(Color::rgb(240, 240, 240)),
-                    border: BorderStyle::same(Border::same(1.0).radius(Radius::same(5))
-                        .color(Color::rgb(144, 209, 255))),
-                },
-            },
-        }
-    }
-}
+// impl Style {
+//     pub fn light_style() -> Style {
+//         Style {
+//             window: FrameStyle {
+//                 fill: Color::rgb(240, 240, 240),
+//                 shadow: Shadow::new(),
+//                 border: Border::same(0.0).radius(Radius::same(0)),
+//             },
+//
+//             widgets: WidgetStyle {
+//                 click: ClickStyle::new(),
+//                 popup: ClickStyle {
+//                     fill: FillStyle::same(Color::rgb(240, 240, 240)),
+//                     border: BorderStyle::same(Border::same(1.0).radius(Radius::same(5))
+//                         .color(Color::rgb(144, 209, 255))),
+//                 },
+//             },
+//         }
+//     }
+// }

@@ -92,7 +92,6 @@ pub mod map;
 mod window;
 mod key;
 mod error;
-#[cfg(feature = "gpu")]
 pub mod shape;
 
 #[cfg(all(not(feature = "winit"), target_os = "windows"))]
@@ -100,8 +99,8 @@ pub use window::win32::tray::{Tray, TrayMenu};
 pub use window::{attribute::WindowAttribute, inner::InnerWindow};
 pub use layout::{horizontal::HorizontalLayout, vertical::VerticalLayout,
                  popup::Popup, LayoutKind, recycle::RecycleLayout};
-pub use size::{font::Font, border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos,
-               Size, margin::Margin};
+pub use size::font::{Font, FontSlant, FontWeight};
+pub use size::{border::Border, padding::Padding, radius::Radius, rect::Rect, pos::Pos, Size, margin::Margin};
 pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget, radio::RadioButton,
                   image::Image, button::Button, checkbox::CheckBox, slider::Slider, processbar::ProcessBar,
                   select::SelectItem, textedit::TextEdit, spinbox::SpinBox, combo::ComboBox,
@@ -114,6 +113,7 @@ pub use ui::Ui;
 pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow, FrameStyle};
 pub use frame::{App, context::UpdateType};
 pub use align::Align;
+pub use render::{VisualStyle, WidgetStyle};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

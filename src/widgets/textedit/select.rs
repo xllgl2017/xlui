@@ -1,16 +1,15 @@
 use crate::frame::context::UpdateType;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{RenderParam, VisualStyle, WidgetStyle};
+use crate::shape::Shape;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::window::UserEvent;
-use crate::Offset;
+use crate::{Offset, Shadow};
 
 pub struct EditSelection {
     renders: Vec<RenderParam>,
@@ -31,27 +30,19 @@ impl EditSelection {
         }
     }
 
-    pub fn init(&mut self, rows: usize, rect: &Rect, line_height: f32, ui: &mut Ui, init: bool) {
-        if init {
-            let mut select_style = ClickStyle::new();
-            select_style.fill.inactive = Color::rgba(255, 0, 0, 100); //Color::rgba(144, 209, 255, 100); //
-            select_style.fill.hovered = Color::rgba(144, 209, 255, 100);
-            select_style.fill.clicked = Color::rgba(144, 209, 255, 100);
-            select_style.border.inactive = Border::same(0.0).radius(Radius::same(0));
-            select_style.border.hovered = Border::same(0.0).radius(Radius::same(0));
-            select_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
-            for row in 0..rows {
-                let mut rect = rect.clone();
-                rect.set_x_max(rect.dx().min);
-                rect.set_height(line_height);
-                rect.offset(&Offset::new().with_y(row as f32 * line_height).covered());
-                let param = RectParam::new().with_rect(rect).with_style(select_style.clone());
-                let render = RenderParam::new(RenderKind::Rectangle(param));
-                self.renders.push(render);
-            }
+    pub fn init(&mut self, rows: usize, line_height: f32) {
+        let mut select_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgba(144, 209, 255, 100),
+            border: Border::same(0.0),
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        });
+        select_style.inactive.fill = Color::rgba(255, 0, 0, 100);
+        for row in 0..rows {
+            let mut render = RenderParam::new(Shape::Rectangle).with_style(select_style.clone()).with_size(0.0, line_height);
+            render.rect_mut().offset(&Offset::new().with_y(row as f32 * line_height).covered());
+            self.renders.push(render);
         }
-        #[cfg(feature = "gpu")]
-        self.renders.iter_mut().for_each(|x| x.init(ui, false, false));
     }
 
     pub fn set_by_cursor(&mut self, cursor: &EditCursor) {
@@ -73,7 +64,7 @@ impl EditSelection {
     pub fn render(&mut self, ui: &mut Ui, rows: usize) {
         for (index, render) in self.renders.iter_mut().enumerate() {
             if index >= rows { continue; }
-            render.draw(ui, false, false);
+            render.draw(ui, false, false, false);
         }
     }
 
@@ -91,7 +82,6 @@ impl EditSelection {
     pub fn move_select(&mut self, ui: &mut Ui, cursor: &mut EditCursor, cchar: &mut CharBuffer) {
         let pos = ui.device.device_input.mouse.lastest.relative;
         cursor.update_by_pos(pos, cchar);
-        // println!("move_select-{:?}-{}-{}-{}-{}", pos, cursor.horiz, cursor.vert, self.start_horiz, self.start_vert);
         if cursor.vert > self.start_vert { //向下选择
             for (index, render) in self.renders.iter_mut().enumerate() {
                 if index == self.start_vert {
@@ -214,7 +204,9 @@ impl EditSelection {
 
     pub fn update_position(&mut self, mut rect: Rect) {
         for render in self.renders.iter_mut() {
+            // println!("111{:?}", render.rect());
             render.rect_mut().offset_y_to(rect.dy().min);
+            // println!("222{:?}", render.rect());
             rect.add_min_y(render.rect().height());
         }
     }
