@@ -1,10 +1,10 @@
 #[cfg(feature = "gpu")]
 use crate::{Color, Pos, Rect};
+use crate::Pos;
 #[cfg(feature = "gpu")]
 use crate::shape::circle::CircleShape;
 #[cfg(feature = "gpu")]
 use crate::shape::rectangle::RectangleShape;
-#[cfg(feature = "gpu")]
 use crate::shape::triangle::TriangleShape;
 #[cfg(feature = "gpu")]
 use crate::vertex::Vertex;
@@ -14,19 +14,26 @@ mod rectangle;
 mod ring;
 #[cfg(feature = "gpu")]
 mod circle;
-#[cfg(feature = "gpu")]
 mod triangle;
 
 pub enum Shape {
     Rectangle,
     Circle,
-    Triangle,
     #[cfg(feature = "gpu")]
     Rectangle(RectangleShape),
     #[cfg(feature = "gpu")]
     Circle(CircleShape),
-    #[cfg(feature = "gpu")]
     Triangle(TriangleShape),
+}
+
+impl Shape{
+    pub fn triangle()->Shape{
+        Shape::Triangle(TriangleShape{
+            p0: Pos::new(),
+            p1: Pos::new(),
+            p2: Pos::new(),
+        })
+    }
 }
 
 #[cfg(feature = "gpu")]

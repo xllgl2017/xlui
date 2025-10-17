@@ -298,7 +298,7 @@ impl Geometry {
         self.margin_right() - self.margin.right
     }
 
-    fn margin_right(&self) -> f32 {
+    pub(crate) fn margin_right(&self) -> f32 {
         self.x + self.margin_width()
     }
 

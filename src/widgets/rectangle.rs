@@ -16,9 +16,13 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 ///         color: Color::rgba(0, 0, 0, 30),
 ///         blur:1.0,//阴影强调
 ///     };
-///     let rectangle=Rectangle::new(ui.style.borrow().widgets.popup.clone(),300.0,300.0)
-///         //设置阴影
-///         .with_shadow(shadow);
+///     let style = VisualStyle::same(WidgetStyle {
+///             fill: Color::rgb(240, 240, 240),
+///             border: Border::same(1.0),
+///             radius: Radius::same(5),
+///             shadow,
+///         });
+///     let rectangle=Rectangle::new(style,300.0,300.0);
 ///     ui.add(rectangle);
 /// }
 /// ```
@@ -34,7 +38,7 @@ impl Rectangle {
         // let param = RectParam::new().with_size(width, height).with_style(style);
         Rectangle {
             id: crate::gen_unique_id(),
-            visual: Visual::new().with_style(style),
+            visual: Visual::new().with_enable().with_style(style).with_size(width, height),
             geometry: Geometry::new().with_context_size(width, height),
             state: WidgetState::default(),
         }
@@ -59,10 +63,10 @@ impl Rectangle {
     //     self
     // }
 
-    // pub fn style_mut(&mut self) -> &mut ClickStyle {
-    //     self.state.changed = true;
-    //     self.fill_render.style_mut()
-    // }
+    pub fn style_mut(&mut self) -> &mut VisualStyle {
+        self.state.changed = true;
+        self.visual.enable().style_mut()
+    }
 
     // pub fn set_offset_x(&mut self, v: f32) {
     //     self.state.changed = self.fill_render.rect_param_mut().shadow.offset[0] == v;

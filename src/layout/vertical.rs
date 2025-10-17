@@ -80,6 +80,7 @@ impl VerticalLayout {
     }
 
     pub fn with_fill(mut self, color: Color) -> Self {
+        self.visual.enable();
         self.visual.style_mut().inactive.fill = color;
         // let mut style = ClickStyle::new();
         // style.fill = FillStyle::same(color);
@@ -91,6 +92,7 @@ impl VerticalLayout {
 
     ///设置背景的样式
     pub fn set_style(&mut self, style: FrameStyle) {
+        self.visual.enable();
         self.visual.style_mut().inactive.fill = style.fill;
         self.visual.style_mut().inactive.border = style.border;
         self.visual.style_mut().inactive.shadow = style.shadow;

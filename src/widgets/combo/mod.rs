@@ -69,6 +69,8 @@ impl<T: Display + 'static> ComboBox<T> {
         let allow_style = VisualStyle::same((Color::BLACK, 0.0, 0).into());
         let buffer = TextBuffer::new("").with_align(Align::LeftCenter)
             .padding(Padding::same(2.0)).fix_width(100.0).fix_height(20.0);
+        let mut allow_render = RenderParam::new(Shape::triangle()).with_style(allow_style);
+        allow_render.set_poses((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into());
         ComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
@@ -79,7 +81,7 @@ impl<T: Display + 'static> ComboBox<T> {
             visual: Visual::new().with_enable().with_style(fill_style),
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
-            allow_render: RenderParam::new(Shape::Triangle).with_style(allow_style),
+            allow_render,
             state: WidgetState::default(),
         }
     }

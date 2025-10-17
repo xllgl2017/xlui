@@ -49,12 +49,12 @@ impl ScrollBar {
         // let slider_param = RectParam::new().with_size(10.0, 10.0).with_style(slider_style);
         ScrollBar {
             id: crate::gen_unique_id(),
-            visual: Visual::new().with_style(fill_style),
+            visual: Visual::new().with_enable().with_style(fill_style),
             // fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
             slider_render: RenderParam::new(Shape::Rectangle).with_style(slider_style),
             context_size: 0.0,
             offset: Offset::new(),
-            geometry: Geometry::new().with_context_size(10.0, 20.0),
+            geometry: Geometry::new(),
             state: WidgetState::default(),
         }
     }
@@ -62,19 +62,17 @@ impl ScrollBar {
     pub fn horizontal() -> ScrollBar {
         let mut res = ScrollBar::new();
         res.geometry.set_context_size(300.0, 5.0);
-        res.visual.rect_mut().set_size(30.0, 5.0);
         res
     }
 
     pub fn vertical() -> ScrollBar {
         let mut res = ScrollBar::new();
         res.geometry.set_context_size(5.0, 300.0);
-        res.visual.rect_mut().set_size(5.0, 30.0);
         res
     }
 
     pub fn set_vbar_value_by_offset(&mut self, offset: f32) -> f32 {
-        if self.context_size < self.visual.rect().height() { return 0.0; }
+        if self.context_size < self.geometry.context_height() { return 0.0; }
         let oy = self.slider_offset_y(offset);
         let roy = self.slider_render.rect_mut().offset_y_limit(self.offset.y + oy, self.visual.rect().dy());
         self.offset.y = roy;
@@ -83,7 +81,7 @@ impl ScrollBar {
     }
 
     pub fn set_hbar_value_by_offset(&mut self, offset: f32) -> f32 {
-        if self.context_size < self.visual.rect().width() { return 0.0; }
+        if self.context_size < self.geometry.context_width() { return 0.0; }
         let ox = self.slider_offset_x(offset);
         let rox = self.slider_render.rect_mut().offset_x_limit(self.offset.x + ox, self.visual.rect().dx());
         self.offset.x = rox;
@@ -101,55 +99,55 @@ impl ScrollBar {
 
     pub fn set_context_height(&mut self, context_height: f32) {
         self.context_size = context_height;
-        let mut slider_height = if self.context_size < self.visual.rect().height() {
-            self.visual.rect().height()
+        let mut slider_height = if self.context_size < self.geometry.context_height() {
+            self.geometry.context_height()
         } else {
-            self.visual.rect().height() * self.visual.rect().height() / self.context_size
+            self.geometry.context_height() * self.geometry.context_height() / self.context_size
         };
         if slider_height < 32.0 { slider_height = 32.0; }
-        self.visual.rect_mut().set_height(slider_height);
+        self.slider_render.rect_mut().set_size(self.geometry.context_width(), slider_height);
         self.state.changed = true;
     }
 
     pub fn set_context_width(&mut self, context_width: f32) {
         self.context_size = context_width;
-        let mut slider_width = if self.context_size < self.visual.rect().width() {
-            self.visual.rect().width()
+        let mut slider_width = if self.context_size < self.geometry.context_width() {
+            self.geometry.context_width()
         } else {
-            self.visual.rect().width() * self.visual.rect().width() / self.context_size
+            self.geometry.context_width() * self.geometry.context_width() / self.context_size
         };
         if slider_width < 32.0 { slider_width = 32.0; }
-        self.visual.rect_mut().set_width(slider_width);
+        self.slider_render.rect_mut().set_size(slider_width, self.geometry.context_height());
         self.state.changed = true;
     }
 
     //计算滑块位移
     fn slider_offset_y(&self, cy: f32) -> f32 {
-        let scrollable_content = self.context_size - self.visual.rect().height();
-        let scrollable_slider = self.visual.rect().height() - self.visual.rect().height();
+        let scrollable_content = self.context_size - self.geometry.context_height();
+        let scrollable_slider = self.geometry.context_height() - self.slider_render.rect().height();
         let scroll_ratio = cy / scrollable_content; // 内容偏移占比：
         scroll_ratio * scrollable_slider // 滑块应偏移：
     }
 
     fn slider_offset_x(&self, cx: f32) -> f32 {
-        let scrollable_context = self.context_size - self.visual.rect().width();
-        let scrollable_slider = self.visual.rect().width() - self.visual.rect().width();
+        let scrollable_context = self.context_size - self.geometry.context_width();
+        let scrollable_slider = self.geometry.context_width() - self.slider_render.rect().width();
         let scroll_ratio = cx / scrollable_context;
         scroll_ratio * scrollable_slider
     }
 
     //计算内容位移
     fn context_offset_y(&self, oy: f32) -> f32 {
-        let scrollable_content = self.context_size - self.visual.rect().height();
-        let scrollable_slider = self.visual.rect().height() - self.visual.rect().height();
+        let scrollable_content = self.context_size - self.geometry.context_height();
+        let scrollable_slider = self.geometry.context_height() - self.slider_render.rect().height();
         if scrollable_slider == 0.0 { return 0.0; }
         let scroll_ratio = oy / scrollable_slider; // 内容偏移占比：
         scroll_ratio * scrollable_content // 滑块应偏移：
     }
 
     fn context_offset_x(&self, ox: f32) -> f32 {
-        let scrollable_content = self.context_size - self.visual.rect().width();
-        let scrollable_slider = self.visual.rect().width() - self.visual.rect().width();
+        let scrollable_content = self.context_size - self.geometry.context_width();
+        let scrollable_slider = self.geometry.context_width() - self.slider_render.rect().width();
         if scrollable_slider == 0.0 { return 0.0; }
         let scroll_ratio = ox / scrollable_slider;
         scroll_ratio * scrollable_content
@@ -159,27 +157,30 @@ impl ScrollBar {
         //背景
         self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
         //滑块
-        *self.visual.rect_mut() = self.visual.rect().clone_with_size(self.visual.rect());
+        // self.slider_render.rect_mut().set_size()
+        // *self.slider_render.rect_mut() = self.visual.rect().clone_with_size(self.slider_render.rect());
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
-            // self.slider_render.offset_to_rect(&ui.draw_rect);
-            // self.slider_render.rect_mut().offset(&self.offset);
+            self.slider_render.offset_to_rect(&ui.draw_rect);
+            self.slider_render.rect_mut().offset(&self.offset);
         }
     }
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        if self.context_size > self.visual.rect().height() && self.geometry.context_height() > self.geometry.context_width() { //垂直
-            self.visual.draw(ui, self.state.disabled, false, false, false);
-            self.slider_render.draw(ui, false, false, false);
-        }
-        if self.context_size > self.visual.rect().width() && self.geometry.context_width() > self.geometry.context_height() { //垂直
-            self.visual.draw(ui, self.state.disabled, false, false, false);
-            self.slider_render.draw(ui, false, false, false);
-        }
+        self.visual.draw(ui, self.state.disabled, false, false, false);
+        self.slider_render.draw(ui, false, false, false);
+        // if self.context_size > self.visual.rect().height() && self.geometry.context_height() > self.geometry.context_width() { //垂直
+        //     self.visual.draw(ui, self.state.disabled, false, false, false);
+        //     self.slider_render.draw(ui, false, false, false);
+        // }
+        // if self.context_size > self.visual.rect().width() && self.geometry.context_width() > self.geometry.context_height() { //垂直
+        //     self.visual.draw(ui, self.state.disabled, false, false, false);
+        //     self.slider_render.draw(ui, false, false, false);
+        // }
     }
 }
 

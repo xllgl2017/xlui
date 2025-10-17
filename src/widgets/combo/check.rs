@@ -45,19 +45,10 @@ pub struct CheckComboBox<T> {
 
 impl<T: Display + 'static> CheckComboBox<T> {
     pub fn new(data: Vec<T>) -> Self {
-        // let fill_style = VisualStyle::same(WidgetStyle {
-        //     fill: Color::rgb(230, 230, 230),
-        //     border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
-        //     radius: Radius::same(3),
-        //     shadow: Shadow::new(),
-        // });
-        // fill_style.fill.inactive = Color::rgb(230, 230, 230);
-        // fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
         let mut allow_style = VisualStyle::same((Color::rgb(230, 230, 230), 1.0, 3).into());
         allow_style.inactive.fill = Color::BLACK;
-        // allow_style.pressed.fill = Color::rgb(165, 165, 165);
-        // allow_style.fill = FillStyle::same(Color::BLACK);
-        // let allow_param = TriangleParam::new((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into(), allow_style);
+        let mut allow_render = RenderParam::new(Shape::triangle()).with_style(allow_style);
+        allow_render.set_poses((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into());
         CheckComboBox {
             id: gen_unique_id(),
             popup_id: "".to_string(),
@@ -68,7 +59,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
             selected: Arc::new(RwLock::new(vec![])),
 
             changed: Arc::new(AtomicBool::new(false)),
-            allow_render: RenderParam::new(Shape::Triangle).with_style(allow_style),
+            allow_render,
             state: WidgetState::default(),
         }
     }
@@ -106,18 +97,6 @@ impl<T: Display + 'static> CheckComboBox<T> {
         });
         item_style.inactive.fill = Color::TRANSPARENT;
         item_style.inactive.border = Border::same(0.0);
-        // item.style_mut().set_style(ClickStyle {
-        //     fill: FillStyle {
-        //         inactive: Color::TRANSPARENT,
-        //         hovered: Color::rgba(153, 193, 241, 220),
-        //         clicked: Color::rgba(153, 193, 241, 220),
-        //     },
-        //     border: BorderStyle {
-        //         inactive: Border::same(0.0),
-        //         hovered: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
-        //         clicked: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2)),
-        //     },
-        // });
         ui.add(item);
     }
 
@@ -141,9 +120,6 @@ impl<T: Display + 'static> CheckComboBox<T> {
     }
 
     fn re_init(&mut self, ui: &mut Ui) {
-        // #[cfg(feature = "gpu")]
-        //背景
-        // self.allow_render.init(ui, false, false);
         //文本
         self.edit.update(ui);
     }
@@ -161,7 +137,7 @@ impl<T: Display + 'static> CheckComboBox<T> {
             self.popup_rect.offset_y(&Offset::new().covered().with_y(self.edit.buffer().geometry.margin_height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
-            allow_rect.set_x_min(allow_rect.dx().min + self.edit.geometry().context_width() - 15.0);
+            allow_rect.set_x_min(ui.draw_rect.dx().min + self.edit.geometry().margin_width() - 15.0);
             allow_rect.add_min_y(5.0);
             self.allow_render.offset_to_rect(&allow_rect);
         }

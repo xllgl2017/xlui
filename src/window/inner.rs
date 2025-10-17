@@ -49,19 +49,16 @@ impl InnerWindow {
         let attr = w.window_attributes();
         let mut rect = Rect::new().with_size(attr.inner_width_f32(), attr.inner_height_f32());
         rect.offset_to(attr.pos_x_f32(), attr.pos_y_f32());
-        // let fill_param = RectParam::new().with_rect(rect.clone()).with_style(ui.style.borrow().widgets.popup.clone())
-        //     .with_shadow(shadow);
         let style = VisualStyle::same(WidgetStyle {
             fill: Color::rgb(240, 240, 240),
-            border: Border::same(1.0),
+            border: Border::same(1.0).color(Color::rgb(144, 209, 255)),
             radius: Radius::same(5),
             shadow,
         });
-        // let fill_render = RenderParam::new(RenderKind::Rectangle(fill_param));
         let layout = VerticalLayout::top_to_bottom().with_size(rect.width(), rect.height());
         let mut window = InnerWindow {
             id: WindowId::unique_id(),
-            visual: Visual::new().with_style(style),
+            visual: Visual::new().with_enable().with_style(style).with_rect(rect),
             layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
             title_rect: Rect::new().with_size(attr.inner_width_f32(), 22.0),
@@ -105,11 +102,6 @@ impl InnerWindow {
             });
             style.hovered.fill = Color::rgba(255, 0, 0, 100);
             style.pressed.fill = Color::rgba(255, 0, 0, 150);
-
-            // style.fill.inactive = Color::TRANSPARENT;
-            // style.fill.hovered = Color::rgba(255, 0, 0, 100);
-            // style.fill.clicked = Color::rgba(255, 0, 0, 150);
-            // style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
             let mut btn = Button::new("×").width(20.0).height(20.0);
             btn.set_style(style.clone());
             let closed = self.request_close.clone();
@@ -147,7 +139,6 @@ impl InnerWindow {
             request_update: None,
             draw_rect: self.visual.rect().clone(),
             widget_changed: WidgetChange::None,
-            // style: Rc::new(RefCell::new(Style::light_style())),
             paint: None,
             disabled: false,
         };
@@ -212,7 +203,6 @@ impl InnerWindow {
             request_update: None,
             draw_rect: self.visual.rect().clone(),
             widget_changed: WidgetChange::None,
-            // style: Rc::new(RefCell::new(Style::light_style())),
             paint: oui.paint.take(),
             disabled: false,
         };
@@ -243,7 +233,6 @@ impl InnerWindow {
             request_update: None,
             draw_rect: self.visual.rect().clone(),
             widget_changed: WidgetChange::None,
-            // style: Rc::new(RefCell::new(Style::light_style())),
             paint: None,
             disabled: false,
         };

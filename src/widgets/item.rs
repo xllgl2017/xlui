@@ -27,7 +27,7 @@ impl ItemWidget {
 
         ItemWidget {
             id: crate::gen_unique_id(),
-            visual: Visual::new().with_style(style),
+            visual: Visual::new().with_enable().with_style(style),
             layout: Some(layout),
             data_str,
             current: Arc::new(RwLock::new(None)),

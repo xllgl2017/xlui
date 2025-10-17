@@ -268,11 +268,10 @@ impl RenderParam {
     // }
     //
     pub fn set_poses(&mut self, p0: Pos, p1: Pos, p2: Pos) {
-        // match self.kind {
-        //     RenderKind::Rectangle(_) => {}
-        //     RenderKind::Circle(_) => {}
-        //     RenderKind::Triangle(ref mut param) => param.set_poses(p0, p1, p2)
-        // }
+        match self.shape {
+            Shape::Triangle(ref mut param) => param.set_poses(p0, p1, p2),
+            _ => {}
+        }
     }
 
     // pub fn set_style(&mut self, style: ClickStyle) {
@@ -292,12 +291,14 @@ impl RenderParam {
     // }
 
     pub fn offset_to_rect(&mut self, rect: &Rect) {
-        self.rect.offset_to_rect(rect);
-        // match self.kind {
-        //     RenderKind::Rectangle(ref mut param) => param.rect.offset_to_rect(rect),
-        //     RenderKind::Circle(ref mut param) => param.rect.offset_to_rect(rect),
-        //     RenderKind::Triangle(ref mut param) => param.offset_to_rect(rect),
-        // };
+        match self.shape {
+            Shape::Triangle(ref mut param) => {
+                let offset = self.rect.offset_to_rect(rect);
+                param.offset(&offset);
+                offset
+            }
+            _ => self.rect.offset_to_rect(rect)
+        };
     }
     #[cfg(feature = "gpu")]
     pub fn indices(&self) -> &Vec<u16> {
@@ -332,11 +333,11 @@ impl RenderParam {
                 ui.context.window.x11().paint_circle(ui.paint.as_mut().unwrap().cairo, style, &self.rect);
             }
             #[cfg(not(feature = "gpu"))]
-            Shape::Triangle => {
+            Shape::Triangle(ref mut param) => {
                 #[cfg(windows)]
                 ui.context.window.win32().paint_triangle(ui.paint.as_mut().unwrap().hdc, param.as_win32_points(), fill, border);
-                // #[cfg(target_os = "linux")]
-                // ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, style);
+                #[cfg(target_os = "linux")]
+                ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, style);
             }
             #[cfg(feature = "gpu")]
             RenderKind::Circle(_) => {
@@ -543,6 +544,11 @@ impl Visual {
     pub fn rect(&self) -> &Rect { self.render.rect() }
 
     pub fn rect_mut(&mut self) -> &mut Rect { self.render.rect_mut() }
+
+    pub fn with_rect(mut self, rect: Rect) -> Visual {
+        self.render.rect = rect;
+        self
+    }
 
     pub fn offset_to_rect(&mut self, rect: &Rect) {
         self.render.offset_to_rect(rect)

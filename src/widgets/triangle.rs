@@ -24,7 +24,7 @@ impl Triangle {
         style.pressed.fill = Color::rgb(165, 165, 165);
         Triangle {
             id: crate::gen_unique_id(),
-            render: RenderParam::new(Shape::Triangle).with_style(style),
+            render: RenderParam::new(Shape::triangle()).with_style(style),
             geometry: Geometry::new(),
             state: WidgetState::default(),
         }

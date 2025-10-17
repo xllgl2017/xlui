@@ -20,16 +20,10 @@ impl TabHeader {
             radius: Radius::same(1),
             shadow: Shadow::new(),
         });
-
-        // tab_style.fill = FillStyle::same(Color::WHITE);
-        // let mut border = Border::same(1.0).radius(Radius::same(1)).color(Color::rgb(160, 160, 160));
-        // border.bottom_width = 0.0;
-        // tab_style.border = BorderStyle::same(border);
         TabHeader {
             id: gen_unique_id(),
             text: TextBuffer::new(text).with_align(Align::Center).fix_height(25.0).min_width(50.0).padding(Padding::same(3.0)),
-            visual: Visual::new().with_style(tab_style),
-            // fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_height(25.0).with_style(tab_style))),
+            visual: Visual::new().with_enable().with_style(tab_style),
             state: WidgetState::default(),
         }
     }
@@ -41,8 +35,6 @@ impl TabHeader {
     fn init(&mut self, ui: &mut Ui) {
         self.text.init(ui);
         self.visual.rect_mut().set_size(self.text.geometry.padding_width(), self.text.geometry.padding_height());
-        // #[cfg(feature = "gpu")]
-        // self.fill.init(ui, false, false);
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -118,16 +110,13 @@ impl TabWidget {
             radius: Radius::same(1),
             shadow: Shadow::new(),
         });
-        // fill_style.fill = FillStyle::same(Color::WHITE);
-        // fill_style.border = BorderStyle::same(Border::same(1.0).radius(Radius::same(1)).color(Color::rgba(144, 209, 255, 255)));
         TabWidget {
             id: gen_unique_id(),
             current: None,
             space: 2.0,
             items: vec![],
             geometry: Geometry::new(),
-            visual: Visual::new().with_style(fill_style),
-            // fill: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(fill_style))),
+            visual: Visual::new().with_enable().with_style(fill_style),
             state: WidgetState::default(),
         }
     }
