@@ -1,3 +1,5 @@
+#[cfg(all(target_os = "windows", not(feature = "gpu")))]
+use windows::Win32::Graphics::GdiPlus::PointF;
 #[cfg(feature = "gpu")]
 use crate::vertex::Vertex;
 use crate::*;
@@ -44,5 +46,14 @@ impl TriangleShape {
             color: style.fill.as_gamma_rgba(),
         });
         self.indices.extend_from_slice(&[0, 1, 2, 0])
+    }
+
+    #[cfg(all(target_os = "windows", not(feature = "gpu")))]
+    pub fn as_win32_points(&self) -> [PointF; 3] {
+        [
+            PointF { X: self.p0.x, Y: self.p0.y },
+            PointF { X: self.p1.x, Y: self.p1.y },
+            PointF { X: self.p2.x, Y: self.p2.y },
+        ]
     }
 }

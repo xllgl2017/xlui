@@ -1,6 +1,3 @@
-use std::ptr::null_mut;
-use std::thread::{sleep, spawn};
-use std::time::Duration;
 use crate::error::UiResult;
 use crate::key::Key;
 #[cfg(not(feature = "gpu"))]
@@ -10,10 +7,11 @@ use crate::window::ime::IMEData;
 use crate::window::win32::{Win32Window, CREATE_CHILD, REQ_UPDATE, RE_INIT, TRAY_ICON};
 use crate::window::wino::EventLoopHandle;
 use crate::*;
+use std::thread::{sleep, spawn};
+use std::time::Duration;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, SIZE, WPARAM};
-use windows::Win32::Graphics::Gdi::{BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDIBSection, CreateFontW, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetDC, ReleaseDC, SelectObject, SetTextColor, AC_SRC_ALPHA, AC_SRC_OVER, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, BLENDFUNCTION, DIB_RGB_COLORS, DT_CENTER, DT_SINGLELINE, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HGDIOBJ, PAINTSTRUCT, SRCCOPY};
-use windows::Win32::Graphics::GdiPlus::{GdipCreateFromHDC, GpGraphics};
+use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BeginPaint, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateFontW, CreateSolidBrush, DeleteDC, DeleteObject, DrawTextW, EndPaint, FillRect, GetDC, ReleaseDC, SelectObject, SetTextColor, DT_CENTER, DT_SINGLELINE, DT_VCENTER, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HGDIOBJ, PAINTSTRUCT, SRCCOPY};
 use windows::Win32::UI::Input::Ime::{ImmGetCompositionStringW, ImmGetContext, ImmReleaseContext, GCS_COMPSTR, GCS_RESULTSTR};
 use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY, VK_BACK, VK_CONTROL, VK_DELETE, VK_DOWN, VK_END, VK_HOME, VK_LEFT, VK_RETURN, VK_RIGHT, VK_UP};
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -172,7 +170,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                 let mut ps = PAINTSTRUCT::default();
                 let hdc = BeginPaint(hwnd, &mut ps);
                 let mut rect = RECT::default();
-                GetClientRect(hwnd, &mut rect);
+                GetClientRect(hwnd, &mut rect).unwrap();
                 // 创建兼容的内存 DC 和位图
                 let mem_dc = CreateCompatibleDC(Option::from(hdc));
                 let mem_bmp = CreateCompatibleBitmap(hdc, rect.right - rect.left, rect.bottom - rect.top);
@@ -182,7 +180,7 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                     // ✅ 填充背景颜色
                     let brush = CreateSolidBrush(COLORREF(Color::rgb(240, 240, 240).as_rgb_u32())); // 白色背景
                     FillRect(mem_dc, &rect, brush);
-                    DeleteObject(HGDIOBJ::from(brush));
+                    DeleteObject(HGDIOBJ::from(brush)).unwrap();
                 }
                 let paint = PaintParam {
                     paint_struct: ps,
@@ -199,9 +197,9 @@ pub unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpar
                     Option::from(mem_dc),
                     0, 0,
                     SRCCOPY,
-                );
-                DeleteObject(HGDIOBJ::from(mem_bmp));
-                DeleteDC(mem_dc);
+                ).unwrap();
+                DeleteObject(HGDIOBJ::from(mem_bmp)).unwrap();
+                DeleteDC(mem_dc).unwrap();
                 EndPaint(hwnd, &ps).unwrap();
             }
             #[cfg(feature = "gpu")]

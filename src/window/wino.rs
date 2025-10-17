@@ -62,7 +62,7 @@ impl LoopWindow {
             window: wt,
             render: Render::new(&device),
             updates: Map::new(),
-            user_update: (WindowId(crate::unique_id_u32()), UpdateType::None),
+            user_update: (WindowId(unique_id_u32()), UpdateType::None),
             new_window: None,
         };
         let mut app_ctx = AppContext::new(device, context, attr);

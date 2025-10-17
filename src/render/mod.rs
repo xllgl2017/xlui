@@ -319,7 +319,7 @@ impl RenderParam {
             #[cfg(not(feature = "gpu"))]
             Shape::Rectangle => {
                 #[cfg(windows)]
-                ui.context.window.win32().paint_rect(ui.paint.as_mut().unwrap().hdc, fill, border, &param.rect);
+                ui.context.window.win32().paint_rect(ui.paint.as_mut().unwrap().hdc, &self.rect, style);
                 #[cfg(target_os = "linux")]
                 ui.context.window.x11().paint_rect(ui.paint.as_mut().unwrap().cairo, style, &self.rect);
             }
@@ -332,14 +332,14 @@ impl RenderParam {
             #[cfg(not(feature = "gpu"))]
             Shape::Circle => {
                 #[cfg(windows)]
-                ui.context.window.win32().paint_circle(ui.paint.as_mut().unwrap().hdc, &param.rect, fill, border);
+                ui.context.window.win32().paint_circle(ui.paint.as_mut().unwrap().hdc, &self.rect, style);
                 #[cfg(target_os = "linux")]
                 ui.context.window.x11().paint_circle(ui.paint.as_mut().unwrap().cairo, style, &self.rect);
             }
             #[cfg(not(feature = "gpu"))]
             Shape::Triangle(ref mut param) => {
                 #[cfg(windows)]
-                ui.context.window.win32().paint_triangle(ui.paint.as_mut().unwrap().hdc, param.as_win32_points(), fill, border);
+                ui.context.window.win32().paint_triangle(ui.paint.as_mut().unwrap().hdc, param.as_win32_points(), style);
                 #[cfg(target_os = "linux")]
                 ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, style);
             }
