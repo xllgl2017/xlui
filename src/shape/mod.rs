@@ -84,7 +84,7 @@ impl Shape {
         match self {
             Shape::Rectangle(_) => 2048,
             Shape::Circle(_) => 2048,
-            Shape::Triangle(_) => 12,
+            Shape::Triangle(_) => 16,
         }
     }
 

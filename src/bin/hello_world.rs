@@ -1,40 +1,38 @@
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use std::sync::Arc;
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use wgpu::util::DeviceExt;
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use wgpu::{include_wgsl, IndexFormat, RenderPassDescriptor, StoreOp, TextureDimension};
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use winit::window::WindowAttributes;
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
 };
-#[cfg(all(feature = "gpu",feature = "winit"))]
-use xlui::shape::rectangle::RectangleShape;
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use xlui::vertex::Vertex;
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 use xlui::{Border, Color, Rect};
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Screen {
     size: [f32; 2],
 }
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 fn draw_rect() -> (Vec<Vertex>, Vec<u16>) {
     let mut rect = Rect::new();
     rect.set_x_min(153.0);
     rect.set_x_max(383.0);
     rect.set_y_min(58.34375);
     rect.set_y_max(288.34375);
-    let mut rectangle = RectangleShape::new(); //CircleShape::new(); //
-    rectangle.update(&rect, &Color::rgb(230, 230, 230), &Border::same(2.0));
-    (rectangle.vertices, rectangle.indices)
+    // let mut rectangle = RectangleShape::new(); //CircleShape::new(); //
+    // rectangle.update(&rect, &Color::rgb(230, 230, 230), &Border::same(2.0));
+    (vec![], vec![])
 }
-#[cfg(all(feature = "gpu",feature = "winit"))]
+#[cfg(all(feature = "gpu", feature = "winit"))]
 fn main() {
     // 创建窗口
     let event_loop = EventLoop::new().unwrap();
@@ -226,10 +224,8 @@ fn main() {
 }
 
 
-#[cfg(any(not(feature = "gpu"),not(feature = "winit")))]
-fn main() {
-
-}
+#[cfg(any(not(feature = "gpu"), not(feature = "winit")))]
+fn main() {}
 
 // fn main() {
 //     // let p1 = Pos { x: 1.0, y: 1.0 };
