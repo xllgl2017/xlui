@@ -26,7 +26,7 @@ impl Circle {
         Circle {
             id: crate::gen_unique_id(),
             geometry: Geometry::new().with_context_size(r * 2.0, r * 2.0),
-            render: RenderParam::new(Shape::Circle).with_style(style).with_size(r * 2.0, r * 2.0),
+            render: RenderParam::new(Shape::circle()).with_style(style).with_size(r * 2.0, r * 2.0),
             state: WidgetState::default(),
 
         }

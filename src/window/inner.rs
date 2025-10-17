@@ -156,7 +156,7 @@ impl InnerWindow {
     fn window_update(&mut self, ui: &mut Ui) -> bool {
         match ui.update_type {
             #[cfg(feature = "gpu")]
-            UpdateType::ReInit => self.fill_render.re_init(),
+            UpdateType::ReInit => self.visual.re_init(),
             UpdateType::MouseMove => {
                 if self.press_title && ui.device.device_input.mouse.pressed {
                     let (ox, oy) = ui.device.device_input.mouse.offset();

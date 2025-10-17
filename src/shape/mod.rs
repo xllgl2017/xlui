@@ -1,13 +1,11 @@
 #[cfg(feature = "gpu")]
-use crate::{Color, Pos, Rect};
-use crate::Pos;
-#[cfg(feature = "gpu")]
 use crate::shape::circle::CircleShape;
 #[cfg(feature = "gpu")]
 use crate::shape::rectangle::RectangleShape;
 use crate::shape::triangle::TriangleShape;
 #[cfg(feature = "gpu")]
 use crate::vertex::Vertex;
+use crate::*;
 #[cfg(feature = "gpu")]
 mod rectangle;
 #[cfg(feature = "gpu")]
@@ -17,7 +15,9 @@ mod circle;
 mod triangle;
 
 pub enum Shape {
+    #[cfg(not(feature = "gpu"))]
     Rectangle,
+    #[cfg(not(feature = "gpu"))]
     Circle,
     #[cfg(feature = "gpu")]
     Rectangle(RectangleShape),
@@ -26,13 +26,31 @@ pub enum Shape {
     Triangle(TriangleShape),
 }
 
-impl Shape{
-    pub fn triangle()->Shape{
-        Shape::Triangle(TriangleShape{
+impl Shape {
+    pub fn triangle() -> Shape {
+        Shape::Triangle(TriangleShape {
+            #[cfg(feature = "gpu")]
+            vertices: vec![],
+            #[cfg(feature = "gpu")]
+            indices: vec![],
             p0: Pos::new(),
             p1: Pos::new(),
             p2: Pos::new(),
         })
+    }
+
+    pub fn rectangle() -> Shape {
+        #[cfg(feature = "gpu")]
+        return Shape::Rectangle(RectangleShape::new());
+        #[cfg(not(feature = "gpu"))]
+        return Shape::Rectangle;
+    }
+
+    pub fn circle() -> Shape {
+        #[cfg(feature = "gpu")]
+        return Shape::Circle(CircleShape::new());
+        #[cfg(not(feature = "gpu"))]
+        return Shape::Circle;
     }
 }
 
@@ -72,9 +90,9 @@ impl Shape {
 
     pub fn update(&mut self, rect: &Rect, style: &WidgetStyle) {
         match self {
-            Shape::Rectangle(rectangle) => rectangle.reset(rect, style),
-            Shape::Circle(circle) => circle.draw(),
-            Shape::Triangle(_) => {}
+            Shape::Rectangle(rectangle) => rectangle.update(rect, style),
+            Shape::Circle(circle) => circle.update(rect, style),
+            Shape::Triangle(triangle) => triangle.update(rect, style),
         }
     }
 }

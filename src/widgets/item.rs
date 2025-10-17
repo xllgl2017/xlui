@@ -117,7 +117,7 @@ impl Widget for ItemWidget {
             // UpdateType::Init => self.fill_render.init(ui, false, false),
             UpdateType::ReInit => {
                 #[cfg(feature = "gpu")]
-                self.fill_render.re_init();
+                self.visual.re_init();
                 self.layout.as_mut().unwrap().update(ui);
             }
             UpdateType::MouseMove => {

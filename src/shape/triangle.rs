@@ -1,6 +1,6 @@
 #[cfg(feature = "gpu")]
 use crate::vertex::Vertex;
-use crate::{Offset, Pos};
+use crate::{Offset, Pos, Rect, WidgetStyle};
 
 pub struct TriangleShape {
     #[cfg(feature = "gpu")]
@@ -23,5 +23,11 @@ impl TriangleShape {
         self.p0.offset(offset.x, offset.y);
         self.p1.offset(offset.x, offset.y);
         self.p2.offset(offset.x, offset.y)
+    }
+
+    pub fn update(&mut self, rect: &Rect, style: &WidgetStyle) {
+        let offset = Offset::new().with_x(rect.get_ox()).with_y(rect.get_oy());
+        self.offset(&offset);
+
     }
 }

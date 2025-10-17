@@ -55,7 +55,7 @@ impl ProcessBar {
         ProcessBar {
             id: crate::gen_unique_id(),
             visual: Visual::new().with_enable().with_style(fill_style).with_size(200.0, 10.0),
-            process_render: RenderParam::new(Shape::Rectangle).with_style(process_style).with_size(200.0,10.0),
+            process_render: RenderParam::new(Shape::rectangle()).with_style(process_style).with_size(200.0,10.0),
             value: v,
             range: 0.0..100.0,
             geometry: Geometry::new().with_context_size(200.0, 10.0),

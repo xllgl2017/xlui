@@ -1,8 +1,8 @@
-use crate::{Border, Color, Pos, Rect};
 use crate::render::WidgetStyle;
 use crate::shape::draw_fan;
 use crate::shape::ring::RingShape;
 use crate::vertex::Vertex;
+use crate::{Pos, Rect};
 
 pub struct CircleShape {
     pub vertices: Vec<Vertex>,
@@ -21,7 +21,7 @@ impl CircleShape {
     /// * rect-圆所在的区域
     /// * fill-填充色
     /// * border-边框
-    pub fn draw(&mut self, rect: &Rect, style: &WidgetStyle) {
+    pub fn update(&mut self, rect: &Rect, style: &WidgetStyle) {
         self.vertices.clear();
         self.indices.clear();
         let center = Pos {
@@ -42,5 +42,8 @@ impl CircleShape {
         let (mut ps, mut is) = ring_shape.draw(start_pos, self.vertices.len() as u16 + 1, &style.border); // draw_ring(center, start_pos, self.vertices.len() as u16 + 1, border, 90);
         self.vertices.append(&mut ps);
         self.indices.append(&mut is);
+        while self.indices.len() * 2 % 4 != 0 {
+            self.indices.push(0);
+        }
     }
 }

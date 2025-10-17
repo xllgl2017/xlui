@@ -62,7 +62,7 @@ impl Widget for TableRow {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             #[cfg(feature = "gpu")]
-            UpdateType::ReInit => self.fill_render.re_init(),
+            UpdateType::ReInit => self.visual.re_init(),
             _ => {}
         }
         let mut width = 0.0;

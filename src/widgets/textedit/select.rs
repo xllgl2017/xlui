@@ -39,7 +39,7 @@ impl EditSelection {
         });
         select_style.inactive.fill = Color::rgba(255, 0, 0, 100);
         for row in 0..rows {
-            let mut render = RenderParam::new(Shape::Rectangle).with_style(select_style.clone()).with_size(0.0, line_height);
+            let mut render = RenderParam::new(Shape::rectangle()).with_style(select_style.clone()).with_size(0.0, line_height);
             render.rect_mut().offset(&Offset::new().with_y(row as f32 * line_height).covered());
             self.renders.push(render);
         }

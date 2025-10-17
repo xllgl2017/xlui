@@ -1,8 +1,8 @@
-use crate::{Border, Color, Pos, Rect};
 use crate::render::WidgetStyle;
 use crate::shape::draw_fan;
 use crate::shape::ring::RingShape;
 use crate::vertex::Vertex;
+use crate::{Border, Pos, Rect};
 
 pub struct RectangleShape {
     pub vertices: Vec<Vertex>,
@@ -213,7 +213,7 @@ impl RectangleShape {
             x: rect.dx().max - style.border.width(),
             y: rect.dy().max - as_s,
         };
-        let (mut rp, mut ri) = draw_fan(rb_center, rb_start, self.vertices.len() as u16 + 1,&style.fill, 90);
+        let (mut rp, mut ri) = draw_fan(rb_center, rb_start, self.vertices.len() as u16 + 1, &style.fill, 90);
         self.vertices.append(&mut rp);
         self.indices.append(&mut ri);
         if style.border.width() > 0.0 {
@@ -247,7 +247,7 @@ impl RectangleShape {
         }
     }
 
-    pub fn reset(&mut self, rect: &Rect, style: &WidgetStyle) {
+    pub fn update(&mut self, rect: &Rect, style: &WidgetStyle) {
         self.vertices.clear();
         self.indices = vec![
             0, 1, 2,
@@ -262,5 +262,8 @@ impl RectangleShape {
         self.draw_rt_arc(rect, as_s, &style);
         self.draw_rb_arc(rect, as_s, &style);
         self.draw_lb_arc(rect, as_s, &style);
+        while self.indices.len() * 2 % 4 != 0 {
+            self.indices.push(0);
+        }
     }
 }

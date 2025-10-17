@@ -51,7 +51,7 @@ impl ScrollBar {
             id: crate::gen_unique_id(),
             visual: Visual::new().with_enable().with_style(fill_style),
             // fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
-            slider_render: RenderParam::new(Shape::Rectangle).with_style(slider_style),
+            slider_render: RenderParam::new(Shape::rectangle()).with_style(slider_style),
             context_size: 0.0,
             offset: Offset::new(),
             geometry: Geometry::new(),

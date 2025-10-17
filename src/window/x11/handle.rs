@@ -3,6 +3,8 @@ use crate::error::UiResult;
 #[cfg(not(feature = "gpu"))]
 use crate::render::image::texture::ImageTexture;
 #[cfg(not(feature = "gpu"))]
+use crate::size::font::{FontSlant, FontWeight};
+#[cfg(not(feature = "gpu"))]
 use crate::text::cchar::LineChar;
 #[cfg(not(feature = "gpu"))]
 use crate::ui::PaintParam;
@@ -26,9 +28,6 @@ use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 use x11::xlib;
 use x11::xlib::{XFreeColormap, XMoveWindow};
-use crate::render::WidgetStyle;
-#[cfg(not(feature = "gpu"))]
-use crate::size::font::{FontSlant, FontWeight};
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,

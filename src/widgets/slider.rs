@@ -83,9 +83,9 @@ impl Slider {
             callback: None,
             contact_ids: vec![],
             visual: Visual::new().with_size(130.0,16.0),
-            bg_render: RenderParam::new(Shape::Rectangle).with_size(114.0, 6.0).with_style(bg_style),
-            slider_render: RenderParam::new(Shape::Circle).with_style(slider_style).with_size(16.0, 16.0),
-            slided_render: RenderParam::new(Shape::Rectangle).with_style(slided_style).with_size(114.0, 6.0),
+            bg_render: RenderParam::new(Shape::rectangle()).with_size(114.0, 6.0).with_style(bg_style),
+            slider_render: RenderParam::new(Shape::circle()).with_style(slider_style).with_size(16.0, 16.0),
+            slided_render: RenderParam::new(Shape::rectangle()).with_style(slided_style).with_size(114.0, 6.0),
             offset: 0.0,
             geometry: Geometry::new().with_context_size(130.0, 16.0),
             state: WidgetState::default(),
@@ -185,7 +185,7 @@ impl Widget for Slider {
             UpdateType::Init => self.init(),
             #[cfg(feature = "gpu")]
             UpdateType::ReInit => {
-                self.fill_render.re_init();
+                self.visual.re_init();
                 self.slided_render.re_init();
                 self.slider_render.re_init();
             }

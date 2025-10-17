@@ -101,7 +101,7 @@ impl Widget for Rectangle {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::ReInit => self.fill_render.re_init(),
+            UpdateType::ReInit => self.visual.re_init(),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(self.visual.rect());
                 if self.state.on_pressed(hovered) { ui.context.window.request_redraw(); }

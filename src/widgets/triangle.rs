@@ -76,8 +76,6 @@ impl Triangle {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.render.update(ui, false, false);
         }
     }
 

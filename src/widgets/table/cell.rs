@@ -45,7 +45,7 @@ impl TableCell {
         TableCell {
             id: gen_unique_id(),
             visual: Visual::new().with_style(cell_style),
-            cell_line: RenderParam::new(Shape::Rectangle).with_style(cell_line_style),
+            cell_line: RenderParam::new(Shape::rectangle()).with_style(cell_line_style),
             layout: Some(LayoutKind::new(layout)),
             geometry: Geometry::new().with_context_size(width, height),
             state: WidgetState::default(),

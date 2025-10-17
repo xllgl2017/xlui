@@ -40,7 +40,7 @@ impl EditCursor {
             max_pos: Pos::new(),
             horiz: 0,
             vert: 0,
-            render: RenderParam::new(Shape::Rectangle).with_style(cursor_style),
+            render: RenderParam::new(Shape::rectangle()).with_style(cursor_style),
             offset: Offset::new(),
             line_height: 0.0,
             changed: false,

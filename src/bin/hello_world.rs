@@ -31,7 +31,7 @@ fn draw_rect() -> (Vec<Vertex>, Vec<u16>) {
     rect.set_y_min(58.34375);
     rect.set_y_max(288.34375);
     let mut rectangle = RectangleShape::new(); //CircleShape::new(); //
-    rectangle.reset(&rect, &Color::rgb(230, 230, 230), &Border::same(2.0));
+    rectangle.update(&rect, &Color::rgb(230, 230, 230), &Border::same(2.0));
     (rectangle.vertices, rectangle.indices)
 }
 #[cfg(all(feature = "gpu",feature = "winit"))]

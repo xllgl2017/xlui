@@ -72,7 +72,7 @@ impl CheckBox {
             callback: None,
             inner_callback: None,
             geometry: Geometry::new(),
-            check_render: RenderParam::new(Shape::Rectangle).with_style(check_style),
+            check_render: RenderParam::new(Shape::rectangle()).with_style(check_style),
             contact_ids: vec![],
             visual: Visual::new(),
             state: WidgetState::default(),

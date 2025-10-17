@@ -127,7 +127,7 @@ impl<T: PartialEq + Display + 'static> Widget for SelectItem<T> {
             UpdateType::Draw => self.redraw(ui),
             UpdateType::Init => self.init(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::ReInit => self.fill_render.re_init(),
+            UpdateType::ReInit => self.visual.re_init(),
             UpdateType::MouseMove => {
                 let hovered = ui.device.device_input.hovered_at(self.visual.rect());
                 if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }

@@ -71,7 +71,8 @@ impl RenderParam {
     pub fn rect_mut(&mut self) -> &mut Rect { &mut self.rect }
 
     #[cfg(feature = "gpu")]
-    pub fn update(&mut self, ui: &mut Ui, style: WidgetStyle) {
+    pub fn update(&mut self, ui: &mut Ui, disabled: bool, hovered: bool, pressed: bool) {
+        let style = self.style.dyn_style(ui.disabled || disabled, hovered, pressed);
         let size: Size = (&ui.device.surface_config).into();
         let bind_data = bytemuck::bytes_of(&size);
         match self.bind_buffer {
@@ -82,6 +83,7 @@ impl RenderParam {
             }
             Some(ref buffer) => ui.device.queue.write_buffer(buffer, 0, bind_data),
         }
+        self.shape.update(&self.rect, style);
         let vertices_data = bytemuck::cast_slice(self.shape.vertices());
         let indices_data = bytemuck::cast_slice(self.shape.indices());
         match self.vertices_buffer {
@@ -300,16 +302,18 @@ impl RenderParam {
             _ => self.rect.offset_to_rect(rect)
         };
     }
-    #[cfg(feature = "gpu")]
-    pub fn indices(&self) -> &Vec<u16> {
-        match self.kind {
-            RenderKind::Rectangle(ref param) => &param.rect_shape.indices,
-            RenderKind::Circle(ref param) => &param.circle_shape.indices,
-            RenderKind::Triangle(ref param) => &param.indices
-        }
-    }
+    // #[cfg(feature = "gpu")]
+    // pub fn indices(&self) -> &Vec<u16> {
+    //     self.shape.indices()
+    //     // match self.shape {
+    //     //     Shape::Rectangle(ref param) => &param.rect_shape.indices,
+    //     //     Shape::Circle(ref param) => &param.circle_shape.indices,
+    //     //     Shape::Triangle(ref param) => &param.indices
+    //     // }
+    // }
 
     pub fn draw(&mut self, ui: &mut Ui, disabled: bool, hovered: bool, pressed: bool) {
+        #[cfg(not(feature = "gpu"))]
         let style = self.style.dyn_style(ui.disabled || disabled, hovered, pressed);
         match self.shape {
             #[cfg(not(feature = "gpu"))]
@@ -321,7 +325,7 @@ impl RenderParam {
             }
             #[cfg(feature = "gpu")]
             Shape::Rectangle(_) => {
-                self.update(ui, style, hovered, pressed);
+                self.update(ui, disabled, hovered, pressed);
                 let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.rectangle.render(&self, pass);
             }
@@ -340,14 +344,14 @@ impl RenderParam {
                 ui.context.window.x11().paint_triangle(ui.paint.as_mut().unwrap().cairo, param.p0, param.p1, param.p2, style);
             }
             #[cfg(feature = "gpu")]
-            RenderKind::Circle(_) => {
-                self.update(ui, hovered, pressed);
+            Shape::Circle(_) => {
+                self.update(ui, disabled, hovered, pressed);
                 let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.circle.render(&self, pass);
             }
             #[cfg(feature = "gpu")]
-            RenderKind::Triangle(_) => {
-                self.update(ui, hovered, pressed);
+            Shape::Triangle(_) => {
+                self.update(ui, disabled, hovered, pressed);
                 let pass = &mut ui.paint.as_mut().unwrap().pass;
                 ui.context.render.triangle.render(&self, pass);
             }
@@ -417,7 +421,7 @@ pub(crate) trait WrcRender {
         render_pass.set_bind_group(0, param.bind_group.as_ref().unwrap(), &[]);
         render_pass.set_vertex_buffer(0, param.vertices_buffer.as_ref().unwrap().slice(..));
         render_pass.set_index_buffer(param.indices_buffer.as_ref().unwrap().slice(..), IndexFormat::Uint16);
-        render_pass.draw_indexed(0..param.indices().len() as u32, 0, 0..1);
+        render_pass.draw_indexed(0..param.shape.indices().len() as u32, 0, 0..1);
     }
 }
 
@@ -496,11 +500,17 @@ impl Visual {
     pub fn new() -> Visual {
         Visual {
             #[cfg(feature = "gpu")]
-            render: RenderParam::new(Shape::Rectangle(RectangleShape::new())),
+            render: RenderParam::new(Shape::rectangle()),
+            #[cfg(not(feature = "gpu"))]
             render: RenderParam::new(Shape::Rectangle),
             disable: true,
             foreground: false,
         }
+    }
+
+    #[cfg(feature = "gpu")]
+    pub fn re_init(&mut self) {
+        self.render.re_init();
     }
 
     pub fn with_enable(mut self) -> Visual {
