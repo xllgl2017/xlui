@@ -11,8 +11,8 @@ impl TestAlign {
 
 impl App for TestAlign {
     fn draw(&mut self, ui: &mut Ui) {
-        let mut style = ClickStyle::new();
-        style.fill = FillStyle::same(Color::rgb(235, 152, 235));
+        let style = VisualStyle::same((Color::rgb(235, 152, 235), 0.0, 0).into());
+        // style.fill = FillStyle::same(Color::rgb(235, 152, 235));
         ui.horizontal(|ui| {
             ui.add(Label::new("AlignTop🦀").height(50.0).width(100.0).align(Align::Center));
             ui.add(Button::new("LT").width(50.0).height(50.0).align(Align::LeftTop).with_style(style.clone()));

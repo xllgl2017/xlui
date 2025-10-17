@@ -1,17 +1,16 @@
-use std::mem;
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem};
 use crate::map::Map;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::Visual;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle, FrameStyle};
+use crate::style::FrameStyle;
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Margin, Offset, Padding, Radius, Rect, Widget};
+use crate::{Margin, Offset, Padding, Widget};
+use std::mem;
 ///### 垂直布局的使用
 ///```rust
 /// use xlui::*;
@@ -46,7 +45,7 @@ pub struct VerticalLayout {
     offset: Offset,
     geometry: Geometry,
     direction: LayoutDirection,
-    fill_render: Option<RenderParam>,
+    visual: Visual,
 }
 
 impl VerticalLayout {
@@ -58,7 +57,7 @@ impl VerticalLayout {
             geometry: Geometry::new(),
             direction,
             offset: Offset::new(),
-            fill_render: None,
+            visual: Visual::new(),
         }
     }
 
@@ -81,23 +80,30 @@ impl VerticalLayout {
     }
 
     pub fn with_fill(mut self, color: Color) -> Self {
-        let mut style = ClickStyle::new();
-        style.fill = FillStyle::same(color);
-        style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
-        let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
-        self.fill_render = Some(fill_render);
+        self.visual.enable();
+        self.visual.style_mut().inactive.fill = color;
+        // let mut style = ClickStyle::new();
+        // style.fill = FillStyle::same(color);
+        // style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
+        // let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
+        // self.fill_render = Some(fill_render);
         self
     }
 
     ///设置背景的样式
     pub fn set_style(&mut self, style: FrameStyle) {
-        match self.fill_render {
-            None => {
-                let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
-                self.fill_render = Some(fill_render);
-            }
-            Some(ref mut render) => render.set_frame_style(style),
-        }
+        self.visual.enable();
+        self.visual.style_mut().inactive.fill = style.fill;
+        self.visual.style_mut().inactive.border = style.border;
+        self.visual.style_mut().inactive.shadow = style.shadow;
+        self.visual.style_mut().inactive.radius = style.radius;
+        // match self.fill_render {
+        //     None => {
+        //         let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
+        //         self.fill_render = Some(fill_render);
+        //     }
+        //     Some(ref mut render) => render.set_frame_style(style),
+        // }
     }
 
     pub fn set_width(&mut self, w: f32) {
@@ -147,18 +153,20 @@ impl Layout for VerticalLayout {
                     if width < item.width() { width = item.width(); }
                     height += item.height() + self.item_space;
                 }
-                if let Some(ref mut render) = self.fill_render {
-                    self.geometry.set_context_size(width, height);
-                    render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
-                    #[cfg(feature = "gpu")]
-                    render.init(ui, false, false);
-                }
+                self.geometry.set_context_size(width, height);
+                self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+                // if let Some(ref mut render) = self.fill_render {
+                //     self.geometry.set_context_size(width, height);
+                //     render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+                //     // #[cfg(feature = "gpu")]
+                //     // render.init(ui, false, false);
+                // }
             }
             _ => {
                 self.geometry.set_margin_size(ui.draw_rect.width(), ui.draw_rect.height());
-                if let UpdateType::Draw = ui.update_type && let Some(ref mut render) = self.fill_render {
-                    render.rect_mut().offset_to_rect(&ui.draw_rect);
-                    render.draw(ui, false, false);
+                if let UpdateType::Draw = ui.update_type {
+                    self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
+                    self.visual.draw(ui, false, false, false, false);
                 }
 
                 let mut rect = self.geometry.context_rect().with_y_direction(self.direction);

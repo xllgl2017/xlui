@@ -4,6 +4,7 @@ use crate::widgets::space::Space;
 use std::any::{Any, TypeId};
 use std::ops::{BitAnd, BitOr, BitOrAssign, Deref, DerefMut};
 use crate::size::Geometry;
+use crate::UpdateType;
 
 pub mod label;
 pub mod button;
@@ -178,7 +179,7 @@ pub struct WidgetState {
     hovered: bool,
     pressed: bool,
     changed: bool,
-    disabled: bool,
+    pub(crate) disabled: bool,
     // selected: bool,
 }
 
@@ -217,5 +218,25 @@ impl WidgetState {
     ///控件按下的滑动移动
     pub fn hovered_moving(&self) -> bool {
         self.pressed && self.focused
+    }
+
+    ///disable-为是否启用样式，默认不启用
+    pub fn handle_event(&mut self, ui: &mut Ui, geometry: &Geometry, disable: bool) {
+        match ui.update_type {
+            UpdateType::MouseMove => {
+                let hovered = ui.device.device_input.hovered_at(&geometry.padding_rect());
+                if self.on_pressed(hovered) && !disable {
+                    ui.context.window.request_redraw();
+                };
+            }
+            UpdateType::MousePress => {
+                let pressed = ui.device.device_input.pressed_at(&geometry.padding_rect());
+                if self.on_pressed(pressed) && !disable {
+                    ui.context.window.request_redraw();
+                };
+            }
+            UpdateType::MouseRelease => if self.on_release() && !disable { ui.context.window.request_redraw(); },
+            _ => {}
+        }
     }
 }

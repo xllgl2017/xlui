@@ -1,15 +1,13 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::key::Key;
-use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{RenderParam, VisualStyle};
 use crate::response::{Callback, Response};
-use crate::size::border::Border;
+use crate::shape::Shape;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
 use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle};
 use crate::ui::Ui;
 use crate::widgets::textedit::TextEdit;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
@@ -17,6 +15,7 @@ use crate::window::UserEvent;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+
 /// ### Slider的示例用法
 /// ```
 /// use xlui::*;
@@ -60,14 +59,16 @@ pub struct SpinBox<T> {
 
 impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCastExt + 'static> SpinBox<T> {
     pub fn new(v: T, g: T, r: Range<T>) -> Self {
-        let color = Color::rgb(95, 95, 95);
-        let inactive_color = Color::rgb(153, 152, 152);
-        let mut style = ClickStyle::new();
-        style.fill.inactive = color;
-        style.fill.hovered = inactive_color;
-        style.border = BorderStyle::same(Border::same(0.0));
-        let up_param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style.clone());
-        let down_param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style);
+        let mut allow_style = VisualStyle::same((Color::rgb(95, 95, 95), 0.0, 0).into());
+        allow_style.hovered.fill = Color::rgb(153, 152, 152);
+        // let color = Color::rgb(95, 95, 95);
+        // let inactive_color = Color::rgb(153, 152, 152);
+        // let mut style = ClickStyle::new();
+        // style.fill.inactive = color;
+        // style.fill.hovered = inactive_color;
+        // style.border = BorderStyle::same(Border::same(0.0));
+        // let up_param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style.clone());
+        // let down_param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), style);
         SpinBox {
             id: crate::gen_unique_id(),
             edit: TextEdit::single_edit(format!("{:.*}", 2, v)),
@@ -77,8 +78,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             gap: g,
             range: r,
             callback: None,
-            up_render: RenderParam::new(RenderKind::Triangle(up_param)),
-            down_render: RenderParam::new(RenderKind::Triangle(down_param)),
+            up_render: RenderParam::new(Shape::triangle()).with_style(allow_style.clone()),
+            down_render: RenderParam::new(Shape::triangle()).with_style(allow_style),
             contact_ids: vec![],
             press_up: false,
             press_down: false,
@@ -135,8 +136,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         p2.x = self.rect.dx().max;
         p2.y = self.up_render.rect().dy().max;
         self.up_render.set_poses(p0, p1, p2);
-        #[cfg(feature = "gpu")]
-        self.up_render.init(ui, false, false);
+        // #[cfg(feature = "gpu")]
+        // self.up_render.init(ui, false, false);
         self.down_render.rect_mut().set_x_min(self.rect.dx().max - 14.0);
         self.down_render.rect_mut().set_x_max(self.rect.dx().max);
         self.down_render.rect_mut().set_y_min(self.rect.dy().max - self.rect.height() / 2.0 + 2.0);
@@ -151,8 +152,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
         p2.x = self.rect.dx().max;
         p2.y = self.down_render.rect_mut().dy().min;
         self.down_render.set_poses(p0, p1, p2);
-        #[cfg(feature = "gpu")]
-        self.down_render.init(ui, false, false);
+        // #[cfg(feature = "gpu")]
+        // self.down_render.init(ui, false, false);
     }
 
     fn call(&mut self, ui: &mut Ui) {
@@ -239,8 +240,8 @@ impl<T: PartialOrd + AddAssign + SubAssign + ToString + Copy + Display + NumCast
             ui.draw_rect = edit_rect;
         }
         self.edit.redraw(ui);
-        self.down_render.draw(ui, self.value <= self.range.start, false);
-        self.up_render.draw(ui, self.value >= self.range.end, false);
+        self.down_render.draw(ui, self.state.disabled, self.value <= self.range.start, false);
+        self.up_render.draw(ui, self.state.disabled, self.value >= self.range.end, false);
     }
 }
 

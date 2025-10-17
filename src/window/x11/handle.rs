@@ -3,6 +3,8 @@ use crate::error::UiResult;
 #[cfg(not(feature = "gpu"))]
 use crate::render::image::texture::ImageTexture;
 #[cfg(not(feature = "gpu"))]
+use crate::size::font::{FontSlant, FontWeight};
+#[cfg(not(feature = "gpu"))]
 use crate::text::cchar::LineChar;
 #[cfg(not(feature = "gpu"))]
 use crate::ui::PaintParam;
@@ -26,8 +28,6 @@ use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 use x11::xlib;
 use x11::xlib::{XFreeColormap, XMoveWindow};
-#[cfg(not(feature = "gpu"))]
-use crate::size::font::{FontSlant, FontWeight};
 
 pub struct X11WindowHandle {
     pub(crate) display: *mut xlib::Display,
@@ -202,7 +202,7 @@ impl X11WindowHandle {
 
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_rect(&self, cairo: &mut Cairo, fill: &Color, border: &Border, rect: &Rect) {
+    pub fn paint_rect(&self, cairo: &mut Cairo, style: &WidgetStyle, rect: &Rect) {
         cairo.save();
         let x1 = rect.dx().min;
         let y1 = rect.dy().min;
@@ -211,37 +211,37 @@ impl X11WindowHandle {
         cairo.set_antialias(CairoAntialias::Best);
         cairo.new_path();
         cairo.arc(
-            (x2 - border.radius.right_top as f32) as f64,
-            (y1 + border.radius.right_top as f32) as f64,
-            border.radius.right_top as f64,
+            (x2 - style.radius.right_top as f32) as f64,
+            (y1 + style.radius.right_top as f32) as f64,
+            style.radius.right_top as f64,
             -90_f64.to_radians(), 0_f64.to_radians(),
         );
         cairo.arc(
-            (x2 - border.radius.right_bottom as f32) as f64,
-            (y2 - border.radius.right_bottom as f32) as f64,
-            border.radius.right_bottom as f64,
+            (x2 - style.radius.right_bottom as f32) as f64,
+            (y2 - style.radius.right_bottom as f32) as f64,
+            style.radius.right_bottom as f64,
             0_f64.to_radians(), 90_f64.to_radians());
         cairo.arc(
-            (x1 + border.radius.left_bottom as f32) as f64,
-            (y2 - border.radius.left_bottom as f32) as f64,
-            border.radius.left_bottom as f64,
+            (x1 + style.radius.left_bottom as f32) as f64,
+            (y2 - style.radius.left_bottom as f32) as f64,
+            style.radius.left_bottom as f64,
             90_f64.to_radians(), 180_f64.to_radians());
         cairo.arc(
-            (x1 + border.radius.left_top as f32) as f64,
-            (y1 + border.radius.left_top as f32) as f64,
-            border.radius.left_top as f64,
+            (x1 + style.radius.left_top as f32) as f64,
+            (y1 + style.radius.left_top as f32) as f64,
+            style.radius.left_top as f64,
             180_f64.to_radians(), 270_f64.to_radians());
         cairo.close_path();
-        cairo.set_source_rgba(fill.r_f64(), fill.g_f64(), fill.b_f64(), fill.a_f64());
+        cairo.set_source_rgba(style.fill.r_f64(), style.fill.g_f64(), style.fill.b_f64(), style.fill.a_f64());
         cairo.fill_preserve();
-        cairo.set_line_width(border.width() as f64);
-        cairo.set_source_rgba(border.color.r_f64(), border.color.g_f64(), border.color.b_f64(), border.color.a_f64());
+        cairo.set_line_width(style.border.width() as f64);
+        cairo.set_source_rgba(style.border.color.r_f64(), style.border.color.g_f64(), style.border.color.b_f64(), style.border.color.a_f64());
         cairo.stroke();
         cairo.restore();
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_circle(&self, cairo: &mut Cairo, fill: &Color, border: &Border, rect: &Rect) {
+    pub fn paint_circle(&self, cairo: &mut Cairo, style: &WidgetStyle, rect: &Rect) {
         cairo.save();
         cairo.new_path();
         cairo.arc(
@@ -251,26 +251,26 @@ impl X11WindowHandle {
             0f64.to_radians(), 360f64.to_radians(),
         );
         cairo.close_path();
-        cairo.set_source_rgba(fill.r_f64(), fill.g_f64(), fill.b_f64(), fill.a_f64());
+        cairo.set_source_rgba(style.fill.r_f64(), style.fill.g_f64(), style.fill.b_f64(), style.fill.a_f64());
         cairo.fill_preserve();
-        cairo.set_line_width(border.width() as f64);
-        cairo.set_source_rgba(border.color.r_f64(), border.color.g_f64(), border.color.b_f64(), border.color.a_f64());
+        cairo.set_line_width(style.border.width() as f64);
+        cairo.set_source_rgba(style.border.color.r_f64(), style.border.color.g_f64(), style.border.color.b_f64(), style.border.color.a_f64());
         cairo.stroke();
         cairo.restore();
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_triangle(&self, cairo: &mut Cairo, pos0: Pos, pos1: Pos, pos2: Pos, fill: &Color, border: &Border) {
+    pub fn paint_triangle(&self, cairo: &mut Cairo, pos0: Pos, pos1: Pos, pos2: Pos, style: &WidgetStyle) {
         cairo.save();
         cairo.new_path();
         cairo.move_to(pos0.x as f64, pos0.y as f64);
         cairo.line_to(pos1.x as f64, pos1.y as f64);
         cairo.line_to(pos2.x as f64, pos2.y as f64);
         cairo.close_path();
-        cairo.set_source_rgba(fill.r_f64(), fill.g_f64(), fill.b_f64(), fill.a_f64());
+        cairo.set_source_rgba(style.fill.r_f64(), style.fill.g_f64(), style.fill.b_f64(), style.fill.a_f64());
         cairo.fill_preserve();
-        cairo.set_line_width(border.width() as f64);
-        cairo.set_source_rgba(border.color.r_f64(), border.color.g_f64(), border.color.b_f64(), border.color.a_f64());
+        cairo.set_line_width(style.border.width() as f64);
+        cairo.set_source_rgba(style.border.color.r_f64(), style.border.color.g_f64(), style.border.color.b_f64(), style.border.color.a_f64());
         cairo.stroke();
         cairo.restore();
     }

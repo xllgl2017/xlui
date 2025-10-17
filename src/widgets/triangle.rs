@@ -1,13 +1,13 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderKind, RenderParam};
-use crate::render::triangle::param::TriangleParam;
+use crate::render::{RenderParam, VisualStyle};
 use crate::response::Response;
-use crate::size::Geometry;
+use crate::shape::Shape;
 use crate::size::pos::Pos;
 use crate::size::rect::Rect;
-use crate::style::ClickStyle;
+use crate::size::Geometry;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
+use crate::Color;
 
 pub struct Triangle {
     id: String,
@@ -19,10 +19,12 @@ pub struct Triangle {
 
 impl Triangle {
     pub fn new() -> Self {
-        let param = TriangleParam::new(Pos::new(), Pos::new(), Pos::new(), ClickStyle::new());
+        let mut style = VisualStyle::same((Color::rgb(230, 230, 230), 1.0, 3).into());
+        style.inactive.border.set_same(0.0);
+        style.pressed.fill = Color::rgb(165, 165, 165);
         Triangle {
             id: crate::gen_unique_id(),
-            render: RenderParam::new(RenderKind::Triangle(param)),
+            render: RenderParam::new(Shape::triangle()).with_style(style),
             geometry: Geometry::new(),
             state: WidgetState::default(),
         }
@@ -61,12 +63,12 @@ impl Triangle {
         self.geometry.offset_to_rect(&rect);
     }
 
-    pub fn with_style(mut self, style: ClickStyle) -> Self {
+    pub fn with_style(mut self, style: VisualStyle) -> Self {
         self.render.set_style(style);
         self
     }
 
-    pub fn set_style(&mut self, style: ClickStyle) {
+    pub fn set_style(&mut self, style: VisualStyle) {
         self.render.set_style(style);
     }
 
@@ -74,18 +76,16 @@ impl Triangle {
         if ui.widget_changed.contains(WidgetChange::Position) {
             self.geometry.offset_to_rect(&ui.draw_rect);
             self.render.offset_to_rect(&ui.draw_rect);
-            #[cfg(feature = "gpu")]
-            self.render.update(ui, false, false);
         }
     }
 
-    pub fn style_mut(&mut self) -> &mut ClickStyle {
+    pub fn style_mut(&mut self) -> &mut VisualStyle {
         self.render.style_mut()
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.render.draw(ui, false, false);
+        self.render.draw(ui, self.state.disabled, false, false);
     }
 }
 
@@ -95,7 +95,7 @@ impl Widget for Triangle {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::Init | UpdateType::ReInit => self.render.init(ui, false, false),
+            UpdateType::ReInit => self.render.re_init(),
             _ => {}
         }
         Response::new(&self.id, WidgetSize::same(self.geometry.margin_width(), self.geometry.margin_height()))

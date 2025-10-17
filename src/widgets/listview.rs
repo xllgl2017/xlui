@@ -1,19 +1,19 @@
-use std::mem;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
+use crate::layout::recycle::RecycleLayout;
 use crate::layout::{Layout, LayoutItem, LayoutKind};
+use crate::render::{VisualStyle, WidgetStyle};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
 use crate::style::color::Color;
-use crate::style::{BorderStyle, ClickStyle, FillStyle};
 use crate::ui::Ui;
 use crate::widgets::item::ItemWidget;
-use crate::{HorizontalLayout, Label, Padding, ScrollWidget};
+use crate::widgets::WidgetKind;
+use crate::{HorizontalLayout, Label, Padding, ScrollWidget, Shadow};
+use std::mem;
 use std::ops::Range;
 use std::sync::{Arc, RwLock};
-use crate::layout::recycle::RecycleLayout;
-use crate::widgets::WidgetKind;
 
 pub enum ListUpdate<T> {
     Push(T),
@@ -135,18 +135,27 @@ impl<T: 'static> ListView<T> {
     fn item_widget(&self, ui: &mut Ui, datum: &T, index: usize) -> LayoutItem {
         let previous_update = ui.update_type.clone();
         ui.update_type = UpdateType::Init;
-        let style = ClickStyle {
-            fill: FillStyle {
-                inactive: Color::TRANSPARENT,
-                hovered: Color::rgba(153, 193, 241, 220),
-                clicked: Color::rgba(153, 193, 241, 220),
-            },
-            border: BorderStyle {
-                inactive: Border::same(1.0).radius(Radius::same(3)).color(Color::rgb(190, 190, 190)),
-                hovered: Border::same(0.0).radius(Radius::same(3)),
-                clicked: Border::same(0.0).radius(Radius::same(3)),
-            },
-        };
+        let mut style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgba(153, 193, 241, 220),
+            border: Border::same(0.0),
+            radius: Radius::same(3),
+            shadow: Shadow::new(),
+        });
+        style.inactive.fill = Color::TRANSPARENT;
+        style.inactive.border=Border::same(1.0).color(Color::rgb(190, 190, 190));
+
+        // let style = ClickStyle {
+        //     fill: FillStyle {
+        //         inactive: Color::TRANSPARENT,
+        //         hovered: Color::rgba(153, 193, 241, 220),
+        //         clicked: Color::rgba(153, 193, 241, 220),
+        //     },
+        //     border: BorderStyle {
+        //         inactive: Border::same(1.0).radius(Radius::same(3)).color(Color::rgb(190, 190, 190)),
+        //         hovered: Border::same(0.0).radius(Radius::same(3)),
+        //         clicked: Border::same(0.0).radius(Radius::same(3)),
+        //     },
+        // };
         let current = self.current.clone();
         let callback = self.callback.clone();
         let item_layout = HorizontalLayout::left_to_right().with_size(self.width - 18.0, self.item_height)
@@ -264,13 +273,18 @@ impl<T: 'static> ListView<T> {
         let layout = RecycleLayout::new().with_item_height(self.item_height);
         let mut area = ScrollWidget::vertical().with_layout(layout).with_size(self.width, self.height);
         self.lid = area.id.clone();
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::TRANSPARENT;
-        fill_style.fill.hovered = Color::TRANSPARENT;
-        fill_style.fill.clicked = Color::TRANSPARENT;
-        fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
-        fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        let fill_style = VisualStyle::same(WidgetStyle{
+            fill: Color::TRANSPARENT,
+            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+            radius: Radius::same(2),
+            shadow: Shadow::new(),
+        });
+        // fill_style.fill.inactive = Color::TRANSPARENT;
+        // fill_style.fill.hovered = Color::TRANSPARENT;
+        // fill_style.fill.clicked = Color::TRANSPARENT;
+        // fill_style.border.inactive = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        // fill_style.border.hovered = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
+        // fill_style.border.clicked = Border::same(1.0).color(Color::rgba(144, 209, 255, 255)).radius(Radius::same(2));
         area.set_style(fill_style);
         area.show(ui, |ui| {
             let recycle: &mut RecycleLayout = ui.layout().as_mut_().unwrap();
@@ -315,7 +329,7 @@ impl<T: 'static> ListView<T> {
                 let mut start = display.start;
                 for item in recycle_layout.items_mut().iter_mut() {
                     let item: &mut ItemWidget = item.widget_mut().unwrap();
-                    item.restore_status(self.hovered == Some(start),  start.to_string());
+                    item.restore_status(self.hovered == Some(start), start.to_string());
                     (self.onscroll)(&self.data[start], item.layout());
                     start += 1;
                     if start == self.data.len() { break; }

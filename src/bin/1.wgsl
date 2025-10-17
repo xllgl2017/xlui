@@ -3,18 +3,19 @@ struct VertexOutput {
     @location(0) color: vec4<f32>,
 };
 
-struct Screen{
-    size:vec2<f32>,
+struct Size{
+    width: f32,
+    height: f32,
 }
 
 @group(0) @binding(0)
-var<uniform> screen: Screen;
+var<uniform> size: Size;
 
 @vertex
 fn vs_main(@location(0) position: vec2<f32>, @location(1) color: vec4<f32>)-> VertexOutput {
     var out: VertexOutput;
-    let x=(position.x/screen.size.x)*2.0 - 1.0;
-    let y=-(position.y/screen.size.y)*2.0 + 1.0;
+    let x=(position.x/size.width)*2.0 - 1.0;
+    let y=-(position.y/size.height)*2.0 + 1.0;
     out.position = vec4<f32>(x,y, 0.0, 1.0);
     out.color = color;
     return out;

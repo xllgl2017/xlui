@@ -4,21 +4,26 @@ use crate::render::image::{load_win32_image_raw, ImageSource};
 #[cfg(not(feature = "gpu"))]
 use crate::text::cchar::LineChar;
 use crate::window::win32::clipboard::Win32Clipboard;
-use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 #[cfg(feature = "gpu")]
 use crate::window::win32::{GetWindowLongPtrW, GWLP_HINSTANCE};
+use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 use crate::window::UserEvent;
 use crate::*;
 #[cfg(feature = "gpu")]
 use raw_window_handle::{DisplayHandle, RawDisplayHandle, RawWindowHandle, WindowHandle, WindowsDisplayHandle};
 #[cfg(feature = "gpu")]
 use std::num::NonZeroIsize;
+#[cfg(not(feature = "gpu"))]
 use std::ptr::null_mut;
 use std::sync::RwLock;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, POINT, WPARAM};
-use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HDC, HFONT, HGDIOBJ, SRCCOPY, TRANSPARENT};
-use windows::Win32::Graphics::GdiPlus::{CompositingQualityHighQuality, FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipDrawPolygon, GdipFillEllipse, GdipFillPath, GdipFillPolygon, GdipSetCompositingQuality, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, PointF, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, SmoothingModeDefault, SmoothingModeHighSpeed, UnitPixel};
+#[cfg(not(feature = "gpu"))]
+use windows::Win32::Graphics::Gdi::{HDC, HFONT};
+use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HGDIOBJ, SRCCOPY, TRANSPARENT};
+#[cfg(not(feature = "gpu"))]
+use windows::Win32::Graphics::GdiPlus::{CompositingQualityHighQuality, FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipFillEllipse, GdipFillPath, GdipSetCompositingQuality, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, UnitPixel};
+use windows::Win32::Graphics::GdiPlus::{GdipDrawPolygon, GdipFillPolygon, PointF};
 use windows::Win32::Graphics::Imaging::{GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, WICBitmapInterpolationModeFant, WICBitmapPaletteTypeCustom};
 use windows::Win32::UI::Input::Ime::{ImmGetContext, ImmReleaseContext, ImmSetCompositionWindow, CFS_POINT, COMPOSITIONFORM};
 use windows::Win32::UI::WindowsAndMessaging::{DestroyWindow, PostMessageW, ShowWindow, SW_HIDE, SW_SHOW, WM_PAINT};
@@ -111,6 +116,7 @@ impl Win32WindowHandle {
         }
     }
 
+    #[cfg(not(feature = "gpu"))]
     fn add_round_rect_path(path: &mut GpPath, rect: &Rect, radius: &Radius) {
         unsafe {
             let x = rect.dx().min;
@@ -153,7 +159,8 @@ impl Win32WindowHandle {
         }
     }
 
-    pub fn paint_rect(&self, hdc: HDC, fill: &Color, border: &Border, rect: &Rect) {
+    #[cfg(not(feature = "gpu"))]
+    pub fn paint_rect(&self, hdc: HDC, rect: &Rect, style: &WidgetStyle) {
         unsafe {
             let mut graphics: *mut GpGraphics = null_mut();
             GdipCreateFromHDC(hdc, &mut graphics);
@@ -165,20 +172,20 @@ impl Win32WindowHandle {
 
 
             let mut pen: *mut GpPen = null_mut();
-            GdipCreatePen1(border.color.as_rgba_u32(), border.top_width, UnitPixel, &mut pen); // 红色边框
+            GdipCreatePen1(style.border.color.as_rgba_u32(), style.border.top_width, UnitPixel, &mut pen); // 红色边框
 
             let mut brush: *mut GpSolidFill = null_mut();
-            GdipCreateSolidFill(fill.as_rgba_u32(), &mut brush); // 青色填充
+            GdipCreateSolidFill(style.fill.as_rgba_u32(), &mut brush); // 青色填充
 
             // 创建路径
             let mut path: *mut GpPath = null_mut();
             GdipCreatePath(FillModeAlternate, &mut path);
 
-            Self::add_round_rect_path(&mut *path, rect, &border.radius);
+            Self::add_round_rect_path(&mut *path, rect, &style.radius);
 
             // 填充 + 描边
             GdipFillPath(graphics, brush.cast(), path);
-            if border.top_width != 0.0 {
+            if style.border.top_width != 0.0 {
                 // GdipSetSmoothingMode(graphics, SmoothingModeNone);
                 GdipDrawPath(graphics, pen, path);
             }
@@ -191,7 +198,8 @@ impl Win32WindowHandle {
         }
     }
 
-    pub fn paint_circle(&self, hdc: HDC, rect: &Rect, fill: &Color, border: &Border) {
+    #[cfg(not(feature = "gpu"))]
+    pub fn paint_circle(&self, hdc: HDC, rect: &Rect, style: &WidgetStyle) {
         unsafe {
             // 创建 Graphics 对象
             let mut graphics: *mut GpGraphics = null_mut();
@@ -202,15 +210,15 @@ impl Win32WindowHandle {
             // 创建填充刷（支持 alpha）
             // let fill_color = (fill.a as u32) << 24 | (fill.r as u32) << 16 | (fill.g as u32) << 8 | (fill.b as u32);
             let mut brush: *mut GpSolidFill = null_mut();
-            GdipCreateSolidFill(fill.as_rgba_u32(), &mut brush);
+            GdipCreateSolidFill(style.fill.as_rgba_u32(), &mut brush);
 
             // 绘制圆形（支持透明度）
             GdipFillEllipse(graphics, brush.cast(), rect.dx().min, rect.dy().min, rect.width(), rect.height());
 
             // 边框
-            if border.width() > 0.0 {
+            if style.border.width() > 0.0 {
                 let mut pen: *mut GpPen = null_mut();
-                GdipCreatePen1(border.color.as_rgba_u32(), border.width(), UnitPixel, &mut pen);
+                GdipCreatePen1(style.border.color.as_rgba_u32(), style.border.width(), UnitPixel, &mut pen);
                 GdipDrawEllipse(graphics, pen, rect.dx().min, rect.dy().min, rect.width(), rect.height());
                 GdipDeletePen(pen);
             }
@@ -271,7 +279,7 @@ impl Win32WindowHandle {
             let mut height = 0;
             unsafe { format_converter.GetSize(&mut width, &mut height)?; }
 
-            let mut hbitmap: HBITMAP = HBITMAP::default();
+            // let mut hbitmap: HBITMAP = HBITMAP::default();
             let bmi = BITMAPINFO {
                 bmiHeader: BITMAPINFOHEADER {
                     biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
@@ -285,7 +293,7 @@ impl Win32WindowHandle {
                 ..Default::default()
             };
             let mut bits: *mut std::ffi::c_void = null_mut();
-            hbitmap = CreateDIBSection(Some(hdc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0)?;
+            let hbitmap = CreateDIBSection(Some(hdc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0)?;
             let stride = (width as f32 * 4.0) as usize;
             let buf_size = stride * height as usize;
             let buffer_slice = std::slice::from_raw_parts_mut(bits as *mut u8, buf_size);
@@ -306,7 +314,7 @@ impl Win32WindowHandle {
     }
 
     #[cfg(not(feature = "gpu"))]
-    pub fn paint_triangle(&self, hdc: HDC, points: [PointF; 3], fill: &Color, border: &Border) {
+    pub fn paint_triangle(&self, hdc: HDC, points: [PointF; 3], style: &WidgetStyle) {
         unsafe {
             // 创建 Graphics 对象
             let mut graphics: *mut GpGraphics = null_mut();
@@ -316,14 +324,14 @@ impl Win32WindowHandle {
 
             // === 填充 ===
             let mut brush: *mut GpSolidFill = null_mut();
-            GdipCreateSolidFill(fill.as_rgba_u32(), &mut brush);
+            GdipCreateSolidFill(style.fill.as_rgba_u32(), &mut brush);
             GdipFillPolygon(graphics, brush.cast(), points.as_ptr(), 3, FillModeAlternate);
             GdipDeleteBrush(brush.cast());
 
             // === 边框 ===
-            if border.width() > 0.0 {
+            if style.border.width() > 0.0 {
                 let mut pen: *mut GpPen = null_mut();
-                GdipCreatePen1(border.color.as_rgba_u32(), border.width(), UnitPixel, &mut pen);
+                GdipCreatePen1(style.border.color.as_rgba_u32(), style.border.width(), UnitPixel, &mut pen);
                 GdipDrawPolygon(graphics, pen, points.as_ptr(), 3);
                 GdipDeletePen(pen);
             }

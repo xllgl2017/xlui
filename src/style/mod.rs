@@ -19,7 +19,8 @@ use crate::Radius;
 ///             blur:5.0,
 ///             color:Color::rgb(123,123,123)
 ///         },
-///         border:Border::same(1.0).radius(Radius::same(2))
+///         border:Border::same(1.0),
+///         radius:Radius::same(2)
 ///     };
 /// }
 /// ```
@@ -27,6 +28,7 @@ pub struct FrameStyle {
     pub fill: Color,
     pub shadow: Shadow,
     pub border: Border,
+    pub radius: Radius,
 
 }
 
@@ -37,16 +39,19 @@ pub struct FrameStyle {
 /// use xlui::*;
 ///
 /// fn draw(ui:&mut Ui){
-///     let mut style=ClickStyle::new();
+///     let mut style=VisualStyle::new();
 ///     //未活跃的状态
-///     style.fill.inactive=Color::GRAY;
-///     style.border.inactive=Border::same(1.0).radius(Radius::same(5)).color(Color::RED);
+///     style.inactive.fill=Color::GRAY;
+///     style.inactive.border=Border::same(1.0).color(Color::RED);
+///     style.inactive.radius=Radius::same(5);
 ///     //滑动状态
-///     style.fill.hovered=Color::GRAY;
-///     style.border.hovered=Border::same(1.0).radius(Radius::same(5)).color(Color::RED);
+///     style.hovered.fill=Color::GRAY;
+///     style.hovered.border=Border::same(1.0).color(Color::RED);
+///     style.hovered.radius=Radius::same(5);
 ///     //活跃状态
-///     style.fill.clicked=Color::GRAY;
-///     style.border.clicked=Border::same(1.0).radius(Radius::same(5)).color(Color::RED);
+///     style.pressed.fill=Color::GRAY;
+///     style.pressed.border=Border::same(1.0).color(Color::RED);
+///     style.pressed.radius=Radius::same(5);
 /// }
 /// ```
 ///
@@ -120,11 +125,12 @@ impl ClickStyle {
     }
 }
 
-pub struct WidgetStyle {
-    pub click: ClickStyle,
-    pub popup: ClickStyle,
-}
+// pub struct WidgetStyle {
+//     pub click: ClickStyle,
+//     pub popup: ClickStyle,
+// }
 
+#[derive(Clone)]
 pub struct Shadow {
     pub offset: [f32; 2],
     pub spread: f32,
@@ -143,29 +149,29 @@ impl Shadow {
     }
 }
 
-pub struct Style {
-    pub window: FrameStyle,
-    pub widgets: WidgetStyle,
-}
+// pub struct Style {
+//     pub window: FrameStyle,
+//     pub widgets: WidgetStyle,
+// }
 
 
-impl Style {
-    pub fn light_style() -> Style {
-        Style {
-            window: FrameStyle {
-                fill: Color::rgb(240, 240, 240),
-                shadow: Shadow::new(),
-                border: Border::same(0.0).radius(Radius::same(0)),
-            },
-
-            widgets: WidgetStyle {
-                click: ClickStyle::new(),
-                popup: ClickStyle {
-                    fill: FillStyle::same(Color::rgb(240, 240, 240)),
-                    border: BorderStyle::same(Border::same(1.0).radius(Radius::same(5))
-                        .color(Color::rgb(144, 209, 255))),
-                },
-            },
-        }
-    }
-}
+// impl Style {
+//     pub fn light_style() -> Style {
+//         Style {
+//             window: FrameStyle {
+//                 fill: Color::rgb(240, 240, 240),
+//                 shadow: Shadow::new(),
+//                 border: Border::same(0.0).radius(Radius::same(0)),
+//             },
+//
+//             widgets: WidgetStyle {
+//                 click: ClickStyle::new(),
+//                 popup: ClickStyle {
+//                     fill: FillStyle::same(Color::rgb(240, 240, 240)),
+//                     border: BorderStyle::same(Border::same(1.0).radius(Radius::same(5))
+//                         .color(Color::rgb(144, 209, 255))),
+//                 },
+//             },
+//         }
+//     }
+// }

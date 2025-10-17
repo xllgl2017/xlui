@@ -1,7 +1,8 @@
-use crate::{Border, Color, Pos, Rect};
+use crate::render::WidgetStyle;
 use crate::shape::draw_fan;
 use crate::shape::ring::RingShape;
 use crate::vertex::Vertex;
+use crate::{Border, Pos, Rect};
 
 pub struct RectangleShape {
     pub vertices: Vec<Vertex>,
@@ -23,40 +24,40 @@ impl RectangleShape {
         }
     }
 
-    fn draw_base_rectangle(&mut self, rect: &Rect, fill: &Color, border_width: f32, as_s: f32) {
+    fn draw_base_rectangle(&mut self, rect: &Rect, style: &WidgetStyle, as_s: f32) {
         //垂直矩形
         self.vertices.push(Vertex {
-            position: [rect.dx().min + as_s, rect.dy().min + border_width], //lt
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().min + as_s, rect.dy().min + style.border.width()], //lt
+            color: style.fill.as_gamma_rgba(),
         });
         self.vertices.push(Vertex {
-            position: [rect.dx().max - as_s, rect.dy().min + border_width], //rt
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().max - as_s, rect.dy().min + style.border.width()], //rt
+            color: style.fill.as_gamma_rgba(),
         });
         self.vertices.push(Vertex {
-            position: [rect.dx().max - as_s, rect.dy().max - border_width], //rb
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().max - as_s, rect.dy().max - style.border.width()], //rb
+            color: style.fill.as_gamma_rgba(),
         });
         self.vertices.push(Vertex {
-            position: [rect.dx().min + as_s, rect.dy().max - border_width], //lb,
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().min + as_s, rect.dy().max - style.border.width()], //lb,
+            color: style.fill.as_gamma_rgba(),
         });
         //水平矩形
         self.vertices.push(Vertex {
-            position: [rect.dx().min + border_width, rect.dy().min + as_s], //lt
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().min + style.border.width(), rect.dy().min + as_s], //lt
+            color: style.fill.as_gamma_rgba(),
         });
         self.vertices.push(Vertex {
-            position: [rect.dx().max - border_width, rect.dy().min + as_s], //rt
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().max - style.border.width(), rect.dy().min + as_s], //rt
+            color: style.fill.as_gamma_rgba(),
         });
         self.vertices.push(Vertex {
-            position: [rect.dx().max - border_width, rect.dy().max - as_s], //rb,
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().max - style.border.width(), rect.dy().max - as_s], //rb,
+            color: style.fill.as_gamma_rgba(),
         });
         self.vertices.push(Vertex {
-            position: [rect.dx().min + border_width, rect.dy().max - as_s], //lb,
-            color: fill.as_gamma_rgba(),
+            position: [rect.dx().min + style.border.width(), rect.dy().max - as_s], //lb,
+            color: style.fill.as_gamma_rgba(),
         });
     }
 
@@ -158,95 +159,95 @@ impl RectangleShape {
     }
 
     //左上角圆角+边框
-    fn draw_lt_arc(&mut self, rect: &Rect, as_s: f32, fill: &Color, border: &Border) {
+    fn draw_lt_arc(&mut self, rect: &Rect, as_s: f32, style: &WidgetStyle) {
         let lt_center = Pos {
             x: rect.dx().min + as_s,
             y: rect.dy().min + as_s,
         };
         let mut lt_start = Pos {
-            x: rect.dx().min + border.width(),
+            x: rect.dx().min + style.border.width(),
             y: rect.dy().min + as_s,
         };
-        let (mut rp, mut ri) = draw_fan(lt_center, lt_start, self.vertices.len() as u16 + 1, fill, 90);
+        let (mut rp, mut ri) = draw_fan(lt_center, lt_start, self.vertices.len() as u16 + 1, &style.fill, 90);
         self.vertices.append(&mut rp);
         self.indices.append(&mut ri);
         //左上角边框
-        if border.width() > 0.0 {
+        if style.border.width() > 0.0 {
             lt_start.x = rect.dx().min;
             self.ring_shape.set_center(lt_center);
-            let (mut rp, mut ri) = self.ring_shape.draw(lt_start, self.vertices.len() as u16 + 1, border); //draw_ring(lt_center, lt_start, self.vertices.len() as u16 + 1, border, 90);
+            let (mut rp, mut ri) = self.ring_shape.draw(lt_start, self.vertices.len() as u16 + 1, &style.border); //draw_ring(lt_center, lt_start, self.vertices.len() as u16 + 1, border, 90);
             self.vertices.append(&mut rp);
             self.indices.append(&mut ri);
         }
     }
 
     //右上角圆角+边框
-    fn draw_rt_arc(&mut self, rect: &Rect, as_s: f32, fill: &Color, border: &Border) {
+    fn draw_rt_arc(&mut self, rect: &Rect, as_s: f32, style: &WidgetStyle) {
         let rt_center = Pos {
             x: rect.dx().max - as_s,
             y: rect.dy().min + as_s,
         };
         let mut rt_start = Pos {
             x: rect.dx().max - as_s,
-            y: rect.dy().min + border.width(),
+            y: rect.dy().min + style.border.width(),
         };
-        let (mut rp, mut ri) = draw_fan(rt_center, rt_start, self.vertices.len() as u16 + 1, fill, 90);
+        let (mut rp, mut ri) = draw_fan(rt_center, rt_start, self.vertices.len() as u16 + 1, &style.fill, 90);
         self.vertices.append(&mut rp);
         self.indices.append(&mut ri);
-        if border.width() > 0.0 {
+        if style.border.width() > 0.0 {
             rt_start.y = rect.dy().min;
             self.ring_shape.set_center(rt_center);
-            let (mut rp, mut ri) = self.ring_shape.draw(rt_start, self.vertices.len() as u16 + 1, border); //draw_ring(rt_center, rt_start, self.vertices.len() as u16 + 1, border, 90);
+            let (mut rp, mut ri) = self.ring_shape.draw(rt_start, self.vertices.len() as u16 + 1, &style.border); //draw_ring(rt_center, rt_start, self.vertices.len() as u16 + 1, border, 90);
             self.vertices.append(&mut rp);
             self.indices.append(&mut ri);
         }
     }
 
     //右下角圆角+边框
-    fn draw_rb_arc(&mut self, rect: &Rect, as_s: f32, fill: &Color, border: &Border) {
+    fn draw_rb_arc(&mut self, rect: &Rect, as_s: f32, style: &WidgetStyle) {
         let rb_center = Pos {
             x: rect.dx().max - as_s,
             y: rect.dy().max - as_s,
         };
         let mut rb_start = Pos {
-            x: rect.dx().max - border.width(),
+            x: rect.dx().max - style.border.width(),
             y: rect.dy().max - as_s,
         };
-        let (mut rp, mut ri) = draw_fan(rb_center, rb_start, self.vertices.len() as u16 + 1, fill, 90);
+        let (mut rp, mut ri) = draw_fan(rb_center, rb_start, self.vertices.len() as u16 + 1, &style.fill, 90);
         self.vertices.append(&mut rp);
         self.indices.append(&mut ri);
-        if border.width() > 0.0 {
+        if style.border.width() > 0.0 {
             rb_start.x = rect.dx().max;
             self.ring_shape.set_center(rb_center);
-            let (mut rp, mut ri) = self.ring_shape.draw(rb_start, self.vertices.len() as u16 + 1, border); //draw_ring(rb_center, rb_start, self.vertices.len() as u16 + 1, border, 90);
+            let (mut rp, mut ri) = self.ring_shape.draw(rb_start, self.vertices.len() as u16 + 1, &style.border); //draw_ring(rb_center, rb_start, self.vertices.len() as u16 + 1, border, 90);
             self.vertices.append(&mut rp);
             self.indices.append(&mut ri);
         }
     }
 
     //左下角圆角+边框
-    fn draw_lb_arc(&mut self, rect: &Rect, as_s: f32, fill: &Color, border: &Border) {
+    fn draw_lb_arc(&mut self, rect: &Rect, as_s: f32, style: &WidgetStyle) {
         let lb_center = Pos {
             x: rect.dx().min + as_s,
             y: rect.dy().max - as_s,
         };
         let mut lb_start = Pos {
             x: rect.dx().min + as_s,
-            y: rect.dy().max - border.width(),
+            y: rect.dy().max - style.border.width(),
         };
-        let (mut rp, mut ri) = draw_fan(lb_center, lb_start, self.vertices.len() as u16 + 1, fill, 90);
+        let (mut rp, mut ri) = draw_fan(lb_center, lb_start, self.vertices.len() as u16 + 1, &style.fill, 90);
         self.vertices.append(&mut rp);
         self.indices.append(&mut ri);
-        if border.width() > 0.0 {
+        if style.border.width() > 0.0 {
             lb_start.y = rect.dy().max;
             self.ring_shape.set_center(lb_center);
-            let (mut rp, mut ri) = self.ring_shape.draw(lb_start, self.vertices.len() as u16 + 1, border); //draw_ring(lb_center, lb_start, self.vertices.len() as u16 + 1, border, 90);
+            let (mut rp, mut ri) = self.ring_shape.draw(lb_start, self.vertices.len() as u16 + 1, &style.border); //draw_ring(lb_center, lb_start, self.vertices.len() as u16 + 1, border, 90);
             self.vertices.append(&mut rp);
             self.indices.append(&mut ri);
         }
     }
 
-    pub fn reset(&mut self, rect: &Rect, fill: &Color, border: &Border) {
+    pub fn update(&mut self, rect: &Rect, style: &WidgetStyle) {
         self.vertices.clear();
         self.indices = vec![
             0, 1, 2,
@@ -254,12 +255,15 @@ impl RectangleShape {
             4, 5, 6,
             6, 4, 7
         ];
-        let as_s = border.width() + border.radius.left_bottom as f32;
-        self.draw_base_rectangle(rect, fill, border.width(), as_s);
-        self.draw_border_line(rect, as_s, border);
-        self.draw_lt_arc(rect, as_s, fill, border);
-        self.draw_rt_arc(rect, as_s, fill, border);
-        self.draw_rb_arc(rect, as_s, fill, border);
-        self.draw_lb_arc(rect, as_s, fill, border);
+        let as_s = style.border.width() + style.radius.left_bottom as f32;
+        self.draw_base_rectangle(rect, style, as_s);
+        self.draw_border_line(rect, as_s, &style.border);
+        self.draw_lt_arc(rect, as_s, &style);
+        self.draw_rt_arc(rect, as_s, &style);
+        self.draw_rb_arc(rect, as_s, &style);
+        self.draw_lb_arc(rect, as_s, &style);
+        while self.indices.len() * 2 % 4 != 0 {
+            self.indices.push(0);
+        }
     }
 }

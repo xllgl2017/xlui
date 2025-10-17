@@ -1,5 +1,4 @@
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{Visual, VisualStyle};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::ui::Ui;
@@ -11,7 +10,7 @@ use crate::*;
 
 pub struct TableRow {
     id: String,
-    fill_render: RenderParam,
+    visual: Visual,
     cells: Vec<TableCell>,
     geometry: Geometry,
     state: WidgetState,
@@ -19,13 +18,16 @@ pub struct TableRow {
 
 impl TableRow {
     pub fn new<T>(headers: &TableHeader<T>, row_height: f32) -> TableRow {
+        let mut style = VisualStyle::same((Color::rgb(230, 230, 230), 1.0, 3).into());
+        style.inactive.border.set_same(0.0);
+        style.pressed.fill = Color::rgb(165, 165, 165);
         let mut cells = vec![];
         for column in &headers.columns {
             cells.push(TableCell::new(column.width(), row_height));
         }
         TableRow {
             id: gen_unique_id(),
-            fill_render: RenderParam::new(RenderKind::Rectangle(RectParam::new())),
+            visual: Visual::new().with_style(style),
             cells,
             geometry: Geometry::new().with_fix_height(row_height),
             state: WidgetState::default(),
@@ -48,8 +50,8 @@ impl TableRow {
             datum.set_column(index);
             cell.show_body(ui, header, datum);
         }
-        self.fill_render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
-        if datum.row % 2 == 0 { self.fill_render.style_mut().fill = FillStyle::same(Color::rgb(245, 245, 245)) }
+        self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
+        if datum.row % 2 == 0 { self.visual.style_mut().inactive.fill = Color::rgb(245, 245, 245) }
 
         let row = WidgetKind::new(ui, self);
         row
@@ -60,7 +62,7 @@ impl Widget for TableRow {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             #[cfg(feature = "gpu")]
-            UpdateType::Init | UpdateType::ReInit => self.fill_render.init(ui, false, false),
+            UpdateType::ReInit => self.visual.re_init(),
             _ => {}
         }
         let mut width = 0.0;

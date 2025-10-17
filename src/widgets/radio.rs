@@ -1,17 +1,16 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
-use crate::render::circle::param::CircleParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{RenderParam, VisualStyle, WidgetStyle};
 use crate::response::{Callback, Response};
+use crate::shape::Shape;
 use crate::size::border::Border;
-use crate::size::rect::Rect;
 use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
+use crate::{Radius, Shadow};
 
 /// ### RadioButton的示例用法
 /// ```
@@ -51,41 +50,36 @@ pub struct RadioButton {
 
 impl RadioButton {
     pub fn new(v: bool, label: impl Into<RichText>) -> RadioButton {
-        let mut outer_style = ClickStyle::new();
-        outer_style.fill.inactive = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
-        outer_style.fill.hovered = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
-        outer_style.fill.clicked = Color::TRANSPARENT; //Color::rgb(95, 95, 95);
-        outer_style.border.inactive = Border::same(1.0).color(Color::rgb(95, 95, 95));
-        outer_style.border.hovered = Border::same(1.0).color(Color::rgb(56, 160, 200));
-        outer_style.border.clicked = Border::same(1.0).color(Color::rgb(56, 182, 244));
-
-        let mut inner_style = ClickStyle::new();
-        inner_style.fill.inactive = Color::TRANSPARENT;
-        inner_style.fill.hovered = Color::rgb(56, 160, 200);
-        inner_style.fill.clicked = Color::rgb(56, 182, 244);
-        inner_style.border.inactive = Border::same(0.0).color(Color::TRANSPARENT);
-        inner_style.border.hovered = Border::same(0.0).color(Color::TRANSPARENT);
-        inner_style.border.clicked = Border::same(0.0).color(Color::TRANSPARENT);
-        let outer_param = CircleParam::new(Rect::new().with_size(16.0, 16.0), outer_style);
-        let inner_param = CircleParam::new(Rect::new().with_size(16.0, 16.0), inner_style);
+        let mut outer_style = VisualStyle::same(
+            WidgetStyle {
+                fill: Color::TRANSPARENT,
+                border: Border::same(1.0).color(Color::rgb(95, 95, 95)),
+                radius: Radius::same(0),
+                shadow: Shadow::new(),
+            }
+        );
+        outer_style.hovered.border.color = Color::rgb(56, 160, 200);
+        outer_style.pressed.border.color = Color::rgb(56, 182, 244);
+        let mut inner_style = VisualStyle::same(WidgetStyle {
+            fill: Color::TRANSPARENT,
+            border: Border::same(0.0).color(Color::TRANSPARENT),
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        });
+        inner_style.hovered.fill = Color::rgb(56, 160, 200);
+        inner_style.pressed.fill = Color::rgb(56, 182, 244);
         RadioButton {
             id: crate::gen_unique_id(),
             value: v,
             text: TextBuffer::new(label),
             callback: None,
             geometry: Geometry::new(),
-            outer_render: RenderParam::new(RenderKind::Circle(outer_param)),
-            inner_render: RenderParam::new(RenderKind::Circle(inner_param)),
+            outer_render: RenderParam::new(Shape::circle()).with_style(outer_style).with_size(16.0, 16.0),
+            inner_render: RenderParam::new(Shape::circle()).with_style(inner_style).with_size(8.0, 8.0),
             contact_ids: vec![],
             group_ids: vec![],
             state: WidgetState::default(),
         }
-    }
-
-    fn reset_size(&mut self, ui: &mut Ui) {
-        self.text.geometry.add_fix_width(self.geometry.context_width() - 18.0);
-        self.text.init(ui);
-        self.geometry.set_context_size(self.text.geometry.padding_width() + 18.0, self.text.geometry.padding_height());
     }
 
     pub fn with_width(mut self, width: f32) -> RadioButton {
@@ -120,23 +114,8 @@ impl RadioButton {
 
     fn init(&mut self, ui: &mut Ui) {
         //分配大小
-        self.reset_size(ui);
-        self.re_init(ui);
-    }
-
-    fn re_init(&mut self, ui: &mut Ui) {
-        #[cfg(feature = "gpu")]
-        //外圆
-        self.outer_render.init(ui, self.value, self.value);
-        //内圆
-        self.inner_render.rect_mut().add_min_x(4.0);
-        self.inner_render.rect_mut().contract_y(4.0);
-        let height = self.inner_render.rect().height();
-        self.inner_render.rect_mut().set_width(height);
-        #[cfg(feature = "gpu")]
-        self.inner_render.init(ui, self.value, self.value);
-        //文本
         self.text.init(ui);
+        self.geometry.set_context_size(self.text.geometry.padding_width() + 18.0, self.text.geometry.padding_height());
     }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
@@ -162,8 +141,8 @@ impl RadioButton {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.outer_render.draw(ui, self.state.hovered || self.value, self.value);
-        self.inner_render.draw(ui, self.value, self.value);
+        self.outer_render.draw(ui, self.state.disabled, self.state.hovered || self.value, self.value);
+        self.inner_render.draw(ui, self.state.disabled, self.value, self.value);
         self.text.redraw(ui);
     }
 }

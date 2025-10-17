@@ -1,11 +1,7 @@
-use crate::Border;
 use crate::frame::context::UpdateType;
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{Visual, VisualStyle};
 use crate::response::Response;
 use crate::size::Geometry;
-use crate::size::rect::Rect;
-use crate::style::{ClickStyle, Shadow};
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 /// ### Rectangle的示例用法
@@ -20,25 +16,29 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 ///         color: Color::rgba(0, 0, 0, 30),
 ///         blur:1.0,//阴影强调
 ///     };
-///     let rectangle=Rectangle::new(ui.style.borrow().widgets.popup.clone(),300.0,300.0)
-///         //设置阴影
-///         .with_shadow(shadow);
+///     let style = VisualStyle::same(WidgetStyle {
+///             fill: Color::rgb(240, 240, 240),
+///             border: Border::same(1.0),
+///             radius: Radius::same(5),
+///             shadow,
+///         });
+///     let rectangle=Rectangle::new(style,300.0,300.0);
 ///     ui.add(rectangle);
 /// }
 /// ```
 pub struct Rectangle {
     id: String,
-    fill_render: RenderParam,
+    visual: Visual,
     geometry: Geometry,
     state: WidgetState,
 }
 
 impl Rectangle {
-    pub fn new(style: ClickStyle, width: f32, height: f32) -> Self {
-        let param = RectParam::new().with_size(width, height).with_style(style);
+    pub fn new(style: VisualStyle, width: f32, height: f32) -> Self {
+        // let param = RectParam::new().with_size(width, height).with_style(style);
         Rectangle {
             id: crate::gen_unique_id(),
-            fill_render: RenderParam::new(RenderKind::Rectangle(param)),
+            visual: Visual::new().with_enable().with_style(style).with_size(width, height),
             geometry: Geometry::new().with_context_size(width, height),
             state: WidgetState::default(),
         }
@@ -49,51 +49,50 @@ impl Rectangle {
         self
     }
 
-    pub fn with_rect(mut self, rect: Rect) -> Self {
-        *self.fill_render.rect_mut() = rect;
-        self
-    }
+    // pub fn with_rect(mut self, rect: Rect) -> Self {
+    //     *self.fill_render.rect_mut() = rect;
+    //     self
+    // }
 
-    pub fn set_rect(&mut self, rect: Rect) {
-        *self.fill_render.rect_mut() = rect;
-    }
+    // pub fn set_rect(&mut self, rect: Rect) {
+    //     *self.fill_render.rect_mut() = rect;
+    // }
 
-    pub fn with_shadow(mut self, shadow: Shadow) -> Self {
-        self.fill_render.set_shadow(shadow);
-        self
-    }
+    // pub fn with_shadow(mut self, shadow: Shadow) -> Self {
+    //     self.fill_render.set_shadow(shadow);
+    //     self
+    // }
 
-    pub fn style_mut(&mut self) -> &mut ClickStyle {
+    pub fn style_mut(&mut self) -> &mut VisualStyle {
         self.state.changed = true;
-        self.fill_render.style_mut()
+        self.visual.enable().style_mut()
     }
 
-    pub fn set_offset_x(&mut self, v: f32) {
-        self.state.changed = self.fill_render.rect_param_mut().shadow.offset[0] == v;
-        self.fill_render.rect_param_mut().shadow.offset[0] = v;
-    }
+    // pub fn set_offset_x(&mut self, v: f32) {
+    //     self.state.changed = self.fill_render.rect_param_mut().shadow.offset[0] == v;
+    //     self.fill_render.rect_param_mut().shadow.offset[0] = v;
+    // }
 
-    pub fn set_offset_y(&mut self, v: f32) {
-        self.state.changed = self.fill_render.rect_param_mut().shadow.offset[1] == v;
-        self.fill_render.rect_param_mut().shadow.offset[1] = v;
-    }
+    // pub fn set_offset_y(&mut self, v: f32) {
+    //     self.state.changed = self.fill_render.rect_param_mut().shadow.offset[1] == v;
+    //     self.fill_render.rect_param_mut().shadow.offset[1] = v;
+    // }
 
-    pub fn set_border(&mut self, nb: Border) {
-        let ob = &self.fill_render.style_mut().border.inactive;
-        self.state.changed = ob == &nb;
-        self.fill_render.style_mut().border.inactive = nb;
-    }
+    // pub fn set_border(&mut self, nb: Border) {
+    //     let ob = &self.fill_render.style_mut().border.inactive;
+    //     self.state.changed = ob == &nb;
+    //     self.fill_render.style_mut().border.inactive = nb;
+    // }
 
     fn update_buffer(&mut self, ui: &mut Ui) {
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.offset_to_rect(&ui.draw_rect);
+            self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
         }
-
     }
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill_render.draw(ui, self.state.hovered, ui.device.device_input.mouse.pressed);
+        self.visual.draw(ui, self.state.disabled, self.state.hovered, self.state.pressed, false);
     }
 }
 
@@ -102,9 +101,9 @@ impl Widget for Rectangle {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
             #[cfg(feature = "gpu")]
-            UpdateType::Init | UpdateType::ReInit => self.fill_render.init(ui, false, false),
+            UpdateType::ReInit => self.visual.re_init(),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
+                let hovered = ui.device.device_input.hovered_at(self.visual.rect());
                 if self.state.on_pressed(hovered) { ui.context.window.request_redraw(); }
             }
             _ => {}

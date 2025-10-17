@@ -1,15 +1,14 @@
-use crate::render::rectangle::param::RectParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{RenderParam, VisualStyle, WidgetStyle};
 use crate::size::border::Border;
 use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::text::cchar::CChar;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
-use crate::Offset;
+use crate::{Offset, Shadow};
+use crate::shape::Shape;
 
 pub struct EditCursor {
     pub(crate) min_pos: Pos,
@@ -24,19 +23,24 @@ pub struct EditCursor {
 
 impl EditCursor {
     pub fn new() -> EditCursor {
-        let mut cursor_style = ClickStyle::new();
-        cursor_style.fill.inactive = Color::rgb(0, 83, 125);
-        cursor_style.fill.hovered = Color::rgb(0, 83, 125);
-        cursor_style.fill.clicked = Color::rgb(0, 83, 125);
-        cursor_style.border.inactive = Border::same(0.0).radius(Radius::same(0));
-        cursor_style.border.hovered = Border::same(0.0).radius(Radius::same(0));
-        cursor_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
+        let cursor_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgb(0, 83, 125),
+            border: Border::same(0.0),
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        });
+        // cursor_style.fill.inactive = Color::rgb(0, 83, 125);
+        // cursor_style.fill.hovered = Color::rgb(0, 83, 125);
+        // cursor_style.fill.clicked = Color::rgb(0, 83, 125);
+        // cursor_style.border.inactive = Border::same(0.0).radius(Radius::same(0));
+        // cursor_style.border.hovered = Border::same(0.0).radius(Radius::same(0));
+        // cursor_style.border.clicked = Border::same(0.0).radius(Radius::same(0));
         EditCursor {
             min_pos: Pos::new(),
             max_pos: Pos::new(),
             horiz: 0,
             vert: 0,
-            render: RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(cursor_style))),
+            render: RenderParam::new(Shape::rectangle()).with_style(cursor_style),
             offset: Offset::new(),
             line_height: 0.0,
             changed: false,
@@ -44,14 +48,12 @@ impl EditCursor {
         }
     }
 
-    pub fn init(&mut self, cchar: &CharBuffer, ui: &mut Ui, init: bool) {
+    pub fn init(&mut self, cchar: &CharBuffer, init: bool) {
         if init {
             self.line_height = cchar.buffer.text.height;
             self.vert = cchar.buffer.lines.len();
             self.horiz = cchar.buffer.lines.last().unwrap().len();
         }
-        #[cfg(feature = "gpu")]
-        self.render.init(ui, false, false);
     }
 
     pub fn reset_x(&mut self, cchar: &CharBuffer) {
@@ -67,7 +69,7 @@ impl EditCursor {
 
 
     pub fn render(&mut self, ui: &mut Ui) {
-        self.render.draw(ui, false, false);
+        self.render.draw(ui, false, false, false);
     }
 
     pub fn update_position(&mut self, rect: Rect, cchar: &CharBuffer) {

@@ -10,7 +10,6 @@ fn main() {
 }
 
 pub struct TestWidget {
-    status: String,
     count: i32,
     change_image: bool,
 }
@@ -18,7 +17,6 @@ pub struct TestWidget {
 impl TestWidget {
     pub fn new() -> Self {
         Self {
-            status: "".to_string(),
             count: 0,
             change_image: false,
         }
@@ -136,10 +134,8 @@ impl App for TestWidget {
             ui.add_space(30.0);
             let mut cb = CheckBox::new(false, "checkbox1").id("cb").contact("rb").connect(Self::check).with_size(100.0, 25.0);
             let style = cb.style_mut();
-            style.set_style(ClickStyle {
-                fill: FillStyle::same(Color::rgb(2, 165, 154)),
-                border: BorderStyle::same(Border::same(1.0).color(Color::BLACK).radius(Radius::same(2))),
-            });
+            style.inactive.fill = Color::rgb(2, 165, 154);
+            style.inactive.border = Border::same(1.0).color(Color::BLACK);
             cb.geometry_mut().an(Align::LeftCenter).pd(Padding::same(2.0));
             ui.add(cb);
             ui.checkbox(true, "checkbox2").set_callback(Self::check);
@@ -233,8 +229,6 @@ impl App for TestWidget {
     }
 
     fn update(&mut self, ui: &mut Ui) {
-        // let status: &mut Label = ui.get_widget("status").unwrap();
-        // status.set_text(&self.status);
         if self.change_image {
             self.change_image = false;
             let image: &mut Image = ui.get_widget("test_image").unwrap();

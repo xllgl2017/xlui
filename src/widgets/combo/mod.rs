@@ -3,22 +3,20 @@ pub mod check;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
-use crate::render::rectangle::param::RectParam;
-use crate::render::triangle::param::TriangleParam;
-use crate::render::{RenderKind, RenderParam};
+use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
 use crate::response::{Callback, Response};
+use crate::shape::Shape;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
 use crate::size::radius::Radius;
 use crate::size::rect::Rect;
 use crate::size::Geometry;
 use crate::style::color::Color;
-use crate::style::ClickStyle;
 use crate::text::buffer::TextBuffer;
 use crate::ui::Ui;
 use crate::widgets::select::SelectItem;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
-use crate::{Align, FillStyle, Offset};
+use crate::{Align, Offset, Shadow};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
 
@@ -49,7 +47,7 @@ pub struct ComboBox<T> {
     popup_rect: Rect,
     callback: Option<Box<dyn FnMut(&mut Box<dyn App>, &mut Ui, &T)>>,
 
-    fill_render: RenderParam,
+    visual: Visual,
     allow_render: RenderParam,
 
     selected: Arc<RwLock<Option<String>>>,
@@ -60,36 +58,34 @@ pub struct ComboBox<T> {
 
 impl<T: Display + 'static> ComboBox<T> {
     pub fn new(data: Vec<T>) -> Self {
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::rgb(230, 230, 230);
-        fill_style.border.inactive = Border::same(0.0).radius(Radius::same(3));
-        fill_style.border.hovered = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
-        fill_style.border.clicked = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
-        let mut allow_style = ClickStyle::new();
-        allow_style.fill = FillStyle::same(Color::BLACK);
-        let fill_param = RectParam::new().with_size(100.0, 20.0).with_style(fill_style);
-        let allow_param = TriangleParam::new((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into(), allow_style);
+        let mut fill_style = VisualStyle::same(WidgetStyle {
+            fill: Color::rgb(230, 230, 230),
+            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+            radius: Radius::same(3),
+            shadow: Shadow::new(),
+        });
+        fill_style.inactive.border = Border::same(0.0);
+        fill_style.pressed.fill = Color::rgb(210, 210, 210);
+        let allow_style = VisualStyle::same((Color::BLACK, 0.0, 0).into());
+        let buffer = TextBuffer::new("").with_align(Align::LeftCenter)
+            .padding(Padding::same(2.0)).fix_width(100.0).fix_height(20.0);
+        let mut allow_render = RenderParam::new(Shape::triangle()).with_style(allow_style);
+        allow_render.set_poses((0.0, 0.0).into(), (10.0, 0.0).into(), (5.0, 8.0).into());
         ComboBox {
             id: crate::gen_unique_id(),
             popup_id: "".to_string(),
-            text_buffer: TextBuffer::new("".to_string()).with_align(Align::LeftCenter).padding(Padding::same(2.0)),
+            text_buffer: buffer,
             data,
             popup_rect: Rect::new().with_size(100.0, 150.0),
             callback: None,
-            fill_render: RenderParam::new(RenderKind::Rectangle(fill_param)),
+            visual: Visual::new().with_enable().with_style(fill_style),
             previous_select: None,
             selected: Arc::new(RwLock::new(None)),
-            allow_render: RenderParam::new(RenderKind::Triangle(allow_param)),
+            allow_render,
             state: WidgetState::default(),
         }
     }
 
-    fn reset_size(&mut self, ui: &mut Ui) {
-        self.text_buffer.geometry.set_min_width(100.0);
-        self.text_buffer.geometry.set_max_width(100.0);
-        self.text_buffer.init(ui);
-        self.fill_render.rect_mut().set_size(self.text_buffer.geometry.padding_width(), self.text_buffer.geometry.padding_height());
-    }
 
     pub fn with_size(mut self, width: f32, height: f32) -> Self {
         self.text_buffer.geometry.set_fix_size(width, height);
@@ -122,25 +118,12 @@ impl<T: Display + 'static> ComboBox<T> {
 
     fn init(&mut self, ui: &mut Ui) {
         //计算大小
-        self.reset_size(ui);
+        self.text_buffer.init(ui);
+        self.visual.rect_mut().set_size(self.text_buffer.geometry.padding_width(), self.text_buffer.geometry.padding_height());
         //下拉框布局
-        let popup = Popup::new(ui, self.popup_rect.width(), self.popup_rect.height());
+        let popup = Popup::new(self.popup_rect.width(), self.popup_rect.height());
         self.popup_id = popup.id.clone();
         popup.show(ui, |ui| self.add_items(ui));
-        self.re_init(ui);
-    }
-
-    fn re_init(&mut self, ui: &mut Ui) {
-        //背景
-        let mut fill_style = ClickStyle::new();
-        fill_style.fill.inactive = Color::rgb(230, 230, 230);
-        fill_style.border.inactive = Border::same(1.0).radius(Radius::same(3)).color(Color::rgba(144, 209, 255, 255));
-        #[cfg(feature = "gpu")]
-        self.fill_render.init(ui, false, false);
-        #[cfg(feature = "gpu")]
-        self.allow_render.init(ui, false, false);
-        //文本
-        self.text_buffer.init(ui);
     }
 
     pub fn parent(&self) -> Arc<RwLock<Option<String>>> {
@@ -170,15 +153,15 @@ impl<T: Display + 'static> ComboBox<T> {
         if self.state.changed { ui.widget_changed |= WidgetChange::Value; }
         self.state.changed = false;
         if ui.widget_changed.contains(WidgetChange::Position) {
-            self.fill_render.rect_mut().offset_to_rect(&ui.draw_rect);
+            self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
             self.popup_rect.offset_to_rect(&ui.draw_rect);
-            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.fill_render.rect_mut().height() + 5.0));
+            self.popup_rect.offset_y(&Offset::new().covered().with_y(self.visual.rect_mut().height() + 5.0));
             ui.popups.as_mut().unwrap()[&self.popup_id].set_rect(self.popup_rect.clone());
             let mut allow_rect = ui.draw_rect.clone();
-            allow_rect.set_x_min(allow_rect.dx().min + self.fill_render.rect().width() - 15.0);
+            allow_rect.set_x_min(allow_rect.dx().min + self.visual.rect().width() - 15.0);
             allow_rect.add_min_y(5.0);
             self.allow_render.offset_to_rect(&allow_rect);
-            let mut text_rect = self.fill_render.rect_mut().clone();
+            let mut text_rect = self.visual.rect_mut().clone();
             text_rect.add_min_x(2.0);
             self.text_buffer.geometry.offset_to_rect(&text_rect);
         }
@@ -190,9 +173,10 @@ impl<T: Display + 'static> ComboBox<T> {
 
     fn redraw(&mut self, ui: &mut Ui) {
         self.update_buffer(ui);
-        self.fill_render.draw(ui, self.state.hovered || self.state.focused, self.state.focused);
-        self.allow_render.draw(ui, false, false);
+        self.visual.draw(ui, self.state.disabled, self.state.hovered || self.state.focused, self.state.focused, false);
+        self.allow_render.draw(ui, self.state.disabled, false, false);
         self.text_buffer.redraw(ui);
+        self.visual.draw(ui, self.state.disabled, self.state.hovered || self.state.focused, self.state.focused, true);
     }
 
     ///初始化时设置当前item，默认为None
@@ -209,18 +193,17 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
     fn update(&mut self, ui: &mut Ui) -> Response<'_> {
         match ui.update_type {
             UpdateType::Draw => self.redraw(ui),
-            UpdateType::Init => self.init(ui),
-            UpdateType::ReInit => self.re_init(ui),
+            UpdateType::Init | UpdateType::ReInit => self.init(ui),
             UpdateType::MouseMove => {
-                let hovered = ui.device.device_input.hovered_at(self.fill_render.rect());
+                let hovered = ui.device.device_input.hovered_at(self.visual.rect());
                 if self.state.on_hovered(hovered) { ui.context.window.request_redraw(); }
             }
             UpdateType::MousePress => {
-                let pressed = ui.device.device_input.pressed_at(self.fill_render.rect());
+                let pressed = ui.device.device_input.pressed_at(self.visual.rect());
                 if self.state.on_pressed(pressed) { ui.context.window.request_redraw(); }
             }
             UpdateType::MouseRelease => {
-                let clicked = ui.device.device_input.click_at(self.fill_render.rect());
+                let clicked = ui.device.device_input.click_at(self.visual.rect());
                 if self.state.on_clicked(clicked) {
                     self.state.focused = true;
                     let popup = &mut ui.popups.as_mut().unwrap()[&self.popup_id];
@@ -231,7 +214,7 @@ impl<T: Display + 'static> Widget for ComboBox<T> {
             }
             _ => {}
         }
-        Response::new(&self.id, WidgetSize::same(self.fill_render.rect().width(), self.fill_render.rect().height()))
+        Response::new(&self.id, WidgetSize::same(self.visual.rect().width(), self.visual.rect().height()))
     }
 
     fn geometry(&mut self) -> &mut Geometry {
