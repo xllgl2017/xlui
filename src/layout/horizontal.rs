@@ -239,6 +239,7 @@ impl Layout for HorizontalLayout {
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
             space.geometry().set_context_height(0.0);
+            item.set_height(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }

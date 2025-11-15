@@ -143,8 +143,16 @@ impl WidgetKind {
         self.width
     }
 
+    pub fn set_width(&mut self, width: f32) {
+        self.width = width;
+    }
+
     pub fn height(&self) -> f32 {
         self.height
+    }
+
+    pub fn set_height(&mut self, height: f32) {
+        self.height = height;
     }
 
     pub fn is_space(&self) -> bool {

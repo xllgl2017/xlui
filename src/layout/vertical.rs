@@ -9,7 +9,7 @@ use crate::style::FrameStyle;
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Margin, Offset, Padding, Widget};
+use crate::{Border, Margin, Offset, Padding, Radius, Shadow, Widget};
 use std::mem;
 use std::ops::Range;
 
@@ -254,6 +254,7 @@ impl Layout for VerticalLayout {
                 //     let resp = item.update(ui);
                 //     if width < resp.size.dw { width = resp.size.dw; }
                 //     height += resp.size.dh + self.item_space;
+                //     println!("{}", resp.size.dh);
                 //     match self.direction {
                 //         LayoutDirection::Min => ui.draw_rect.add_min_y(resp.size.dh + self.item_space),
                 //         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
@@ -282,6 +283,7 @@ impl Layout for VerticalLayout {
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
             space.geometry().set_context_width(0.0);
+            item.set_width(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }
