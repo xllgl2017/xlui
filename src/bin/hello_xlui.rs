@@ -135,9 +135,9 @@ impl App for XlUiApp {
                     ui.label("sh1");
                     ui.label("sh2");
                     ui.button("sh3").set_callback(Self::click2);
-                    for i in 0..1000 {
-                        ui.label(format!("h{}", i));
-                    }
+                    // for i in 0..1000 {
+                    //     ui.label(format!("h{}", i));
+                    // }
                 });
                 for i in 0..1000 {
                     ui.label(format!("i{}", i));

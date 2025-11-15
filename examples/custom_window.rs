@@ -24,14 +24,15 @@ impl XlUiApp {
 impl App for XlUiApp {
     fn draw(&mut self, ui: &mut Ui) {
         let style = FrameStyle {
-            fill: Color::rgba(240, 240, 240,255),
+            fill: Color::rgba(240, 240, 240, 255),
             shadow: Shadow {
                 offset: [0.0, 0.0],
                 spread: 5.0,
                 blur: 1.0,
                 color: Color::rgba(0, 0, 0, 100),
             },
-            border: Border::same(2.0).color(Color::rgb(150, 210, 255)).radius(Radius::same(10)),
+            border: Border::same(2.0).color(Color::rgb(150, 210, 255)),
+            radius: Radius::same(10),
         };
         let layout: &mut VerticalLayout = ui.layout().as_mut_().unwrap();
         layout.set_padding(Padding::same(5.0));
@@ -43,17 +44,18 @@ impl App for XlUiApp {
             ui.image("logo.jpg", (25.0, 25.0));
             ui.add(Label::new("自定义标题栏").align(Align::Center).height(25.0));
             ui.add_layout(HorizontalLayout::right_to_left(), |ui| {
-                let mut style = ClickStyle::new();
-                style.fill.inactive = Color::TRANSPARENT;
-                style.fill.hovered = Color::rgba(255, 0, 0, 100);
-                style.fill.clicked = Color::rgba(255, 0, 0, 150);
-                style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
+                let mut style = VisualStyle::same(WidgetStyle::from((Color::rgba(255, 0, 0, 100), 0.0, 0)));
+                style.inactive.fill = Color::TRANSPARENT;
+                // style.fill.inactive = Color::TRANSPARENT;
+                // style.fill.hovered = Color::rgba(255, 0, 0, 100);
+                // style.fill.clicked = Color::rgba(255, 0, 0, 150);
+                // style.border = BorderStyle::same(Border::same(0.0));
                 let mut btn = Button::new("×").width(20.0).height(20.0).connect(Self::close);
                 btn.set_style(style.clone());
                 ui.add(btn);
                 let mut btn = Button::new("□").width(20.0).height(20.0);
-                style.fill.hovered = Color::rgba(160, 160, 160, 100);
-                style.fill.clicked = Color::rgba(160, 160, 160, 150);
+                style.hovered.fill = Color::rgba(160, 160, 160, 100);
+                style.pressed.fill = Color::rgba(160, 160, 160, 150);
                 btn.set_style(style.clone());
                 ui.add(btn);
             });

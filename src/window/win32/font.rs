@@ -85,7 +85,7 @@ impl Win32Font {
 
     pub fn line_height(&self) -> UiResult<f32> {
         unsafe {
-            let dpi = unsafe { GetDeviceCaps(Some(self.hdc), LOGPIXELSY) };
+            let dpi = GetDeviceCaps(Some(self.hdc), LOGPIXELSY);
             let height = -self.mul_div(self.size as i32, dpi, 112);
             let font = self.create_font(height, &self.family);
             let old = SelectObject(self.hdc, HGDIOBJ::from(font));
@@ -102,7 +102,7 @@ impl Win32Font {
         let mut res = vec![];
         let mut line_char = LineChar::new();
         for ch in line.chars() {
-            let cchar = self.measure_char(ch).unwrap();
+            let cchar = self.measure_char(ch)?;
             if wrap && line_char.width + cchar.width >= max_wrap {
                 let mut line = mem::take(&mut line_char);
                 line.auto_wrap = true;

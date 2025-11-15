@@ -99,7 +99,6 @@ impl Font {
     ///使用字体字节集
     pub fn from_vec(data: Vec<u8>) -> UiResult<Font> {
         let mut res = Font::default()?;
-        // res.glyph_font = ab_glyph::FontArc::try_from_vec(data.to_vec())?;
         let mut font_system = cosmic_text::FontSystem::new();
         let id = font_system.db_mut().load_font_source(Source::Binary(Arc::new(data)));
         for face in font_system.db().faces() {
@@ -293,10 +292,6 @@ impl FontKind {
             FontKind::Win32(font) => font.measure_text(text, wrap, max_wrap_width),
         }
     }
-    // #[cfg(feature = "gpu")]
-    // pub fn wgpu_mut(&mut self) -> &mut WGpuFont {
-    //     match self { FontKind::WGpu(font) => font }
-    // }
 
     pub fn measure_char(&self, ch: char) -> UiResult<CChar> {
         match self {

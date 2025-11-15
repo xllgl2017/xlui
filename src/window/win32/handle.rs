@@ -4,9 +4,9 @@ use crate::render::image::{load_win32_image_raw, ImageSource};
 #[cfg(not(feature = "gpu"))]
 use crate::text::cchar::LineChar;
 use crate::window::win32::clipboard::Win32Clipboard;
+use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 #[cfg(feature = "gpu")]
 use crate::window::win32::{GetWindowLongPtrW, GWLP_HINSTANCE};
-use crate::window::win32::{until, CREATE_CHILD, REQ_UPDATE, RE_INIT, USER_UPDATE};
 use crate::window::UserEvent;
 use crate::*;
 #[cfg(feature = "gpu")]
@@ -18,9 +18,9 @@ use std::ptr::null_mut;
 use std::sync::RwLock;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, POINT, WPARAM};
+use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HGDIOBJ, SRCCOPY, TRANSPARENT};
 #[cfg(not(feature = "gpu"))]
 use windows::Win32::Graphics::Gdi::{HDC, HFONT};
-use windows::Win32::Graphics::Gdi::{BitBlt, CreateCompatibleDC, CreateDIBSection, CreateFontW, DeleteDC, DeleteObject, DrawTextW, InvalidateRect, SelectObject, SetBkMode, SetTextColor, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DT_LEFT, DT_SINGLELINE, DT_TOP, FONT_CHARSET, FONT_CLIP_PRECISION, FONT_OUTPUT_PRECISION, FONT_QUALITY, HBITMAP, HGDIOBJ, SRCCOPY, TRANSPARENT};
 #[cfg(not(feature = "gpu"))]
 use windows::Win32::Graphics::GdiPlus::{CompositingQualityHighQuality, FillModeAlternate, GdipAddPathArc, GdipAddPathLine, GdipCreateFromHDC, GdipCreatePath, GdipCreatePen1, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics, GdipDeletePath, GdipDeletePen, GdipDrawEllipse, GdipDrawPath, GdipFillEllipse, GdipFillPath, GdipSetCompositingQuality, GdipSetSmoothingMode, GpGraphics, GpPath, GpPen, GpSolidFill, SmoothingModeAntiAlias, SmoothingModeAntiAlias8x8, UnitPixel};
 use windows::Win32::Graphics::GdiPlus::{GdipDrawPolygon, GdipFillPolygon, PointF};
@@ -55,13 +55,13 @@ impl Win32WindowHandle {
     }
 
 
-    pub fn set_visible(&self, visible: bool) -> UiResult<()> {
-        match visible {
-            true => unsafe { ShowWindow(self.hwnd, SW_SHOW).ok()?; },
-            false => unsafe { ShowWindow(self.hwnd, SW_HIDE).ok()?; },
-        }
-        Ok(())
-    }
+    // pub fn set_visible(&self, visible: bool) -> UiResult<()> {
+    //     match visible {
+    //         true => unsafe { ShowWindow(self.hwnd, SW_SHOW).ok()?; },
+    //         false => unsafe { ShowWindow(self.hwnd, SW_HIDE).ok()?; },
+    //     }
+    //     Ok(())
+    // }
 
     pub fn request_redraw(&self) -> UiResult<()> {
         #[cfg(not(feature = "wgpu"))]
@@ -265,7 +265,7 @@ impl Win32WindowHandle {
             scaler.Initialize(&frame, rect.width() as u32, rect.height() as u32, WICBitmapInterpolationModeFant)?;
 
             // 转换为 32bpp BGRA
-            let mut format_converter = factory.CreateFormatConverter()?;
+            let format_converter = factory.CreateFormatConverter()?;
 
             format_converter.Initialize(
                 &scaler,
@@ -274,10 +274,10 @@ impl Win32WindowHandle {
                 None,
                 0.0,
                 WICBitmapPaletteTypeCustom,
-            ).unwrap();
+            )?;
             let mut width = 0;
             let mut height = 0;
-            unsafe { format_converter.GetSize(&mut width, &mut height)?; }
+            format_converter.GetSize(&mut width, &mut height)?;
 
             // let mut hbitmap: HBITMAP = HBITMAP::default();
             let bmi = BITMAPINFO {
