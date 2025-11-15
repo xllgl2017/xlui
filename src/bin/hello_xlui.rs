@@ -125,20 +125,20 @@ impl App for XlUiApp {
             ui.label("h1");
             let area = ScrollWidget::vertical().enable_hscroll().with_size(300.0, 400.0);
             area.show(ui, |ui| {
-                ui.label("start");
-                ui.vertical(|ui| {
-                    ui.label("sv1");
-                    ui.label("sv2");
-                    ui.button("sv3").set_callback(Self::click1);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("sh1");
-                    ui.label("sh2");
-                    ui.button("sh3").set_callback(Self::click2);
-                    // for i in 0..1000 {
-                    //     ui.label(format!("h{}", i));
-                    // }
-                });
+                // ui.label("start");
+                // ui.vertical(|ui| {
+                //     ui.label("sv1");
+                //     ui.label("sv2");
+                //     ui.button("sv3").set_callback(Self::click1);
+                // });
+                // ui.horizontal(|ui| {
+                //     ui.label("sh1");
+                //     ui.label("sh2");
+                //     ui.button("sh3").set_callback(Self::click2);
+                //     // for i in 0..1000 {
+                //     //     ui.label(format!("h{}", i));
+                //     // }
+                // });
                 for i in 0..1000 {
                     ui.label(format!("i{}", i));
                 }
