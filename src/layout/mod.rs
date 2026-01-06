@@ -61,10 +61,24 @@ impl LayoutItem {
         }
     }
 
+    pub fn set_width(&mut self, width: f32) {
+        match self {
+            LayoutItem::Layout(v) => v.size.dw=width,
+            LayoutItem::Widget(v) => v.set_width(width)
+        }
+    }
+
     pub fn height(&self) -> f32 {
         match self {
             LayoutItem::Layout(v) => v.size.dh,
             LayoutItem::Widget(v) => v.height(),
+        }
+    }
+
+    pub fn set_height(&mut self,height: f32) {
+        match self {
+            LayoutItem::Layout(v) => v.size.dh=height,
+            LayoutItem::Widget(v) => v.set_height(height),
         }
     }
 
@@ -163,4 +177,37 @@ impl LayoutKind {
 pub enum LayoutDirection {
     Min,
     Max,
+}
+
+enum OffsetDirection {
+    TopDown,
+    DownTop,
+}
+
+struct LayoutOffset {
+    previous: Offset,
+    current: Offset,
+    context: Offset,
+    direction: OffsetDirection,
+    offsetting: bool,
+}
+
+impl LayoutOffset {
+    fn new() -> LayoutOffset {
+        LayoutOffset {
+            previous: Offset::new(),
+            current: Offset::new(),
+            context: Offset::new(),
+            direction: OffsetDirection::TopDown,
+            offsetting: true,
+        }
+    }
+
+    fn next_offset(&mut self, offset: Offset) {
+        self.previous = self.current.clone();
+        self.current = offset;
+        if self.current.y > self.previous.y { self.direction = OffsetDirection::TopDown; }
+        if self.current.y < self.previous.y { self.direction = OffsetDirection::DownTop; }
+        self.offsetting = true;
+    }
 }

@@ -147,9 +147,9 @@ impl ScrollWidget {
     pub(crate) fn redraw(&mut self, ui: &mut Ui) {
         if self.a != 0.0 {
             let oy = self.a * 10.0 * 10.0;
-            let mut pos = Pos::new();
-            pos.x = self.visual.rect().dx().center();
-            pos.y = self.visual.rect().dy().center();
+            // let mut pos = Pos::new();
+            // pos.x = self.visual.rect().dx().center();
+            // pos.y = self.visual.rect().dy().center();
             if self.a.abs() - 0.001 < 0.0 {
                 self.a = 0.0;
             } else if self.a > 0.0 {

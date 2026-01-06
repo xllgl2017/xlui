@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::layout::{Layout, LayoutDirection, LayoutItem};
+use crate::layout::{Layout, LayoutDirection, LayoutItem, LayoutOffset};
 use crate::map::Map;
 use crate::render::Visual;
 use crate::response::Response;
@@ -11,6 +11,7 @@ use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
 use crate::*;
 use std::mem;
+use std::ops::Range;
 
 ///### 水平布局的使用
 ///```rust
@@ -46,11 +47,13 @@ pub struct HorizontalLayout {
     item_space: f32, //item之间的间隔
     geometry: Geometry,
     direction: LayoutDirection,
-    offset: Offset,
+    // offset: Offset,
     visual: Visual,
     window: bool,
     pressed: bool,
     press_pos: Pos,
+    display:Range<usize>,
+    offset:LayoutOffset,
 }
 
 impl HorizontalLayout {
@@ -61,11 +64,12 @@ impl HorizontalLayout {
             item_space: 5.0,
             direction,
             geometry: Geometry::new(),
-            offset: Offset::new(),
+            offset: LayoutOffset::new(),
             visual: Visual::new(),
             window: false,
             pressed: false,
             press_pos: Pos::new(),
+            display: 0..0,
         }
     }
 
@@ -87,11 +91,6 @@ impl HorizontalLayout {
     pub fn with_fill(mut self, color: Color) -> Self {
         self.visual.enable();
         self.visual.style_mut().inactive.fill = color;
-        // let mut style = ClickStyle::new();
-        // style.fill = FillStyle::same(color);
-        // style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
-        // let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
-        // self.fill_render = Some(fill_render);
         self
     }
 
@@ -102,13 +101,6 @@ impl HorizontalLayout {
         self.visual.style_mut().inactive.border = style.border;
         self.visual.style_mut().inactive.shadow = style.shadow;
         self.visual.style_mut().inactive.radius = style.radius;
-        // match self.fill_render {
-        //     None => {
-        //         let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
-        //         self.fill_render = Some(fill_render);
-        //     }
-        //     Some(ref mut render) => render.set_frame_style(style),
-        // }
     }
 
 
@@ -152,6 +144,31 @@ impl HorizontalLayout {
     pub fn moving(mut self) -> Self {
         self.window = true;
         self
+    }
+
+    fn reset_display(&mut self) {
+        let context_rect = self.geometry.context_rect();
+        let mut sum_height = 0.0;
+        for (index, item) in self.items.iter().enumerate() {
+            let item_min_x = context_rect.dx().min + self.offset.current.x + sum_height;
+            let item_max_x = context_rect.dx().min + self.offset.current.x + sum_height + item.height() + self.item_space;
+            println!("{} {} {} {} {} {}", item_min_x, item_max_x, context_rect.dx().min, context_rect.dx().max, item.width(), index);
+            if item_min_x <= context_rect.dx().min && item_max_x > context_rect.dx().min {
+                self.display.start = index;
+                self.offset.context.x = item_min_x - context_rect.dx().min;
+                // self.context_offset.y = item_min_y - context_rect.dy().min;
+                println!("start");
+            }
+            if item_min_x < context_rect.dx().max && item_max_x >= context_rect.dx().max {
+                self.display.end = index;
+                break;
+            }
+            sum_height = sum_height + item.height() + self.item_space;
+        }
+        if self.display.end == 0 && self.items.len() != 0 { self.display.end = self.items.len() - 1; }
+        println!("offset: {:?}; display: {:?}; rect: {:?}", self.offset.current, self.display, context_rect);
+        // self.need_refresh_display = false;
+        self.offset.offsetting = false;
     }
 }
 
@@ -197,6 +214,7 @@ impl Layout for HorizontalLayout {
                     #[cfg(target_os = "linux")]
                     ui.context.window.x11().move_window(x, y);
                 }
+                if self.offset.offsetting { self.reset_display(); }
                 //设置布局padding
                 let mut rect = self.geometry.context_rect().with_x_direction(self.direction);
 
@@ -206,10 +224,10 @@ impl Layout for HorizontalLayout {
                     // render.rect_mut().offset_to_rect(&rect);
                     // render.draw(ui, false, false);
                 }
-                rect.offset(&self.offset);
+                rect.offset(&self.offset.context);
                 let previous_rect = mem::replace(&mut ui.draw_rect, rect);
-                for item in self.items.iter_mut() {
-                    let resp = item.update(ui);
+                for i in self.display.start..=self.display.end {
+                    let resp = self.items[i].update(ui);
                     if height < resp.size.dh { height = resp.size.dh; }
                     width += resp.size.dw + self.item_space;
                     match self.direction {
@@ -217,6 +235,15 @@ impl Layout for HorizontalLayout {
                         LayoutDirection::Max => ui.draw_rect.add_max_x(-resp.size.dw - self.item_space),
                     }
                 }
+                // for item in self.items.iter_mut() {
+                //     let resp = item.update(ui);
+                //     if height < resp.size.dh { height = resp.size.dh; }
+                //     width += resp.size.dw + self.item_space;
+                //     match self.direction {
+                //         LayoutDirection::Min => ui.draw_rect.add_min_x(resp.size.dw + self.item_space),
+                //         LayoutDirection::Max => ui.draw_rect.add_max_x(-resp.size.dw - self.item_space),
+                //     }
+                // }
                 width -= self.item_space;
                 ui.draw_rect = previous_rect;
             }
@@ -239,12 +266,14 @@ impl Layout for HorizontalLayout {
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
             space.geometry().set_context_height(0.0);
+            item.set_height(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }
 
     fn set_offset(&mut self, offset: Offset) {
-        self.offset = offset;
+        self.offset.next_offset(offset);
+        // self.offset = offset;
     }
 
     fn set_size(&mut self, w: f32, h: f32) {

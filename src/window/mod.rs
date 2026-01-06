@@ -169,12 +169,12 @@ impl WindowType {
         &self.ime
     }
 
-    #[cfg(all(not(feature = "winit"), target_os = "windows"))]
-    pub(crate) fn set_visible(&self, visible: bool) {
-        match self.kind {
-            WindowKind::Win32(ref window) => window.set_visible(visible).unwrap(),
-        }
-    }
+    // #[cfg(all(not(feature = "winit"), target_os = "windows"))]
+    // pub(crate) fn set_visible(&self, visible: bool) {
+    //     match self.kind {
+    //         WindowKind::Win32(ref window) => window.set_visible(visible).unwrap(),
+    //     }
+    // }
 
     #[cfg(not(feature = "winit"))]
     pub(crate) fn request_clipboard(&self, clipboard: ClipboardData) {

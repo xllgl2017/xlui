@@ -129,7 +129,8 @@ impl Widget for Label {
             UpdateType::Draw => self.redraw(ui),
             _ => self.state.handle_event(ui, &self.buffer.geometry, self.visual.disable())
         }
-        self.visual.draw(ui,self.state.disabled, self.state.hovered, self.state.pressed, true);
+        self.visual.draw(ui, self.state.disabled, self.state.hovered, self.state.pressed, true);
+        println!("{} {} {}", self.buffer.text.text, self.buffer.geometry.margin_width(), self.buffer.geometry.margin_height());
         Response::new(&self.id, WidgetSize::same(self.buffer.geometry.margin_width(), self.buffer.geometry.margin_height()))
     }
 

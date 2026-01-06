@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::layout::{Layout, LayoutDirection, LayoutItem};
+use crate::layout::{Layout, LayoutDirection, LayoutItem, LayoutOffset};
 use crate::map::Map;
 use crate::render::Visual;
 use crate::response::Response;
@@ -11,6 +11,8 @@ use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
 use crate::{Margin, Offset, Padding, Widget};
 use std::mem;
+use std::ops::Range;
+
 ///### 垂直布局的使用
 ///```rust
 /// use xlui::*;
@@ -38,14 +40,22 @@ use std::mem;
 ///
 /// }
 /// ```
+///
+///
+///
+
 pub struct VerticalLayout {
     id: String,
     items: Map<String, LayoutItem>,
     item_space: f32, //item之间的间隔
-    offset: Offset,
+    // offset: Offset,
+    // context_offset: Offset,
     geometry: Geometry,
     direction: LayoutDirection,
     visual: Visual,
+    // need_refresh_display: bool,
+    display: Range<usize>,
+    offset: LayoutOffset,
 }
 
 impl VerticalLayout {
@@ -56,8 +66,12 @@ impl VerticalLayout {
             item_space: 5.0,
             geometry: Geometry::new(),
             direction,
-            offset: Offset::new(),
+            // offset: Offset::new(),
             visual: Visual::new(),
+            // need_refresh_display: true,
+            display: 0..0,
+            // context_offset: Offset::new(),
+            offset: LayoutOffset::new(),
         }
     }
 
@@ -69,6 +83,7 @@ impl VerticalLayout {
         VerticalLayout::new(LayoutDirection::Max)
     }
 
+    //设置布局的大小
     pub fn with_size(self, w: f32, h: f32) -> Self {
         self.with_width(w).with_height(h)
     }
@@ -79,14 +94,10 @@ impl VerticalLayout {
         self
     }
 
+    ///布局的背景填充
     pub fn with_fill(mut self, color: Color) -> Self {
         self.visual.enable();
         self.visual.style_mut().inactive.fill = color;
-        // let mut style = ClickStyle::new();
-        // style.fill = FillStyle::same(color);
-        // style.border = BorderStyle::same(Border::same(0.0).radius(Radius::same(0)));
-        // let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new().with_style(style)));
-        // self.fill_render = Some(fill_render);
         self
     }
 
@@ -97,28 +108,25 @@ impl VerticalLayout {
         self.visual.style_mut().inactive.border = style.border;
         self.visual.style_mut().inactive.shadow = style.shadow;
         self.visual.style_mut().inactive.radius = style.radius;
-        // match self.fill_render {
-        //     None => {
-        //         let fill_render = RenderParam::new(RenderKind::Rectangle(RectParam::new_frame(Rect::new(), style)));
-        //         self.fill_render = Some(fill_render);
-        //     }
-        //     Some(ref mut render) => render.set_frame_style(style),
-        // }
     }
 
+    ///设置布局宽度
     pub fn set_width(&mut self, w: f32) {
         self.geometry.set_fix_width(w);
     }
 
+    ///设置布局的高度
     pub fn with_height(mut self, h: f32) -> Self {
         self.set_height(h);
         self
     }
 
+    ///设置布局的高度
     pub fn set_height(&mut self, h: f32) {
         self.geometry.set_fix_height(h);
     }
 
+    ///设置每个item之间的间隔
     pub fn with_space(mut self, s: f32) -> Self {
         self.item_space = s;
         self
@@ -140,6 +148,31 @@ impl VerticalLayout {
     pub fn item_space(&self) -> f32 {
         self.item_space
     }
+
+    fn reset_display(&mut self) {
+        let context_rect = self.geometry.context_rect();
+        let mut sum_height = 0.0;
+        for (index, item) in self.items.iter().enumerate() {
+            let item_min_y = context_rect.dy().min + self.offset.current.y + sum_height;
+            let item_max_y = context_rect.dy().min + self.offset.current.y + sum_height + item.height() + self.item_space;
+            println!("{} {} {} {} {} {}", item_min_y, item_max_y, context_rect.dy().min, context_rect.dy().max, item.height(), index);
+            if item_min_y <= context_rect.dy().min && item_max_y > context_rect.dy().min {
+                self.display.start = index;
+                self.offset.context.y = item_min_y - context_rect.dy().min;
+                // self.context_offset.y = item_min_y - context_rect.dy().min;
+                println!("start");
+            }
+            if item_min_y < context_rect.dy().max && item_max_y >= context_rect.dy().max {
+                self.display.end = index;
+                break;
+            }
+            sum_height = sum_height + item.height() + self.item_space;
+        }
+        if self.display.end == 0 && self.items.len() != 0 { self.display.end = self.items.len() - 1; }
+        println!("offset: {:?}; display: {:?}; rect: {:?}", self.offset.current, self.display, context_rect);
+        // self.need_refresh_display = false;
+        self.offset.offsetting = false;
+    }
 }
 
 impl Layout for VerticalLayout {
@@ -155,12 +188,6 @@ impl Layout for VerticalLayout {
                 }
                 self.geometry.set_context_size(width, height);
                 self.visual.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
-                // if let Some(ref mut render) = self.fill_render {
-                //     self.geometry.set_context_size(width, height);
-                //     render.rect_mut().set_size(self.geometry.padding_width(), self.geometry.padding_height());
-                //     // #[cfg(feature = "gpu")]
-                //     // render.init(ui, false, false);
-                // }
             }
             _ => {
                 self.geometry.set_margin_size(ui.draw_rect.width(), ui.draw_rect.height());
@@ -168,12 +195,23 @@ impl Layout for VerticalLayout {
                     self.visual.rect_mut().offset_to_rect(&ui.draw_rect);
                     self.visual.draw(ui, false, false, false, false);
                 }
-
-                let mut rect = self.geometry.context_rect().with_y_direction(self.direction);
-                rect.offset(&self.offset);
-                let previous_rect = mem::replace(&mut ui.draw_rect, rect);
-                for item in self.items.iter_mut() {
-                    let resp = item.update(ui);
+                if self.offset.offsetting { self.reset_display(); }
+                let mut context_rect = self.geometry.context_rect().with_y_direction(self.direction);
+                context_rect.offset(&self.offset.context);
+                let previous_rect = mem::replace(&mut ui.draw_rect, context_rect);
+                // let context_rect = self.geometry.context_rect();
+                // for i in self.display.clone() {
+                //     let item=&mut self.items[i];
+                //     let resp = item.update(ui);
+                //     if width < resp.size.dw { width = resp.size.dw; }
+                //     height += resp.size.dh + self.item_space;
+                //     match self.direction {
+                //         LayoutDirection::Min => ui.draw_rect.add_min_y(resp.size.dh + self.item_space),
+                //         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
+                //     }
+                // }
+                for i in self.display.start..=self.display.end {
+                    let resp = self.items[i].update(ui);
                     if width < resp.size.dw { width = resp.size.dw; }
                     height += resp.size.dh + self.item_space;
                     match self.direction {
@@ -181,6 +219,16 @@ impl Layout for VerticalLayout {
                         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
                     }
                 }
+                // for item in self.items.iter_mut() {
+                //     let resp = item.update(ui);
+                //     if width < resp.size.dw { width = resp.size.dw; }
+                //     height += resp.size.dh + self.item_space;
+                //     println!("{}", resp.size.dh);
+                //     match self.direction {
+                //         LayoutDirection::Min => ui.draw_rect.add_min_y(resp.size.dh + self.item_space),
+                //         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
+                //     }
+                // }
                 height -= self.item_space;
                 ui.draw_rect = previous_rect;
             }
@@ -204,12 +252,15 @@ impl Layout for VerticalLayout {
     fn add_item(&mut self, mut item: LayoutItem) {
         if let Some(space) = item.widget_mut::<Space>() {
             space.geometry().set_context_width(0.0);
+            item.set_width(0.0);
         }
         self.items.insert(item.id().to_string(), item);
     }
 
     fn set_offset(&mut self, offset: Offset) {
-        self.offset = offset;
+        self.offset.next_offset(offset);
+        // self.need_refresh_display = self.offset != offset;
+        // self.offset = offset;
     }
 
     fn set_size(&mut self, w: f32, h: f32) {
