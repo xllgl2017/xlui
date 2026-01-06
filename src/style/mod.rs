@@ -185,6 +185,20 @@ impl Style {
         Ok(border)
     }
 
+    fn read_radius(value: &str) -> UiResult<Radius> {
+        let items = value.split(" ").collect::<Vec<_>>();
+        match items.len() {
+            1 => Ok(Radius::same(Style::read_size(items[0])? as u8)),
+            4 => Ok(Radius {
+                left_bottom: Style::read_size(items[3])? as u8,
+                right_bottom: Style::read_size(items[2])? as u8,
+                right_top: Style::read_size(items[1])? as u8,
+                left_top: Style::read_size(items[0])? as u8,
+            }),
+            _ => Err("invalid radius".into()),
+        }
+    }
+
     pub fn from_css(fp: impl AsRef<Path>) -> UiResult<Style> {
         let lines = fs::read_to_string(fp.as_ref())?.replace("\r\n", "\n").replace("\n", "");
         let mut index = 0;
@@ -197,7 +211,7 @@ impl Style {
             let items = lines[index + lpos + 1..index + rpos].split(";");
             for item in items {
                 if item == "" { continue; }
-                let mut kvs = item.split(":");
+                let mut kvs = item.split(": ");
                 let key = kvs.next().ok_or(UiError::CssStyleError)?.replace(" ", "");
                 let value = kvs.next().ok_or(UiError::CssStyleError)?;
 
@@ -210,10 +224,10 @@ impl Style {
                         visual_style.disabled.fill = Style::read_color(&value)?;
                     } else {
                         let color = Style::read_color(&value)?;
-                        // visual_style.disabled.fill = color.clone();
+                        visual_style.disabled.fill = color.clone();
                         visual_style.inactive.fill = color.clone();
-                        // visual_style.hovered.fill = color.clone();
-                        // visual_style.pressed.fill = color;
+                        visual_style.hovered.fill = color.clone();
+                        visual_style.pressed.fill = color;
                     }
                     "border" => if name.contains(":hover") {
                         visual_style.hovered.border = Style::read_border(&value)?;
@@ -223,10 +237,23 @@ impl Style {
                         visual_style.disabled.border = Style::read_border(&value)?;
                     } else {
                         let border = Style::read_border(&value)?;
-                        // visual_style.disabled.border = border.clone();
+                        visual_style.disabled.border = border.clone();
                         visual_style.inactive.border = border.clone();
-                        // visual_style.hovered.border = border.clone();
-                        // visual_style.pressed.border = border;
+                        visual_style.hovered.border = border.clone();
+                        visual_style.pressed.border = border;
+                    }
+                    "border-radius" => if name.contains(":hover") {
+                        visual_style.hovered.radius = Style::read_radius(&value)?;
+                    }else if name.contains(":active") {
+                        visual_style.pressed.radius = Style::read_radius(&value)?;
+                    }else if name.contains(":disabled") {
+                        visual_style.disabled.radius = Style::read_radius(&value)?;
+                    }else {
+                        let radius = Style::read_radius(&value)?;
+                        visual_style.disabled.radius = radius.clone();
+                        visual_style.inactive.radius = radius.clone();
+                        visual_style.hovered.radius = radius.clone();
+                        visual_style.pressed.radius = radius;
                     }
                     _ => {}
                 }

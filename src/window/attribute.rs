@@ -3,6 +3,7 @@ use std::sync::Arc;
 use winit::window::{Icon, WindowLevel};
 use crate::{Color, Font};
 use crate::size::Size;
+use crate::style::Style;
 #[cfg(all(target_os = "windows", not(feature = "winit")))]
 use crate::window::win32::tray::Tray;
 
@@ -31,7 +32,7 @@ pub struct WindowAttribute {
     #[cfg(all(not(feature = "winit"), target_os = "windows"))]
     pub tray: Option<Tray>,
     ///窗口填充色
-    pub fill: Color,
+    pub style: Style,
 }
 
 impl WindowAttribute {
@@ -75,9 +76,9 @@ impl WindowAttribute {
 impl Default for WindowAttribute {
     fn default() -> WindowAttribute {
         WindowAttribute {
-            inner_size: (800,600).into(),
-            min_inner_size:(0,0).into(),
-            max_inner_size:(2560,1440).into(),
+            inner_size: (800, 600).into(),
+            min_inner_size: (0, 0).into(),
+            max_inner_size: (2560, 1440).into(),
             position: [100, 100],
             resizable: true,
             title: "xlui".to_string(),
@@ -92,7 +93,7 @@ impl Default for WindowAttribute {
             font: Font::default().unwrap(),
             #[cfg(all(not(feature = "winit"), target_os = "windows"))]
             tray: None,
-            fill:Color::rgb(240, 240, 240),
+            style:Style::default()
         }
     }
 }

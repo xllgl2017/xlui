@@ -41,7 +41,6 @@ pub struct AppContext {
     pub(crate) context: Context,
     pub(crate) previous_time: u128,
     pub(crate) redraw_thread: JoinHandle<()>,
-    pub(crate) attr: WindowAttribute,
 }
 
 impl AppContext {
@@ -54,11 +53,10 @@ impl AppContext {
             layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
             inner_windows: Some(Map::new()),
-            styles: Style::from_css("res/css/widgets.css").unwrap(),
+            styles:attr.style,
             context,
             previous_time: 0,
             redraw_thread: spawn(|| {}),
-            attr,
         }
     }
 

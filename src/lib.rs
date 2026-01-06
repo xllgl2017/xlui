@@ -113,7 +113,7 @@ pub use ui::Ui;
 pub use style::{color::Color, Shadow, FrameStyle};
 pub use frame::{App, context::UpdateType};
 pub use align::Align;
-pub use style::{VisualStyle, WidgetStyle};
+pub use style::{VisualStyle, WidgetStyle, Style};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;
