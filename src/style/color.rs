@@ -69,7 +69,6 @@ impl Color {
     }
 
     pub fn as_rgba_u32(&self) -> u32 {
-        // (fill.a as u32) << 24 | (fill.r as u32) << 16 | (fill.g as u32) << 8 | (fill.b as u32);
         ((self.a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
     }
     #[cfg(all(target_os = "linux",not(feature = "gpu")))]
