@@ -2,8 +2,9 @@ pub mod color;
 
 use crate::size::border::Border;
 use crate::style::color::Color;
-use crate::Radius;
-
+use crate::{Radius, Rect, Ui};
+use crate::render::RenderParam;
+use crate::shape::Shape;
 
 /// #### 窗口样式
 /// 可以用于窗口布局
@@ -56,74 +57,7 @@ pub struct FrameStyle {
 /// ```
 ///
 ///
-#[derive(Clone)]
-pub struct FillStyle {
-    pub inactive: Color,
-    pub hovered: Color,
-    pub clicked: Color,
-}
 
-impl FillStyle {
-    pub fn same(c: Color) -> Self {
-        FillStyle {
-            inactive: c.clone(),
-            hovered: c.clone(),
-            clicked: c,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct BorderStyle {
-    pub inactive: Border,
-    pub hovered: Border,
-    pub clicked: Border,
-}
-
-impl BorderStyle {
-    pub fn same(c: Border) -> Self {
-        BorderStyle {
-            inactive: c.clone(),
-            hovered: c.clone(),
-            clicked: c,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct ClickStyle {
-    pub fill: FillStyle,
-    pub border: BorderStyle,
-}
-
-impl ClickStyle {
-    pub fn new() -> ClickStyle {
-        ClickStyle {
-            fill: FillStyle {
-                inactive: Color::rgb(230, 230, 230),
-                hovered: Color::rgb(230, 230, 230),
-                clicked: Color::rgb(165, 165, 165),
-            },
-
-            border: BorderStyle {
-                inactive: Border::same(0.0),
-                hovered: Border::same(1.0).color(Color::rgb(0, 0, 0)),
-                clicked: Border::same(1.0).color(Color::rgb(0, 0, 0)),
-            },
-        }
-    }
-    pub fn dyn_fill(&self, clicked: bool, hovered: bool) -> &Color {
-        if clicked && hovered { return &self.fill.clicked; }
-        if hovered { return &self.fill.hovered; }
-        &self.fill.inactive
-    }
-
-    pub fn dyn_border(&self, clicked: bool, hovered: bool) -> &Border {
-        if clicked && hovered { return &self.border.clicked; }
-        if hovered { return &self.border.hovered; }
-        &self.border.inactive
-    }
-}
 
 #[derive(Clone)]
 pub struct Shadow {
@@ -142,4 +76,149 @@ impl Shadow {
             color: Color::TRANSPARENT,
         }
     }
+}
+
+
+#[derive(Clone)]
+pub struct WidgetStyle {
+    pub fill: Color,
+    pub border: Border,
+    pub radius: Radius,
+    pub shadow: Shadow,
+}
+
+impl WidgetStyle {
+    pub fn new() -> WidgetStyle {
+        WidgetStyle {
+            fill: Color::new(),
+            border: Border::same(0.0),
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        }
+    }
+}
+
+impl From<(Color, f32, u8)> for WidgetStyle {
+    fn from(value: (Color, f32, u8)) -> Self {
+        let mut res = WidgetStyle::new();
+        res.fill = value.0;
+        res.border = Border::same(value.1);
+        res.radius = Radius::same(value.2);
+        res
+    }
+}
+
+#[derive(Clone)]
+pub struct VisualStyle {
+    pub disabled: WidgetStyle,
+    pub inactive: WidgetStyle,
+    pub hovered: WidgetStyle,
+    pub pressed: WidgetStyle,
+}
+
+impl VisualStyle {
+    pub fn new() -> VisualStyle {
+        VisualStyle {
+            disabled: WidgetStyle::new(),
+            inactive: WidgetStyle::new(),
+            hovered: WidgetStyle::new(),
+            pressed: WidgetStyle::new(),
+        }
+    }
+
+    pub fn same(style: WidgetStyle) -> VisualStyle {
+        let mut res = VisualStyle::new();
+        res.disabled = style.clone();
+        res.inactive = style.clone();
+        res.hovered = style.clone();
+        res.pressed = style;
+        res
+    }
+
+    pub fn dyn_style(&self, disabled: bool, hovered: bool, pressed: bool) -> &WidgetStyle {
+        if disabled { return &self.disabled; }
+        if pressed { return &self.pressed; }
+        if hovered { return &self.hovered; }
+        &self.inactive
+    }
+}
+
+
+pub struct Visual {
+    render: RenderParam,
+    disable: bool,
+    foreground: bool,
+}
+
+impl Visual {
+    pub fn new() -> Visual {
+        Visual {
+            #[cfg(feature = "gpu")]
+            render: RenderParam::new(Shape::rectangle()),
+            #[cfg(not(feature = "gpu"))]
+            render: RenderParam::new(Shape::Rectangle),
+            disable: true,
+            foreground: false,
+        }
+    }
+
+    #[cfg(feature = "gpu")]
+    pub fn re_init(&mut self) {
+        self.render.re_init();
+    }
+
+    pub fn with_enable(mut self) -> Visual {
+        self.disable = false;
+        self
+    }
+
+    pub fn enable(&mut self) -> &mut Visual {
+        self.disable = false;
+        self
+    }
+
+    pub fn with_style(mut self, style: VisualStyle) -> Visual {
+        self.render.set_style(style);
+        self
+    }
+
+    pub fn set_style(&mut self, style: VisualStyle) {
+        self.render.set_style(style);
+    }
+
+
+    pub fn draw(&mut self, ui: &mut Ui, disabled: bool, hovered: bool, pressed: bool, foreground: bool) {
+        if self.disable || self.foreground != foreground { return; }
+        self.render.draw(ui, disabled, hovered, pressed);
+    }
+
+    pub fn foreground(&self) -> bool {
+        self.foreground
+    }
+
+    pub fn disable(&self) -> bool {
+        self.disable
+    }
+
+    pub fn with_size(mut self, w: f32, h: f32) -> Visual {
+        self.render.rect.set_size(w, h);
+        self
+    }
+
+    pub fn rect(&self) -> &Rect { self.render.rect() }
+
+    pub fn rect_mut(&mut self) -> &mut Rect { self.render.rect_mut() }
+
+    pub fn with_rect(mut self, rect: Rect) -> Visual {
+        self.render.rect = rect;
+        self
+    }
+
+    pub fn offset_to_rect(&mut self, rect: &Rect) {
+        self.render.offset_to_rect(rect)
+    }
+
+    pub fn style(&self) -> &VisualStyle { &self.render.style }
+
+    pub fn style_mut(&mut self) -> &mut VisualStyle { self.render.style_mut() }
 }

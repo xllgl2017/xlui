@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::shape::Shape;
 use crate::size::border::Border;
@@ -10,6 +10,7 @@ use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::Shadow;
 use std::ops::Range;
+use crate::render::RenderParam;
 
 ///#### ProcessBar的示例用法
 ///```rust

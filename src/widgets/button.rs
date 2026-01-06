@@ -2,7 +2,7 @@ use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::render::image::ImageSource;
-use crate::render::{Visual, VisualStyle};
+use crate::style::{Visual, VisualStyle};
 use crate::response::{Callback, Response};
 use crate::size::padding::Padding;
 use crate::size::Geometry;

@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderParam, VisualStyle, WidgetStyle};
+use crate::style::{VisualStyle, WidgetStyle};
 use crate::shape::Shape;
 use crate::size::border::Border;
 use crate::size::radius::Radius;
@@ -10,6 +10,7 @@ use crate::widgets::textedit::buffer::CharBuffer;
 use crate::widgets::textedit::cursor::EditCursor;
 use crate::window::UserEvent;
 use crate::{Offset, Shadow};
+use crate::render::RenderParam;
 
 pub struct EditSelection {
     renders: Vec<RenderParam>,

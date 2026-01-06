@@ -1,6 +1,6 @@
 use crate::frame::context::UpdateType;
 use crate::layout::LayoutKind;
-use crate::render::{Visual, VisualStyle};
+use crate::style::{Visual, VisualStyle};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::ui::Ui;

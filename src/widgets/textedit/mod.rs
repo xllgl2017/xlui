@@ -2,7 +2,7 @@ use crate::align::Align;
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::key::Key;
 use crate::layout::LayoutDirection;
-use crate::render::{Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::{Callback, Response};
 use crate::size::border::Border;
 use crate::size::radius::Radius;

@@ -1,7 +1,7 @@
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem, LayoutOffset};
 use crate::map::Map;
-use crate::render::Visual;
+use crate::style::Visual;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::style::color::Color;

@@ -1,4 +1,4 @@
-use crate::render::{Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;

@@ -1,6 +1,6 @@
 use crate::align::Align;
 use crate::frame::context::UpdateType;
-use crate::render::Visual;
+use crate::style::Visual;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::text::buffer::TextBuffer;

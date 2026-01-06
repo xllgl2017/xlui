@@ -3,7 +3,7 @@ pub mod check;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::popup::Popup;
-use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
+use crate::style::{ Visual, VisualStyle, WidgetStyle};
 use crate::response::{Callback, Response};
 use crate::shape::Shape;
 use crate::size::border::Border;
@@ -19,6 +19,7 @@ use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::{Align, Offset, Shadow};
 use std::fmt::Display;
 use std::sync::{Arc, RwLock};
+use crate::render::RenderParam;
 
 /// ### ComboBox的示例用法
 ///```

@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::shape::Shape;
 use crate::size::border::Border;
@@ -9,6 +9,7 @@ use crate::style::color::Color;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::{Offset, Shadow};
+use crate::render::RenderParam;
 
 pub struct ScrollBar {
     id: String,

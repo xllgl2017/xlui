@@ -3,7 +3,7 @@ use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
-use crate::render::{Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
