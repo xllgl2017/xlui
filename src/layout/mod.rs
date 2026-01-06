@@ -178,3 +178,36 @@ pub enum LayoutDirection {
     Min,
     Max,
 }
+
+enum OffsetDirection {
+    TopDown,
+    DownTop,
+}
+
+struct LayoutOffset {
+    previous: Offset,
+    current: Offset,
+    context: Offset,
+    direction: OffsetDirection,
+    offsetting: bool,
+}
+
+impl LayoutOffset {
+    fn new() -> LayoutOffset {
+        LayoutOffset {
+            previous: Offset::new(),
+            current: Offset::new(),
+            context: Offset::new(),
+            direction: OffsetDirection::TopDown,
+            offsetting: true,
+        }
+    }
+
+    fn next_offset(&mut self, offset: Offset) {
+        self.previous = self.current.clone();
+        self.current = offset;
+        if self.current.y > self.previous.y { self.direction = OffsetDirection::TopDown; }
+        if self.current.y < self.previous.y { self.direction = OffsetDirection::DownTop; }
+        self.offsetting = true;
+    }
+}

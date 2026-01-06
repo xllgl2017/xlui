@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::layout::{Layout, LayoutDirection, LayoutItem};
+use crate::layout::{Layout, LayoutDirection, LayoutItem, LayoutOffset};
 use crate::map::Map;
 use crate::render::Visual;
 use crate::response::Response;
@@ -9,7 +9,7 @@ use crate::style::FrameStyle;
 use crate::ui::Ui;
 use crate::widgets::space::Space;
 use crate::widgets::WidgetSize;
-use crate::{Border, Margin, Offset, Padding, Radius, Shadow, Widget};
+use crate::{Margin, Offset, Padding, Widget};
 use std::mem;
 use std::ops::Range;
 
@@ -43,38 +43,7 @@ use std::ops::Range;
 ///
 ///
 ///
-enum OffsetDirection {
-    TopDown,
-    DownTop,
-}
 
-struct LayoutOffset {
-    previous: Offset,
-    current: Offset,
-    context: Offset,
-    direction: OffsetDirection,
-    offsetting: bool,
-}
-
-impl LayoutOffset {
-    fn new() -> LayoutOffset {
-        LayoutOffset {
-            previous: Offset::new(),
-            current: Offset::new(),
-            context: Offset::new(),
-            direction: OffsetDirection::TopDown,
-            offsetting: true,
-        }
-    }
-
-    fn next_offset(&mut self, offset: Offset) {
-        self.previous = self.current.clone();
-        self.current = offset;
-        if self.current.y > self.previous.y { self.direction = OffsetDirection::TopDown; }
-        if self.current.y < self.previous.y { self.direction = OffsetDirection::DownTop; }
-        self.offsetting = true;
-    }
-}
 pub struct VerticalLayout {
     id: String,
     items: Map<String, LayoutItem>,

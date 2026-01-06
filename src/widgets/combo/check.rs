@@ -89,14 +89,14 @@ impl<T: Display + 'static> CheckComboBox<T> {
             state.store(true, Ordering::SeqCst);
         });
         item.geometry_mut().an(Align::LeftCenter).pd(Padding::same(3.0));
-        let mut item_style = VisualStyle::same(WidgetStyle {
-            fill: Color::rgba(153, 193, 241, 220),
-            border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
-            radius: Radius::same(2),
-            shadow: Shadow::new(),
-        });
-        item_style.inactive.fill = Color::TRANSPARENT;
-        item_style.inactive.border = Border::same(0.0);
+        // let mut item_style = VisualStyle::same(WidgetStyle {
+        //     fill: Color::rgba(153, 193, 241, 220),
+        //     border: Border::same(1.0).color(Color::rgba(144, 209, 255, 255)),
+        //     radius: Radius::same(2),
+        //     shadow: Shadow::new(),
+        // });
+        // item_style.inactive.fill = Color::TRANSPARENT;
+        // item_style.inactive.border = Border::same(0.0);
         ui.add(item);
     }
 
