@@ -2,7 +2,7 @@ use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::layout::recycle::RecycleLayout;
 use crate::layout::{Layout, LayoutItem, LayoutKind};
-use crate::render::{VisualStyle, WidgetStyle};
+use crate::style::{VisualStyle, WidgetStyle};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::radius::Radius;

@@ -49,6 +49,16 @@ impl<K: Clone + Eq + Hash, V> Map<K, V> {
         EntryMapIterMut { inner: self.values.iter_mut() }
     }
 
+    pub fn entry_or_insert_with(&mut self, key: K, callback: impl FnOnce() -> V) -> &mut V {
+        if let Some(pos) = self.keys.get(&key) {
+            &mut self.values[*pos].value
+        } else {
+            self.values.push(MapNode { key: key.clone(), value: callback() });
+            self.keys.insert(key, self.values.len() - 1);
+            &mut self.values.last_mut().unwrap().value
+        }
+    }
+
 
     pub fn get(&self, key: &K) -> Option<&V> {
         let index = self.keys.get(key)?;

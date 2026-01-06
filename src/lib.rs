@@ -110,10 +110,10 @@ pub use widgets::{label::Label, scroll::ScrollWidget, listview::ListView, Widget
 pub use error::{UiResult, UiError};
 pub use text::{rich::RichTextExt, TextWrap, rich::RichText};
 pub use ui::Ui;
-pub use style::{ClickStyle, BorderStyle, FillStyle, color::Color, Shadow, FrameStyle};
+pub use style::{color::Color, Shadow, FrameStyle};
 pub use frame::{App, context::UpdateType};
 pub use align::Align;
-pub use render::{VisualStyle, WidgetStyle};
+pub use style::{VisualStyle, WidgetStyle, Style};
 
 pub trait NumCastExt: Sized {
     fn as_f32(&self) -> f32;

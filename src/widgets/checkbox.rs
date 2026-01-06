@@ -1,6 +1,7 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
-use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
+use crate::render::RenderParam;
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::{Callback, InnerCallB, Response};
 use crate::shape::Shape;
 use crate::size::border::Border;

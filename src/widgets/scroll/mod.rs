@@ -2,14 +2,13 @@ pub mod bar;
 
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutKind};
-use crate::render::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
-use crate::size::pos::Pos;
 use crate::size::radius::Radius;
 use crate::size::Geometry;
 use crate::style::color::Color;
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::ui::Ui;
 use crate::widgets::scroll::bar::ScrollBar;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};

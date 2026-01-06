@@ -1,9 +1,13 @@
 pub mod color;
+mod visual;
 
+use std::fs;
+use std::path::Path;
 use crate::size::border::Border;
 use crate::style::color::Color;
-use crate::Radius;
-
+use crate::{Radius, UiError, UiResult};
+pub use visual::*;
+use crate::map::Map;
 
 /// #### 窗口样式
 /// 可以用于窗口布局
@@ -56,79 +60,6 @@ pub struct FrameStyle {
 /// ```
 ///
 ///
-#[derive(Clone)]
-pub struct FillStyle {
-    pub inactive: Color,
-    pub hovered: Color,
-    pub clicked: Color,
-}
-
-impl FillStyle {
-    pub fn same(c: Color) -> Self {
-        FillStyle {
-            inactive: c.clone(),
-            hovered: c.clone(),
-            clicked: c,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct BorderStyle {
-    pub inactive: Border,
-    pub hovered: Border,
-    pub clicked: Border,
-}
-
-impl BorderStyle {
-    pub fn same(c: Border) -> Self {
-        BorderStyle {
-            inactive: c.clone(),
-            hovered: c.clone(),
-            clicked: c,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct ClickStyle {
-    pub fill: FillStyle,
-    pub border: BorderStyle,
-}
-
-impl ClickStyle {
-    pub fn new() -> ClickStyle {
-        ClickStyle {
-            fill: FillStyle {
-                inactive: Color::rgb(230, 230, 230),
-                hovered: Color::rgb(230, 230, 230),
-                clicked: Color::rgb(165, 165, 165),
-            },
-
-            border: BorderStyle {
-                inactive: Border::same(0.0),
-                hovered: Border::same(1.0).color(Color::rgb(0, 0, 0)),
-                clicked: Border::same(1.0).color(Color::rgb(0, 0, 0)),
-            },
-        }
-    }
-    pub fn dyn_fill(&self, clicked: bool, hovered: bool) -> &Color {
-        if clicked && hovered { return &self.fill.clicked; }
-        if hovered { return &self.fill.hovered; }
-        &self.fill.inactive
-    }
-
-    pub fn dyn_border(&self, clicked: bool, hovered: bool) -> &Border {
-        if clicked && hovered { return &self.border.clicked; }
-        if hovered { return &self.border.hovered; }
-        &self.border.inactive
-    }
-}
-
-// pub struct WidgetStyle {
-//     pub click: ClickStyle,
-//     pub popup: ClickStyle,
-// }
 
 #[derive(Clone)]
 pub struct Shadow {
@@ -149,29 +80,198 @@ impl Shadow {
     }
 }
 
-// pub struct Style {
-//     pub window: FrameStyle,
-//     pub widgets: WidgetStyle,
-// }
+
+#[derive(Clone)]
+pub struct WidgetStyle {
+    pub fill: Color,
+    pub border: Border,
+    pub radius: Radius,
+    pub shadow: Shadow,
+}
+
+impl WidgetStyle {
+    pub fn new() -> WidgetStyle {
+        WidgetStyle {
+            fill: Color::new(),
+            border: Border::same(0.0),
+            radius: Radius::same(0),
+            shadow: Shadow::new(),
+        }
+    }
+}
+
+impl From<(Color, f32, u8)> for WidgetStyle {
+    fn from(value: (Color, f32, u8)) -> Self {
+        let mut res = WidgetStyle::new();
+        res.fill = value.0;
+        res.border = Border::same(value.1);
+        res.radius = Radius::same(value.2);
+        res
+    }
+}
 
 
-// impl Style {
-//     pub fn light_style() -> Style {
-//         Style {
-//             window: FrameStyle {
-//                 fill: Color::rgb(240, 240, 240),
-//                 shadow: Shadow::new(),
-//                 border: Border::same(0.0).radius(Radius::same(0)),
-//             },
-//
-//             widgets: WidgetStyle {
-//                 click: ClickStyle::new(),
-//                 popup: ClickStyle {
-//                     fill: FillStyle::same(Color::rgb(240, 240, 240)),
-//                     border: BorderStyle::same(Border::same(1.0).radius(Radius::same(5))
-//                         .color(Color::rgb(144, 209, 255))),
-//                 },
-//             },
-//         }
-//     }
-// }
+pub struct Style {
+    widgets: Map<String, VisualStyle>,
+    frame: FrameStyle,
+}
+
+impl Style {
+    fn new() -> Style {
+        Style {
+            widgets: Map::new(),
+            frame: FrameStyle {
+                fill: Color::rgb(165, 235, 154),
+                shadow: Shadow {
+                    offset: [10.0, 10.0],
+                    spread: 10.0,
+                    blur: 5.0,
+                    color: Color::rgb(123, 123, 123),
+                },
+                border: Border::same(1.0),
+                radius: Radius::same(2),
+            },
+        }
+    }
+
+    pub fn default() -> Style {
+        let mut res = Style::new();
+        let mut style = VisualStyle::same((Color::rgb(230, 230, 230), 1.0, 3).into());
+        style.inactive.border.set_same(0.0);
+        style.pressed.fill = Color::rgb(165, 165, 165);
+        res.widgets.insert(".button".to_string(), style);
+        res
+    }
+
+    #[inline]
+    pub fn set_widget_style(&self, visual: &mut Visual, keys: Vec<impl ToString>) {
+        for key in keys {
+            let key = key.to_string();
+            if let Some(widget) = self.widgets.get(&key) {
+                visual.enable().set_style(widget.clone());
+                return;
+            }
+        }
+    }
+
+    fn read_color(value: &str) -> UiResult<Color> {
+        let values = value.replace("rgb(", "").replace(")", "").replace("rgba(", "").replace(" ", "");
+        let mut rgba = values.split(",");
+        let r = rgba.next().ok_or("invalid red value")?.parse()?;
+        let g = rgba.next().ok_or("invalid green value")?.parse()?;
+        let b = rgba.next().ok_or("invalid blue value")?.parse()?;
+        let a = rgba.next().map(|v| v.parse().unwrap_or(255)).unwrap_or(255);
+        Ok(Color::rgba(r, g, b, a))
+    }
+
+    fn read_size(value: &str) -> UiResult<f32> {
+        let value = value.replace(" ", "").replace("px", "");
+        Ok(value.parse()?)
+    }
+
+    fn read_border(value: &str) -> UiResult<Border> {
+        let value = value.replace(", ", ",");
+        let items = value.split(" ").collect::<Vec<_>>();
+        let mut border = Border::same(0.0);
+        for item in items {
+            if item.starts_with("rgb") {
+                border.color = Style::read_color(item)?;
+            } else if let Ok(width) = item.parse() {
+                border.set_same(width);
+            } else if item.ends_with("px") || item.parse::<f32>().is_ok() {
+                border.set_same(Style::read_size(item)?);
+            }
+        }
+        Ok(border)
+    }
+
+    fn read_radius(value: &str) -> UiResult<Radius> {
+        let items = value.split(" ").collect::<Vec<_>>();
+        match items.len() {
+            1 => Ok(Radius::same(Style::read_size(items[0])? as u8)),
+            4 => Ok(Radius {
+                left_bottom: Style::read_size(items[3])? as u8,
+                right_bottom: Style::read_size(items[2])? as u8,
+                right_top: Style::read_size(items[1])? as u8,
+                left_top: Style::read_size(items[0])? as u8,
+            }),
+            _ => Err("invalid radius".into()),
+        }
+    }
+
+    pub fn from_css(fp: impl AsRef<Path>) -> UiResult<Style> {
+        let lines = fs::read_to_string(fp.as_ref())?.replace("\r\n", "\n").replace("\n", "");
+        let mut index = 0;
+        let mut res = Style::new();
+        while let Some(rpos) = lines[index..].find("}") {
+            let lpos = lines[index..].find("{").ok_or(UiError::CssStyleError)?;
+            let name = lines[index..index + lpos].replace(" ", "");
+            let key = if name.contains(":") { name.split(":").next().ok_or(UiError::CssStyleError)? } else { &name };
+            let visual_style = res.widgets.entry_or_insert_with(key.to_string(), || VisualStyle::new());
+            let items = lines[index + lpos + 1..index + rpos].split(";");
+            for item in items {
+                if item == "" { continue; }
+                let mut kvs = item.split(": ");
+                let key = kvs.next().ok_or(UiError::CssStyleError)?.replace(" ", "");
+                let value = kvs.next().ok_or(UiError::CssStyleError)?;
+
+                match key.as_str() {
+                    "background-color" => if name.contains(":hover") {
+                        visual_style.hovered.fill = Style::read_color(&value)?;
+                    } else if name.contains(":active") {
+                        visual_style.pressed.fill = Style::read_color(&value)?;
+                    } else if name.contains(":disabled") {
+                        visual_style.disabled.fill = Style::read_color(&value)?;
+                    } else {
+                        let color = Style::read_color(&value)?;
+                        visual_style.disabled.fill = color.clone();
+                        visual_style.inactive.fill = color.clone();
+                        visual_style.hovered.fill = color.clone();
+                        visual_style.pressed.fill = color;
+                    }
+                    "border" => if name.contains(":hover") {
+                        visual_style.hovered.border = Style::read_border(&value)?;
+                    } else if name.contains(":active") {
+                        visual_style.pressed.border = Style::read_border(&value)?;
+                    } else if name.contains(":disabled") {
+                        visual_style.disabled.border = Style::read_border(&value)?;
+                    } else {
+                        let border = Style::read_border(&value)?;
+                        visual_style.disabled.border = border.clone();
+                        visual_style.inactive.border = border.clone();
+                        visual_style.hovered.border = border.clone();
+                        visual_style.pressed.border = border;
+                    }
+                    "border-radius" => if name.contains(":hover") {
+                        visual_style.hovered.radius = Style::read_radius(&value)?;
+                    }else if name.contains(":active") {
+                        visual_style.pressed.radius = Style::read_radius(&value)?;
+                    }else if name.contains(":disabled") {
+                        visual_style.disabled.radius = Style::read_radius(&value)?;
+                    }else {
+                        let radius = Style::read_radius(&value)?;
+                        visual_style.disabled.radius = radius.clone();
+                        visual_style.inactive.radius = radius.clone();
+                        visual_style.hovered.radius = radius.clone();
+                        visual_style.pressed.radius = radius;
+                    }
+                    _ => {}
+                }
+            }
+            // println!("{:#?}", visual_style);
+            index += rpos + 1;
+        }
+        Ok(res)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::style::Style;
+
+    #[test]
+    fn test_css_style() {
+        let style = Style::from_css("res/css/widgets.css").unwrap();
+    }
+}

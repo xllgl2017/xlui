@@ -1,0 +1,15 @@
+.button {
+    background-color: rgb(230, 230, 230);
+    border: rgb(0, 0, 0) 0 solid;
+    border-radius: 1px;
+}
+
+.button:hover {
+    background-color: rgb(230, 230, 230);
+    border: rgba(213, 17, 235, 0.76) 1px solid;
+}
+
+.button:active {
+    background-color: rgb(165, 165, 165);
+    border: rgb(0, 0, 0) 1px solid;
+}

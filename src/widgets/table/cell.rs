@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderParam, Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::shape::Shape;
 use crate::size::Geometry;
@@ -10,6 +10,7 @@ use crate::widgets::table::header::{TableHeader, TableUi};
 use crate::widgets::table::row::TableRowData;
 use crate::widgets::{WidgetChange, WidgetSize, WidgetState};
 use crate::*;
+use crate::render::RenderParam;
 
 pub struct TableCell {
     pub(crate) id: String,

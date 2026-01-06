@@ -1,8 +1,9 @@
 use crate::key::Key;
-use crate::render::{RenderParam, VisualStyle, WidgetStyle};
+use crate::render::RenderParam;
 use crate::response::{Callback, Response};
 use crate::shape::Shape;
 use crate::size::Geometry;
+use crate::style::VisualStyle;
 use crate::widgets::{WidgetChange, WidgetSize, WidgetState};
 use crate::*;
 use std::fmt::Display;

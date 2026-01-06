@@ -1,4 +1,4 @@
-use crate::render::{RenderParam, VisualStyle, WidgetStyle};
+use crate::style::{VisualStyle, WidgetStyle};
 use crate::size::border::Border;
 use crate::size::pos::Pos;
 use crate::size::radius::Radius;
@@ -8,6 +8,7 @@ use crate::text::cchar::CChar;
 use crate::ui::Ui;
 use crate::widgets::textedit::buffer::CharBuffer;
 use crate::{Offset, Shadow};
+use crate::render::RenderParam;
 use crate::shape::Shape;
 
 pub struct EditCursor {

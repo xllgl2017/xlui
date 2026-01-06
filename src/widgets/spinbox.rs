@@ -1,7 +1,7 @@
 use crate::frame::context::{ContextUpdate, UpdateType};
 use crate::frame::App;
 use crate::key::Key;
-use crate::render::{RenderParam, VisualStyle};
+use crate::style::VisualStyle;
 use crate::response::{Callback, Response};
 use crate::shape::Shape;
 use crate::size::pos::Pos;
@@ -15,6 +15,7 @@ use crate::window::UserEvent;
 use crate::NumCastExt;
 use std::fmt::Display;
 use std::ops::{AddAssign, Range, SubAssign};
+use crate::render::RenderParam;
 
 /// ### Slider的示例用法
 /// ```

@@ -1,5 +1,5 @@
 use crate::frame::context::UpdateType;
-use crate::render::{Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Response;
 use crate::size::padding::Padding;
 use crate::size::rect::Rect;

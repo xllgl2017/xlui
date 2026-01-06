@@ -1,5 +1,5 @@
 use crate::layout::{Layout, LayoutItem};
-use crate::render::{VisualStyle, WidgetStyle};
+use crate::style::{VisualStyle, WidgetStyle};
 use crate::style::color::Color;
 use crate::ui::Ui;
 use crate::widgets::table::column::TableColumn;

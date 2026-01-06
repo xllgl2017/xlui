@@ -1,7 +1,7 @@
 use crate::frame::context::UpdateType;
 use crate::layout::{Layout, LayoutDirection, LayoutItem, LayoutOffset};
 use crate::map::Map;
-use crate::render::Visual;
+use crate::style::Visual;
 use crate::response::Response;
 use crate::size::Geometry;
 use crate::style::color::Color;
@@ -48,12 +48,9 @@ pub struct VerticalLayout {
     id: String,
     items: Map<String, LayoutItem>,
     item_space: f32, //item之间的间隔
-    // offset: Offset,
-    // context_offset: Offset,
     geometry: Geometry,
     direction: LayoutDirection,
     visual: Visual,
-    // need_refresh_display: bool,
     display: Range<usize>,
     offset: LayoutOffset,
 }
@@ -66,11 +63,8 @@ impl VerticalLayout {
             item_space: 5.0,
             geometry: Geometry::new(),
             direction,
-            // offset: Offset::new(),
             visual: Visual::new(),
-            // need_refresh_display: true,
             display: 0..0,
-            // context_offset: Offset::new(),
             offset: LayoutOffset::new(),
         }
     }
@@ -155,12 +149,9 @@ impl VerticalLayout {
         for (index, item) in self.items.iter().enumerate() {
             let item_min_y = context_rect.dy().min + self.offset.current.y + sum_height;
             let item_max_y = context_rect.dy().min + self.offset.current.y + sum_height + item.height() + self.item_space;
-            println!("{} {} {} {} {} {}", item_min_y, item_max_y, context_rect.dy().min, context_rect.dy().max, item.height(), index);
             if item_min_y <= context_rect.dy().min && item_max_y > context_rect.dy().min {
                 self.display.start = index;
                 self.offset.context.y = item_min_y - context_rect.dy().min;
-                // self.context_offset.y = item_min_y - context_rect.dy().min;
-                println!("start");
             }
             if item_min_y < context_rect.dy().max && item_max_y >= context_rect.dy().max {
                 self.display.end = index;
@@ -169,8 +160,6 @@ impl VerticalLayout {
             sum_height = sum_height + item.height() + self.item_space;
         }
         if self.display.end == 0 && self.items.len() != 0 { self.display.end = self.items.len() - 1; }
-        println!("offset: {:?}; display: {:?}; rect: {:?}", self.offset.current, self.display, context_rect);
-        // self.need_refresh_display = false;
         self.offset.offsetting = false;
     }
 }
@@ -199,17 +188,6 @@ impl Layout for VerticalLayout {
                 let mut context_rect = self.geometry.context_rect().with_y_direction(self.direction);
                 context_rect.offset(&self.offset.context);
                 let previous_rect = mem::replace(&mut ui.draw_rect, context_rect);
-                // let context_rect = self.geometry.context_rect();
-                // for i in self.display.clone() {
-                //     let item=&mut self.items[i];
-                //     let resp = item.update(ui);
-                //     if width < resp.size.dw { width = resp.size.dw; }
-                //     height += resp.size.dh + self.item_space;
-                //     match self.direction {
-                //         LayoutDirection::Min => ui.draw_rect.add_min_y(resp.size.dh + self.item_space),
-                //         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
-                //     }
-                // }
                 for i in self.display.start..=self.display.end {
                     let resp = self.items[i].update(ui);
                     if width < resp.size.dw { width = resp.size.dw; }
@@ -219,16 +197,6 @@ impl Layout for VerticalLayout {
                         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
                     }
                 }
-                // for item in self.items.iter_mut() {
-                //     let resp = item.update(ui);
-                //     if width < resp.size.dw { width = resp.size.dw; }
-                //     height += resp.size.dh + self.item_space;
-                //     println!("{}", resp.size.dh);
-                //     match self.direction {
-                //         LayoutDirection::Min => ui.draw_rect.add_min_y(resp.size.dh + self.item_space),
-                //         LayoutDirection::Max => ui.draw_rect.add_max_y(-resp.size.dh - self.item_space),
-                //     }
-                // }
                 height -= self.item_space;
                 ui.draw_rect = previous_rect;
             }
@@ -259,8 +227,6 @@ impl Layout for VerticalLayout {
 
     fn set_offset(&mut self, offset: Offset) {
         self.offset.next_offset(offset);
-        // self.need_refresh_display = self.offset != offset;
-        // self.offset = offset;
     }
 
     fn set_size(&mut self, w: f32, h: f32) {

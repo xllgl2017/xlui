@@ -1,8 +1,9 @@
 use crate::frame::context::UpdateType;
-use crate::render::{RenderParam, VisualStyle};
+use crate::render::RenderParam;
 use crate::response::Response;
 use crate::shape::Shape;
 use crate::size::Geometry;
+use crate::style::VisualStyle;
 use crate::ui::Ui;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
 use crate::Color;

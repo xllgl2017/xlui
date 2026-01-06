@@ -97,7 +97,8 @@ impl App for XlUi {
     }
     fn window_attributes(&self) -> WindowAttribute {
         WindowAttribute {
-            inner_size: (1920, 1080).into(),
+            inner_size: (1100, 1080).into(),
+            style: Style::from_css("res/css/widgets.css").unwrap(),
             ..Default::default()
         }
     }

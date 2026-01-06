@@ -6,6 +6,7 @@ pub enum UiError {
     NullPtr,
     UNINIT,
     OptNone,
+    CssStyleError,
     Error(String),
 }
 
@@ -17,6 +18,7 @@ impl UiError {
             UiError::NullPtr => "空指针",
             UiError::UNINIT => "值未初始化",
             UiError::OptNone => "Option值为None",
+            UiError::CssStyleError => "CSS Style 文件语法错误",
             UiError::Error(value) => value
         }
     }

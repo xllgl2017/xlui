@@ -3,7 +3,7 @@ use crate::frame::App;
 use crate::layout::popup::Popup;
 use crate::layout::{LayoutItem, LayoutKind};
 use crate::map::Map;
-use crate::render::{Visual, VisualStyle, WidgetStyle};
+use crate::style::{Visual, VisualStyle, WidgetStyle};
 use crate::response::Callback;
 use crate::size::border::Border;
 use crate::size::padding::Padding;
@@ -139,6 +139,7 @@ impl InnerWindow {
             request_update: None,
             draw_rect: self.visual.rect().clone(),
             widget_changed: WidgetChange::None,
+            styles: oui.styles,
             paint: None,
             disabled: false,
         };
@@ -203,6 +204,7 @@ impl InnerWindow {
             request_update: None,
             draw_rect: self.visual.rect().clone(),
             widget_changed: WidgetChange::None,
+            styles: oui.styles,
             paint: oui.paint.take(),
             disabled: false,
         };
@@ -233,6 +235,7 @@ impl InnerWindow {
             request_update: None,
             draw_rect: self.visual.rect().clone(),
             widget_changed: WidgetChange::None,
+            styles: oui.styles,
             paint: None,
             disabled: false,
         };
