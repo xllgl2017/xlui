@@ -71,22 +71,22 @@ impl Color {
     pub fn as_rgba_u32(&self) -> u32 {
         ((self.a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
     }
-    #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn r_f64(&self) -> f64 {
         self.r as f64 / 255.0
     }
 
-    #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn g_f64(&self) -> f64 {
         self.g as f64 / 255.0
     }
 
-    #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn b_f64(&self) -> f64 {
         self.b as f64 / 255.0
     }
 
-    #[cfg(all(target_os = "linux",not(feature = "gpu")))]
+    #[cfg(all(target_os = "linux", not(feature = "gpu")))]
     pub(crate) fn a_f64(&self) -> f64 {
         self.a as f64 / 255.0
     }

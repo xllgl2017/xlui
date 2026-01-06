@@ -30,13 +30,14 @@ use std::time::Duration;
 use wgpu::{LoadOp, Operations, RenderPassDescriptor};
 #[cfg(all(windows, not(feature = "gpu")))]
 use windows::Win32::Graphics::Gdi::{HDC, PAINTSTRUCT};
+use crate::style::Style;
 
 pub struct AppContext {
     pub(crate) device: Device,
     pub(crate) layout: Option<LayoutKind>,
     pub(crate) popups: Option<Map<String, Popup>>,
     pub(crate) inner_windows: Option<Map<WindowId, InnerWindow>>,
-    // pub(crate) style: Rc<RefCell<Style>>,
+    pub(crate) styles: Style,
     pub(crate) context: Context,
     pub(crate) previous_time: u128,
     pub(crate) redraw_thread: JoinHandle<()>,
@@ -53,7 +54,7 @@ impl AppContext {
             layout: Some(LayoutKind::new(layout)),
             popups: Some(Map::new()),
             inner_windows: Some(Map::new()),
-            // style: Rc::new(RefCell::new(Style::light_style())),
+            styles: Style::from_css("res/css/widgets.css").unwrap(),
             context,
             previous_time: 0,
             redraw_thread: spawn(|| {}),
@@ -76,7 +77,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            // style: self.style.clone(),
+            styles: &self.styles,
             paint: None,
             disabled: false,
         };
@@ -102,7 +103,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            // style: self.style.clone(),
+            styles: &self.styles,
             paint: None,
             disabled: false,
         };
@@ -125,7 +126,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            // style: self.style.clone(),
+            styles: &self.styles,
             paint: None,
             disabled: false,
         };
@@ -245,7 +246,7 @@ impl AppContext {
             request_update: None,
             draw_rect,
             widget_changed: WidgetChange::None,
-            // style: self.style.clone(),
+            styles: &self.styles,
             paint,
             disabled: false,
         };
@@ -321,7 +322,7 @@ pub struct Ui<'a, 'p> {
     pub(crate) request_update: Option<(WindowId, UpdateType)>,
     pub(crate) draw_rect: Rect,
     pub(crate) widget_changed: WidgetChange,
-    // pub style: Rc<RefCell<Style>>,
+    pub(crate) styles: &'a Style,
     pub(crate) paint: Option<PaintParam<'p>>,
     pub(crate) disabled: bool,
 }

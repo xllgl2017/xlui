@@ -2,16 +2,15 @@ use crate::align::Align;
 use crate::frame::context::UpdateType;
 use crate::frame::App;
 use crate::render::image::ImageSource;
-use crate::style::{Visual, VisualStyle};
 use crate::response::{Callback, Response};
 use crate::size::padding::Padding;
 use crate::size::Geometry;
+use crate::style::{Visual, VisualStyle};
 use crate::text::buffer::TextBuffer;
 use crate::text::rich::RichText;
 use crate::ui::Ui;
 use crate::widgets::image::Image;
 use crate::widgets::{Widget, WidgetChange, WidgetSize, WidgetState};
-use crate::Color;
 
 /// ### Button的示例用法
 /// ```
@@ -67,17 +66,13 @@ pub struct Button {
 
 impl Button {
     pub fn new(text: impl Into<RichText>) -> Self {
-        let mut style = VisualStyle::same((Color::rgb(230, 230, 230), 1.0, 3).into());
-        style.inactive.border.set_same(0.0);
-        style.pressed.fill = Color::rgb(165, 165, 165);
-
         Button {
             id: crate::gen_unique_id(),
             text_buffer: TextBuffer::new(text),
             callback: None,
             inner_callback: None,
             image: None,
-            visual: Visual::new().with_enable().with_style(style),
+            visual: Visual::new(),
             state: WidgetState::default(),
             geometry: Geometry::new().with_padding(Padding::same(2.0)).with_align(Align::Center),
         }
@@ -133,7 +128,7 @@ impl Button {
     }
 
     pub fn with_style(mut self, style: impl Into<VisualStyle>) -> Self {
-        self.visual.set_style(style.into());
+        self.visual.enable().set_style(style.into());
         self
     }
 
@@ -149,10 +144,11 @@ impl Button {
 
 
     pub fn set_style(&mut self, style: VisualStyle) {
-        self.visual.set_style(style);
+        self.visual.enable().set_style(style);
     }
 
     pub(crate) fn reset_size(&mut self, ui: &mut Ui) {
+        if self.visual.disable() { ui.styles.set_widget_style(&mut self.visual, vec![self.id.as_str(), ".button"]); }
         self.text_buffer.init(ui);
         match self.image {
             None => self.geometry.set_context_size(self.text_buffer.geometry.margin_width(), self.text_buffer.geometry.margin_height()),

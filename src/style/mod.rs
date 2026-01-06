@@ -1,10 +1,13 @@
 pub mod color;
+mod visual;
 
+use std::fs;
+use std::path::Path;
 use crate::size::border::Border;
 use crate::style::color::Color;
-use crate::{Radius, Rect, Ui};
-use crate::render::RenderParam;
-use crate::shape::Shape;
+use crate::{Radius, UiError, UiResult};
+pub use visual::*;
+use crate::map::Map;
 
 /// #### 窗口样式
 /// 可以用于窗口布局
@@ -58,7 +61,6 @@ pub struct FrameStyle {
 ///
 ///
 
-
 #[derive(Clone)]
 pub struct Shadow {
     pub offset: [f32; 2],
@@ -108,117 +110,141 @@ impl From<(Color, f32, u8)> for WidgetStyle {
     }
 }
 
-#[derive(Clone)]
-pub struct VisualStyle {
-    pub disabled: WidgetStyle,
-    pub inactive: WidgetStyle,
-    pub hovered: WidgetStyle,
-    pub pressed: WidgetStyle,
+
+pub struct Style {
+    widgets: Map<String, VisualStyle>,
+    frame: FrameStyle,
 }
 
-impl VisualStyle {
-    pub fn new() -> VisualStyle {
-        VisualStyle {
-            disabled: WidgetStyle::new(),
-            inactive: WidgetStyle::new(),
-            hovered: WidgetStyle::new(),
-            pressed: WidgetStyle::new(),
+impl Style {
+    fn new() -> Style {
+        Style {
+            widgets: Map::new(),
+            frame: FrameStyle {
+                fill: Color::rgb(165, 235, 154),
+                shadow: Shadow {
+                    offset: [10.0, 10.0],
+                    spread: 10.0,
+                    blur: 5.0,
+                    color: Color::rgb(123, 123, 123),
+                },
+                border: Border::same(1.0),
+                radius: Radius::same(2),
+            },
         }
     }
 
-    pub fn same(style: WidgetStyle) -> VisualStyle {
-        let mut res = VisualStyle::new();
-        res.disabled = style.clone();
-        res.inactive = style.clone();
-        res.hovered = style.clone();
-        res.pressed = style;
+    pub fn default() -> Style {
+        let mut res = Style::new();
+        let mut style = VisualStyle::same((Color::rgb(230, 230, 230), 1.0, 3).into());
+        style.inactive.border.set_same(0.0);
+        style.pressed.fill = Color::rgb(165, 165, 165);
+        res.widgets.insert(".button".to_string(), style);
         res
     }
 
-    pub fn dyn_style(&self, disabled: bool, hovered: bool, pressed: bool) -> &WidgetStyle {
-        if disabled { return &self.disabled; }
-        if pressed { return &self.pressed; }
-        if hovered { return &self.hovered; }
-        &self.inactive
-    }
-}
-
-
-pub struct Visual {
-    render: RenderParam,
-    disable: bool,
-    foreground: bool,
-}
-
-impl Visual {
-    pub fn new() -> Visual {
-        Visual {
-            #[cfg(feature = "gpu")]
-            render: RenderParam::new(Shape::rectangle()),
-            #[cfg(not(feature = "gpu"))]
-            render: RenderParam::new(Shape::Rectangle),
-            disable: true,
-            foreground: false,
+    #[inline]
+    pub fn set_widget_style(&self, visual: &mut Visual, keys: Vec<impl ToString>) {
+        for key in keys {
+            let key = key.to_string();
+            if let Some(widget) = self.widgets.get(&key) {
+                visual.enable().set_style(widget.clone());
+                return;
+            }
         }
     }
 
-    #[cfg(feature = "gpu")]
-    pub fn re_init(&mut self) {
-        self.render.re_init();
+    fn read_color(value: &str) -> UiResult<Color> {
+        let values = value.replace("rgb(", "").replace(")", "").replace("rgba(", "").replace(" ", "");
+        let mut rgba = values.split(",");
+        let r = rgba.next().ok_or("invalid red value")?.parse()?;
+        let g = rgba.next().ok_or("invalid green value")?.parse()?;
+        let b = rgba.next().ok_or("invalid blue value")?.parse()?;
+        let a = rgba.next().map(|v| v.parse().unwrap_or(255)).unwrap_or(255);
+        Ok(Color::rgba(r, g, b, a))
     }
 
-    pub fn with_enable(mut self) -> Visual {
-        self.disable = false;
-        self
+    fn read_size(value: &str) -> UiResult<f32> {
+        let value = value.replace(" ", "").replace("px", "");
+        Ok(value.parse()?)
     }
 
-    pub fn enable(&mut self) -> &mut Visual {
-        self.disable = false;
-        self
+    fn read_border(value: &str) -> UiResult<Border> {
+        let value = value.replace(", ", ",");
+        let items = value.split(" ").collect::<Vec<_>>();
+        let mut border = Border::same(0.0);
+        for item in items {
+            if item.starts_with("rgb") {
+                border.color = Style::read_color(item)?;
+            } else if let Ok(width) = item.parse() {
+                border.set_same(width);
+            } else if item.ends_with("px") || item.parse::<f32>().is_ok() {
+                border.set_same(Style::read_size(item)?);
+            }
+        }
+        Ok(border)
     }
 
-    pub fn with_style(mut self, style: VisualStyle) -> Visual {
-        self.render.set_style(style);
-        self
+    pub fn from_css(fp: impl AsRef<Path>) -> UiResult<Style> {
+        let lines = fs::read_to_string(fp.as_ref())?.replace("\r\n", "\n").replace("\n", "");
+        let mut index = 0;
+        let mut res = Style::new();
+        while let Some(rpos) = lines[index..].find("}") {
+            let lpos = lines[index..].find("{").ok_or(UiError::CssStyleError)?;
+            let name = lines[index..index + lpos].replace(" ", "");
+            let key = if name.contains(":") { name.split(":").next().ok_or(UiError::CssStyleError)? } else { &name };
+            let visual_style = res.widgets.entry_or_insert_with(key.to_string(), || VisualStyle::new());
+            let items = lines[index + lpos + 1..index + rpos].split(";");
+            for item in items {
+                if item == "" { continue; }
+                let mut kvs = item.split(":");
+                let key = kvs.next().ok_or(UiError::CssStyleError)?.replace(" ", "");
+                let value = kvs.next().ok_or(UiError::CssStyleError)?;
+
+                match key.as_str() {
+                    "background-color" => if name.contains(":hover") {
+                        visual_style.hovered.fill = Style::read_color(&value)?;
+                    } else if name.contains(":active") {
+                        visual_style.pressed.fill = Style::read_color(&value)?;
+                    } else if name.contains(":disabled") {
+                        visual_style.disabled.fill = Style::read_color(&value)?;
+                    } else {
+                        let color = Style::read_color(&value)?;
+                        // visual_style.disabled.fill = color.clone();
+                        visual_style.inactive.fill = color.clone();
+                        // visual_style.hovered.fill = color.clone();
+                        // visual_style.pressed.fill = color;
+                    }
+                    "border" => if name.contains(":hover") {
+                        visual_style.hovered.border = Style::read_border(&value)?;
+                    } else if name.contains(":active") {
+                        visual_style.pressed.border = Style::read_border(&value)?;
+                    } else if name.contains(":disabled") {
+                        visual_style.disabled.border = Style::read_border(&value)?;
+                    } else {
+                        let border = Style::read_border(&value)?;
+                        // visual_style.disabled.border = border.clone();
+                        visual_style.inactive.border = border.clone();
+                        // visual_style.hovered.border = border.clone();
+                        // visual_style.pressed.border = border;
+                    }
+                    _ => {}
+                }
+            }
+            // println!("{:#?}", visual_style);
+            index += rpos + 1;
+        }
+        Ok(res)
     }
+}
 
-    pub fn set_style(&mut self, style: VisualStyle) {
-        self.render.set_style(style);
+
+#[cfg(test)]
+mod tests {
+    use crate::style::Style;
+
+    #[test]
+    fn test_css_style() {
+        let style = Style::from_css("res/css/widgets.css").unwrap();
     }
-
-
-    pub fn draw(&mut self, ui: &mut Ui, disabled: bool, hovered: bool, pressed: bool, foreground: bool) {
-        if self.disable || self.foreground != foreground { return; }
-        self.render.draw(ui, disabled, hovered, pressed);
-    }
-
-    pub fn foreground(&self) -> bool {
-        self.foreground
-    }
-
-    pub fn disable(&self) -> bool {
-        self.disable
-    }
-
-    pub fn with_size(mut self, w: f32, h: f32) -> Visual {
-        self.render.rect.set_size(w, h);
-        self
-    }
-
-    pub fn rect(&self) -> &Rect { self.render.rect() }
-
-    pub fn rect_mut(&mut self) -> &mut Rect { self.render.rect_mut() }
-
-    pub fn with_rect(mut self, rect: Rect) -> Visual {
-        self.render.rect = rect;
-        self
-    }
-
-    pub fn offset_to_rect(&mut self, rect: &Rect) {
-        self.render.offset_to_rect(rect)
-    }
-
-    pub fn style(&self) -> &VisualStyle { &self.render.style }
-
-    pub fn style_mut(&mut self) -> &mut VisualStyle { self.render.style_mut() }
 }
